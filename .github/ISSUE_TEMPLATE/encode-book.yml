@@ -1,0 +1,36 @@
+name: Encode Book
+description: Run Agent 5 — encode a single book into the BOOKS knowledge base
+labels: ["encode-book"]
+body:
+  - type: input
+    id: slug
+    attributes:
+      label: Book slug
+      placeholder: "goodfellow_deep_learning"
+    validations:
+      required: true
+  - type: input
+    id: title
+    attributes:
+      label: Title
+    validations:
+      required: true
+  - type: input
+    id: category
+    attributes:
+      label: Category
+      placeholder: "ANN / CNN / VISION / NLP / RL / REFACTORING / ALGORITHMS / TRAINING_OPTIMIZATION / DISTRIBUTED_SYSTEMS / OBJECT_DETECTION"
+    validations:
+      required: true
+  - type: input
+    id: free_url
+    attributes:
+      label: Free URL (optional)
+      placeholder: "https://..."
+  - type: textarea
+    id: topics
+    attributes:
+      label: Topics to encode
+      description: One topic per line
+    validations:
+      required: true

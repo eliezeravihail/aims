@@ -1,0 +1,11 @@
+name: Find Book
+description: Run Agent 4 — find the best foundational book for a domain (uses gpt-4o-mini, free)
+labels: ["find-book"]
+body:
+  - type: input
+    id: domain
+    attributes:
+      label: Technical domain
+      placeholder: "e.g. object detection, NLP transformers, distributed systems"
+    validations:
+      required: true

@@ -1,0 +1,9 @@
+name: Books Status
+description: Coverage and quality report for the BOOKS knowledge base
+labels: ["books-status"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Opens a status report — no input needed.
+        Agent 5 will scan all `skills/BOOKS/` directories and return a full coverage report.
