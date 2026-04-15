@@ -1,24 +1,32 @@
 ---
-description: "Book encoding queue — isolated subprocess per book with checkpointing"
+description: "Encode books from queue with configurable limit"
 allowed-tools: Read, Write, Bash
 ---
 
-1. Read `books-init-queue.yaml`
-2. Read `.claude/books_checkpoint.json` — skip completed entries
-3. For each pending book:
-   a. Run isolated subprocess: `claude --print < encode_prompt`
-   b. Write result to checkpoint (success / failed)
-   c. Do not start the next book until the current one finishes
+## Usage
+```
+/project:books-init --count 1
+/project:books-init --count 5
+/project:books-init              (default: 20)
+```
 
-## Dedupe check before each encode
-Read `skills/BOOKS/<category>/_meta.md`.
-If a similar book exists — skip and record "skipped: duplicate".
+## Steps
+1. Parse `--count N` from command (default 20)
+2. Read `books-init-queue.yaml`
+3. Read `.claude/books_checkpoint.json` — skip completed entries
+4. For the first N pending books:
+   a. Check if book has `free_url` — skip if null
+   b. Call book_encoder agent via claude --print
+   c. Write skill files to `skills/BOOKS/<category>/`
+   d. Update `_meta.md`
+   e. Update checkpoint with completed slug
+5. Report summary: encoded + skipped + failed
 
-## Checkpoint update after each book
+## Checkpoint format
 ```json
 {
-  "completed": ["<slug>"],
+  "completed": ["slug1", "slug2"],
   "failed": [],
-  "knowledge_stats": { "average_quality_score": <updated> }
+  "knowledge_stats": { "average_quality_score": 0.85 }
 }
 ```
