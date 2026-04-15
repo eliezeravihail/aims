@@ -1,0 +1,17 @@
+name: Books Init
+description: Encode all books in the queue (books-init-queue.yaml) into the BOOKS knowledge base
+labels: ["books-init"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Runs Agent 5 on every pending book in `books-init-queue.yaml`.
+        Encoded skill files are committed automatically to `skills/BOOKS/`.
+  - type: dropdown
+    id: confirm
+    attributes:
+      label: Confirm
+      options:
+        - "Yes — run books-init now"
+    validations:
+      required: true

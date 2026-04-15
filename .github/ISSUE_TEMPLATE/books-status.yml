@@ -5,5 +5,13 @@ body:
   - type: markdown
     attributes:
       value: |
-        Opens a status report — no input needed.
-        Agent 5 will scan all `skills/BOOKS/` directories and return a full coverage report.
+        Runs Agent 5 — scans all `skills/BOOKS/` directories and returns a full coverage report.
+        No input needed, just submit.
+  - type: dropdown
+    id: confirm
+    attributes:
+      label: Confirm
+      options:
+        - "Yes — run status report now"
+    validations:
+      required: true
