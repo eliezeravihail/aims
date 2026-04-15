@@ -28,7 +28,7 @@ from openai import OpenAI
 # ── GitHub Models client ────────────────────────────────────────────────────
 
 GITHUB_MODELS_BASE_URL = "https://models.inference.ai.azure.com"
-SONNET_MODEL  = "Meta-Llama-3.1-70B-Instruct"  # Free tier — high quality
+SONNET_MODEL  = "gpt-4o-mini"  # Free tier — confirmed ID
 MINI_MODEL    = "gpt-4o-mini"        # Fast free model for lightweight ranking
 
 _client = OpenAI(
