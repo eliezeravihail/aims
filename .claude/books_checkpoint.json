@@ -1,7 +1,11 @@
 {
   "_comment": "Auto-managed \u2014 do not edit manually",
   "last_session": null,
-  "completed": [],
+  "completed": [
+    "goodfellow_deep_learning",
+    "szeliski_computer_vision",
+    "fowler_refactoring"
+  ],
   "failed": [],
   "quality_index_version": "v2",
   "knowledge_stats": {
