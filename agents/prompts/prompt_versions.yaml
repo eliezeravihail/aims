@@ -1,0 +1,10 @@
+locked: true
+
+active:
+  agent_4: v1.0
+  agent_5: v1.1
+
+resolution_rule: >
+  Before invoking any agent, read this file and load
+  agents/prompts/versions/<agent>_<version>.md exactly.
+  Do not load any other version.

@@ -1,0 +1,41 @@
+- slug: goodfellow_deep_learning
+  priority: 1
+  title: "Deep Learning"
+  authors: [Goodfellow, Bengio, Courville]
+  category: ANN
+  free_url: "https://www.deeplearningbook.org"
+  source_tier: tier_1a
+  topics_to_encode:
+    - backprop
+    - regularization
+    - optimization
+    - convolutional_networks
+    - sequence_models
+
+- slug: fowler_refactoring
+  priority: 1
+  title: "Refactoring: Improving the Design of Existing Code"
+  authors: [Fowler]
+  category: REFACTORING
+  free_url: null
+  source_tier: tier_1a
+  topics_to_encode:
+    - code_smells
+    - extract_method
+    - move_field
+    - decompose_conditional
+    - replace_pattern
+
+- slug: szeliski_computer_vision
+  priority: 1
+  title: "Computer Vision: Algorithms and Applications"
+  authors: [Szeliski]
+  category: VISION
+  free_url: "https://szeliski.org/Book"
+  source_tier: tier_1a
+  topics_to_encode:
+    - feature_detection
+    - image_formation
+    - segmentation
+    - recognition
+    - geometric_transforms
