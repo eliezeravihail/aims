@@ -4,16 +4,16 @@ runner/run.py — GitHub Actions entrypoint for knowledge-library-agents.
 All LLM calls go through GitHub Models (OpenAI-compatible endpoint).
 GITHUB_TOKEN is the only credential needed — no ANTHROPIC_API_KEY required.
 
-Agent routing by issue label:
-  find-book    → Agent 4 (Book Finder)   — gpt-4o-mini via GitHub Models (fast + free)
-  encode-book  → Agent 5 (Book Encoder)  — claude-3-5-sonnet via GitHub Models
-  books-status → Agent 5                 — claude-3-5-sonnet via GitHub Models
-  books-audit  → Agent 5                 — claude-3-5-sonnet via GitHub Models
-  books-init   → Agent 5 (queue run)     — claude-3-5-sonnet via GitHub Models
+Free models used (verify availability at github.com/marketplace/models):
+  gpt-4o-mini                  — OpenAI, free tier, fast
+  Meta-Llama-3.1-70B-Instruct  — Meta, free tier, high quality
 
-Why gpt-4o-mini for find-book?
-  Agent 4 does structured ranking and web lookups — a fast, cheap model is ideal.
-  Claude Sonnet is reserved for tasks that require deep knowledge distillation.
+Agent routing by issue label:
+  find-book    → Agent 4 (Book Finder)  — gpt-4o-mini (fast structured ranking)
+  encode-book  → Agent 5 (Book Encoder) — Meta-Llama-3.1-70B-Instruct
+  books-status → Agent 5               — Meta-Llama-3.1-70B-Instruct
+  books-audit  → Agent 5               — Meta-Llama-3.1-70B-Instruct
+  books-init   → Agent 5 (queue run)   — Meta-Llama-3.1-70B-Instruct
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ from openai import OpenAI
 # ── GitHub Models client ────────────────────────────────────────────────────
 
 GITHUB_MODELS_BASE_URL = "https://models.inference.ai.azure.com"
-SONNET_MODEL  = "claude-3-5-sonnet"  # Claude Sonnet via GitHub Models
+SONNET_MODEL  = "Meta-Llama-3.1-70B-Instruct"  # Free tier — high quality
 MINI_MODEL    = "gpt-4o-mini"        # Fast free model for lightweight ranking
 
 _client = OpenAI(
