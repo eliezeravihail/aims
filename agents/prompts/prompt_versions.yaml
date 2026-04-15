@@ -2,7 +2,7 @@ locked: true
 
 active:
   book_finder:  v1.0
-  book_encoder: v1.1
+  book_encoder: v1.2
 
 resolution_rule: >
   Before invoking any agent, read this file and load

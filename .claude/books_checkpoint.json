@@ -1,17 +1,17 @@
 {
-  "_comment": "Auto-managed \u2014 do not edit manually",
-  "last_session": null,
+  "_comment": "Auto-managed — do not edit manually",
+  "last_session": "2026-04-15",
   "completed": [
+    "fowler_refactoring",
     "goodfellow_deep_learning",
-    "szeliski_computer_vision",
-    "fowler_refactoring"
+    "szeliski_computer_vision"
   ],
   "failed": [],
   "quality_index_version": "v2",
   "knowledge_stats": {
     "duplicates_merged": 0,
     "stale_books": 0,
-    "average_quality_score": 0.0
+    "average_quality_score": 0.81
   },
-  "pending": "all"
+  "pending": "none"
 }
