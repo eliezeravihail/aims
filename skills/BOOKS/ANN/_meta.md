@@ -5,6 +5,7 @@
 | slug | title | version | quality_score | last_used | stale | duplicate_of |
 |------|-------|---------|--------------|-----------|-------|-------------|
 | —    | —     | —       | —            | —         | false | —           |
+| goodfellow_deep_learning | Deep Learning | v1.1 | 0.82 | 2026-04-15 | false | — |
 
 ## Ranking policy
 1. Prefer tier_1a > tier_1b > tier_2
