@@ -1,24 +1,26 @@
-# Dev Agent System v2
+# knowledge-library-agents
 
 ## Always-active rules
-- Every agent runs in an isolated subprocess via `claude --print`.
 - Always read `agents/prompts/prompt_versions.yaml` before invoking any agent, then load the exact versioned prompt file listed there.
-- Validation uses three channels: static analysis + semantic validation + confidence scoring.
-- Refactor changes are gated by `refactor_mode` (auto / review / blocked).
 - BOOKS knowledge is loaded by `quality_score` descending; skip `stale=true` entries.
-
-## Primary entrypoints
-- `/project:dev-cycle`              — full adaptive pipeline
-- `/project:books-init`             — encode book queue
-- `/project:ingest-local-sources`   — encode a local folder of PDFs or text files
-- `/project:books-status`           — coverage and quality report
-- `/project:books-audit`            — knowledge hygiene
+- Never encode a book without a verified free source — hallucinated content is not acceptable.
 
 ## Agent map
 | Agent | Role | Model |
 |-------|------|-------|
-| Agent 1 | Refactoring + Guardrails | Sonnet |
-| Agent 2 | Validation + Scoring | Sonnet, temp=0 |
-| Agent 3 | Testing + Coverage | Sonnet |
-| Agent 4 | Book Finder | Haiku |
-| Agent 5 | Book Encoder | Sonnet |
+| book_finder  | Find best foundational book for a domain | claude-haiku-4-5-20251001 |
+| book_encoder | Encode book topics into skill files      | claude-sonnet-4-6 |
+
+## Primary entrypoints
+- `/project:books-init`             — encode all books in queue
+- `/project:ingest-local-sources`   — encode a local folder of PDFs or text files
+- `/project:find-book <domain>`     — find the best book for a domain
+- `/project:encode-book`            — encode a single book
+- `/project:books-status`           — coverage and quality report
+- `/project:books-update`           — find new editions, refresh stale books
+- `/project:books-audit`            — knowledge hygiene
+
+## Encoding rules
+- Books with no `free_url` must be ingested locally via `/project:ingest-local-sources`
+- Each topic = one file: `skills/BOOKS/<CATEGORY>/<slug>_<topic>.md`
+- Update `_meta.md` after every encode

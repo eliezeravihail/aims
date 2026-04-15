@@ -1,0 +1,1 @@
+Alias. Read agents/prompts/prompt_versions.yaml then load agents/prompts/versions/book_finder_v1.0.md exactly.

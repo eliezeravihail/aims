@@ -1,0 +1,1 @@
+Alias. Read agents/prompts/prompt_versions.yaml then load agents/prompts/versions/book_encoder_v1.1.md exactly.

@@ -1,10 +1,10 @@
 ---
-description: "Agent 5 — encode a single book from the internet into BOOKS"
+description: "Book Encoder — encode a single book from the internet into BOOKS"
 allowed-tools: Read, Write, WebSearch
 ---
 
 1. Read `agents/prompts/prompt_versions.yaml`
-2. Load the Agent 5 version defined there
+2. Load the Book Encoder version defined there
 
 ## Required input (from books-init-queue.yaml)
 slug, title, authors, category, free_url, topics_to_encode
