@@ -15,7 +15,7 @@ find-book <domain>          →  discovers the best foundational book for a topi
 encode-book / books-init    →  reads the book from its free URL and distills it into
                                 a hierarchy of skill files under skills/BOOKS/
 
-Agent using the knowledge   →  reads _meta.md to pick the best book,
+query-knowledge <topic>     →  reads _meta.md to pick the best book,
                                 reads _index.md to see available topics (cheap),
                                 loads only the specific topic file it needs (lazy)
 ```
@@ -27,19 +27,20 @@ Agent using the knowledge   →  reads _meta.md to pick the best book,
 | **book_finder** | Finds the best foundational book for a given domain | Haiku | Searches the web, compares editions and quality, returns a ranked recommendation with a free URL if available |
 | **book_encoder** | Distills a book into queryable skill files | Sonnet | Fetches the book from its free URL, extracts key topics, writes a `_index.md` (topic list) and one `<topic>.md` per topic |
 
-## Commands
+## Using the knowledge base
 
-| Command | What it does |
-|---------|-------------|
-| `/project:find-book <domain>` | Search the web for the best foundational book on a domain and return a recommendation |
-| `/project:encode-book` | Encode a single book (interactive — prompts for slug, URL, topics) |
-| `/project:books-init [--count N]` | Encode the first N pending books from `books-init-queue.yaml` (default: 20) |
-| `/project:ingest-local-sources <folder>` | Encode local PDFs or text files into the knowledge base |
-| `/project:books-status` | Coverage and quality report across all categories |
-| `/project:books-update` | Find newer editions and refresh stale books |
-| `/project:books-audit` | Knowledge hygiene: deduplicate, re-rank, decay old entries |
+Query any topic directly from the pre-built KB:
 
-## Knowledge structure
+```
+/project:query-knowledge backpropagation
+/project:query-knowledge RANSAC homography
+/project:query-knowledge regularization dropout
+```
+
+The agent reads `_meta.md` to select the highest-quality book for the topic, then loads only
+the specific topic file needed — keeping token usage low even as the KB grows.
+
+### Knowledge structure
 
 Each encoded book lives in a folder:
 
@@ -51,19 +52,26 @@ skills/BOOKS/<CATEGORY>/<slug>/
   ...
 ```
 
-The agent loads `_index.md` to decide relevance, then only opens the specific topic file it needs.
-This keeps token usage low even for large knowledge bases.
+## Adding a book
 
-## Install
+### Encode a specific book (simple path)
 
-1. Clone this repo into your Claude Code plugins folder
-2. Open the folder in Claude Code
-3. Add books to `books-init-queue.yaml` (or use `/project:find-book` to discover them)
-4. Run `/project:books-init` to encode the queue
+If you know which book you want to add:
 
-## Add a book manually
+```
+/project:encode-book
+```
 
-Edit `books-init-queue.yaml`:
+The command is interactive — it will prompt for the book URL, title, and topics to encode.
+
+For books without a free URL, download the PDF and use:
+```
+/project:ingest-local-sources ./my-book.pdf --category ANN --slug my_book
+```
+
+### Encode from a queue (batch)
+
+Add books to `books-init-queue.yaml`:
 
 ```yaml
 - slug: your_book_slug
@@ -77,21 +85,39 @@ Edit `books-init-queue.yaml`:
     - topic_two
 ```
 
-Then run `/project:books-init --count 1`.
-
-For books without a free URL, download the PDF and use:
+Then run:
 ```
-/project:ingest-local-sources ./my-book.pdf --category ANN --slug my_book
-```
-
-## Ingest local sources
-
-```
-/project:ingest-local-sources ./papers/yolo --category OBJECT_DETECTION --slug yolo_papers
-/project:ingest-local-sources ./notes/pytorch --category TRAINING_OPTIMIZATION
+/project:books-init          # encodes first 20 pending books
+/project:books-init --count 1
 ```
 
-Supports: `.pdf`, `.txt`, `.md`
+## Discovering books (advanced)
+
+If you don't have a specific book in mind, use `find-book` to search the web for the
+best foundational book on a topic:
+
+```
+/project:find-book deep learning
+/project:find-book computer vision
+```
+
+Returns a ranked recommendation with a free URL (when available) and suggested topics to encode.
+The output can be pasted directly into `books-init-queue.yaml`.
+
+## Maintenance
+
+| Command | What it does |
+|---------|-------------|
+| `/project:books-status` | Coverage and quality report across all categories |
+| `/project:books-update` | Find newer editions and refresh stale books |
+| `/project:books-audit` | Knowledge hygiene: deduplicate, re-rank, decay old entries |
+
+## Install
+
+1. Clone this repo into your Claude Code plugins folder
+2. Open the folder in Claude Code
+3. Run `/project:query-knowledge <topic>` to use the pre-built KB immediately
+4. Add books with `/project:encode-book` or edit `books-init-queue.yaml` + `/project:books-init`
 
 ## Knowledge categories
 

@@ -12,13 +12,20 @@
 | book_encoder | Encode book topics into skill files      | claude-sonnet-4-6 |
 
 ## Primary entrypoints
-- `/project:books-init`             — encode all books in queue
-- `/project:ingest-local-sources`   — encode a local folder of PDFs or text files
-- `/project:find-book <domain>`     — find the best book for a domain
-- `/project:encode-book`            — encode a single book
-- `/project:books-status`           — coverage and quality report
-- `/project:books-update`           — find new editions, refresh stale books
-- `/project:books-audit`            — knowledge hygiene
+
+### End-user commands
+- `/project:query-knowledge <topic>` — query the knowledge base
+- `/project:encode-book`             — encode a single book (interactive)
+- `/project:ingest-local-sources`    — encode a local PDF or text file
+
+### Advanced / discovery
+- `/project:find-book <domain>`      — find the best book for a domain (web search)
+- `/project:books-init`              — encode all pending books from queue
+
+### Maintenance
+- `/project:books-status`            — coverage and quality report
+- `/project:books-update`            — find new editions, refresh stale books
+- `/project:books-audit`             — knowledge hygiene
 
 ## Encoding rules
 - Books with no `free_url` must be ingested locally via `/project:ingest-local-sources`
