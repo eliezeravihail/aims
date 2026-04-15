@@ -4,6 +4,8 @@ A Claude Code plugin that builds and maintains a structured technical knowledge 
 An AI agent can query this knowledge base instead of relying solely on its training data — getting
 dense, curated, up-to-date information on demand.
 
+**Created by [Eliezer Avihail](https://www.linkedin.com/in/eliezer-avihail/) · MIT License**
+
 ## How it works
 
 ```
