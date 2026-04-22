@@ -8,8 +8,9 @@ consumers plug in.
 To register an agent: create `agents/<id>.md` conforming to the schema in
 `agents/_schema.md`, then append one row to the table below.
 
-| id | file | one-line capability |
-|----|------|---------------------|
+| id       | file                | one-line capability                                                  |
+|----------|---------------------|-----------------------------------------------------------------------|
+| debugger | agents/debugger.md  | Reproduce, isolate, fix, and verify a bug. Terminal `verification` step. |
 
 ## Contract references
 Every registered agent must conform to:

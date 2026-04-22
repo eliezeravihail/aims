@@ -99,7 +99,22 @@ execution time. Literals are passed through.
 
 `suggested_action` is a recommendation; the Router decides.
 
-## 5. Failure taxonomy
+## 5. Task scope (Router's pre-exec classification)
+
+The Router classifies every fresh request into one of three **scopes**. The
+scope determines how heavy the orchestration is — we don't pay Planner +
+Validator cost for a one-line edit.
+
+| Scope     | When it applies                                                         | Executor behavior                                              |
+|-----------|--------------------------------------------------------------------------|----------------------------------------------------------------|
+| `trivial` | Obvious, bounded (one file / one function), matches one worker exactly. | Dispatch worker, **skip Validator**. Worker's envelope is final. |
+| `simple`  | Single worker fits, but stakes are non-trivial (multi-file, side effects, ambiguous inputs). | Dispatch worker, run Validator **once** (terminal), then Router post-exec loop. |
+| `complex` | Multiple agents needed, or decomposition required.                      | Dispatch Planner → walk Plan → Validator **per step with `validate: true`** + Router loop. |
+
+`scope` is a property of the **request**, not of the agent. The same worker
+may be invoked on a trivial request or a simple one.
+
+## 6. Failure taxonomy
 
 | Signal      | Who raises it        | What the Router does                                  |
 |-------------|----------------------|-------------------------------------------------------|
@@ -108,7 +123,7 @@ execution time. Literals are passed through.
 | `replan`    | Validator verdict    | Hand the verdict back to `_planner` for a new Plan.   |
 | `abort`     | Worker or Router     | Stop with a structured failure report.                |
 
-## 6. Loop caps (defaults)
+## 7. Loop caps (defaults)
 
 | Cap                  | Default | Scope                         |
 |----------------------|---------|-------------------------------|
@@ -118,7 +133,7 @@ execution time. Literals are passed through.
 
 Exceeding any cap → `abort`.
 
-## 7. Context isolation
+## 8. Context isolation
 
 Each agent call is a separate Claude Code subagent invocation. Only the
 envelope crosses the context boundary — not the agent's tool calls, internal

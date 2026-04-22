@@ -33,40 +33,40 @@ All counters start at 0. Caps come from `plan.caps` (defaults in `_schema.md` §
 ## The state machine
 
 ```
-         ┌───────────────────────────┐
-         │ 1. Router (pre-exec)      │
-         └──────────────┬────────────┘
-         dispatch-direct│   │dispatch-planner
-               ┌────────┘   └────────┐
-               ▼                     ▼
-      ┌────────────────┐   ┌───────────────────┐
-      │ 2a. run worker │   │ 2b. Planner → Plan│
-      └───────┬────────┘   └─────────┬─────────┘
-              │                      │
-              │                      ▼
-              │           ┌────────────────────┐
-              │           │ 3. Executor walks  │
-              │           │    Plan step-by-   │
-              │           │    step            │
-              │           └──────────┬─────────┘
-              │                      │
-              └──────┬───────────────┘
-                     ▼
-         ┌────────────────────────┐
-         │ 4. Validator (if step  │
-         │    declares validate)  │
-         └────────────┬───────────┘
-                      ▼
-         ┌────────────────────────┐
-         │ 5. Router (post-exec)  │
-         │    reads Verdict +     │
-         │    state → decision    │
-         └────────────┬───────────┘
-                      │
-   ┌──────────┬───────┼───────┬──────────┐
-   ▼          ▼       ▼       ▼          ▼
- accept    retry   re-route replan    abort
- (done)  (back 2)  (back 1)  (back 2b) (fail)
+              ┌───────────────────────────┐
+              │ 1. Router (pre-exec)      │
+              │    → scope + action       │
+              └────┬──────────┬──────────┬┘
+    dispatch-trivial│ dispatch-simple │  │ dispatch-planner
+                   ▼          ▼          ▼
+         ┌─────────────┐ ┌─────────────┐ ┌──────────────────┐
+         │ 2a. worker  │ │ 2a. worker  │ │ 2b. Planner→Plan │
+         │ (no valid-  │ │             │ │                  │
+         │  ator)      │ │             │ └────────┬─────────┘
+         └──────┬──────┘ └──────┬──────┘          ▼
+                │               │       ┌────────────────────┐
+                │               │       │ 3. Walk Plan step- │
+                │               │       │    by-step         │
+                │               │       └────────┬───────────┘
+                │               │                │
+                │               └────────┬───────┘
+                │                        ▼
+                │            ┌──────────────────────────┐
+                │            │ 4. Validator (step has   │
+                │            │    validate: true)       │
+                │            └────────────┬─────────────┘
+                │                         ▼
+                │            ┌──────────────────────────┐
+                │            │ 5. Router (post-exec):   │
+                │            │    Verdict + state →     │
+                │            │    accept/retry/re-route/│
+                │            │    replan/abort          │
+                │            └────────────┬─────────────┘
+                │                         │
+                ▼             ┌───────────┼─────────┬────────┐
+             accept           ▼           ▼         ▼        ▼
+           (trivial         accept      retry    re-route  replan  abort
+            path end)      (done)     (back 2a) (back 2a)(back 2b)(fail)
 ```
 
 ## Steps the Executor performs
@@ -76,13 +76,18 @@ Dispatch `_router` as a subagent with:
 ```
 inputs = { request: state.request }
 ```
-Read its `decision.action`:
-- `dispatch-direct` → go to Step 2a with `decision.target_agent`.
-- `dispatch-planner` → go to Step 2b.
+Read its `decision.action` and `decision.scope`:
+- `dispatch-trivial` → go to Step 2a (trivial path, no Validator).
+- `dispatch-simple`  → go to Step 2a (simple path, Validator terminal).
+- `dispatch-planner` → go to Step 2b (complex path).
 - Anything else at this stage is a protocol violation → `abort`.
 
-### Step 2a — Run a single worker (simple path)
-Dispatch `decision.target_agent` as a subagent with inputs derived from the request. Record the envelope in `state.step_results["s1"]`. Go to Step 4.
+### Step 2a — Run a single worker
+Dispatch `decision.target_agent` as a subagent with inputs derived from the request. Record the envelope in `state.step_results["s1"]`.
+
+Branch on scope:
+- `scope == "trivial"` → **skip Step 4 and Step 5**. The worker's envelope is the final outcome. Emit the report and stop.
+- `scope == "simple"`  → go to Step 4 (Validator runs once, then post-exec Router loop).
 
 ### Step 2b — Invoke `_planner`
 Dispatch `_planner` as a subagent with:
