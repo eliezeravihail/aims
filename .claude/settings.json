@@ -1,32 +1,18 @@
 {
   "model": "claude-sonnet-4-6",
-  "promptLock": true,
-  "deterministicPromptLoading": true,
   "permissions": {
     "allow": [
       "Read(**)",
-      "Write(agents/prompts/**)",
+      "Write(agents/**)",
       "Write(skills/BOOKS/**)",
       "Write(.claude/reports/**)",
+      "Write(.claude/books_checkpoint.json)",
       "WebSearch(*)",
-      "Bash(claude --print:*)",
       "Bash(pdftotext *)",
-      "Bash(pip install *)",
-      "Bash(python *)",
-      "Bash(find *)",
-      "Bash(cat *)"
+      "Bash(find *)"
     ],
     "deny": [
       "Write(.claude/commands/**)"
     ]
-  },
-  "agentModelOverrides": {
-    "find-book":            "claude-haiku-4-5-20251001",
-    "encode-book":          "claude-sonnet-4-6",
-    "books-init":           "claude-sonnet-4-6",
-    "books-status":         "claude-sonnet-4-6",
-    "books-update":         "claude-sonnet-4-6",
-    "books-audit":          "claude-sonnet-4-6",
-    "ingest-local-sources": "claude-sonnet-4-6"
   }
 }

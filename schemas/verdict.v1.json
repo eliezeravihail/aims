@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "verdict.v1",
+  "title": "Verdict v1",
+  "type": "object",
+  "required": ["schema_version", "passed", "score", "issues", "suggested_action"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "passed": {"type": "boolean"},
+    "score":  {"type": "number", "minimum": 0.0, "maximum": 1.0},
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["severity", "location", "reason", "suggestion"],
+        "properties": {
+          "severity":   {"enum": ["critical", "high", "medium", "low"]},
+          "location":   {"type": "string"},
+          "reason":     {"type": "string"},
+          "suggestion": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "suggested_action": {"enum": ["accept", "retry", "re-route", "replan", "abort"]},
+    "objective_checks": {
+      "type": "object",
+      "description": "outcome-focused signals; e.g. tests_passed, build_succeeded",
+      "additionalProperties": {"type": ["boolean", "number", "string"]}
+    }
+  },
+  "additionalProperties": false
+}

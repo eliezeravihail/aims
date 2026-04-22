@@ -1,124 +1,161 @@
 # knowledge-library-agents
 
-A Claude Code plugin that builds and maintains a structured technical knowledge base from books.
-An AI agent can query this knowledge base instead of relying solely on its training data — getting
-dense, curated, up-to-date information on demand.
+Two independent concerns live in this repo:
+
+1. **Agent routing system** — a dual-mode Claude Code orchestrator. One
+   framework supports two invocation modes, picked based on the baseline
+   model's capability. Generic and domain-neutral.
+2. **Books knowledge library** — a pre-existing knowledge base under
+   `skills/BOOKS/` with its own slash commands. Not coupled to the routing
+   system.
 
 **Created by [Eliezer Avihail](https://www.linkedin.com/in/eliezer-avihail/) · MIT License**
 
-## How it works
+---
+
+## Agent routing system
+
+### Two modes
+
+| Command                    | When to use                                              | What runs                                                |
+|----------------------------|----------------------------------------------------------|----------------------------------------------------------|
+| `/project:experts` (default) | Strong baselines (Claude Opus / Sonnet).               | One lean worker with methodology skills preloaded.       |
+| `/project:agents-experts`  | Weak baselines (Copilot, smaller OSS, constrained clouds). | Decomposed pipeline: Router → Planner → workers → Validator loop. |
+
+### `/experts` (lean) — the default
 
 ```
-find-book <domain>          →  discovers the best foundational book for a topic
-                                (searches the web, evaluates quality, returns a recommendation)
-
-encode-book / books-init    →  reads the book from its free URL and distills it into
-                                a hierarchy of skill files under skills/BOOKS/
-
-query-knowledge <topic>     →  reads _meta.md to pick the best book,
-                                reads _index.md to see available topics (cheap),
-                                loads only the specific topic file it needs (lazy)
+User → /project:experts "<request>"
+         │
+         ▼
+  Router (Haiku, tools:[]) ── emits {model, skills_to_load, rationale}
+         │
+         ▼
+  One worker on the chosen model ── skills composed into its system prompt
+         │
+         ▼
+  [Validator (Sonnet)] ── optional terminal, only if worker wrote files
+         │
+         ▼
+       done
 ```
 
-## Agents
+Why it exists: pilot data showed that on bounded feature builds, a single
+capable Opus dispatch produced a correct implementation where a 7-tier
+pipeline produced a subtly broken one (see `PILOT_FEATURE_REPORT.md`).
+The lean mode exposes that pattern as a first-class command.
 
-| Agent | Role | Model | How it works |
-|-------|------|-------|--------------|
-| **book_finder** | Finds the best foundational book for a given domain | Haiku | Searches the web, compares editions and quality, returns a ranked recommendation with a free URL if available |
-| **book_encoder** | Distills a book into queryable skill files | Sonnet | Fetches the book from its free URL, extracts key topics, writes a `_index.md` (topic list) and one `<topic>.md` per topic |
-
-## Using the knowledge base
-
-Query any topic directly from the pre-built KB:
+### `/agents-experts` (pipeline) — for weaker baselines
 
 ```
-/project:query-knowledge backpropagation
-/project:query-knowledge RANSAC homography
-/project:query-knowledge regularization dropout
+User → /project:agents-experts "<request>"
+         │
+         ▼
+  Router (Haiku) ── triage + post-exec dispatch ── cheap
+         │
+   ┌─────┼───────────────┐
+   ▼     ▼               ▼
+trivial  simple      complex
+ (worker  (worker +   (Planner (Opus) → workers → Validator ←─┐
+  only)   Validator)   per step; Router decides next step)    │
+                                   │                           │
+                                   ▼                           │
+                         Validator (Sonnet) ── objective ──────┘
+                         quality gate; runs tests; catches
+                         lying artifacts (empirically verified
+                         on cookiecutter-4 stretch)
 ```
 
-The agent reads `_meta.md` to select the highest-quality book for the topic, then loads only
-the specific topic file needed — keeping token usage low even as the KB grows.
+Each role is an isolated subagent. Only JSON envelopes cross role
+boundaries — no shared context. That's how cost stays bounded and how
+the Validator can make independent judgements.
 
-### Knowledge structure
+### Shared across modes
 
-Each encoded book lives in a folder:
+- **Skills** (under `skills/`) — methodology playbooks loaded by the
+  worker (in lean) or the corresponding wrapper agent (in pipeline):
+  - `project-context` — the `.claude.md` codebase cache procedure.
+  - `quality-analysis` — 7-dimension self-check rubric.
+  - `debug-methodology` — reproduce → isolate → fix → verify → test-gap.
+  - `test-strategy` — design / assess coverage plans.
+  - `test-authoring` — author deterministic tests from a `TestTarget` list.
+  - `feature-build` — design → implement → verify.
+- **Schemas** (`agents/_schema.md`, `schemas/*.v1.json`) — envelope / Plan
+  / Verdict / frontmatter contracts. Identical in both modes.
+- **Validator** (`agents/_validator.md`) — independent quality gate.
+  Optional-terminal in lean; per-step in pipeline.
+- **Registry** (`agents/registry.md`) — the list of worker agents, thin
+  wrappers that each load one skill.
 
-```
-skills/BOOKS/<CATEGORY>/<slug>/
-  _index.md        ← topic list (one line per topic — load this first)
-  backprop.md      ← condensed, actionable content for this topic
-  optimization.md
-  ...
-```
+### Contracts
 
-## Adding a book
+Every exchange uses shapes defined in `agents/_schema.md`:
 
-### Encode a specific book (simple path)
+- **Envelope** — one of `{ok, outputs}` / `{retry, reason, hint}` / `{abort, reason}`.
+- **Plan** (pipeline only) — ordered DAG of `AgentStep{agent, inputs, validate, depends_on}` with `${sN.outputs.port}` binding.
+- **Verdict** — `{passed, score, issues[], suggested_action, objective_checks}`.
 
-If you know which book you want to add:
+### Failure taxonomy (pipeline mode)
 
-```
-/project:encode-book
-```
+| Signal     | Who raises it         | What happens next                                       |
+|------------|-----------------------|---------------------------------------------------------|
+| `retry`    | Worker envelope       | Re-invoke same agent with `retry_hint` (cap: 3/step).   |
+| `re-route` | Validator verdict     | Try a different agent, same goal (cap: 3/request).      |
+| `replan`   | Validator verdict     | Back to Planner with the verdict + old plan (cap: 2).   |
+| `abort`    | Any agent / cap blown | Stop with a structured report.                          |
 
-The command is interactive — it will prompt for the book URL, title, and topics to encode.
+Lean mode uses `retry` and `abort` only — no `re-route` or `replan`, since
+there's no decomposition to adjust.
 
-For books without a free URL, download the PDF and use:
-```
-/project:ingest-local-sources ./my-book.pdf --category ANN --slug my_book
-```
+### Defining a new worker
 
-### Encode from a queue (batch)
+1. Create `agents/<id>.md` with YAML frontmatter conforming to `agents/_schema.md`. The body is a **thin wrapper**: 3-5 lines telling the worker to load a specific skill (usually a new one under `skills/<methodology>/`) and emit the envelope declared in the frontmatter.
+2. Append one row to `agents/registry.md`.
+3. If the new worker enables a class of tasks, add a line to the decision rule in `agents/_router.md` so the lean Router can route to it via skill selection.
 
-Add books to `books-init-queue.yaml`:
+Pipeline mode sees the new agent automatically through the registry.
 
-```yaml
-- slug: your_book_slug
-  title: "Book Title"
-  authors: [Author]
-  category: ANN          # see categories below
-  free_url: "https://..."  # must be a verifiable free source; null = local ingest only
-  source_tier: tier_1a
-  topics_to_encode:
-    - topic_one
-    - topic_two
-```
+### Deterministic executor
 
-Then run:
-```
-/project:books-init          # encodes first 20 pending books
-/project:books-init --count 1
-```
+`harness/` is the Python implementation of the spec. The markdown files
+are the contract; the harness enforces it:
 
-## Discovering books (advanced)
+- `harness/envelope.py` — strict JSON schema validation.
+- `harness/executor.py`:
+  - `run(request, cwd)` — pipeline entry point (`_router_pipeline` → …).
+  - `run_lean(request, cwd)` — lean entry point (`_router` → single worker).
+- `harness/dispatcher.py` — `MockDispatcher` (tests) and `LiveDispatcher` (Anthropic SDK).
+- `harness/tracer.py` — per-step JSONL observability.
 
-If you don't have a specific book in mind, use `find-book` to search the web for the
-best foundational book on a topic:
+Run `python -m pytest tests/` — the full suite exercises both modes on
+mocked responses (47 tests covering envelope, registry, state machine,
+retry, malformed envelopes, lean dispatch with skills, etc.).
 
-```
-/project:find-book deep learning
-/project:find-book computer vision
-```
+### Empirical support
 
-Returns a ranked recommendation with a free URL (when available) and suggested topics to encode.
-The output can be pasted directly into `books-init-queue.yaml`.
+Four pilots are committed:
 
-## Maintenance
+- **`tests/pilot_medium/`** — BugsInPy/cookiecutter-4 on pipeline mode.
+  Validator caught an injected wrong-fix artefact baseline would have
+  shipped. Pipeline cost ~4× baseline tokens.
+- **`tests/pilot_feature/`** — TODO CLI on pipeline. Pipeline produced a
+  subtly broken implementation (id-reuse) where Opus single-shot was
+  correct. This pilot motivated the dual-mode split.
+- **`tests/pilot_holistic/`** — contacts CLI. First pilot where the Router
+  routed to `dispatch-baseline` (pipeline holistic escape hatch); cost
+  ratio dropped from 6.8× to 2.23×.
+- **`tests/pilot_medium_lean/`** — cookiecutter-4 on **lean mode**.
+  Commits the numbers that justified promoting lean to the default.
 
-| Command | What it does |
-|---------|-------------|
-| `/project:books-status` | Coverage and quality report across all categories |
-| `/project:books-update` | Find newer editions and refresh stale books |
-| `/project:books-audit` | Knowledge hygiene: deduplicate, re-rank, decay old entries |
+See `PILOT_*_REPORT.md` at repo root for the write-ups and
+`FRAMEWORK_EVAL_PLAN.md` for how to run new pilots.
 
-## Install
+---
 
-1. Clone this repo into your Claude Code plugins folder
-2. Open the folder in Claude Code
-3. Run `/project:query-knowledge <topic>` to use the pre-built KB immediately
-4. Add books with `/project:encode-book` or edit `books-init-queue.yaml` + `/project:books-init`
+## Books knowledge library (separate, pre-existing)
 
-## Knowledge categories
+Decoupled from the routing system. Slash commands:
 
-`ANN` · `CNN` · `VISION` · `OBJECT_DETECTION` · `REFACTORING` · `ALGORITHMS` · `NLP` · `RL` · `TRAINING_OPTIMIZATION` · `DISTRIBUTED_SYSTEMS`
+- `/project:query-knowledge <topic>` — query the knowledge base
+- `/project:ingest-local-sources` — encode a local PDF or text file
+- `/project:books-status` — coverage and quality report
