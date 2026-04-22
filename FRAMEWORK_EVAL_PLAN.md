@@ -110,6 +110,14 @@ if the next pilot confirms a hypothesis:
 | H4 — Validator laundered a bug | Tighten `_router.md` decision table: `passed: true + suggested_action != "accept"` → `retry`, not `accept` |
 | H5 — Holistic lost to pipeline | Revise the `holistic` classification rule with the specific reason the task was coordination-heavy after all |
 | H6 — Cost ratio up | The framework grew overhead somewhere; bisect dispatches against the previous pilot's numbers |
+| H7 — Convention drift | Strengthen `skills/project-context` to capture conventions (style, error patterns, test layout), not just module layout |
+| H8 — Discovery scales super-linearly | The cache is under-producing — add per-module summaries or a second layer |
+| H9 — Cache does not earn its keep | Either fix the cache format (workers aren't consulting it) or retire it |
+| H10 — New tests diverge from existing style | Bind `codebase_hint: "tests/"` to the tester step in `_planner.md` |
+| H11 — No merge-conflict detection | New Executor preflight that reads `git status` + diffs against tracked branches, emits `advisory: "in-flight-conflict"` |
+| H12 — Slow convergence on known-root-cause bug | Add a `hypothesis:` input to the debugger so a familiar user can short-circuit the reproduce phase |
+| H13 — No CoWork-session awareness | Executor preflight: `git fetch --all` + detect divergent branches touching target files, emit `advisory: "cowork-in-flight"` |
+| H14 — Shared-cache race undetected | Project-context skill: re-hash `CLAUDE.md` / `.claude.md` before each worker; emit `project-context-stale` on change |
 
 ## Reporting template
 
@@ -150,6 +158,189 @@ enhancement: a `harness/eval_pilot.py` script that reads a `pre_run.md`,
 runs both sides, computes the hypothesis grades mechanically, and emits
 the report template pre-filled. Not required for the next pilot — do it
 manually first, automate when the manual workflow stabilises.
+
+## Scenario B — bug fix / feature in `the target framework` via Claude Code **CoWork** sessions
+
+**Status**: pending. Trigger = the next time the user (Eliezer) hits a
+bug in `the target framework` or decides to add a feature there. The user
+will update this section with the actual task at trigger time.
+
+All three prior pilots were sterile: standalone repos, no history, no
+parallel work in flight, solo user. The one context the framework has
+**not** been tested in is the one it will actually live in. The user is
+developing `the target framework` inside a Claude Code **CoWork** session —
+Claude Code's multi-session workspace feature — while this routing
+framework lives in a separate session. The pilot runs against
+`the target framework` as the target codebase, with another Claude Code
+session in the same CoWork potentially touching the same tree in
+parallel. Coordination between sessions is exclusively through the git
+tree; neither session sees the other's context. Shared state consists of
+the committed code, `CLAUDE.md`, and `.claude.md`.
+
+This is not a human-coworker scenario. The "coworker" — if any is active
+during the pilot — is a second Claude Code instance inside the same
+CoWork. Both sessions read the same `CLAUDE.md` and `.claude.md`. Both
+produce markdown + code. Neither has visibility into the other's
+session context — only whatever lands on disk or in a commit.
+
+### What's different from scenarios A (the sterile pilots)
+
+| Axis | Sterile pilot | CoWork pilot (`the target framework`) |
+|------|---------------|-----------------------------------|
+| User's prior familiarity with the codebase | zero — you read the spec | high — you have context the pipeline doesn't |
+| Repository size | hundreds of LOC | thousands to hundreds of thousands |
+| Conventions | none enforced | strong, enforced by `the target framework`'s own `CLAUDE.md` |
+| In-flight work | none | possibly a second CoWork session on a separate branch |
+| Shared state | none | `CLAUDE.md`, `.claude.md`, and the git tree |
+| Coordination surface | none | git only (branches, commits, possibly the same file) |
+| Test infrastructure | tiny | established fixtures, helpers, CI hooks |
+| Stakes | a pilot | real merge-conflict risk if a parallel CoWork session is active |
+
+### Pre-run notes (in addition to §2 above)
+
+Before dispatching anything:
+
+1. **Task statement.** One sentence from the user: bug to fix or feature to add. Written at trigger time, not in advance.
+2. **Git snapshot.** From inside `the target framework`'s checkout: `git rev-parse HEAD`, `git log --oneline -20`, `git branch -a`. Store in `pre_run.md`. Any fix the pipeline proposes will be diffed against this snapshot.
+3. **CoWork session map.** List any other active CoWork session working on `the target framework` — its branch name, its recent commits, the files it has touched (`git log --name-only <their-branch>..HEAD`). If none, record "none active". This is the surface where merge conflict can actually happen.
+4. **Shared-context snapshot.** Capture the current state of `the target framework`'s `CLAUDE.md` and `.claude.md` at dispatch time. If either changes mid-run (because a parallel session updated it), that's a race worth recording.
+5. **Convention inventory (one page).** The unwritten rules you already know that the pipeline should pick up from `the target framework`'s `CLAUDE.md` / `.claude.md`: naming, module layout, test-file patterns, logging style, error-raising style, commit-message convention. Write them down so you can grade whether the framework followed them.
+6. **Your own mental fix sketch.** One paragraph: what you would do if you fixed this yourself. The framework's output gets graded against this, not just against "did tests pass".
+
+### Additional hypotheses (continuing from H1–H6 above)
+
+**H7: Convention conformance.** Did the fix match `the target framework`'s
+style — naming, error patterns, import order, test-file naming? Grade
+by diffing the fix's stylistic choices against 3 neighboring files
+(pick randomly before dispatch; no cherry-picking afterward).
+- *Fails if*: the fix introduces a new pattern when an existing one would have worked.
+- *Implied action*: strengthen `skills/project-context` to capture
+  conventions (not just module layout).
+- **CoWork nuance**: both sessions read the same `CLAUDE.md`. If they
+  diverge on style, the convention was under-specified in the shared
+  instructions — that's where to fix it, not in either session's prompt.
+
+**H8: Scaling cost vs. codebase size.** Tokens spent on discovery
+(reads, greps, globs) vs. LOC of the repository. Compare against the
+TODO pilot ratio (tiny repo) and the cookiecutter pilot ratio (medium).
+- *Fails if*: discovery tokens scale super-linearly with LOC — indicates
+  the `.claude.md` cache is not shielding the workers.
+- *Implied action*: the Bootstrap procedure in `skills/project-context`
+  is under-producing; either add a per-module summary or add a second
+  cache layer.
+
+**H9: `.claude.md` earn-its-keep test.** Run the fix twice: once with
+`.claude.md` present, once without. Measure Grep/Glob/Read tool calls
+across workers.
+- *Fails if*: the difference is < 30%. The cache exists to reduce
+  discovery; if it doesn't, it's dead weight.
+- *Implied action*: either fix the cache format (maybe it lacks the fields
+  workers actually consult), or retire it.
+
+**H10: Test-pattern recognition.** Compare 1 new test the tester wrote
+to 3 existing tests in the same module.
+- *Fails if*: the new test uses different fixtures, different assertion
+  style, different import shape than existing tests in that module.
+- *Implied action*: feed the test_strategist the existing test layout,
+  not just the production code layout. Update `_planner.md` to bind a
+  `codebase_hint: "tests/"` explicitly in the tester step.
+
+**H11: Merge-conflict inference.** Does the framework detect that one of
+the files it wants to touch is being edited on a coworker's open PR?
+(If it doesn't touch git at all to check, that's the answer.)
+- *Fails if*: the framework proposed edits to a file with an in-flight
+  change and had no awareness.
+- *Implied action*: add a preflight step in the Executor that consults
+  `git status --porcelain` and `git diff main...HEAD` across tracked
+  branches, surfaces the overlap to Router/Planner as
+  `advisory: "in-flight-conflict"`. This is a new capability, not a tweak.
+
+**H12: Prior-knowledge disadvantage.** You already know the bug's root
+cause; the framework doesn't. Measure: how long until the pipeline
+converges on the same hypothesis you'd have formed? (Tokens + wall-clock
+to the first correct root-cause statement in the debugger envelope.)
+- *Fails if*: the pipeline burns more than 2× the time it would take you
+  to just explain the cause and ask for a fix.
+- *Implied action*: for a familiar-codebase user, add a `hypothesis:`
+  input on the debugger so the user can short-circuit the reproduce phase.
+
+**H13: CoWork-session awareness.** If a second CoWork session is active
+on `the target framework` at dispatch time, does the pipeline notice?
+Today, nothing in the Executor reads git state to detect this; the
+preflight only touches `.claude.md`. So the expected answer is "no".
+- *Fails if*: the pipeline edits a file the other CoWork session is
+  also editing, with no advisory. (This is the interesting failure.)
+- *Implied action*: add an Executor preflight step that runs
+  `git fetch --all` and checks for divergent branches touching the
+  pipeline's target files, surfaces as `advisory: "cowork-in-flight"`.
+
+**H14: Shared-cache race.** Does either `CLAUDE.md` or `.claude.md`
+change during the run? (Would indicate a concurrent session wrote to
+the shared state mid-pipeline.)
+- *Measurement*: hash the two files at dispatch start and at each
+  Validator gate; record divergences.
+- *Fails if*: the pipeline kept reading a stale cache after the other
+  session updated it, leading to decisions based on outdated structure.
+- *Implied action*: the project-context skill should re-hash the cache
+  before each worker dispatch and emit `advisory: "project-context-
+  stale"` if it changed since preflight.
+
+### Report template additions (scenario B only)
+
+```
+## Convention conformance (H7)
+  3 neighbouring files sampled: [a.py, b.py, c.py]
+  Divergences: [list any]
+  Verdict: conformed / diverged on {...}
+
+## Scaling (H8)
+  Repo LOC: ...
+  Discovery tokens: ...
+  Tokens / kLOC: ...                   ← compare to prior pilots
+
+## Cache (H9)
+  With cache:    Grep=<>, Glob=<>, Read=<>
+  Without cache: Grep=<>, Glob=<>, Read=<>
+  Delta: <%>
+
+## Test-pattern recognition (H10)
+  Sample new test: tests/...
+  Sample neighbours: [3 paths]
+  Divergences: [list]
+
+## Merge-conflict inference (H11)
+  Files the pipeline proposes to edit: [...]
+  Files the other CoWork session has touched on its branch: [...]
+  Overlap: [...]
+  Framework advisory emitted?  yes / no
+
+## Prior-knowledge disadvantage (H12)
+  Your ex-ante hypothesis: "<one line>"
+  Debugger's root_cause:    "<one line>"
+  Match?                    yes / partially / no
+  Time to converge:          <tokens, seconds>
+
+## CoWork-session awareness (H13)
+  Parallel session active at dispatch?  yes / no / unknown
+  Its branch:                           <name or "—">
+  Files it edited in flight:            [...]
+  Pipeline advisory emitted for overlap? yes / no
+
+## Shared-cache race (H14)
+  CLAUDE.md hash at dispatch / at completion: <h1> / <h2>
+  .claude.md hash at dispatch / at completion: <h1> / <h2>
+  Race observed?                yes / no
+  Pipeline decisions affected?  yes / no
+```
+
+### The interesting negative result to watch for
+
+A framework that works great on pilots and poorly here is a framework
+that **only works in isolation**. That's the most likely failure mode and
+the one that would make this pilot the most useful. If the numbers here
+are worse than in the sterile pilots, it tells us the framework needs to
+become codebase-aware (cache, convention-detection, git-integration)
+before it can graduate from "benchmark winner" to "production tool".
 
 ## The one meta-rule
 
