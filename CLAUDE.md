@@ -1,40 +1,44 @@
 # knowledge-library-agents
 
-## Always-active rules
-- Agent definitions live in `agents/<name>.md`. Read the relevant file before invoking — the frontmatter declares model + tools, the body is the full behavior spec.
+This repo houses two independent concerns:
+
+1. **Agent routing system** (this PR's scope) — generic infrastructure in
+   `agents/` + `/project:experts`. Domain-neutral.
+2. **Books knowledge library** (pre-existing) — skills and data under
+   `skills/BOOKS/`, `books-init-queue.yaml`, and the `books-*` /
+   `query-knowledge` / `ingest-local-sources` slash commands.
+
+The two are decoupled: the routing system does not reference the books project,
+and the books project does not depend on the routing system. An agent file for a
+book-related agent would register itself in `agents/router.md` like any other
+consumer would — no special casing.
+
+## Agent routing system
+
+### Always-active rules
+- Agent definitions live in `agents/<id>.md`. Read the relevant file before invoking — the frontmatter declares `model` + `tools`, the body is the full behavior spec.
 - Route multi-agent work through `/project:experts`. The registry of available agents is `agents/router.md`.
-- BOOKS knowledge is loaded by `quality_score` descending; skip `stale=true` entries.
-- Never encode a book without a verified free source — hallucinated content is not acceptable.
+- Agent files are pure behavior (role, inputs/outputs contract, retry protocol). Domain playbooks live in skills, never in agent files.
 
-## Agents
-| Agent | File | Role | Model |
-|-------|------|------|-------|
-| book_finder  | agents/book_finder.md  | Find best foundational book for a domain | claude-haiku-4-5-20251001 |
-| book_encoder | agents/book_encoder.md | Encode a book into `skills/BOOKS/<cat>/<slug>/` | claude-sonnet-4-6 |
+### Retry protocol
+An agent signals an unacceptable result with a single line `STATUS: RETRY <reason>`.
+The router feeds `<reason>` back as `retry_hint` on the next loop iteration.
+Default cap: 3 retries per agent per pipeline stage.
 
-## Primary entrypoints
+### Router modes
+| Mode    | When                                                               |
+|---------|--------------------------------------------------------------------|
+| SINGLE  | One agent, read-only / idempotent request                          |
+| LOOP    | One agent with a quality gate; retries on `STATUS: RETRY`          |
+| CASCADE | Multi-stage pipeline; stage N's `outputs` bind into stage N+1's `inputs` |
 
-### End-user commands
-- `/project:experts <request>`     — route the request: single agent, cascade (find→encode), or loop (encoder retries on quality failure)
+## Books knowledge library (separate concern)
+
+Entrypoints (unchanged, independent of the routing system):
 - `/project:query-knowledge <topic>` — query the knowledge base
-- `/project:ingest-local-sources`    — encode a local PDF or text file (read-only local FS path, bypasses the router)
-
-### Maintenance
+- `/project:ingest-local-sources` — encode a local PDF or text file
 - `/project:books-status` — coverage and quality report
 
-## Router modes (`/project:experts`)
-| Intent  | Mode    | Pipeline                       |
-|---------|---------|--------------------------------|
-| FIND    | SINGLE  | book_finder                    |
-| ENCODE  | LOOP    | book_encoder (max 3 retries)   |
-| BUILD   | CASCADE | book_finder → book_encoder     |
-| REFRESH | CASCADE | book_finder → book_encoder per stale slug |
-
-Loops are driven by the `STATUS: RETRY <reason>` protocol: an agent that fails its own
-quality gate returns that line instead of the normal output, and the router feeds the
-reason back as `retry_hint` on the next iteration.
-
-## Encoding rules
-- Books with no `free_url` must be ingested locally via `/project:ingest-local-sources`
-- Output: `skills/BOOKS/<CATEGORY>/<slug>/_index.md` + one `<topic>.md` per topic
-- Update `_meta.md` after every encode
+Rules for the books project (apply only when working on that concern):
+- BOOKS knowledge is loaded by `quality_score` descending; skip `stale=true` entries.
+- Never encode a book without a verified free source — hallucinated content is not acceptable.

@@ -1,15 +1,32 @@
 # Agent Registry
 
-The router (`/project:experts`) reads this file to know which agents exist and what each one does.
-Agents are behavior wrappers — the domain playbook lives in the project skills, not here.
-To add a new agent: create `agents/<name>.md` and append one row to the table below.
+Authoritative list of agents available to the `/project:experts` router.
+To add an agent: create `agents/<id>.md` and append one row to the table below.
 
-| id            | file                      | one-line capability                                                        |
-|---------------|---------------------------|----------------------------------------------------------------------------|
-| book_finder   | agents/book_finder.md     | Produces a `BOOK_RECOMMENDATION` for a given domain.                       |
-| book_encoder  | agents/book_encoder.md    | Encodes a `BOOK_RECOMMENDATION` into the knowledge base.                   |
+| id | file | one-line capability |
+|----|------|---------------------|
 
-# Conventions
-- `model` and `tools` for each agent are declared in the agent file's frontmatter.
-- Each agent's `outputs` contract is authoritative — the router binds those fields 1:1 to the next agent's `inputs` in a cascade.
-- An agent signals an unacceptable result with a single line `STATUS: RETRY <reason>`. The router feeds the reason back as `retry_hint` on the next loop iteration. Max 3 retries per stage.
+## Agent file conventions
+Each `agents/<id>.md` must declare, in YAML frontmatter:
+- `name` — must match the `id` above
+- `model` — exact model id to invoke with
+- `tools` — whitelist of tools the agent may use
+- `inputs` — field list the router binds against (append `?` for optional fields)
+- `outputs` — field list the router reads back
+
+The body is a pure behavior spec: role, input semantics, output contract, and the
+retry protocol. No domain playbooks — those live in the skills the agent invokes.
+
+## Retry protocol
+An agent signals an unacceptable result with a single line:
+
+```
+STATUS: RETRY <reason>
+```
+
+The router feeds `<reason>` back as `retry_hint` on the next loop iteration.
+Default cap: 3 retries per agent per pipeline stage.
+
+## Cascade binding
+In multi-stage pipelines, the router maps stage N's `outputs` 1:1 into stage N+1's
+`inputs` by field name. Declaring compatible schemas is the agent author's job.
