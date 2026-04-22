@@ -80,12 +80,16 @@ Apply **in order**. First match wins.
    - The request describes a multi-stage pipeline ("find X and then encode it", "build the library for Y").
    - Inputs are ambiguous and must be resolved by investigation before acting.
    - Decomposition into ordered sub-tasks is required.
-   - **The request is to fix a bug.** A bug fix implies `debugger → tester` (the debugger identifies test gaps; the tester closes them). Treat every non-trivial bug fix as `complex` so the Planner produces that pair automatically. Exception: classify `trivial` only when the bug is patently untestable (typo in a comment, string literal in non-automated UI).
-   Examples: "grow the KB for topic T", "refactor module M and update all callers", "find and fix the bug in service S", "this test fails — fix it", "users report the dashboard blanks on load — fix it".
+   - **The request is to fix a bug.** A bug fix implies `debugger → tester` (the debugger identifies test gaps; the tester closes them). Treat every non-trivial bug fix as `complex`. Exception: classify `trivial` only when the bug is patently untestable (typo in a comment, string literal in non-automated UI).
+   - **The request is to build, extend, or refactor code and the result should be tested.** Planner should decompose into `test_strategist (design) → coder(s) → tester`, so the test plan is defined up-front and the tester closes exactly those targets.
+   Examples: "grow the KB for topic T", "refactor module M and update all callers", "find and fix the bug in service S", "this test fails — fix it", "add feature F with tests", "users report the dashboard blanks on load — fix it".
 
 3. **`simple`** — the default when neither `trivial` nor `complex` applies.
    A single worker fits but the stakes or side-effects warrant a Validator gate.
-   **Do not use `simple` for bug fixes** — see the `complex` note above. Use it for single-worker, artifact-producing tasks that stand alone. Examples: "encode the queued book `<slug>`".
+   **Do not use `simple` for bug fixes** — see the `complex` note above.
+   Examples of legitimate `simple`:
+   - Read-only analyses with a single deliverable: "assess test coverage of module M" → `test_strategist` in `assess` mode, single worker, Validator terminal.
+   - Single-worker artifact tasks: "encode the queued book `<slug>`".
 
 When in doubt between `trivial` and `simple`: choose `simple`. When in doubt between `simple` and `complex`: choose `complex`. The cost of an unnecessary Planner round is lower than the cost of a missed decomposition.
 

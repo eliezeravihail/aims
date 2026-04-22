@@ -8,10 +8,11 @@ consumers plug in.
 To register an agent: create `agents/<id>.md` conforming to the schema in
 `agents/_schema.md`, then append one row to the table below.
 
-| id       | file                | one-line capability                                                  |
-|----------|---------------------|-----------------------------------------------------------------------|
-| debugger | agents/debugger.md  | Reproduce, isolate, fix, verify a bug; emit `test_gaps` for the tester downstream. |
-| tester   | agents/tester.md    | Close specific test gaps (typically from the debugger) with targeted, named tests. |
+| id              | file                          | one-line capability                                                                 |
+|-----------------|-------------------------------|--------------------------------------------------------------------------------------|
+| debugger        | agents/debugger.md            | Reproduce, isolate, fix, verify a bug; emit `test_gaps` (TestTarget[]) for tester.   |
+| test_strategist | agents/test_strategist.md     | Design a test plan for upcoming code (mode: design), or assess existing coverage (mode: assess). Read-only. |
+| tester          | agents/tester.md              | Author tests from a list of `TestTarget`s handed in by debugger or test_strategist.  |
 
 ## Contract references
 Every registered agent must conform to:

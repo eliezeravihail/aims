@@ -138,3 +138,30 @@ Exceeding any cap → `abort`.
 Each agent call is a separate Claude Code subagent invocation. Only the
 envelope crosses the context boundary — not the agent's tool calls, internal
 reasoning, or intermediate artifacts. This is the core cost-control mechanism.
+
+## 9. Shared value types
+
+Some value shapes flow between multiple agents. Keep them aligned so the
+Planner can chain producers to consumers by schema match.
+
+### TestTarget
+
+Produced by `debugger` (field `test_gaps`) and `test_strategist` (field
+`test_plan`). Consumed by `tester` (field `targets`).
+
+```json
+{
+  "test_type": "unit" | "integration" | "e2e" | "property" | "regression",
+  "target":    "<module / function / endpoint / UI flow>",
+  "scenario":  "<specific input / state / timing to exercise>",
+  "origin":    "bug-driven" | "strategic",
+  "priority":  "critical" | "high" | "medium" | "low",     // optional, default "medium"
+  "rationale": "<one-line justification>"                   // optional
+}
+```
+
+- `origin: "bug-driven"` — the target is derived from a real failure the debugger observed.
+- `origin: "strategic"` — the target comes from a coverage plan, not a specific bug.
+
+The tester treats both origins the same; it only ever consumes a list of TestTargets.
+

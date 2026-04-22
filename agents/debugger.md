@@ -12,7 +12,7 @@ outputs:
   - root_cause: string             # one-paragraph explanation of why the bug happens
   - fix: object                    # { files: [<path>, ...], summary: "<what changed>" }
   - verification: string           # concrete command or steps to confirm the fix
-  - test_gaps: array               # [Gap], missing tests that would have caught this bug — feeds the tester agent downstream
+  - test_gaps: array               # [TestTarget] (agents/_schema.md §9) — origin: "bug-driven". Feeds the tester agent downstream.
 effects: [read-fs, write-fs]
 idempotent: false
 strategy:
@@ -65,14 +65,17 @@ A bug that reached the user is, by definition, a test gap. Your job is not
 over until you have answered **"what test, if it had existed, would have
 caught this?"**
 
-For each gap, emit one `Gap` object in `test_gaps`:
+For each gap, emit one `TestTarget` (shape in `agents/_schema.md` §9) in
+`test_gaps`, with `origin: "bug-driven"`:
 
 ```json
 {
-  "test_type":    "unit" | "integration" | "e2e" | "property" | "regression",
-  "target":       "<module / function / endpoint / UI flow that lacked coverage>",
-  "missing_case": "<the specific input / state / timing that the bug exploited>",
-  "suggestion":   "<one-line description of the test to add>"
+  "test_type": "unit|integration|e2e|property|regression",
+  "target":    "<module / function / endpoint / UI flow that lacked coverage>",
+  "scenario":  "<the specific input / state / timing that the bug exploited>",
+  "origin":    "bug-driven",
+  "priority":  "critical|high|medium|low",   // calibrated to severity of the bug
+  "rationale": "<one-line justification>"
 }
 ```
 
@@ -82,7 +85,7 @@ Honesty rules:
 - Do not write the tests yourself. This agent identifies gaps; the `tester` agent (invoked downstream in the Plan) fills them.
 
 The `test_gaps` port is the hand-off to the next stage of the pipeline. The
-Planner chains `debugger → tester`, binding `tester.inputs.test_gaps` from
+Planner chains `debugger → tester`, binding `tester.inputs.targets` from
 `${s1.outputs.test_gaps}`.
 
 # Content rules
@@ -117,9 +120,11 @@ If any check fails, fix the output before submitting. If the bug is out of scope
     "test_gaps": [
       {
         "test_type": "unit|integration|e2e|property|regression",
-        "target": "<module/function/endpoint>",
-        "missing_case": "<specific input/state/timing>",
-        "suggestion": "<one-line test description>"
+        "target":    "<module/function/endpoint>",
+        "scenario":  "<specific input/state/timing>",
+        "origin":    "bug-driven",
+        "priority":  "critical|high|medium|low",
+        "rationale": "<one-line justification>"
       }
     ]
   }
