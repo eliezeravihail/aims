@@ -53,6 +53,8 @@ class Executor:
             self._run_single(decision["target_agent"], state, validate=False)
         elif action == "dispatch-simple":
             self._run_single(decision["target_agent"], state, validate=True)
+        elif action == "dispatch-baseline":
+            self._run_baseline(state)
         elif action == "dispatch-planner":
             self._run_planned(state)
         else:
@@ -76,6 +78,25 @@ class Executor:
         path.write_text(_stub_context(state.cwd))
 
     # ---- step 1–5 ------------------------------------------------------
+
+    def _run_baseline(self, state: ExecutionState) -> None:
+        """Holistic path: dispatch `_baseline` (Opus) with the raw request,
+        no Planner, no Validator. Exists because pilot data showed decomposition
+        hurts correctness on self-contained feature builds."""
+        step_id = "s1"
+        try:
+            spec = self.registry.infra("_baseline")
+        except KeyError:
+            state.outcome = "abort"
+            state.outcome_reason = "_baseline infra agent not registered"
+            return
+        envelope_dict = self._dispatch_worker(spec, {"request": state.request}, step_id)
+        state.step_results[step_id] = envelope_dict
+        if not envelope_dict["ok"]:
+            state.outcome = "abort"
+            state.outcome_reason = (envelope_dict.get("abort") or envelope_dict.get("retry"))["reason"]
+            return
+        state.outcome = "accept"
 
     def _run_single(self, agent_id: str, state: ExecutionState, *, validate: bool) -> None:
         step_id = "s1"

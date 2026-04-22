@@ -101,18 +101,23 @@ execution time. Literals are passed through.
 
 ## 5. Task scope (Router's pre-exec classification)
 
-The Router classifies every fresh request into one of three **scopes**. The
+The Router classifies every fresh request into one of four **scopes**. The
 scope determines how heavy the orchestration is — we don't pay Planner +
-Validator cost for a one-line edit.
+Validator cost for a one-line edit, and we don't force decomposition on a
+task that suffers from it.
 
-| Scope     | When it applies                                                         | Executor behavior                                              |
-|-----------|--------------------------------------------------------------------------|----------------------------------------------------------------|
-| `trivial` | Obvious, bounded (one file / one function), matches one worker exactly. | Dispatch worker, **skip Validator**. Worker's envelope is final. |
-| `simple`  | Single worker fits, but stakes are non-trivial (multi-file, side effects, ambiguous inputs). | Dispatch worker, run Validator **once** (terminal), then Router post-exec loop. |
-| `complex` | Multiple agents needed, or decomposition required.                      | Dispatch Planner → walk Plan → Validator **per step with `validate: true`** + Router loop. |
+| Scope      | When it applies                                                         | Executor behavior                                              |
+|------------|--------------------------------------------------------------------------|----------------------------------------------------------------|
+| `trivial`  | Obvious, bounded (one file / one function), matches one worker exactly. | Dispatch worker, **skip Validator**. Worker's envelope is final. |
+| `simple`   | Single worker fits, but stakes are non-trivial (multi-file, side effects, ambiguous inputs). | Dispatch worker, run Validator **once** (terminal), then Router post-exec loop. |
+| `holistic` | Self-contained feature/refactor; decomposition would hurt coherence (design choices are entangled). | Dispatch `_baseline` (Opus), end-to-end, **no Planner, no Validator**. |
+| `complex`  | Multiple concerns need coordination (bug-fix + tests, multi-step cascades). | Dispatch Planner → walk Plan → Validator **per step with `validate: true`** + Router loop. |
 
-`scope` is a property of the **request**, not of the agent. The same worker
-may be invoked on a trivial request or a simple one.
+`scope` is a property of the **request**, not of the agent. The same
+worker may be invoked on a trivial request or a simple one. And the
+`holistic` branch exists because pilot data showed that on feature builds
+within single-context scope, a single Opus dispatch produced more correct
+output than a decomposed pipeline — see `PILOT_FEATURE_REPORT.md`.
 
 ## 6. Failure taxonomy
 

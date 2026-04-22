@@ -57,11 +57,12 @@ Executor schedules a refresh on the next step.
 1. Read `agents/registry.md` — the list of registered workers.
 2. Classify the request into a **scope** (see §4 below), and choose an `action` consistent with that scope:
 
-| Scope     | action                 | target_agent                              |
-|-----------|------------------------|-------------------------------------------|
-| `trivial` | `dispatch-trivial`     | the single worker whose capability matches |
-| `simple`  | `dispatch-simple`      | the single worker whose capability matches |
-| `complex` | `dispatch-planner`     | `null` (Planner picks agents)              |
+| Scope      | action              | target_agent                              |
+|------------|---------------------|-------------------------------------------|
+| `trivial`  | `dispatch-trivial`  | the single worker whose capability matches |
+| `simple`   | `dispatch-simple`   | the single worker whose capability matches |
+| `holistic` | `dispatch-baseline` | `null` (always routes to `_baseline`)      |
+| `complex`  | `dispatch-planner`  | `null` (Planner picks agents)              |
 
 3. Emit the `decision` envelope.
 
@@ -98,20 +99,33 @@ Apply **in order**. First match wins.
    Examples: "rename variable X to Y in file Z", "read the config and tell me the value of K", "remove unused import in file F".
 
 2. **`complex`** — any of:
-   - More than one worker is needed to complete the request.
-   - The request describes a multi-stage pipeline ("find X and then encode it", "build the library for Y").
+   - More than one concern needs to be coordinated by separate workers (bug-fix + regression tests, find-and-encode, etc.).
+   - The request is to fix a bug. A bug fix implies `debugger → tester`. Exception: classify `trivial` only when the bug is patently untestable (typo in a comment).
+   - The user explicitly asks for auditability, coverage assessment, or separated test authoring.
    - Inputs are ambiguous and must be resolved by investigation before acting.
-   - Decomposition into ordered sub-tasks is required.
-   - **The request is to fix a bug.** A bug fix implies `debugger → tester` (the debugger identifies test gaps; the tester closes them). Treat every non-trivial bug fix as `complex`. Exception: classify `trivial` only when the bug is patently untestable (typo in a comment, string literal in non-automated UI).
-   - **The request is to build, extend, or refactor code and the result should be tested.** Planner should decompose into `test_strategist (design) → coder(s) → tester`, so the test plan is defined up-front and the tester closes exactly those targets.
-   Examples: "grow the KB for topic T", "refactor module M and update all callers", "find and fix the bug in service S", "this test fails — fix it", "add feature F with tests", "users report the dashboard blanks on load — fix it".
+   Examples: "find and fix the bug in service S with regression tests", "grow the KB for topic T", "assess coverage of module M and close gaps", "this test fails — fix it and add regression coverage".
 
-3. **`simple`** — the default when neither `trivial` nor `complex` applies.
-   A single worker fits but the stakes or side-effects warrant a Validator gate.
-   **Do not use `simple` for bug fixes** — see the `complex` note above.
+3. **`holistic`** — any of:
+   - The request is a self-contained feature build or refactor that fits in a single capable dispatch.
+   - Design choices are entangled (data model + storage + CLI + persistence in one cohesive whole).
+   - The user did NOT explicitly ask for separated tests, audit trail, or quality gates.
+   - Decomposition across a `test_strategist → implementer → tester` pipeline risks the strategist missing invariants the holistic model would naturally preserve.
+   Examples: "build a terminal TODO-list app with plain-text persistence", "implement a small CLI that does X", "write a utility module for Y". Any time the user phrases a task as a single coherent deliverable and a strong model can plausibly do it end-to-end, prefer `holistic` over `complex`. Pilot data (TODO-CLI build, see `PILOT_FEATURE_REPORT.md`) showed that decomposed pipelines lose correctness here; a single Opus dispatch wins.
+
+4. **`simple`** — the default when none of the above applies.
+   A single registered worker fits, but stakes or side-effects warrant a Validator gate.
+   **Do not use `simple` for bug fixes** — use `complex`.
    Examples of legitimate `simple`:
-   - Read-only analyses with a single deliverable: "assess test coverage of module M" → `test_strategist` in `assess` mode, single worker, Validator terminal.
+   - Read-only analyses with a single deliverable: "assess test coverage of module M" → `test_strategist` in `assess` mode, Validator terminal.
    - Single-worker artifact tasks: "encode the queued book `<slug>`".
+
+# Disambiguation: `holistic` vs `complex`
+Both handle multi-file tasks. The deciding question is whether **decomposition helps or hurts**:
+
+- If the task is "do this coherent thing" and a capable single model can produce all artifacts cohesively → `holistic`.
+- If the task is "do A, then separately also B" and the artifacts are independent enough to be validated separately → `complex`.
+
+Rule of thumb: if the user's request fits in one English sentence without conjunctions like "and also", "plus", "with tests" — it is almost certainly `holistic`.
 
 When in doubt between `trivial` and `simple`: choose `simple`. When in doubt between `simple` and `complex`: choose `complex`. The cost of an unnecessary Planner round is lower than the cost of a missed decomposition.
 
@@ -123,8 +137,8 @@ One JSON envelope per `agents/_schema.md` §2:
   "ok": true,
   "outputs": {
     "decision": {
-      "action": "dispatch-trivial" | "dispatch-simple" | "dispatch-planner" | "accept" | "retry" | "re-route" | "replan" | "abort",
-      "scope": "trivial" | "simple" | "complex" | null,
+      "action": "dispatch-trivial" | "dispatch-simple" | "dispatch-baseline" | "dispatch-planner" | "accept" | "retry" | "re-route" | "replan" | "abort",
+      "scope": "trivial" | "simple" | "holistic" | "complex" | null,
       "target_agent": "<agent id>" | null,
       "rationale": "<one short sentence>"
     }
@@ -133,7 +147,7 @@ One JSON envelope per `agents/_schema.md` §2:
 ```
 
 Field rules:
-- `scope` is set **only** on pre-exec mode (when `action` ∈ {dispatch-trivial, dispatch-simple, dispatch-planner}). Otherwise `null`.
+- `scope` is set **only** on pre-exec mode (when `action` ∈ {dispatch-trivial, dispatch-simple, dispatch-baseline, dispatch-planner}). Otherwise `null`.
 - `target_agent` is `null` unless `action` ∈ {dispatch-trivial, dispatch-simple, re-route}.
 - `rationale` ≤ 120 characters.
 

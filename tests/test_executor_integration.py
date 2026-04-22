@@ -344,6 +344,60 @@ def test_tracer_records_dispatches(registry, tmp_cwd):
     assert summary["outcome"] == "accept"
 
 
+def test_baseline_dispatch_skips_planner_and_validator(registry, tmp_cwd):
+    """scope=holistic: Router → _baseline → done. No Planner, no Validator.
+    The holistic path is the architecture's escape hatch from decomposition,
+    motivated by pilot data showing a single Opus dispatch outperforms a
+    decomposed pipeline on self-contained feature builds."""
+    responses = {
+        "_router": lambda inp: router_decision(
+            "dispatch-baseline", scope="holistic", target_agent=None
+        ),
+        "_baseline": lambda inp: env.ok({
+            "summary": "built TODO CLI end-to-end in one dispatch",
+            "created_files": ["todo.py", "test_todo.py"],
+            "verification": "python -m pytest test_todo.py -q",
+        }),
+    }
+    ex = Executor(registry, MockDispatcher(responses), Tracer())
+    state = ex.run("build a terminal TODO CLI with plain-text persistence",
+                   cwd=str(tmp_cwd))
+
+    assert state.outcome == "accept"
+    assert "s1" in state.step_results
+    assert state.verdicts == {}                     # no Validator ran
+    assert state.plan is None                       # no Planner ran
+    envelope = state.step_results["s1"]
+    assert envelope["outputs"]["summary"].startswith("built TODO CLI")
+
+
+def test_baseline_missing_infra_agent_aborts_gracefully(tmp_cwd):
+    """If `_baseline` is not registered, the executor must abort with a
+    clear reason — not raise."""
+    from harness.registry import Registry
+
+    class RegistryWithoutBaseline(Registry):
+        def infra(self, role):
+            if role == "_baseline":
+                raise KeyError("_baseline missing")
+            return super().infra(role)
+
+    reg = RegistryWithoutBaseline.load(ROOT / "agents")
+    # Shim out: intentionally force the KeyError path.
+    orig_infra = reg.infra
+    reg.infra = lambda r: (_ for _ in ()).throw(KeyError("_baseline missing")) if r == "_baseline" else orig_infra(r)
+
+    responses = {
+        "_router": lambda inp: router_decision(
+            "dispatch-baseline", scope="holistic", target_agent=None
+        ),
+    }
+    ex = Executor(reg, MockDispatcher(responses), Tracer())
+    state = ex.run("build X", cwd=str(tmp_cwd))
+    assert state.outcome == "abort"
+    assert "_baseline" in state.outcome_reason
+
+
 # -- helpers -------------------------------------------------------------
 
 

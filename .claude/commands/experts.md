@@ -99,9 +99,10 @@ Dispatch `_router` as a subagent with:
 inputs = { request: state.request }
 ```
 Read its `decision.action` and `decision.scope`:
-- `dispatch-trivial` → go to Step 2a (trivial path, no Validator).
-- `dispatch-simple`  → go to Step 2a (simple path, Validator terminal).
-- `dispatch-planner` → go to Step 2b (complex path).
+- `dispatch-trivial`  → go to Step 2a (trivial path, no Validator).
+- `dispatch-simple`   → go to Step 2a (simple path, Validator terminal).
+- `dispatch-baseline` → go to Step 2c (holistic path, single Opus dispatch, no Validator).
+- `dispatch-planner`  → go to Step 2b (complex path).
 - Anything else at this stage is a protocol violation → `abort`.
 
 ### Step 2a — Run a single worker
@@ -110,6 +111,18 @@ Dispatch `decision.target_agent` as a subagent with inputs derived from the requ
 Branch on scope:
 - `scope == "trivial"` → **skip Step 4 and Step 5**. The worker's envelope is the final outcome. Emit the report and stop.
 - `scope == "simple"`  → go to Step 4 (Validator runs once, then post-exec Router loop).
+
+### Step 2c — Holistic dispatch to `_baseline`
+Dispatch `_baseline` as a subagent with `inputs = { request: state.request }`.
+Record the envelope in `state.step_results["s1"]`.
+
+**Skip Step 4 and Step 5 entirely.** The holistic path exists to avoid
+decomposition overhead when pilot data shows decomposition hurts quality.
+A Validator pass would partially undo that saving (and can't meaningfully
+evaluate a cohesive build without decomposing the rubric). The user can
+re-dispatch with `dispatch-planner` if they want a quality-gated run.
+
+Emit the report and stop.
 
 ### Step 2b — Invoke `_planner`
 Dispatch `_planner` as a subagent with:

@@ -56,7 +56,7 @@ class Registry:
             entries[agent_id] = RegistryEntry(agent_id, file, cap, spec)
 
         infra: dict[str, AgentSpec] = {}
-        for infra_id in ("_router", "_planner", "_validator"):
+        for infra_id in ("_router", "_planner", "_validator", "_baseline"):
             infra_file = agents_dir / f"{infra_id}.md"
             if infra_file.exists():
                 infra[infra_id] = load_spec(infra_file)
