@@ -10,7 +10,8 @@ To register an agent: create `agents/<id>.md` conforming to the schema in
 
 | id       | file                | one-line capability                                                  |
 |----------|---------------------|-----------------------------------------------------------------------|
-| debugger | agents/debugger.md  | Reproduce, isolate, fix, and verify a bug. Terminal `verification` step. |
+| debugger | agents/debugger.md  | Reproduce, isolate, fix, verify a bug; emit `test_gaps` for the tester downstream. |
+| tester   | agents/tester.md    | Close specific test gaps (typically from the debugger) with targeted, named tests. |
 
 ## Contract references
 Every registered agent must conform to:

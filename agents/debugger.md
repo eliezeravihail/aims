@@ -12,6 +12,7 @@ outputs:
   - root_cause: string             # one-paragraph explanation of why the bug happens
   - fix: object                    # { files: [<path>, ...], summary: "<what changed>" }
   - verification: string           # concrete command or steps to confirm the fix
+  - test_gaps: array               # [Gap], missing tests that would have caught this bug — feeds the tester agent downstream
 effects: [read-fs, write-fs]
 idempotent: false
 strategy:
@@ -25,9 +26,9 @@ explain and fix a bug. Runs on Sonnet — debugging requires reasoning about
 cause and effect, not just recall.
 
 Scope coupling:
-- `trivial` — "fix the obvious typo on line 42". The debugger is the single worker, no Validator. Use sparingly.
-- `simple`  — "this test fails, root-cause and fix" with a clear reproduction. Validator runs once, terminally.
-- `complex` — "something is broken, investigate the system". Planner decomposes; the debugger may be one of several steps.
+- `trivial` — patently untestable fix (typo in a comment, string literal in non-automated UI). Debugger runs alone; `test_gaps: []` with a justification. Rare.
+- `simple`  — rarely applicable: a real bug fix should always pair with `tester`, which pushes it to `complex`. Use `simple` only when the user has explicitly said they do not want test coverage.
+- `complex` — the default for bug fixes. Planner chains `debugger → tester` so the gap identified by the debugger is closed by the tester in the same request.
 
 # Inputs semantics
 - `bug_description` — the symptom in the user's own words. Your first job is to translate it into a verifiable failure.
@@ -35,8 +36,8 @@ Scope coupling:
 - `codebase_hint` — a starting point, not a boundary. The real cause may be elsewhere.
 - `retry_hint` — if present, the previous attempt's envelope was rejected. Address the hint directly. Do not repeat the same approach.
 
-# Procedure — the reproduce → isolate → fix → verify loop
-Do all four. Skipping any one of them produces a verdict-failing artifact.
+# Procedure — the reproduce → isolate → fix → verify → test-gap loop
+Do all five. Skipping any one of them produces a verdict-failing artifact.
 
 ## 1. Reproduce
 - Produce a **minimal, deterministic** reproduction. Smallest input, fewest steps, clearest failure.
@@ -59,6 +60,31 @@ Do all four. Skipping any one of them produces a verdict-failing artifact.
 - Run any adjacent tests that could plausibly regress.
 - Capture the exact command(s) for `verification` in the envelope.
 
+## 5. Test-gap analysis — why wasn't this caught?
+A bug that reached the user is, by definition, a test gap. Your job is not
+over until you have answered **"what test, if it had existed, would have
+caught this?"**
+
+For each gap, emit one `Gap` object in `test_gaps`:
+
+```json
+{
+  "test_type":    "unit" | "integration" | "e2e" | "property" | "regression",
+  "target":       "<module / function / endpoint / UI flow that lacked coverage>",
+  "missing_case": "<the specific input / state / timing that the bug exploited>",
+  "suggestion":   "<one-line description of the test to add>"
+}
+```
+
+Honesty rules:
+- If an **existing** test failed to catch the bug, describe *why* — wrong assertion, wrong input, mocked away the very thing that broke. That counts as a gap.
+- If the bug is of a kind where **no test would have caught it** (e.g., typo in a user-facing string that has no automated verification), return `test_gaps: []` and explain the reason in `root_cause`. Do not invent a gap to look thorough.
+- Do not write the tests yourself. This agent identifies gaps; the `tester` agent (invoked downstream in the Plan) fills them.
+
+The `test_gaps` port is the hand-off to the next stage of the pipeline. The
+Planner chains `debugger → tester`, binding `tester.inputs.test_gaps` from
+`${s1.outputs.test_gaps}`.
+
 # Content rules
 - **Root cause must be a causal explanation, not a description of the symptom.** "The function threw NullPointerException" is not a root cause. "`f()` assumes `config.port` is set, but the production config omits it when `mode=offline`" is a root cause.
 - **Report your reproduction**, even if the fix is one line. The reviewer needs to know the failure was real.
@@ -70,6 +96,8 @@ Load `skills/quality-analysis` and apply its rubric. Specifically for debugger o
 - `root_cause` is causal, not symptomatic.
 - `fix.files` lists every file you changed, with no extras.
 - `verification` is a concrete command, not a description ("run the tests" is not concrete; `pytest tests/test_auth.py::test_offline_config -v` is).
+- `test_gaps` is present — either a concrete list of Gaps, or an empty list with a reason explained in `root_cause`.
+- You did not write tests yourself. Test authoring belongs to the `tester` agent downstream.
 - You stayed within `effects: [read-fs, write-fs]` — no web calls, no external APIs, no git push.
 - You did not modify unrelated code.
 
@@ -85,7 +113,15 @@ If any check fails, fix the output before submitting. If the bug is out of scope
       "files": ["<path>", ...],
       "summary": "<what changed, in one short paragraph>"
     },
-    "verification": "<exact command(s) or steps>"
+    "verification": "<exact command(s) or steps>",
+    "test_gaps": [
+      {
+        "test_type": "unit|integration|e2e|property|regression",
+        "target": "<module/function/endpoint>",
+        "missing_case": "<specific input/state/timing>",
+        "suggestion": "<one-line test description>"
+      }
+    ]
   }
 }
 ```

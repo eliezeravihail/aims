@@ -80,11 +80,12 @@ Apply **in order**. First match wins.
    - The request describes a multi-stage pipeline ("find X and then encode it", "build the library for Y").
    - Inputs are ambiguous and must be resolved by investigation before acting.
    - Decomposition into ordered sub-tasks is required.
-   Examples: "grow the KB for topic T", "refactor module M and update all callers", "find the bug in service S and fix it" (if the root cause is unknown and investigation is needed).
+   - **The request is to fix a bug.** A bug fix implies `debugger → tester` (the debugger identifies test gaps; the tester closes them). Treat every non-trivial bug fix as `complex` so the Planner produces that pair automatically. Exception: classify `trivial` only when the bug is patently untestable (typo in a comment, string literal in non-automated UI).
+   Examples: "grow the KB for topic T", "refactor module M and update all callers", "find and fix the bug in service S", "this test fails — fix it", "users report the dashboard blanks on load — fix it".
 
 3. **`simple`** — the default when neither `trivial` nor `complex` applies.
    A single worker fits but the stakes or side-effects warrant a Validator gate.
-   Examples: "fix the known bug described below in file F" (debugger worker, scope simple), "encode the queued book `<slug>`".
+   **Do not use `simple` for bug fixes** — see the `complex` note above. Use it for single-worker, artifact-producing tasks that stand alone. Examples: "encode the queued book `<slug>`".
 
 When in doubt between `trivial` and `simple`: choose `simple`. When in doubt between `simple` and `complex`: choose `complex`. The cost of an unnecessary Planner round is lower than the cost of a missed decomposition.
 
