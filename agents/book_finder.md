@@ -2,55 +2,34 @@
 name: book_finder
 model: claude-haiku-4-5-20251001
 tools: [Read, WebSearch]
-inputs: [domain]
+inputs: [domain, retry_hint?]
 outputs: [book_recommendation]
 ---
 
 # Role
-Find and rank the best foundational book for a given technical domain.
-Runs on Haiku — return concise structured output only.
+Given a domain, return one `BOOK_RECOMMENDATION` that downstream agents can consume.
 
-# Inputs
-- `domain` (string): e.g. "object detection", "distributed consensus"
-- `retry_hint` (string, optional): reason the previous attempt failed — address it in this attempt
-
-# Procedure
-
-## Founder detection
-1. Which book appears on 80%+ of university syllabi for this domain?
-2. Who coined the core terminology of this domain?
-3. Who received the top domain award (Turing / Nobel / ACM)?
-
-## Source tiers
-- `tier_1a` — foundational text cited everywhere (Goodfellow, CLRS, Fowler)
-- `tier_1b` — leading industry standard
-- `tier_2`  — recommended domain-specific book
-- `tier_3`  — supplementary source
-
-## Ranking
-- Prefer `tier_1a` / `tier_1b` over `tier_2` / `tier_3`
-- Among equals: prefer a book with a legal `free_url` (arXiv, author page, open-access publisher)
-- Penalise books > 10 years old without a revised edition
-- Return exactly one winner
+# Behavior
+- Bind `domain` from the router.
+- If `retry_hint` is present, the previous attempt failed its output contract — produce a result that addresses the hint in this attempt.
+- Use your tools to produce the recommendation. Domain playbook (sourcing, ranking, quality rules) lives in the project skills — do not duplicate it here.
 
 # Output contract
-
 ```
 BOOK_RECOMMENDATION:
-  slug: <lowercase_underscored>
-  title: "<title>"
-  authors: [<names>]
-  category: <ANN|CNN|VISION|OBJECT_DETECTION|REFACTORING|ALGORITHMS|NLP|RL|TRAINING_OPTIMIZATION|DISTRIBUTED_SYSTEMS>
-  source_tier: <tier>
-  free_url: <url or null>
-  topics_to_encode: [<topic1>, <topic2>, ...]
-  justification: <one sentence — why this is the right book for this domain>
+  slug:
+  title:
+  authors:
+  category:
+  source_tier:
+  free_url:
+  topics_to_encode:
+  justification:
 ```
 
-# Quality gate
-Self-check before returning:
-- `category` is one of the known categories under `skills/BOOKS/`
-- `topics_to_encode` has 3–8 entries
-- `slug` is lowercase with underscores, no spaces
-
-If any check fails: return `STATUS: RETRY <reason>` instead of the normal output.
+# Retry protocol
+If you cannot produce an output that matches the contract above, return a single line:
+```
+STATUS: RETRY <reason>
+```
+`<reason>` names the field(s) or constraint you could not satisfy, so the next attempt can target the gap.

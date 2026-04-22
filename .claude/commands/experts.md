@@ -1,14 +1,14 @@
 ---
 description: "Expert router — parse a request and invoke the right agent(s) in single, cascade, or loop mode"
-allowed-tools: Read, Write, WebSearch, Bash
+allowed-tools: Read, Write, Bash
 argument-hint: "<request>"
 ---
 
 # /project:experts
 
-Natural-language front door to the agent library. Parses `$ARGUMENTS`, chooses a
-mode (single / cascade / loop), loads the agent files listed in `agents/router.md`,
-and executes them.
+Behavior router. Parses `$ARGUMENTS`, picks a mode, loads the agent files from
+`agents/router.md`, and executes them. The router does not carry domain logic —
+it only orchestrates.
 
 ## Usage
 ```
@@ -26,10 +26,10 @@ Classify `$ARGUMENTS` into exactly one intent by matching in order (first match 
 
 | Intent   | Trigger phrases (case-insensitive)                                     |
 |----------|-------------------------------------------------------------------------|
-| BUILD    | "build", "grow the library", "find and encode", "full pipeline", "ingest pipeline" |
-| REFRESH  | "refresh", "update stale", "update the library", "audit and update"     |
-| ENCODE   | "encode", "add book", or explicit `slug` token (lowercase_underscored)  |
-| FIND     | "find", "recommend", "which book", "best book"                          |
+| BUILD    | "build", "grow the library", "find and encode", "full pipeline"        |
+| REFRESH  | "refresh", "update stale", "audit and update"                          |
+| ENCODE   | "encode", "add book", or an explicit `lowercase_underscored` token     |
+| FIND     | "find", "recommend", "which book", "best book"                         |
 | default  | (no match) → FIND                                                       |
 
 ## Step 3 — Choose mode & pipeline
@@ -42,54 +42,47 @@ Classify `$ARGUMENTS` into exactly one intent by matching in order (first match 
 | REFRESH  | CASCADE  | book_finder (per stale slug) → book_encoder | 3 on encoder |
 
 ## Step 4 — Load the agent files
-For every agent id in the chosen pipeline, read `agents/<id>.md`. Respect:
+For every agent id in the pipeline, read `agents/<id>.md`. Respect:
 - `model` in frontmatter — invoke with this exact model
 - `tools` in frontmatter — use only these tools
-- `inputs` / `outputs` — this is the contract the router binds against
+- `inputs` / `outputs` — the contract the router binds against
 
 ## Step 5 — Execute
 
 ### SINGLE
 1. Bind inputs from `$ARGUMENTS` to the agent's `inputs` list.
-2. Invoke the agent with its declared model.
-3. Emit the agent's output verbatim + a one-line summary.
+2. Invoke the agent.
+3. Emit its output verbatim.
 
-### LOOP (encode, max 3)
+### LOOP (max 3)
 1. Bind inputs. Initial `retry_hint = null`.
-2. Invoke `book_encoder`.
-3. If output starts with `STATUS: RETRY <reason>` AND attempt < max:
+2. Invoke the agent.
+3. If the output is a single line starting with `STATUS: RETRY <reason>` AND attempt < max:
    - Set `retry_hint = <reason>`, increment attempt, go to step 2.
 4. Stop when the agent returns its normal output contract OR attempt == max.
-5. Emit final status: success + `quality_score`, OR failure with all retry reasons.
+5. Emit final status and collected retry reasons.
 
-### CASCADE (find → encode)
+### CASCADE
 Maintain a `state` dict keyed by output field names.
-1. **Step 1 — book_finder.** Bind `domain` from `$ARGUMENTS`. Invoke.
-   - On `STATUS: RETRY` from finder: one retry, then abort the cascade.
-   - Write the BOOK_RECOMMENDATION fields into `state` (slug, title, authors, category, free_url, topics_to_encode, source_tier).
-2. **Step 2 — book_encoder.** Bind its `inputs` from `state`. Run inside the LOOP mode above (max 3 retries).
-3. Emit a cascade report: per-step status, final artifact paths, total loops consumed.
+1. Run stage 1. On `STATUS: RETRY`: one retry, then abort.
+2. Write the stage-1 output fields into `state`.
+3. Run stage 2 inside the LOOP mode above, binding its `inputs` from `state`.
+4. Emit a per-stage report.
 
 ### REFRESH (specialisation of CASCADE)
-1. Read every `skills/BOOKS/<category>/_meta.md` that matches the filter (category or "all stale").
-2. For each entry flagged `stale=true` OR older than 18 months:
-   - Run the find → encode cascade with `domain` = the book's original topic cluster.
-3. Emit a per-book refresh report.
+Resolve the list of targets the router should iterate over from project conventions (staleness and filter parsing belong to the skills/playbook, not to the router). For each target, run the CASCADE above.
 
 ## Step 6 — Report
-Always end with a compact summary block:
-
 ```
 Mode: <SINGLE|LOOP|CASCADE|REFRESH>
 Agents: <list>
 Steps: <per-step pass/fail + loop count>
-Artifacts: <created / updated file paths>
+Artifacts: <created / updated paths, if any>
 Retries: <reasons, if any>
 ```
 
-## Input parsing notes
-- Strip leading "please ", "can you ", "i want to ".
-- For FIND: everything after the trigger phrase is `domain`.
-- For ENCODE: the first `lowercase_underscored` token is `slug`; remaining queue fields (title, authors, category, free_url, topics_to_encode) are pulled from `books-init-queue.yaml` if present, otherwise prompt for them.
-- For BUILD: domain is the free text after the trigger phrase.
-- For REFRESH: optional category filter after the trigger phrase; otherwise all categories.
+## Input binding
+- FIND: text after the trigger phrase → `domain`.
+- ENCODE: first `lowercase_underscored` token → `slug`; remaining fields come from the project's queue/config (not embedded here).
+- BUILD: text after the trigger phrase → `domain`.
+- REFRESH: optional category filter after the trigger phrase.
