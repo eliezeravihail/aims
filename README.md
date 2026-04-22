@@ -8,28 +8,47 @@ dense, curated, up-to-date information on demand.
 
 ## How it works
 
+One slash command — `/project:experts` — routes a natural-language request to the right agent(s).
+Two agents do the actual work:
+
 ```
-find-book <domain>          →  discovers the best foundational book for a topic
-                                (searches the web, evaluates quality, returns a recommendation)
+/project:experts find a book on <domain>
+    → book_finder: searches the web, ranks by tier, returns a BOOK_RECOMMENDATION
 
-encode-book / books-init    →  reads the book from its free URL and distills it into
-                                a hierarchy of skill files under skills/BOOKS/
+/project:experts encode <slug>                    (loop, retries on quality failure)
+/project:experts build the library for <domain>   (cascade: find → encode)
+    → book_encoder: distils the book into skills/BOOKS/<CATEGORY>/<slug>/
 
-query-knowledge <topic>     →  reads _meta.md to pick the best book,
-                                reads _index.md to see available topics (cheap),
-                                loads only the specific topic file it needs (lazy)
+/project:query-knowledge <topic>
+    → reads _meta.md to pick the best book, loads only the specific topic file it needs
 ```
 
 ## Agents
 
-| Agent | Role | Model | How it works |
+Agent definitions live in `agents/<name>.md`. Each file has the model + tools in its frontmatter
+and the full behavior spec in the body. To add an agent: create `agents/<name>.md` and add a row
+to `agents/router.md`.
+
+| Agent | File | Model | What it does |
 |-------|------|-------|--------------|
-| **book_finder** | Finds the best foundational book for a given domain | Haiku | Searches the web, compares editions and quality, returns a ranked recommendation with a free URL if available |
-| **book_encoder** | Distills a book into queryable skill files | Sonnet | Fetches the book from its free URL, extracts key topics, writes a `_index.md` (topic list) and one `<topic>.md` per topic |
+| **book_finder**  | `agents/book_finder.md`  | Haiku  | Finds the best foundational book for a given domain, returns ranked YAML |
+| **book_encoder** | `agents/book_encoder.md` | Sonnet | Fetches the book, writes `_index.md` + one `<topic>.md` per topic |
+
+## Router modes
+
+`/project:experts` picks one of four modes based on the request:
+
+| Intent  | Mode    | Pipeline                                 |
+|---------|---------|------------------------------------------|
+| FIND    | SINGLE  | book_finder                              |
+| ENCODE  | LOOP    | book_encoder, up to 3 retries on `STATUS: RETRY` |
+| BUILD   | CASCADE | book_finder → book_encoder               |
+| REFRESH | CASCADE | book_finder → book_encoder per stale slug |
+
+An agent signals an unacceptable result by returning `STATUS: RETRY <reason>` instead of its
+normal output contract. The router feeds the reason back as `retry_hint` on the next loop.
 
 ## Using the knowledge base
-
-Query any topic directly from the pre-built KB:
 
 ```
 /project:query-knowledge backpropagation
@@ -38,11 +57,9 @@ Query any topic directly from the pre-built KB:
 ```
 
 The agent reads `_meta.md` to select the highest-quality book for the topic, then loads only
-the specific topic file needed — keeping token usage low even as the KB grows.
+the specific topic file needed.
 
 ### Knowledge structure
-
-Each encoded book lives in a folder:
 
 ```
 skills/BOOKS/<CATEGORY>/<slug>/
@@ -54,24 +71,19 @@ skills/BOOKS/<CATEGORY>/<slug>/
 
 ## Adding a book
 
-### Encode a specific book (simple path)
-
-If you know which book you want to add:
-
+### Encode a single book
 ```
-/project:encode-book
+/project:experts encode <slug>
 ```
+Pulls the queue entry from `books-init-queue.yaml` and loops on quality failure.
 
-The command is interactive — it will prompt for the book URL, title, and topics to encode.
-
-For books without a free URL, download the PDF and use:
+### Build from a domain name (find + encode)
 ```
-/project:ingest-local-sources ./my-book.pdf --category ANN --slug my_book
+/project:experts build the library for reinforcement learning
 ```
 
-### Encode from a queue (batch)
-
-Add books to `books-init-queue.yaml`:
+### Encode from a queue
+Add entries to `books-init-queue.yaml`:
 
 ```yaml
 - slug: your_book_slug
@@ -85,39 +97,23 @@ Add books to `books-init-queue.yaml`:
     - topic_two
 ```
 
-Then run:
+Then:
 ```
-/project:books-init          # encodes first 20 pending books
-/project:books-init --count 1
-```
-
-## Discovering books (advanced)
-
-If you don't have a specific book in mind, use `find-book` to search the web for the
-best foundational book on a topic:
-
-```
-/project:find-book deep learning
-/project:find-book computer vision
+/project:experts encode your_book_slug
 ```
 
-Returns a ranked recommendation with a free URL (when available) and suggested topics to encode.
-The output can be pasted directly into `books-init-queue.yaml`.
-
-## Maintenance
-
-| Command | What it does |
-|---------|-------------|
-| `/project:books-status` | Coverage and quality report across all categories |
-| `/project:books-update` | Find newer editions and refresh stale books |
-| `/project:books-audit` | Knowledge hygiene: deduplicate, re-rank, decay old entries |
+### Local PDFs or text
+For books without a free URL:
+```
+/project:ingest-local-sources ./my-book.pdf --category ANN --slug my_book
+```
 
 ## Install
 
 1. Clone this repo into your Claude Code plugins folder
 2. Open the folder in Claude Code
 3. Run `/project:query-knowledge <topic>` to use the pre-built KB immediately
-4. Add books with `/project:encode-book` or edit `books-init-queue.yaml` + `/project:books-init`
+4. Add books with `/project:experts build the library for <domain>` or edit the queue + `/project:experts encode <slug>`
 
 ## Knowledge categories
 

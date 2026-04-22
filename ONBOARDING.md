@@ -1,8 +1,7 @@
 # Onboarding
 
 1. Install the plugin.
-2. Initialize BOOKS: `/project:books-init --priority 1`
-3. Check coverage: `/project:books-status`
-4. Run first dev cycle: `/project:dev-cycle`
-5. For `refactor_mode=review` patches — review manually before approving.
-6. Run `/project:books-audit` monthly.
+2. Check coverage: `/project:books-status`
+3. Query the KB: `/project:query-knowledge <topic>`
+4. Grow the KB for a new domain: `/project:experts build the library for <domain>`
+5. Encode a specific queued book: `/project:experts encode <slug>`
