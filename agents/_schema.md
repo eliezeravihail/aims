@@ -139,7 +139,31 @@ Each agent call is a separate Claude Code subagent invocation. Only the
 envelope crosses the context boundary — not the agent's tool calls, internal
 reasoning, or intermediate artifacts. This is the core cost-control mechanism.
 
-## 9. Shared value types
+## 9. Tool discipline for infrastructure agents
+
+Infrastructure agents (`_router`, `_planner`, `_validator`) have a **strict
+minimal-tool rule**. This is not optional — empirical data from the medium-bug
+pilot shows that without it, the Router drifts into the task's domain and
+burns the tokens it was supposed to save.
+
+Required conventions per infra role:
+
+| Agent | Allowed tools | Forbidden behaviour |
+|-------|---------------|---------------------|
+| `_router`    | `[Read]` only (to read `agents/registry.md` and `.claude.md`) | No filesystem Grep/Glob, no Bash, no code analysis. Classification only. |
+| `_planner`   | `[Read]` only (to read registry + project context) | No Bash, no Edit, no Write. |
+| `_validator` | `[Read, Bash]` (Bash to run tests; that is its job) | No Edit, no Write. Never modify the artifact under review. |
+
+Every infra-agent prompt **must** include a line stating what the agent is
+forbidden from doing, not just what it should do. Prohibitions are more
+effective than positive instructions for tier discipline.
+
+**Observed**: in the cookiecutter-4 pilot, tightening `_router` from default
+tools to `[Read]` plus the line *"do NOT read code, do NOT analyze the bug
+yourself"* reduced tool calls from 2 to 0 and reclaimed ~1,800 tokens of
+spurious analysis on a single dispatch.
+
+## 10. Shared value types
 
 Some value shapes flow between multiple agents. Keep them aligned so the
 Planner can chain producers to consumers by schema match.

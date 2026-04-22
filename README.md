@@ -2,9 +2,9 @@
 
 Two independent concerns live in this repo:
 
-1. **Agent routing system** — a generic Claude Code primitive that wires a
-   natural-language request to the right agent(s) and orchestrates them in
-   single, loop, or cascade mode. Domain-neutral.
+1. **Agent routing system** — a tiered Claude Code orchestrator. A single
+   slash command dispatches work across isolated subagents (Router, Planner,
+   Validator, workers), each in its own context. Generic and domain-neutral.
 2. **Books knowledge library** — a pre-existing knowledge base under
    `skills/BOOKS/` with its own slash commands. Not coupled to the routing
    system.
@@ -15,39 +15,82 @@ Two independent concerns live in this repo:
 
 ## Agent routing system
 
-### How it works
-One slash command — `/project:experts <request>` — reads the registry at
-`agents/router.md`, resolves which agent(s) match the request, loads their
-definitions, and runs them.
+### What runs where
 
-Three execution modes, chosen by the router:
+```
+User → /project:experts "<request>"
+                │
+                ▼
+        Router (Haiku) ─── triage + post-exec dispatch ─── cheap
+                │
+   ┌────────────┼─────────────┐
+   ▼            ▼             ▼
+trivial     simple         complex
+(worker     (worker +    (Planner (Opus) → workers → Validator ←─┐
+only)       Validator)    per step; Router decides next step)    │
+                                    │                             │
+                                    ▼                             │
+                              Validator (Sonnet) ─── objective ───┘
+                              quality gate; runs tests; catches
+                              lying artifacts (empirically verified)
+```
 
-| Mode    | When                                                               |
-|---------|--------------------------------------------------------------------|
-| SINGLE  | One agent, read-only / idempotent request                          |
-| LOOP    | One agent with a quality gate; retries up to 3× on `STATUS: RETRY` |
-| CASCADE | Multi-stage pipeline; stage N's `outputs` bind into stage N+1's `inputs` by field name |
+Each role runs as a separate subagent. Only a JSON envelope crosses the
+boundary between them — no shared context. That's how costs stay bounded
+and how the Validator can make independent judgements.
 
-An agent signals an unacceptable result with a single line
-`STATUS: RETRY <reason>` instead of its normal output. The router feeds
-`<reason>` back as `retry_hint` on the next loop iteration.
+### Contracts
+
+Every exchange uses schemas in `agents/_schema.md` and `schemas/*.v1.json`:
+
+- **Envelope** — one of `{ok, outputs}` / `{retry, reason, hint}` / `{abort, reason}`.
+- **Plan** — ordered DAG of `AgentStep{agent, inputs, validate, depends_on}` with `${sN.outputs.port}` binding.
+- **Verdict** — `{passed, score, issues[], suggested_action, objective_checks}`.
+
+### Failure taxonomy
+
+| Signal     | Who raises it         | What happens next                                       |
+|------------|-----------------------|---------------------------------------------------------|
+| `retry`    | Worker envelope       | Re-invoke same agent with `retry_hint` (cap: 3/step).   |
+| `re-route` | Validator verdict     | Try a different agent, same goal (cap: 3/request).      |
+| `replan`   | Validator verdict     | Back to Planner with the verdict + old plan (cap: 2).   |
+| `abort`    | Any agent / cap blown | Stop with a structured report.                          |
 
 ### Defining an agent
-Create `agents/<id>.md` with YAML frontmatter + a behavior body. Frontmatter
-fields: `name`, `model`, `tools`, `inputs`, `outputs`. The body declares the
-role, input semantics, the output contract, and when to emit `STATUS: RETRY`.
-Append a row for the new agent to `agents/router.md`.
 
-Agent files are pure behavior — no domain playbooks. Domain-specific logic
-belongs in the skills the agent invokes.
+Create `agents/<id>.md` with YAML frontmatter conforming to `agents/_schema.md`
+(`name`, `model`, `tools`, `capabilities`, `inputs`, `outputs`, `effects`,
+`idempotent`, `strategy`). The body is a pure behavior spec: role, input
+semantics, output contract, pre-submit checklist. Step 0 of every worker
+loads `skills/project-context` and `skills/quality-analysis`. Append one row
+to `agents/registry.md` and you're done — Planner and Router see the new
+agent automatically.
 
-### Why this layout
-- `agents/<id>.md` = what an agent is.
-- `agents/router.md` = which agents exist.
-- `/project:experts` = how they get invoked.
+### Deterministic executor
 
-No code needed to add an agent. The registry + per-agent behavior file is the
-full contract.
+`harness/` is the Python implementation of the spec. The markdown files are
+the contract; the harness enforces it:
+
+- `harness/envelope.py` — strict JSON schema validation.
+- `harness/executor.py` — state machine: preflight → Router → [Planner] → workers → Validator → Router → loop.
+- `harness/dispatcher.py` — `MockDispatcher` (tests) and `LiveDispatcher` (Anthropic SDK).
+- `harness/tracer.py` — per-step JSONL observability.
+
+Run `python -m pytest tests/` — the full suite exercises the state machine
+on mocked responses (retry, malformed envelope, binding resolution, etc.).
+
+### Empirical support
+
+Two pilots are committed:
+
+- **`tests/pilot_medium/`** — BugsInPy/cookiecutter-4. Both baseline and
+  pipeline fixed the bug; the pipeline's diff was ~3× smaller (closer to
+  upstream) and added 4 regression tests that would catch the bug on
+  revert; the Validator caught an injected wrong-fix artifact that
+  baseline would have shipped. Cost: ~4× baseline tokens. See
+  `PILOT_MEDIUM_REPORT.md`.
+- **`harness/demo.py`** + **`harness/demo_live.py`** — reproducible
+  demos of the mock and live paths.
 
 ---
 

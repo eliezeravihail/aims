@@ -207,6 +207,99 @@ def test_retry_path_when_validator_asks(registry, tmp_cwd):
     assert "retry_hint" in call_log[1]
 
 
+def test_retry_in_plan_step_feeds_hint_back(registry, tmp_cwd):
+    """Plan-step retry path: worker returns retry envelope, executor feeds hint,
+    worker succeeds on the second attempt. Mirrors the cookiecutter pilot's
+    intended recovery flow if the debugger had produced an incomplete fix."""
+    call_log: list[dict] = []
+
+    def debugger(inputs):
+        call_log.append(dict(inputs))
+        if "retry_hint" in inputs:
+            return env.ok({
+                "root_cause": "null-deref on empty list",
+                "fix": {"files": ["a.py"], "summary": "guard with len check"},
+                "verification": "pytest -q",
+                "test_gaps": [],
+            })
+        return env.retry(
+            "reproduction not established",
+            hint="call with an empty list to reproduce",
+        )
+
+    responses = {
+        "_router": _twoway_router("dispatch-planner"),
+        "_planner": lambda inp: env.ok({"plan": {
+            "schema_version": 1,
+            "plan_id": "retry_pilot",
+            "goal": "fix null-deref",
+            "steps": [{
+                "id": "s1", "agent": "debugger",
+                "inputs": {"bug_description": "null deref on empty list"},
+                "validate": False, "depends_on": [],
+            }],
+            "caps": {"retries_per_step": 3, "reroutes": 3, "replans": 2},
+        }}),
+        "debugger": debugger,
+    }
+    ex = Executor(registry, MockDispatcher(responses), Tracer())
+    state = ex.run("fix null-deref", cwd=str(tmp_cwd))
+
+    assert state.outcome == "accept"
+    assert len(call_log) == 2
+    assert "retry_hint" not in call_log[0]
+    assert call_log[1]["retry_hint"] == "reproduction not established"
+    assert state.caps_used.retries_for("s1") == 1
+
+
+def test_lying_artifact_is_rejected_on_objective_check(registry, tmp_cwd):
+    """Simulates the medium-pilot stretch goal: worker claims success but
+    verdict's objective_checks show tests did not pass. Router should NOT
+    accept — here we simulate via validator returning passed=false."""
+    def debugger(inputs):
+        # Worker lies: claims success but the code doesn't actually pass tests.
+        return env.ok({
+            "root_cause": "wrong exception type raised",
+            "fix": {"files": ["hooks.py"], "summary": "raise exception"},
+            "verification": "pytest (claimed)",
+            "test_gaps": [],
+        })
+
+    def validator(_inputs):
+        # Validator runs objective_checks and discovers the lie.
+        v = {
+            "schema_version": 1,
+            "passed": False, "score": 0.15,
+            "issues": [{
+                "severity": "critical", "location": "cookiecutter/hooks.py:74",
+                "reason": "Raises ValueError, not FailedHookException; regression test fails",
+                "suggestion": "Replace ValueError with FailedHookException",
+            }],
+            "suggested_action": "retry",
+            "objective_checks": {"tests_passed": False, "fix_matches_claim": False},
+        }
+        return env.ok({"verdict": v})
+
+    retry_decisions = iter([
+        router_decision("dispatch-simple", scope="simple", target_agent="debugger"),
+        router_decision("abort", rationale="objective_checks contradict claim"),
+    ])
+    responses = {
+        "_router": lambda inp: next(retry_decisions),
+        "_validator": validator,
+        "debugger": debugger,
+    }
+    ex = Executor(registry, MockDispatcher(responses), Tracer())
+    state = ex.run("fix the bug", cwd=str(tmp_cwd))
+
+    assert state.outcome == "abort"
+    assert "objective_checks" in (state.outcome_reason or "").lower() or \
+           "contradict" in (state.outcome_reason or "").lower()
+    # verdict was recorded
+    assert state.verdicts["s1"]["passed"] is False
+    assert state.verdicts["s1"]["objective_checks"]["tests_passed"] is False
+
+
 def test_malformed_envelope_becomes_abort(registry, tmp_cwd):
     """A worker that returns non-JSON must not crash the executor."""
     from harness.dispatcher import DispatchResult

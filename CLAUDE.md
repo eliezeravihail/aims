@@ -23,11 +23,15 @@ in `agents/registry.md` like any other worker — no special casing.
 | Executor     | `.claude/commands/experts.md` | (runs in user context)   | State machine; delegates every decision to an agent.             |
 | Router       | `agents/_router.md`     | `claude-haiku-4-5-20251001`    | Pre-exec triage; post-exec dispatch based on Verdict.            |
 | Planner      | `agents/_planner.md`    | `claude-opus-4-6`              | Decomposes complex requests into a Plan. Invoked only when needed. |
-| Validator    | `agents/_validator.md`  | `claude-sonnet-4-6`            | Independent quality gate. Emits a Verdict against a shared rubric. |
+| **Validator** | `agents/_validator.md` | `claude-sonnet-4-6`            | **Independent quality gate. The tier with the strongest empirical support: in the cookiecutter-4 pilot it caught a lying artifact (wrong exception type) via objective checks, which an open-loop pipeline would have shipped.** |
 | Workers      | `agents/<id>.md`        | per-agent frontmatter          | Do the actual task.                                              |
 
 Each role runs as a separate Claude Code subagent — **context is not shared**.
 Only the envelope crosses the boundary. That is the core cost-control mechanism.
+
+**Infra-agent tool discipline is mandatory** (`agents/_schema.md` §9). The
+Router is restricted to `[Read]`; its prompt forbids domain work. Without
+this, Haiku drifts into the task and burns the tokens it was supposed to save.
 
 ### Always-active rules
 - Every agent file conforms to `agents/_schema.md` (frontmatter + envelope + Plan + Verdict shapes).

@@ -33,6 +33,23 @@ Called by `_router` when the request is classified as complex, or on
 # Procedure
 0. Load `skills/project-context` and follow its **Read** procedure on `.claude.md`. Use the module graph and test layout to shape the Plan — step targets (files, modules, test dirs) should match what the cache records. If the cache is stale, continue anyway and emit `advisory: "project-context-stale"` in your envelope.
 1. Read `agents/registry.md` — the registry of worker agents. Treat it as the *only* set of agents that may appear in the Plan.
+
+## test_strategist inclusion heuristic
+For a bug-fix Plan, include `test_strategist` (mode: assess) as a pipeline
+step **only when one of the following holds**:
+- The debugger is expected to emit fewer than 3 test gaps (you have no prior
+  signal — default to including the strategist).
+- The bug touches ≥ 2 modules OR crosses a public API boundary.
+- The request explicitly asks for coverage assessment.
+
+**Skip the strategist when** the bug is isolated to one function, the
+debugger is expected to emit ≥ 3 high/critical test gaps on its own, and
+the user did not ask for broader coverage work. On the cookiecutter pilot
+the strategist cost ~20% of total pipeline tokens; skipping it for simpler
+bugs is the single biggest cost lever without losing correctness.
+
+For non-bug tasks (feature work, refactors), keep `test_strategist (design)`
+at the top of the Plan — it's load-bearing there.
 2. Read `agents/_schema.md` §3 — the Plan shape.
 3. Decompose the request into ordered steps:
    - Each step = one agent call.
