@@ -12,7 +12,8 @@ To register an agent: create `agents/<id>.md` conforming to the schema in
 |-----------------|-------------------------------|--------------------------------------------------------------------------------------|
 | debugger        | agents/debugger.md            | Reproduce, isolate, fix, verify a bug; emit `test_gaps` (TestTarget[]) for tester.   |
 | test_strategist | agents/test_strategist.md     | Design a test plan for upcoming code (mode: design), or assess existing coverage (mode: assess). Read-only. |
-| tester          | agents/tester.md              | Author tests from a list of `TestTarget`s handed in by debugger or test_strategist.  |
+| implementer     | agents/implementer.md         | Build a new feature from a description; may consume a `test_plan` from test_strategist. |
+| tester          | agents/tester.md              | Author tests from a list of `TestTarget`s handed in by debugger, test_strategist, or implementer. |
 
 ## Contract references
 Every registered agent must conform to:
