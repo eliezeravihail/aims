@@ -62,6 +62,20 @@ No agent re-crawls the filesystem when the cache can answer the question.
 3. Append one row to `agents/registry.md`.
 4. Done — Planner and Router see the agent automatically; no further wiring.
 
+### Deterministic executor (`harness/`)
+The markdown files are the **specification**; `harness/` is the **implementation**:
+- `harness/envelope.py` — JSON schema validation (strict); `schemas/*.v1.json`.
+- `harness/frontmatter.py` — parses agent `.md` frontmatter into typed specs.
+- `harness/registry.py` — loads `agents/registry.md` + infra agents.
+- `harness/state.py` — ExecutionState + `${sN.outputs.port}` binding resolver.
+- `harness/executor.py` — state machine: preflight → Router → [Planner] → workers → Validator → Router → loop.
+- `harness/dispatcher.py` — `MockDispatcher` (tests) and `LiveDispatcher` (Anthropic SDK).
+- `harness/tracer.py` — per-event JSONL observability.
+- `harness/cli.py` — `python -m harness.cli run "<request>"`.
+- `harness/demo.py`, `harness/demo_live.py` — reproducible demos.
+
+Run tests: `python -m pytest tests/`. 36 tests cover envelope, frontmatter, registry, state, and executor state-machine transitions (including retry, malformed envelope, binding resolution).
+
 ---
 
 ## Books knowledge library (separate concern)

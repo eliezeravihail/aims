@@ -1,0 +1,18 @@
+[project]
+name = "agent-routing-harness"
+version = "0.1.0"
+description = "Deterministic executor for the tiered agent routing system."
+requires-python = ">=3.11"
+dependencies = [
+    "jsonschema>=4.21",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+live = ["anthropic>=0.40"]
+dev  = ["pytest>=8", "pytest-xdist>=3"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+norecursedirs = ["tests/fixtures", "skills/BOOKS"]

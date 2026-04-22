@@ -1,2 +1,12 @@
 # Auto-generated project-context cache (see skills/project-context/SKILL.md)
 .claude.md
+tests/fixtures/*/.claude.md
+
+# Demo artifacts
+demo.trace.jsonl
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
