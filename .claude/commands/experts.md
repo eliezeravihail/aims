@@ -1,75 +1,147 @@
 ---
-description: "Expert router — parse a request and invoke the right agent(s) in single, cascade, or loop mode"
-allowed-tools: Read, Write, Bash
+description: "Tiered agent router — Router (Haiku) triages, Planner (Opus) decomposes, Validator (Sonnet) gates, workers execute. Each in its own context."
+allowed-tools: Read, Task, Bash
 argument-hint: "<request>"
 ---
 
 # /project:experts
 
-Generic behavior router. Parses `$ARGUMENTS`, resolves which agent(s) to run,
-and executes them in SINGLE, LOOP, or CASCADE mode. The router is domain-neutral —
-it knows nothing about what any specific agent does; it only orchestrates.
+Orchestrator for the tiered agent routing system. This command itself is the
+**Executor** — thin, deterministic bookkeeping over a state machine. It never
+reasons about the task; it delegates every decision and every piece of work to
+a sub-agent with its own isolated context.
 
-## Step 1 — Load registry
-Read `agents/router.md`. This is the authoritative list of agents available in
-this project, one row per agent with `id`, `file`, and a one-line capability.
+Read once, then operate:
+- `agents/_schema.md` — envelope, Plan, Verdict shapes.
+- `agents/registry.md` — registered worker agents.
+- `agents/_router.md`, `agents/_planner.md`, `agents/_validator.md` — infra agents.
 
-## Step 2 — Resolve target agent(s)
-Match `$ARGUMENTS` to agents by scoring its tokens against each registry row's
-capability string. Two resolution outcomes:
+## State the Executor maintains
 
-- **Single agent matches** → SINGLE or LOOP mode (see Step 3).
-- **Multiple agents form a pipeline** (stage N's `outputs` schema is a superset
-  of stage N+1's `inputs` schema) → CASCADE mode.
-
-If `$ARGUMENTS` does not match any agent, emit the registry and stop.
-
-## Step 3 — Choose mode
-
-| Condition                                                           | Mode    | Max loops |
-|---------------------------------------------------------------------|---------|-----------|
-| Single agent, request is idempotent / read-only                     | SINGLE  | 1         |
-| Single agent, request produces artifacts and the agent declares a quality gate | LOOP    | 3         |
-| Pipeline of two or more agents, schemas chain                       | CASCADE | 3 on the last stage with a quality gate |
-
-Any agent may be promoted from SINGLE to LOOP if its output begins with
-`STATUS: RETRY <reason>` — that is the universal retry signal.
-
-## Step 4 — Load agent files
-For every agent in the pipeline, read `agents/<id>.md`. Respect:
-- `model` in frontmatter — invoke with this exact model
-- `tools` in frontmatter — use only these tools
-- `inputs` / `outputs` — the contract the router binds against
-
-## Step 5 — Execute
-
-### SINGLE
-1. Bind inputs from `$ARGUMENTS` to the agent's declared `inputs`.
-2. Invoke the agent.
-3. Emit its output verbatim.
-
-### LOOP (max 3)
-1. Bind inputs. Initial `retry_hint = null`.
-2. Invoke the agent.
-3. If the output is a single line starting with `STATUS: RETRY <reason>` AND attempt < max:
-   - Set `retry_hint = <reason>`, increment attempt, go to step 2.
-4. Stop when the agent returns its normal output contract OR attempt == max.
-5. Emit the final output plus any collected retry reasons.
-
-### CASCADE
-Maintain a `state` dict keyed by field names.
-1. Bind stage 1's `inputs` from `$ARGUMENTS`. Run stage 1.
-2. On `STATUS: RETRY` at stage 1: one retry, then abort the cascade.
-3. Merge stage 1's `outputs` into `state`.
-4. For each subsequent stage: bind `inputs` from `state`, run it in LOOP mode,
-   merge its `outputs` into `state`.
-5. Emit a per-stage report.
-
-## Step 6 — Report
 ```
-Mode: <SINGLE|LOOP|CASCADE>
-Agents: <list>
-Steps: <per-stage pass/fail + loop count>
-Artifacts: <paths or structured outputs, if any>
-Retries: <reasons, if any>
+state = {
+  request: "<$ARGUMENTS>",
+  plan: null | Plan,
+  step_results: { "<step.id>": <worker envelope> },
+  verdicts:     { "<step.id>": <Verdict> },
+  caps_used: { retries_per_step: {<step.id>: int}, reroutes: int, replans: int }
+}
 ```
+
+All counters start at 0. Caps come from `plan.caps` (defaults in `_schema.md` §6).
+
+## The state machine
+
+```
+         ┌───────────────────────────┐
+         │ 1. Router (pre-exec)      │
+         └──────────────┬────────────┘
+         dispatch-direct│   │dispatch-planner
+               ┌────────┘   └────────┐
+               ▼                     ▼
+      ┌────────────────┐   ┌───────────────────┐
+      │ 2a. run worker │   │ 2b. Planner → Plan│
+      └───────┬────────┘   └─────────┬─────────┘
+              │                      │
+              │                      ▼
+              │           ┌────────────────────┐
+              │           │ 3. Executor walks  │
+              │           │    Plan step-by-   │
+              │           │    step            │
+              │           └──────────┬─────────┘
+              │                      │
+              └──────┬───────────────┘
+                     ▼
+         ┌────────────────────────┐
+         │ 4. Validator (if step  │
+         │    declares validate)  │
+         └────────────┬───────────┘
+                      ▼
+         ┌────────────────────────┐
+         │ 5. Router (post-exec)  │
+         │    reads Verdict +     │
+         │    state → decision    │
+         └────────────┬───────────┘
+                      │
+   ┌──────────┬───────┼───────┬──────────┐
+   ▼          ▼       ▼       ▼          ▼
+ accept    retry   re-route replan    abort
+ (done)  (back 2)  (back 1)  (back 2b) (fail)
+```
+
+## Steps the Executor performs
+
+### Step 1 — Invoke `_router` (pre-exec mode)
+Dispatch `_router` as a subagent with:
+```
+inputs = { request: state.request }
+```
+Read its `decision.action`:
+- `dispatch-direct` → go to Step 2a with `decision.target_agent`.
+- `dispatch-planner` → go to Step 2b.
+- Anything else at this stage is a protocol violation → `abort`.
+
+### Step 2a — Run a single worker (simple path)
+Dispatch `decision.target_agent` as a subagent with inputs derived from the request. Record the envelope in `state.step_results["s1"]`. Go to Step 4.
+
+### Step 2b — Invoke `_planner`
+Dispatch `_planner` as a subagent with:
+```
+inputs = { request: state.request, last_verdict: ..., last_plan: ... }  // last_* populated on replan
+```
+Store the returned Plan in `state.plan`. Go to Step 3.
+
+### Step 3 — Walk the Plan
+For each step in `state.plan.steps` (respecting `depends_on`):
+1. Resolve `inputs` — substitute every `${sN.outputs.<port>}` with the actual value from `state.step_results[sN].outputs[<port>]`.
+2. Dispatch `step.agent` as a subagent with the resolved inputs.
+3. Store the returned envelope in `state.step_results[step.id]`.
+4. If the envelope's `ok` is `false` with a `retry` signal: increment `caps_used.retries_per_step[step.id]`; if under the cap, re-dispatch with `retry_hint`; else escalate to Step 5 with a synthetic Verdict (`passed: false, suggested_action: re-route`).
+5. If the envelope's `ok` is `false` with an `abort`: go to Step 5 with a synthetic Verdict (`suggested_action: abort`).
+6. If the step's `validate: true`, go to Step 4 for this step. Otherwise continue.
+
+### Step 4 — Invoke `_validator`
+Dispatch `_validator` as a subagent with:
+```
+inputs = {
+  artifact:    state.step_results[step.id],
+  agent_id:    step.agent,
+  step_goal:   state.plan.goal + " — step: " + step.id,
+  step_inputs: <resolved inputs from Step 3>
+}
+```
+Store the returned Verdict in `state.verdicts[step.id]`. Go to Step 5.
+
+### Step 5 — Invoke `_router` (post-exec mode)
+Dispatch `_router` as a subagent with:
+```
+inputs = {
+  verdict: state.verdicts[step.id],
+  state:   { caps_used, current_step: step.id }
+}
+```
+Act on the returned `decision.action`:
+- `accept` → mark the step done; continue walking the Plan at Step 3 (next step), or finish if no steps remain.
+- `retry` → increment `caps_used.retries_per_step[step.id]`, re-dispatch step.agent with a `retry_hint` composed from the Verdict's top issue. Then Step 4 again.
+- `re-route` → increment `caps_used.reroutes`. Pick a different agent (the Router's `target_agent`, if provided; otherwise consult `agents/registry.md` for a sibling capability). Dispatch with the same inputs. Then Step 4 again.
+- `replan` → increment `caps_used.replans`. Go to Step 2b with `last_verdict` and `last_plan` set.
+- `abort` → stop with a structured failure report.
+
+## Final report
+Whether success or abort, emit exactly this block (plus structured outputs for success):
+
+```
+Plan:          <plan_id or "direct">
+Steps run:     <list of step ids>
+Caps used:     retries=<..>, reroutes=<..>, replans=<..>
+Outcome:       accept | abort
+Artifacts:     <created / updated paths, if any>
+Verdicts:      <per-step score, if any>
+```
+
+## Rules the Executor itself must honor
+- Never reason about the user's task. Delegate every decision (Router) and every decomposition (Planner).
+- Never call a worker's tools directly. Always dispatch via `Task`.
+- Never read a sub-agent's internal reasoning — only its envelope.
+- Never exceed a cap silently. Always emit a report on `abort`.
+- Never modify a sub-agent's output before passing it downstream. Bind only through the envelope's declared ports.
