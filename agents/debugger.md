@@ -39,6 +39,15 @@ Scope coupling:
 # Procedure — the reproduce → isolate → fix → verify → test-gap loop
 Do all five. Skipping any one of them produces a verdict-failing artifact.
 
+## 0. Load project context (always first)
+Load `skills/project-context` and follow its **Read** procedure on
+`.claude.md`. Use it to locate the module named in `bug_description` or
+`codebase_hint`, its dependencies, and its test path — before any
+filesystem scanning. Do not Grep the whole repo; use the cache to target
+your Read/Grep/Glob at the relevant files only. If the cache is absent or
+missing the module you need, emit `advisory: "project-context-missing"` and
+let the Executor bootstrap it.
+
 ## 1. Reproduce
 - Produce a **minimal, deterministic** reproduction. Smallest input, fewest steps, clearest failure.
 - If the bug is non-deterministic, say so in `root_cause` and capture the pattern (race, timing, environment).

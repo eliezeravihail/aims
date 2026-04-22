@@ -15,6 +15,28 @@ Read once, then operate:
 - `agents/_schema.md` — envelope, Plan, Verdict shapes.
 - `agents/registry.md` — registered worker agents.
 - `agents/_router.md`, `agents/_planner.md`, `agents/_validator.md` — infra agents.
+- `skills/project-context/SKILL.md` — how to read or build `.claude.md`, the shared project-structure cache.
+
+## Step 0 — Project-context preflight (before anything else)
+
+The shared `.claude.md` at the project root is how isolated subagents avoid
+re-discovering the codebase. Preflight:
+
+1. Check whether `.claude.md` exists at the project root.
+2. **If missing** — dispatch a single subagent to run the **Bootstrap** procedure in `skills/project-context/SKILL.md`. This subagent's only job is to build `.claude.md`. It is dispatched on **Sonnet** (structure extraction needs reasoning but not top-tier planning). When it returns, continue to Step 1.
+3. **If present but stale** (a worker later emits `advisory: "project-context-stale"`) — schedule a **Refresh** invocation of the skill as the next pipeline step before continuing the user's request.
+4. **If present and fresh** — proceed directly to Step 1.
+
+In all cases, pass `project_context_path: ".claude.md"` in the initial
+inputs to `_router` and `_planner`, so downstream dispatch can assume the
+cache exists.
+
+User can force initialization or refresh explicitly:
+```
+/project:experts init project context
+/project:experts refresh project context
+```
+Both short-circuit into a single Bootstrap/Refresh run and emit a one-line status.
 
 ## State the Executor maintains
 

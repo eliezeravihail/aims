@@ -33,6 +33,13 @@ targets it was given, no more.
 
 # Procedure
 
+## 0. Load project context
+Load `skills/project-context` and follow its **Read** procedure on
+`.claude.md`. The `Test layout` section tells you the framework and test
+directories without a filesystem walk; the per-module `Tests:` field tells
+you where a given target's tests belong. Skip this step only if the cache
+is missing — in which case emit `advisory: "project-context-missing"`.
+
 ## 1. Locate
 For each target:
 - Identify the test file that logically owns `target` (existing file if possible, new file otherwise).

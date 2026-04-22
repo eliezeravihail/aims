@@ -31,6 +31,17 @@ Never invokes worker agents. Never produces artifacts. Only decides.
 
 # Procedure
 
+## Step 0 — Load project context (both modes)
+Load `skills/project-context` and follow its **Read** procedure on `.claude.md`.
+Use the cached layout/modules to refine your classification and target-agent
+choice — for example, a "fix the bug in the auth module" request is
+unambiguous only if the cache names an auth module. Do not Grep/Glob the
+codebase; the Executor guaranteed the cache exists before dispatching you.
+
+If the cache turns out to be stale relative to your decision surface, still
+proceed — emit `advisory: "project-context-stale"` in your envelope so the
+Executor schedules a refresh on the next step.
+
 ## Mode A — Pre-execution (no verdict)
 1. Read `agents/registry.md` — the list of registered workers.
 2. Classify the request into a **scope** (see §4 below), and choose an `action` consistent with that scope:

@@ -33,8 +33,20 @@ Only the envelope crosses the boundary. That is the core cost-control mechanism.
 - Every agent file conforms to `agents/_schema.md` (frontmatter + envelope + Plan + Verdict shapes).
 - Agent files are pure behavior. Domain playbooks live in skills.
 - Producing agents and `_validator` both load `skills/quality-analysis` — the shared quality rubric is the contract between them.
+- Every infra agent and worker loads `skills/project-context` at step 0 of its procedure, and reads `.claude.md` (the shared project-structure cache) before any wide Grep/Glob/Read. The Executor bootstraps `.claude.md` on first `/project:experts` run if it doesn't exist.
 - Only `agents/registry.md` lists workers. Infrastructure agents are not registered there (they are always present).
 - Route all multi-agent work through `/project:experts`. Do not dispatch workers directly.
+
+### Shared project cache (`.claude.md`)
+A per-checkout (gitignored) markdown file summarising the target codebase:
+layout, modules, test layout, conventions, known invariants. Built from
+ground-truth sources (`pyproject.toml`, `package.json`, `CMakeLists.txt`, …)
+by the **Bootstrap** procedure in `skills/project-context/SKILL.md`.
+- Missing → Executor runs Bootstrap before the first worker dispatch.
+- Stale (worker emits `advisory: "project-context-stale"`) → Executor runs Refresh as the next step.
+- User can force: `/project:experts init project context` or `/project:experts refresh project context`.
+
+No agent re-crawls the filesystem when the cache can answer the question.
 
 ### Failure taxonomy
 | Signal    | Raised by                | Router response                              |
@@ -46,7 +58,7 @@ Only the envelope crosses the boundary. That is the core cost-control mechanism.
 
 ### Adding a worker agent
 1. Create `agents/<id>.md`, conform to `_schema.md`.
-2. In the body, load `skills/quality-analysis` and treat its pre-submit checklist as mandatory.
+2. In the body, declare "step 0" — load `skills/project-context` and `skills/quality-analysis`, apply their procedures as preconditions.
 3. Append one row to `agents/registry.md`.
 4. Done — Planner and Router see the agent automatically; no further wiring.
 

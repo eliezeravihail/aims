@@ -31,6 +31,7 @@ Called by `_router` when the request is classified as complex, or on
   address the verdict's issues in the new Plan, not reproduce the old shape.
 
 # Procedure
+0. Load `skills/project-context` and follow its **Read** procedure on `.claude.md`. Use the module graph and test layout to shape the Plan — step targets (files, modules, test dirs) should match what the cache records. If the cache is stale, continue anyway and emit `advisory: "project-context-stale"` in your envelope.
 1. Read `agents/registry.md` — the registry of worker agents. Treat it as the *only* set of agents that may appear in the Plan.
 2. Read `agents/_schema.md` §3 — the Plan shape.
 3. Decompose the request into ordered steps:

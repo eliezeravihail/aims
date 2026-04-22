@@ -41,6 +41,17 @@ Two modes:
 
 # Procedure
 
+## 0. Load project context (both modes)
+Load `skills/project-context` and follow its **Read** procedure on
+`.claude.md`. The module graph and `Test layout` are the foundation for
+risk mapping: you cannot identify a risk surface for a module you have not
+located. If the cache is missing, emit `advisory: "project-context-missing"`
+and stop — you are not the right agent to bootstrap it.
+
+In `mode: assess`, the cache's `Sources consulted` footer also tells you
+which extractors ran; use that to calibrate confidence in the coverage
+report.
+
 ## `mode: design`
 1. Read `task_description` and `plan_context`. Form a mental model of what will exist when the Plan finishes executing.
 2. Identify the **risk surface**: inputs, external boundaries (APIs, files, time), state transitions, invariants. Tests exist primarily to guard risk surfaces.
