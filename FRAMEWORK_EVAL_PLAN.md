@@ -6,6 +6,17 @@ itself, not just whether the feature works. Every pilot so far exposed a
 specific weakness; the hypotheses below were designed against each one.
 Confirm or refute.
 
+## Which mode to test?
+
+The framework now has two invocation modes:
+
+- **`/experts`** (lean, default) — single dispatch with skills preloaded. Strong baselines.
+- **`/agents-experts`** (pipeline) — decomposed Router → Planner → workers → Validator. Weak baselines.
+
+**Every pilot report must state which command ran.** Pilots on the same
+task across both modes are valuable for comparison but are not required
+— if you only run one mode, say so and note which.
+
 ## Before you start
 
 ### 1. Choose the feature
@@ -85,11 +96,14 @@ this task different?
 
 **H6: Cost ratio is rising or falling.** Track pipeline tokens / baseline
 tokens across pilots:
-- LCS (trivial):       5.3×
-- cookiecutter (complex): 4.1×
-- TODO (holistic, feature): 6.8×
-Target: the ratio should drop over time as the framework matures. If it
-rises, something regressed.
+- LCS (pipeline, trivial):       5.3× (tokens)
+- cookiecutter (pipeline, medium): 4.1× (tokens) / 0.93× ($)
+- TODO (pipeline, feature): 6.8× (tokens)
+- contacts (pipeline, holistic → baseline): 2.23× (tokens)
+- **cookiecutter (lean, medium): 1.13× (tokens) / 0.15× ($)** — dual-mode committed
+Target: **lean-mode ratio** should hold ≤ 1.5× in $ across tasks. Pipeline-mode
+ratio should drop only when the Router makes a better scope choice, not when
+we hack the pipeline itself.
 
 ### 8. Update the evidence, not the docs
 When a hypothesis resolves, add one row to the scorecard — do not rewrite

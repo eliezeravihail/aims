@@ -38,14 +38,19 @@ class Executor:
     # ---- public entrypoint ---------------------------------------------
 
     def run(self, request: str, cwd: str) -> ExecutionState:
+        """Pipeline-mode entry point. `/agents-experts` invokes this path.
+
+        Dispatches `_router_pipeline` for triage, then walks the resulting
+        action (trivial / simple / baseline / planner).
+        """
         state = ExecutionState(request=request, cwd=cwd)
-        self.tracer.emit(kind="dispatch", data={"phase": "start", "request": request})
+        self.tracer.emit(kind="dispatch", data={"phase": "start", "mode": "pipeline", "request": request})
 
         # Step 0 — project-context preflight
         self._preflight_context(state)
 
-        # Step 1 — Router (pre-exec)
-        decision = self._invoke_infra("_router", {"request": request}, state)
+        # Step 1 — Pipeline Router (pre-exec)
+        decision = self._invoke_infra("_router_pipeline", {"request": request}, state)
         action = decision.get("action")
         scope = decision.get("scope")
 
@@ -58,8 +63,33 @@ class Executor:
         elif action == "dispatch-planner":
             self._run_planned(state)
         else:
-            raise ExecutorError(f"Router returned invalid pre-exec action: {action!r}")
+            raise ExecutorError(f"Pipeline router returned invalid pre-exec action: {action!r}")
 
+        self.tracer.emit(kind="outcome", data={"outcome": state.outcome or "accept"})
+        return state
+
+    def run_lean(self, request: str, cwd: str) -> ExecutionState:
+        """Lean-mode entry point. `/experts` invokes this path.
+
+        Dispatches the lean Router `_router`, which returns `{model,
+        skills_to_load, rationale}`. A single worker on the chosen model
+        then executes end-to-end with those skills preloaded in its system
+        context. Optional terminal Validator.
+        """
+        state = ExecutionState(request=request, cwd=cwd)
+        self.tracer.emit(kind="dispatch", data={"phase": "start", "mode": "lean", "request": request})
+
+        # Step 0 — project-context preflight (shared with pipeline mode)
+        self._preflight_context(state)
+
+        # Step 1 — Lean Router
+        decision = self._invoke_infra("_router", {"request": request}, state)
+        action = decision.get("action")
+        if action != "dispatch-lean":
+            raise ExecutorError(f"Lean router returned invalid action: {action!r}")
+
+        # Step 2 — Single worker with skills preloaded
+        self._run_lean(state, decision)
         self.tracer.emit(kind="outcome", data={"outcome": state.outcome or "accept"})
         return state
 
@@ -97,6 +127,92 @@ class Executor:
             state.outcome_reason = (envelope_dict.get("abort") or envelope_dict.get("retry"))["reason"]
             return
         state.outcome = "accept"
+
+    def _run_lean(self, state: ExecutionState, decision: dict) -> None:
+        """Lean path: one worker on the chosen model, with the chosen
+        methodology skills loaded in its system context.
+
+        Dispatched when the lean Router returns {action: "dispatch-lean",
+        model, skills_to_load, rationale}. The worker executes the task
+        end-to-end in a single context. Optional terminal Validator when
+        the worker's artefact declares write-fs effects.
+        """
+        step_id = "s1"
+        model = decision.get("model")
+        skills = decision.get("skills_to_load") or []
+        if not model:
+            state.outcome = "abort"
+            state.outcome_reason = "lean router did not specify a model"
+            return
+
+        # Compose a synthetic worker spec: a thin role statement plus the
+        # full text of each requested skill. Dispatching to this synthetic
+        # spec results in the chosen model receiving the methodology content
+        # in its system prompt — exactly the single-context pattern.
+        body_parts = ["# Role\nYou are a Claude Code worker invoked in lean mode. "
+                      "Execute the user's request end-to-end following the methodology "
+                      "skills loaded below. Emit one JSON envelope per the schema "
+                      "in `agents/_schema.md` §2."]
+        skill_texts = self._load_skill_bodies(state.cwd, skills)
+        for sname, stext in skill_texts.items():
+            body_parts.append(f"\n\n# Loaded skill: {sname}\n{stext}")
+
+        synthetic = AgentSpec(
+            id=f"_lean_worker({model})",
+            model=model,
+            tools=("Read", "Write", "Edit", "Bash", "Grep", "Glob"),
+            capabilities=tuple(skills),
+            inputs={"request": "string"},
+            outputs={},
+            effects=("read-fs", "write-fs"),
+            idempotent=False,
+            max_retries=1,
+            on_failure="abort",
+            body="\n".join(body_parts),
+            path=Path("(synthetic)"),
+        )
+
+        envelope_dict = self._dispatch_worker(synthetic, {"request": state.request}, step_id)
+        state.step_results[step_id] = envelope_dict
+        if not envelope_dict["ok"]:
+            state.outcome = "abort"
+            state.outcome_reason = (envelope_dict.get("abort") or envelope_dict.get("retry") or {}).get("reason", "lean worker failed")
+            return
+
+        # Optional terminal Validator when the artefact has write effects.
+        outputs = envelope_dict.get("outputs") or {}
+        has_write_effects = any(k in outputs for k in ("created_files", "fix", "tests_added"))
+        if has_write_effects and self.registry.has_infra("_validator"):
+            verdict = self._invoke_infra("_validator", {
+                "artifact": envelope_dict,
+                "agent_id": synthetic.id,
+                "step_goal": state.request,
+                "step_inputs": {"request": state.request},
+            }, state)
+            state.verdicts[step_id] = verdict
+            if not verdict.get("passed", False):
+                state.outcome = "abort"
+                state.outcome_reason = "validator rejected lean worker artifact"
+                return
+
+        state.outcome = "accept"
+
+    def _load_skill_bodies(self, cwd: str, skills: list) -> dict:
+        """Read SKILL.md bodies for the requested skill names and return
+        {name: text}. Skills live at <repo_root>/skills/<name>/SKILL.md.
+        Unknown skills are silently skipped — the Router is expected to
+        reference only skills that exist, and the Validator will catch any
+        downstream quality regression."""
+        out: dict = {}
+        # The repo root is the directory containing `agents/`; we accept it
+        # via an env var or default to the harness's own parent directory.
+        import os
+        repo_root = Path(os.environ.get("ROUTING_REPO_ROOT", Path(__file__).parent.parent))
+        for name in skills:
+            skill_file = repo_root / "skills" / name / "SKILL.md"
+            if skill_file.exists():
+                out[name] = skill_file.read_text()
+        return out
 
     def _run_single(self, agent_id: str, state: ExecutionState, *, validate: bool) -> None:
         step_id = "s1"
@@ -172,7 +288,7 @@ class Executor:
         state.verdicts[step_id] = verdict
 
         decision = self._invoke_infra(
-            "_router",
+            "_router_pipeline",
             {
                 "verdict": verdict,
                 "state": {
@@ -232,7 +348,7 @@ class Executor:
         # Infra agents return an envelope whose `outputs` contains one typed
         # payload (decision / plan / verdict). Flatten to that payload.
         outputs = envelope.outputs or {}
-        if role == "_router":
+        if role in ("_router", "_router_pipeline"):
             return outputs.get("decision", outputs)
         if role == "_planner":
             return outputs.get("plan", outputs)

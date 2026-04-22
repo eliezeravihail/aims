@@ -72,7 +72,7 @@ def plan(*steps, goal="test goal", caps=None):
 def test_trivial_dispatch_skips_validator(registry, tmp_cwd):
     """scope=trivial: Router → worker, no Validator."""
     responses = {
-        "_router": lambda inp: router_decision(
+        "_router_pipeline": lambda inp: router_decision(
             "dispatch-trivial", scope="trivial", target_agent="debugger"
         ),
         "debugger": lambda inp: env.ok({
@@ -92,7 +92,7 @@ def test_trivial_dispatch_skips_validator(registry, tmp_cwd):
 
 def test_simple_dispatch_invokes_validator(registry, tmp_cwd):
     responses = {
-        "_router": _twoway_router("dispatch-simple", "debugger"),
+        "_router_pipeline": _twoway_router("dispatch-simple", "debugger"),
         "_validator": lambda inp: verdict(score=0.85),
         "debugger": lambda inp: env.ok({
             "root_cause": "off-by-one in loop bound",
@@ -129,7 +129,7 @@ def test_complex_plan_cascade(registry, tmp_cwd):
     ]
 
     responses = {
-        "_router": _twoway_router("dispatch-planner"),
+        "_router_pipeline": _twoway_router("dispatch-planner"),
         "_planner": lambda inp: plan(
             {"id": "s1", "agent": "debugger",
              "inputs": {"bug_description": "${input}"},
@@ -195,7 +195,7 @@ def test_retry_path_when_validator_asks(registry, tmp_cwd):
     ])
 
     responses = {
-        "_router": lambda inp: next(router_decisions),
+        "_router_pipeline": lambda inp: next(router_decisions),
         "_validator": lambda inp: next(verdicts_iter),
         "debugger": debugger,
     }
@@ -228,7 +228,7 @@ def test_retry_in_plan_step_feeds_hint_back(registry, tmp_cwd):
         )
 
     responses = {
-        "_router": _twoway_router("dispatch-planner"),
+        "_router_pipeline": _twoway_router("dispatch-planner"),
         "_planner": lambda inp: env.ok({"plan": {
             "schema_version": 1,
             "plan_id": "retry_pilot",
@@ -285,7 +285,7 @@ def test_lying_artifact_is_rejected_on_objective_check(registry, tmp_cwd):
         router_decision("abort", rationale="objective_checks contradict claim"),
     ])
     responses = {
-        "_router": lambda inp: next(retry_decisions),
+        "_router_pipeline": lambda inp: next(retry_decisions),
         "_validator": validator,
         "debugger": debugger,
     }
@@ -315,7 +315,7 @@ def test_malformed_envelope_becomes_abort(registry, tmp_cwd):
             return super().dispatch(spec, inputs)
 
     responses = {
-        "_router": lambda inp: router_decision(
+        "_router_pipeline": lambda inp: router_decision(
             "dispatch-trivial", scope="trivial", target_agent="debugger"
         ),
     }
@@ -329,7 +329,7 @@ def test_malformed_envelope_becomes_abort(registry, tmp_cwd):
 def test_tracer_records_dispatches(registry, tmp_cwd):
     tracer = Tracer()
     responses = {
-        "_router": lambda inp: router_decision(
+        "_router_pipeline": lambda inp: router_decision(
             "dispatch-trivial", scope="trivial", target_agent="debugger"
         ),
         "debugger": lambda inp: env.ok({
@@ -350,7 +350,7 @@ def test_baseline_dispatch_skips_planner_and_validator(registry, tmp_cwd):
     motivated by pilot data showing a single Opus dispatch outperforms a
     decomposed pipeline on self-contained feature builds."""
     responses = {
-        "_router": lambda inp: router_decision(
+        "_router_pipeline": lambda inp: router_decision(
             "dispatch-baseline", scope="holistic", target_agent=None
         ),
         "_baseline": lambda inp: env.ok({
@@ -388,7 +388,7 @@ def test_baseline_missing_infra_agent_aborts_gracefully(tmp_cwd):
     reg.infra = lambda r: (_ for _ in ()).throw(KeyError("_baseline missing")) if r == "_baseline" else orig_infra(r)
 
     responses = {
-        "_router": lambda inp: router_decision(
+        "_router_pipeline": lambda inp: router_decision(
             "dispatch-baseline", scope="holistic", target_agent=None
         ),
     }
@@ -396,6 +396,109 @@ def test_baseline_missing_infra_agent_aborts_gracefully(tmp_cwd):
     state = ex.run("build X", cwd=str(tmp_cwd))
     assert state.outcome == "abort"
     assert "_baseline" in state.outcome_reason
+
+
+# -- lean-mode tests (run_lean) -----------------------------------------
+
+
+def test_lean_dispatch_single_worker_with_skills(registry, tmp_cwd):
+    """Lean Router → single worker on chosen model with skills loaded.
+    No Planner, no Validator invoked (worker outputs have no write-effect ports)."""
+    captured_worker_inputs = {}
+
+    def capture_worker(inputs):
+        captured_worker_inputs.update(inputs)
+        return env.ok({
+            "summary": "explained it in one dispatch",
+            "answer": "42",
+        })
+
+    responses = {
+        "_router": lambda inp: env.ok({"decision": {
+            "action": "dispatch-lean",
+            "model": "claude-sonnet-4-6",
+            "skills_to_load": ["project-context"],
+            "rationale": "read-only explanation",
+        }}),
+    }
+    # Route the synthetic lean worker — MockDispatcher matches by spec.id
+    # prefix since the id is f"_lean_worker({model})".
+    class LeanMock(MockDispatcher):
+        def dispatch(self, spec, inputs):
+            if spec.id.startswith("_lean_worker"):
+                self.calls.append((spec.id, inputs))
+                envelope = capture_worker(inputs)
+                import json
+                return __import__("harness.dispatcher", fromlist=["DispatchResult"]).DispatchResult(
+                    text=json.dumps(envelope),
+                    tokens_in=len(json.dumps(inputs)) // 4,
+                    tokens_out=len(json.dumps(envelope)) // 4,
+                    duration_ms=1.0, model=spec.model,
+                )
+            return super().dispatch(spec, inputs)
+
+    ex = Executor(registry, LeanMock(responses), Tracer())
+    state = ex.run_lean("explain the project", cwd=str(tmp_cwd))
+
+    assert state.outcome == "accept"
+    assert "s1" in state.step_results
+    assert state.verdicts == {}   # no Validator — no write effects claimed
+    assert captured_worker_inputs == {"request": "explain the project"}
+
+
+def test_lean_dispatch_triggers_validator_on_write_effects(registry, tmp_cwd):
+    """When the lean worker's envelope has write-effect ports (created_files,
+    fix, or tests_added), the Validator must run as a terminal check."""
+    def worker(inputs):
+        return env.ok({
+            "created_files": ["new.py"],
+            "summary": "wrote a file",
+            "verification": "python new.py",
+        })
+
+    verdicts_iter = iter([verdict(score=0.9)])
+
+    responses = {
+        "_router": lambda inp: env.ok({"decision": {
+            "action": "dispatch-lean",
+            "model": "claude-sonnet-4-6",
+            "skills_to_load": ["feature-build"],
+            "rationale": "feature build",
+        }}),
+        "_validator": lambda inp: next(verdicts_iter),
+    }
+
+    class LeanMock(MockDispatcher):
+        def dispatch(self, spec, inputs):
+            if spec.id.startswith("_lean_worker"):
+                import json
+                envelope = worker(inputs)
+                return __import__("harness.dispatcher", fromlist=["DispatchResult"]).DispatchResult(
+                    text=json.dumps(envelope),
+                    tokens_in=10, tokens_out=10, duration_ms=1.0, model=spec.model,
+                )
+            return super().dispatch(spec, inputs)
+
+    ex = Executor(registry, LeanMock(responses), Tracer())
+    state = ex.run_lean("build a CLI", cwd=str(tmp_cwd))
+
+    assert state.outcome == "accept"
+    assert state.verdicts["s1"]["passed"] is True
+
+
+def test_lean_rejects_non_lean_router_action(registry, tmp_cwd):
+    """The lean Router must emit action='dispatch-lean'. Anything else is
+    a protocol violation."""
+    responses = {
+        "_router": lambda inp: env.ok({"decision": {
+            "action": "dispatch-planner",   # wrong mode — lean path must reject
+            "rationale": "oops",
+        }}),
+    }
+    ex = Executor(registry, MockDispatcher(responses), Tracer())
+    import pytest
+    with pytest.raises(Exception, match="Lean router returned invalid action"):
+        ex.run_lean("do it", cwd=str(tmp_cwd))
 
 
 # -- helpers -------------------------------------------------------------

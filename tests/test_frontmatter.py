@@ -10,7 +10,8 @@ AGENTS = ROOT / "agents"
 
 
 @pytest.mark.parametrize("name", [
-    "_router", "_planner", "_validator", "debugger", "tester", "test_strategist",
+    "_router", "_router_pipeline", "_planner", "_validator", "_baseline",
+    "debugger", "tester", "test_strategist", "implementer",
 ])
 def test_existing_agents_parse(name):
     spec = load(AGENTS / f"{name}.md")

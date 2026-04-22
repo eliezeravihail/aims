@@ -1,8 +1,13 @@
 """Load the agent registry (agents/registry.md) and provide lookups.
 
 The registry is the authoritative list of worker agents the Router and
-Planner may choose from. Infrastructure agents (_router, _planner,
-_validator) are always present and loaded separately.
+Planner may choose from. Infrastructure agents (_router, _router_pipeline,
+_planner, _validator, _baseline) are always present and loaded separately.
+Both modes use this same registry:
+
+- `/experts` (lean) uses `_router` (lean Router) + one worker on the right model.
+- `/agents-experts` (pipeline) uses `_router_pipeline` + `_planner` + `_validator`
+  + multiple workers.
 """
 from __future__ import annotations
 
@@ -56,7 +61,7 @@ class Registry:
             entries[agent_id] = RegistryEntry(agent_id, file, cap, spec)
 
         infra: dict[str, AgentSpec] = {}
-        for infra_id in ("_router", "_planner", "_validator", "_baseline"):
+        for infra_id in ("_router", "_router_pipeline", "_planner", "_validator", "_baseline"):
             infra_file = agents_dir / f"{infra_id}.md"
             if infra_file.exists():
                 infra[infra_id] = load_spec(infra_file)
@@ -80,3 +85,6 @@ class Registry:
 
     def has_worker(self, agent_id: str) -> bool:
         return agent_id in self._entries
+
+    def has_infra(self, role: str) -> bool:
+        return role in self._infra
