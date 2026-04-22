@@ -9,7 +9,7 @@ ROOT = Path(__file__).parent.parent
 def test_registry_loads_current_workers():
     reg = Registry.load(ROOT / "agents")
     names = sorted(reg.workers())
-    assert names == ["debugger", "test_strategist", "tester"]
+    assert names == ["debugger", "implementer", "test_strategist", "tester"]
 
 
 def test_registry_exposes_infra_agents():
