@@ -3,20 +3,21 @@
 ## Project structure
 
 ```
-agents/          # Markdown agent specs (router, planner, workers, validator)
-skills/          # Reusable methodology skills loaded into worker system prompts
-harness/         # Python executor that runs the agent pipeline
-schemas/         # JSON schemas for envelope validation
-tests/           # pytest suite (47 tests)
-.claude/commands/ # Slash commands: experts.md (lean), agents-experts.md (pipeline)
+agents/                 # Markdown agent specs (router, planner, workers, validator)
+skills/                 # Reusable methodology skills loaded into worker system prompts
+commands/               # Slash commands: experts.md (lean), agents-experts.md (pipeline)
+harness/                # Python executor that runs the agent pipeline
+schemas/                # JSON schemas for envelope validation
+tests/                  # pytest suite (47 tests)
+.claude-plugin/plugin.json  # Claude Code plugin manifest
 ```
 
 ## Two invocation modes
 
 | Mode | Command | Use when |
 |------|---------|----------|
-| Lean (default) | `/project:experts <task>` | Claude Opus / Sonnet baseline — single dispatch |
-| Pipeline | `/project:agents-experts <task>` | Copilot / weaker model — decomposed pipeline |
+| Lean (default) | `/experts <task>` | Claude Opus / Sonnet baseline — single dispatch |
+| Pipeline | `/agents-experts <task>` | Copilot / weaker model — decomposed pipeline |
 
 ## Running tests
 

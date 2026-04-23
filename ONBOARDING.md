@@ -2,13 +2,31 @@
 
 This repo has two independent surfaces.
 
+## Install
+
+```bash
+claude plugin install eliezeravihail/expert-system
+```
+
+Or for local development:
+
+```bash
+git clone https://github.com/eliezeravihail/expert-system.git
+cd expert-system
+claude --plugin-dir .
+```
+
+See `README.md` §Installation for VS Code Copilot and the Python harness.
+
 ## Agent routing system
-1. Install the plugin.
-2. Read `agents/router.md` to see which agents are registered.
-3. Invoke one with `/project:experts <request>` — the router picks SINGLE, LOOP, or CASCADE.
-4. To add an agent: create `agents/<id>.md` and append a row to `agents/router.md`.
+
+1. Invoke the lean router (default, for Opus/Sonnet): `/experts <request>`.
+2. For weaker baselines (Copilot, smaller OSS) use the pipeline mode: `/agents-experts <request>`.
+3. Read `agents/registry.md` to see which workers are registered.
+4. To add a worker: create `agents/<id>.md`, append one row to `agents/registry.md`, and (for lean) add a line to the decision rule in `agents/_router.md`.
 
 ## Books knowledge library (separate concern)
-1. Check coverage: `/project:books-status`
-2. Query the KB: `/project:query-knowledge <topic>`
-3. Encode a local source: `/project:ingest-local-sources`
+
+1. Check coverage: `/books-status`
+2. Query the KB: `/query-knowledge <topic>`
+3. Encode a local source: `/ingest-local-sources`
