@@ -1,4 +1,4 @@
-# knowledge-library-agents
+# expert-system
 
 Two independent concerns live in this repo:
 
@@ -13,19 +13,67 @@ Two independent concerns live in this repo:
 
 ---
 
+## Installation
+
+### As a Claude Code plugin (recommended)
+
+```bash
+claude plugin install eliezeravihail/expert-system
+```
+
+This registers the five slash commands below (`/experts`, `/agents-experts`,
+`/books-status`, `/query-knowledge`, `/ingest-local-sources`) in your
+Claude Code session. Auto-discovered from `commands/`, `agents/`, and
+`skills/` at the repo root per the
+[plugin spec](https://code.claude.com/docs/en/plugins-reference.md).
+
+### Local development
+
+Clone the repo and point Claude Code at it directly:
+
+```bash
+git clone https://github.com/eliezeravihail/expert-system.git
+cd expert-system
+claude --plugin-dir .
+```
+
+Changes to `commands/`, `agents/`, or `skills/` are picked up on the next
+Claude Code restart — no reinstall needed.
+
+### VS Code Copilot (pipeline mode)
+
+For Copilot users, two global agents are provided under `.github/agents/`:
+
+- `experts.agent.md` — lean mode
+- `agents-experts.agent.md` — pipeline mode
+
+Copy either into your VS Code user profile's agents directory to enable
+them in Copilot agent mode. See `.github/copilot-instructions.md`.
+
+### Python harness (for running pilots / CI)
+
+```bash
+pip install -e .              # installs the `harness` package only
+pip install -e '.[live]'      # add Anthropic SDK for live dispatch
+pip install -e '.[dev]'       # add pytest for the test suite
+python -m pytest tests/       # 47 tests
+```
+
+---
+
 ## Agent routing system
 
 ### Two modes
 
-| Command                    | When to use                                              | What runs                                                |
-|----------------------------|----------------------------------------------------------|----------------------------------------------------------|
-| `/project:experts` (default) | Strong baselines (Claude Opus / Sonnet).               | One lean worker with methodology skills preloaded.       |
-| `/project:agents-experts`  | Weak baselines (Copilot, smaller OSS, constrained clouds). | Decomposed pipeline: Router → Planner → workers → Validator loop. |
+| Command            | When to use                                              | What runs                                                |
+|--------------------|----------------------------------------------------------|----------------------------------------------------------|
+| `/experts` (default) | Strong baselines (Claude Opus / Sonnet).               | One lean worker with methodology skills preloaded.       |
+| `/agents-experts`  | Weak baselines (Copilot, smaller OSS, constrained clouds). | Decomposed pipeline: Router → Planner → workers → Validator loop. |
 
 ### `/experts` (lean) — the default
 
 ```
-User → /project:experts "<request>"
+User → /experts "<request>"
          │
          ▼
   Router (Haiku, tools:[]) ── emits {model, skills_to_load, rationale}
@@ -48,7 +96,7 @@ The lean mode exposes that pattern as a first-class command.
 ### `/agents-experts` (pipeline) — for weaker baselines
 
 ```
-User → /project:agents-experts "<request>"
+User → /agents-experts "<request>"
          │
          ▼
   Router (Haiku) ── triage + post-exec dispatch ── cheap
@@ -156,6 +204,6 @@ See `PILOT_*_REPORT.md` at repo root for the write-ups and
 
 Decoupled from the routing system. Slash commands:
 
-- `/project:query-knowledge <topic>` — query the knowledge base
-- `/project:ingest-local-sources` — encode a local PDF or text file
-- `/project:books-status` — coverage and quality report
+- `/query-knowledge <topic>` — query the knowledge base
+- `/ingest-local-sources` — encode a local PDF or text file
+- `/books-status` — coverage and quality report
