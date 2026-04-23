@@ -17,28 +17,36 @@ Two independent concerns live in this repo:
 
 ### As a Claude Code plugin (recommended)
 
+Claude Code installs plugins via a marketplace. Add this repo as a
+marketplace, then install the plugin from it:
+
 ```bash
-claude plugin install eliezeravihail/expert-system
+claude plugin marketplace add https://github.com/eliezeravihail/expert-system.git
+claude plugin install expert-system@expert-system
 ```
 
-This registers the five slash commands below (`/experts`, `/agents-experts`,
-`/books-status`, `/query-knowledge`, `/ingest-local-sources`) in your
-Claude Code session. Auto-discovered from `commands/`, `agents/`, and
-`skills/` at the repo root per the
+(The `<name>@<marketplace>` form is required; both names happen to be
+`expert-system` here.) Restart Claude Code after install. This registers
+the five slash commands (`/experts`, `/agents-experts`, `/books-status`,
+`/query-knowledge`, `/ingest-local-sources`) — auto-discovered from
+`commands/`, `agents/`, and `skills/` at the repo root per the
 [plugin spec](https://code.claude.com/docs/en/plugins-reference.md).
+
+Verify with `claude plugin list`.
 
 ### Local development
 
-Clone the repo and point Claude Code at it directly:
+Clone the repo and add the working copy as a local marketplace:
 
 ```bash
 git clone https://github.com/eliezeravihail/expert-system.git
 cd expert-system
-claude --plugin-dir .
+claude plugin marketplace add .
+claude plugin install expert-system@expert-system
 ```
 
-Changes to `commands/`, `agents/`, or `skills/` are picked up on the next
-Claude Code restart — no reinstall needed.
+Changes to `commands/`, `agents/`, or `skills/` are picked up after
+`claude plugin marketplace update expert-system` + restart.
 
 ### VS Code Copilot (pipeline mode)
 

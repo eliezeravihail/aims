@@ -5,7 +5,8 @@ This repo has two independent surfaces.
 ## Install
 
 ```bash
-claude plugin install eliezeravihail/expert-system
+claude plugin marketplace add https://github.com/eliezeravihail/expert-system.git
+claude plugin install expert-system@expert-system
 ```
 
 Or for local development:
@@ -13,7 +14,8 @@ Or for local development:
 ```bash
 git clone https://github.com/eliezeravihail/expert-system.git
 cd expert-system
-claude --plugin-dir .
+claude plugin marketplace add .
+claude plugin install expert-system@expert-system
 ```
 
 See `README.md` §Installation for VS Code Copilot and the Python harness.

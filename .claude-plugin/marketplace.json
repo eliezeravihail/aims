@@ -1,0 +1,17 @@
+{
+  "name": "expert-system",
+  "metadata": {
+    "description": "Tiered agent routing system for software development."
+  },
+  "owner": {
+    "name": "Eliezer Avihail",
+    "url": "https://github.com/eliezeravihail"
+  },
+  "plugins": [
+    {
+      "name": "expert-system",
+      "source": "./",
+      "description": "Tiered agent routing system for software development — lean single-dispatch and full decomposed pipeline modes."
+    }
+  ]
+}
