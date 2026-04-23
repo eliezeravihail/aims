@@ -193,17 +193,4 @@ Four pilots are committed:
   routed to `dispatch-baseline` (pipeline holistic escape hatch); cost
   ratio dropped from 6.8× to 2.23×.
 - **`tests/pilot_medium_lean/`** — cookiecutter-4 on **lean mode**.
-  Commits the numbers that justified promoting lean to the default.
-
-See `PILOT_*_REPORT.md` at repo root for the write-ups and
-`FRAMEWORK_EVAL_PLAN.md` for how to run new pilots.
-
----
-
-## Books knowledge library (separate, pre-existing)
-
-Decoupled from the routing system. Slash commands:
-
-- `/query-knowledge <topic>` — query the knowledge base
-- `/ingest-local-sources` — encode a local PDF or text file
-- `/books-status` — coverage and quality report
+  Commits the numbers that justified promoting lean to the default.--
