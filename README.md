@@ -27,9 +27,8 @@ claude plugin install expert-system@expert-system
 
 (The `<name>@<marketplace>` form is required; both names happen to be
 `expert-system` here.) Restart Claude Code after install. This registers
-the five slash commands (`/experts`, `/agents-experts`, `/books-status`,
-`/query-knowledge`, `/ingest-local-sources`) — auto-discovered from
-`commands/`, `agents/`, and `skills/` at the repo root per the
+the two slash commands (`/experts`, `/agents-experts`) — auto-discovered
+from `commands/`, `agents/`, and `skills/` at the repo root per the
 [plugin spec](https://code.claude.com/docs/en/plugins-reference.md).
 
 Verify with `claude plugin list`.
