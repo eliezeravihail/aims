@@ -12,6 +12,9 @@ dependencies = [
 live = ["anthropic>=0.40"]
 dev  = ["pytest>=8", "pytest-xdist>=3"]
 
+[tool.setuptools.packages.find]
+include = ["harness*"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
