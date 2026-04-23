@@ -1,0 +1,42 @@
+{
+  "name": "expert-system",
+  "version": "1.0.0",
+  "description": "Tiered agent routing system for software development — lean single-dispatch and full decomposed pipeline modes.",
+  "author": {
+    "name": "Eliezer Avihail",
+    "url": "https://github.com/eliezeravihail"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eliezeravihail/expert-system.git"
+  },
+  "commands": [
+    {
+      "name": "experts",
+      "path": ".claude/commands/experts.md",
+      "description": "Lean mode: Router → single Worker with methodology skills preloaded (use with Claude Opus/Sonnet)"
+    },
+    {
+      "name": "agents-experts",
+      "path": ".claude/commands/agents-experts.md",
+      "description": "Pipeline mode: Router → Planner → Workers → Validator loop (use with Copilot or weaker models)"
+    },
+    {
+      "name": "books-status",
+      "path": ".claude/commands/books-status.md",
+      "description": "Show knowledge library coverage and quality report"
+    },
+    {
+      "name": "query-knowledge",
+      "path": ".claude/commands/query-knowledge.md",
+      "description": "Query the BOOKS knowledge base"
+    },
+    {
+      "name": "ingest-local-sources",
+      "path": ".claude/commands/ingest-local-sources.md",
+      "description": "Encode a local PDF or text file into the knowledge base"
+    }
+  ],
+  "mcpServers": []
+}
