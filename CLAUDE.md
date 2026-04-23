@@ -1,16 +1,7 @@
-# knowledge-library-agents
+# expert-system
 
-Two independent concerns live in this repo:
-
-1. **Agent routing system** — generic orchestration infrastructure in
-   `agents/`, `skills/`, `harness/`, and the two slash commands.
-   Domain-neutral.
-2. **Books knowledge library** (pre-existing, separate concern) — data and
-   skills under `skills/BOOKS/`, `books-init-queue.yaml`, and the
-   `query-knowledge` / `ingest-local-sources` / `books-status` slash commands.
-
-The two are decoupled. A book-related worker agent, if reintroduced,
-registers in `agents/registry.md` like any other worker — no special casing.
+Generic agent routing infrastructure in `agents/`, `skills/`, `harness/`,
+and two slash commands. Domain-neutral.
 
 ---
 
@@ -135,16 +126,3 @@ The markdown files are the **specification**; `harness/` is the **implementation
 - `harness/cli.py` — `python -m harness.cli run "<request>"`.
 
 Run tests: `python -m pytest tests/`. 47 tests cover envelope, frontmatter, registry, state, and executor state-machine transitions for both modes.
-
----
-
-## Books knowledge library (separate concern)
-
-Entrypoints (unchanged, independent of the routing system):
-- `/project:query-knowledge <topic>` — query the knowledge base
-- `/project:ingest-local-sources` — encode a local PDF or text file
-- `/project:books-status` — coverage and quality report
-
-Rules that apply only to the books concern:
-- BOOKS knowledge is loaded by `quality_score` descending; skip `stale=true` entries.
-- Never encode a book without a verified free source — hallucinated content is not acceptable.

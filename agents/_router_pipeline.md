@@ -117,7 +117,7 @@ Apply **in order**. First match wins.
    **Do not use `simple` for bug fixes** — use `complex`.
    Examples of legitimate `simple`:
    - Read-only analyses with a single deliverable: "assess test coverage of module M" → `test_strategist` in `assess` mode, Validator terminal.
-   - Single-worker artifact tasks: "encode the queued book `<slug>`".
+   - Single-worker artifact tasks with a well-scoped output.
 
 # Disambiguation: `holistic` vs `complex`
 Both handle multi-file tasks. The deciding question is whether **decomposition helps or hurts**:

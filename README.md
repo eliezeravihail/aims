@@ -1,13 +1,8 @@
 # expert-system
 
-Two independent concerns live in this repo:
-
-1. **Agent routing system** — a dual-mode Claude Code orchestrator. One
-   framework supports two invocation modes, picked based on the baseline
-   model's capability. Generic and domain-neutral.
-2. **Books knowledge library** — a pre-existing knowledge base under
-   `skills/BOOKS/` with its own slash commands. Not coupled to the routing
-   system.
+A dual-mode Claude Code orchestrator. One framework supports two invocation
+modes, picked based on the baseline model's capability. Generic and
+domain-neutral.
 
 **Created by [Eliezer Avihail](https://www.linkedin.com/in/eliezer-avihail/) · MIT License**
 
@@ -27,9 +22,8 @@ claude plugin install expert-system@expert-system
 
 (The `<name>@<marketplace>` form is required; both names happen to be
 `expert-system` here.) Restart Claude Code after install. This registers
-the five slash commands (`/experts`, `/agents-experts`, `/books-status`,
-`/query-knowledge`, `/ingest-local-sources`) — auto-discovered from
-`commands/`, `agents/`, and `skills/` at the repo root per the
+the two slash commands (`/experts`, `/agents-experts`) — auto-discovered
+from `commands/`, `agents/`, and `skills/` at the repo root per the
 [plugin spec](https://code.claude.com/docs/en/plugins-reference.md).
 
 Verify with `claude plugin list`.
