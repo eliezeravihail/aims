@@ -1,13 +1,8 @@
 # expert-system
 
-Two independent concerns live in this repo:
-
-1. **Agent routing system** — a dual-mode Claude Code orchestrator. One
-   framework supports two invocation modes, picked based on the baseline
-   model's capability. Generic and domain-neutral.
-2. **Books knowledge library** — a pre-existing knowledge base under
-   `skills/BOOKS/` with its own slash commands. Not coupled to the routing
-   system.
+A dual-mode Claude Code orchestrator. One framework supports two invocation
+modes, picked based on the baseline model's capability. Generic and
+domain-neutral.
 
 **Created by [Eliezer Avihail](https://www.linkedin.com/in/eliezer-avihail/) · MIT License**
 

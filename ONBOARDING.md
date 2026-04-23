@@ -1,7 +1,5 @@
 # Onboarding
 
-This repo has two independent surfaces.
-
 ## Install
 
 ```bash
@@ -26,9 +24,3 @@ See `README.md` §Installation for VS Code Copilot and the Python harness.
 2. For weaker baselines (Copilot, smaller OSS) use the pipeline mode: `/agents-experts <request>`.
 3. Read `agents/registry.md` to see which workers are registered.
 4. To add a worker: create `agents/<id>.md`, append one row to `agents/registry.md`, and (for lean) add a line to the decision rule in `agents/_router.md`.
-
-## Books knowledge library (separate concern)
-
-1. Check coverage: `/books-status`
-2. Query the KB: `/query-knowledge <topic>`
-3. Encode a local source: `/ingest-local-sources`

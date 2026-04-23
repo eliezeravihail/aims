@@ -4,11 +4,8 @@
     "allow": [
       "Read(**)",
       "Write(agents/**)",
-      "Write(skills/BOOKS/**)",
       "Write(.claude/reports/**)",
-      "Write(.claude/books_checkpoint.json)",
       "WebSearch(*)",
-      "Bash(pdftotext *)",
       "Bash(find *)"
     ],
     "deny": [
