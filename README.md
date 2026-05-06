@@ -21,8 +21,12 @@ your session model after.
 ## Hooks (per-project, installed by `/init-workflow`)
 
 - **SessionStart** — surfaces in-progress plans and recent ADRs.
-- **UserPromptSubmit** — nudges toward `/plan` or `/adr` on trigger phrases
-  (refactor, migrate, "X vs Y", new feature, …). Never blocks.
+- **UserPromptSubmit** — **router**. Detects intent (bug, feature, refactor,
+  decision, mechanical, question) and injects context that tells Claude to
+  ask via `AskUserQuestion` which workflow to follow before doing any work.
+  Hook is a deterministic shell classifier; Claude is the conversational
+  router. Suppresses on slash-prefixed prompts, during planning lock, and
+  for short follow-ups. See ADR-0004 for the design rationale.
 - **PreToolUse** — hard-blocks Edit/Write while a `.claude/.planning-lock`
   file exists (the lock is set by `/plan`'s read-only phase). In `block` mode
   also requires an in-progress plan when editing under `src/`, `lib/`,
@@ -32,42 +36,85 @@ Mode switch: `echo nudge > .claude/ais-mode` / `echo block > .claude/ais-mode`.
 
 ## Install
 
+Two paths depending on how you want commands available.
+
+### A. Global plugin install (recommended)
+
+One-time, gives you `/plan`, `/adr`, `/grunt`, `/done`, `/init-workflow` in
+every Claude Code session, in any directory.
+
 ```sh
 # inside Claude Code:
-/plugin install ais@<your-marketplace>
+/plugin marketplace add /path/to/this/repo
+/plugin install ais@ais
 ```
 
-(See `.claude-plugin/marketplace.json` for the entry shape.)
-
-## Use
-
-In any project:
+Then in any project:
 
 ```
 /init-workflow
 ```
 
-Answers a few questions (test command, lint, ADR location, hook mode), then
-shows a diff preview and applies only after you approve. Re-running is a no-op.
+Bootstraps that project's `.claude/` (hooks, settings, CLAUDE.md, ADRs).
+From then on, every Claude session you open in that directory loads the
+discipline automatically — hooks fire, CLAUDE.md is in context, the router
+asks before edits.
 
-After init:
+### B. Self-contained per project (no global install)
+
+If you don't want the plugin in your global Claude config, or you want to
+share a repo with collaborators who don't have ais installed:
+
+```
+/init-workflow --self-contained
+```
+
+Copies the commands into the project's `.claude/commands/`. The project
+becomes self-aware — works without anything globally installed. Trade-off:
+each project carries its own copy of the commands, so updates to ais
+require re-running `/init-workflow` to refresh.
+
+### Triggering ais without any install
+
+If you cloned this repo and want to try it before installing anything,
+the repo is itself a working ais project (dogfooded). Open Claude Code
+inside this directory and the `.claude/` config takes effect.
+
+## How it feels in practice
+
+The router-as-secretary case (no slash command needed):
+
+```
+you: TypeError: cannot unpack non-iterable NoneType at parser.py:42
+
+  [router fires, intent=bug]
+  Claude (via AskUserQuestion):
+    Which workflow?
+      (a) /plan a real fix       (b) /grunt a quick patch
+      (c) diagnose only — root cause, no edits
+  you: a
+  Claude: <enters /plan discipline: lock, read-only exploration,
+           ExitPlanMode, plan written to docs/plans/>
+```
+
+The explicit-command case (you already know what you want):
 
 ```
 /plan add OAuth2 callback handler
    ↳ Opus, plan-mode discipline, ExitPlanMode → plan file written
-/model sonnet                # for implementation
+/model sonnet
    ↳ implement against the plan
 /adr use httpx over requests
    ↳ records the decision before it gets buried
 /done
-   ↳ verifies steps, runs the verification commands, asks about ADRs
+   ↳ verifies steps, runs verification commands, asks about ADRs
 ```
 
-For mechanical work that needs no judgment:
+Mechanical, no-judgment work:
 
 ```
 /grunt rename CamelCase to snake_case in scripts/
-   ↳ Haiku, refuses to make architectural decisions
+   ↳ Haiku, refuses on judgment calls
 ```
 
 ## Layout
