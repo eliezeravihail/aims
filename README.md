@@ -5,6 +5,35 @@ project-local hooks, idempotent bootstrap. No multi-agent pipeline, no
 orchestration overhead — just the discipline that makes single-dispatch
 sessions reliable on Opus / Sonnet baselines.
 
+## What this is for (and what it isn't)
+
+The point of ais is **not** to make the agent smarter or more correct.
+The model's reasoning capability is whatever it is — ais doesn't change it.
+
+What ais actually does:
+
+- **Keeps the human side of the work organized.** Plans on disk, decisions
+  in ADRs, a router that asks before edits — a workflow you can fall into
+  without having to remember ceremony every time.
+- **Lets the agent know the project better.** CLAUDE.md, the ADR log, and
+  plans on disk all become durable context that survives session
+  compaction and crosses sessions. The Claude session that picks up your
+  work tomorrow has access to what was decided yesterday and why.
+
+What ais explicitly doesn't try to do:
+
+- It doesn't change how the model reasons.
+- It doesn't turn wrong answers into right ones.
+- It doesn't substitute for tests, domain knowledge, or careful prompts.
+- It doesn't add an "intelligence layer" via routers, validators, or
+  multi-agent orchestration. (That was the previous design; see ADR-0002
+  for why we dropped it.)
+
+If the agent is making bad calls, ais will not fix that — better tests,
+clearer requirements, or a different model will. ais addresses a different
+problem: the human-side cost of remembering what was decided and why,
+session after session.
+
 ## What you get
 
 | Command            | Model  | Purpose                                                               |
