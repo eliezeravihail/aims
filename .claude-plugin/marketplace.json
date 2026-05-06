@@ -1,17 +1,13 @@
 {
-  "name": "expert-system",
-  "metadata": {
-    "description": "Tiered agent routing system for software development."
-  },
+  "name": "ais",
   "owner": {
-    "name": "Eliezer Avihail",
-    "url": "https://github.com/eliezeravihail"
+    "name": "eliezeravihail"
   },
   "plugins": [
     {
-      "name": "expert-system",
-      "source": "./",
-      "description": "Tiered agent routing system for software development — lean single-dispatch and full decomposed pipeline modes."
+      "name": "ais",
+      "source": ".",
+      "description": "Lean code-development discipline: /plan, /adr, /grunt, /done + per-project hooks. Zero ceremony for trivial work, real discipline for non-trivial."
     }
   ]
 }

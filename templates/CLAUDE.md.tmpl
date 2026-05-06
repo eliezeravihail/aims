@@ -1,0 +1,42 @@
+# {{PROJECT_NAME}}
+
+<!-- ais-managed sections below; safe to edit, but keep the section headings stable. -->
+
+## Build & test commands
+
+- Test: `{{TEST_CMD}}`
+- Lint: `{{LINT_CMD}}`
+- Typecheck: `{{TYPECHECK_CMD}}`
+
+(Run before declaring work complete.)
+
+## Decision records
+
+Architecture decisions live in `{{ADR_DIR}}/`. Index: `{{ADR_DIR}}/README.md`.
+
+- New decision → `/adr <title>`
+- Past decisions are append-only. To change one, write a new ADR that
+  supersedes it; do not edit the old.
+
+## Workflow
+
+- Non-trivial change → `/plan <task>` first. Plans live in `docs/plans/`.
+- Mechanical work (renames, formatting, log/config edits) → `/grunt`.
+- Closing a plan → `/done` (verifies steps and prompts for ADRs).
+
+## Models policy
+
+- Planning, ADR, closing → **Opus** (auto via slash command frontmatter).
+- Implementation → **Sonnet** (run `/model sonnet` once per session).
+- Mechanical / log / config edits → `/grunt` runs on **Haiku**.
+- Override anytime with `/model <name>`.
+
+## Hooks
+
+Mode: `{{HOOK_MODE}}` (configured at `.claude/ais-mode`). Change with:
+```
+echo nudge > .claude/ais-mode    # warn only
+echo block > .claude/ais-mode    # block source edits without active plan
+```
+The planning lock (`.claude/.planning-lock`) always blocks edits regardless
+of mode — this is what makes `/plan` actually read-only.

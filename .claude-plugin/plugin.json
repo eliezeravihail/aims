@@ -1,17 +1,11 @@
 {
-  "name": "expert-system",
-  "version": "1.0.1",
-  "description": "Tiered agent routing system for software development — lean single-dispatch and full decomposed pipeline modes.",
+  "name": "ais",
+  "version": "0.1.0",
+  "description": "Lean code-development discipline for Claude Code: /plan with planning lock, /adr for architecture decisions, model assignment per task, and per-project hooks installed on /init-workflow.",
   "author": {
-    "name": "Eliezer Avihail",
-    "url": "https://github.com/eliezeravihail"
+    "name": "ais"
   },
+  "homepage": "https://github.com/eliezeravihail/expert-system",
   "license": "MIT",
-  "repository": "https://github.com/eliezeravihail/expert-system.git",
-  "keywords": [
-    "agents",
-    "routing",
-    "orchestration",
-    "expert-system"
-  ]
+  "keywords": ["workflow", "adr", "planning", "discipline", "code"]
 }

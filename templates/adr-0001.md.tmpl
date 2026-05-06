@@ -1,0 +1,52 @@
+# ADR-0001: Record architecture decisions
+Status: accepted
+Date: {{DATE}}
+Supersedes: —
+Superseded by: —
+
+## Context
+
+We make architectural choices throughout the life of this project — frameworks,
+data models, boundaries, dependencies. These choices shape every subsequent
+change, but their rationale is usually lost: it lives in chat history, in
+people's heads, in PR threads that nobody re-reads.
+
+We need a small, durable record that future maintainers (and our future selves)
+can rely on.
+
+## Decision
+
+We will record architecture decisions as **Architecture Decision Records
+(ADRs)** in `docs/adr/`, following Michael Nygard's lightweight format.
+
+- One file per decision, numbered monotonically: `NNNN-slug.md`.
+- Each ADR carries: Context, Decision, Consequences, Alternatives, Verification.
+- Status lifecycle: `proposed → accepted → superseded | deprecated`.
+- ADRs are **append-only**: past records are not edited; a changed decision
+  produces a new ADR that supersedes the old one (only the status pointer on
+  the old record may be updated).
+
+New ADRs are drafted via the `/adr <title>` slash command.
+
+## Consequences
+
+- ✅ Decisions are durable and reviewable in PRs alongside the code they affect.
+- ✅ "Why is it this way?" has a citable answer.
+- ⚠️ Adds a small ceremony: significant decisions cost ~10 minutes to record.
+  We accept this — the cost of forgotten rationale is higher.
+- 🔒 We rule out informal-only decisions: any architectural change that a
+  reviewer can't trace to an ADR (or won't be one) is a signal to slow down.
+
+## Alternatives considered
+
+- **Wiki / Notion / Confluence** — rejected because decisions drift away from
+  the code; no PR-time review.
+- **Inline comments / commit messages** — rejected because they don't surface
+  in the right places when someone needs to understand the system.
+- **No formal record** — rejected because we already lived this and forgot why.
+
+## Verification
+
+- This file exists.
+- New decisions arrive as `docs/adr/NNNN-*.md` files via `/adr`.
+- The index in `docs/adr/README.md` lists every ADR with its current status.
