@@ -1,0 +1,12 @@
+# Project-context cache (per-checkout, written by /snapshot)
+.claude-context.md
+
+# Planning lock (set by /plan during read-only phase)
+.claude/.planning-lock
+
+# Personal Claude Code settings (permissions, local overrides)
+.claude/settings.local.json
+
+# Editor / OS noise
+.DS_Store
+*.swp

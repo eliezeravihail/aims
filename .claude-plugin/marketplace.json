@@ -1,0 +1,13 @@
+{
+  "name": "ais",
+  "owner": {
+    "name": "eliezeravihail"
+  },
+  "plugins": [
+    {
+      "name": "ais",
+      "source": ".",
+      "description": "Lean code-development discipline: /plan, /adr, /grunt, /done + per-project hooks. Zero ceremony for trivial work, real discipline for non-trivial."
+    }
+  ]
+}
