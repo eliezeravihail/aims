@@ -1,10 +1,10 @@
-# ais
+# aims
 
-This repository **is** the `ais` plugin. Working on it = developing the
+This repository **is** the `aims` plugin. Working on it = developing the
 plugin itself. The plugin is also installed locally (under `.claude/`)
 so its hooks and conventions apply to its own development. Dogfooding.
 
-<!-- ais-managed sections below; safe to edit, but keep the section headings stable. -->
+<!-- aims-managed sections below; safe to edit, but keep the section headings stable. -->
 
 ## Build & test commands
 
@@ -39,10 +39,10 @@ Architecture decisions live in `docs/adr/`. Index: `docs/adr/README.md`.
 
 ## Hooks
 
-Mode: `nudge` (configured at `.claude/ais-mode`). Change with:
+Mode: `nudge` (configured at `.claude/aims-mode`). Change with:
 ```
-echo nudge > .claude/ais-mode    # warn only
-echo block > .claude/ais-mode    # block source edits without active plan
+echo nudge > .claude/aims-mode    # warn only
+echo block > .claude/aims-mode    # block source edits without active plan
 ```
 The planning lock (`.claude/.planning-lock`) always blocks edits regardless
 of mode — this is what makes `/plan` actually read-only.

@@ -1,4 +1,7 @@
-# ais
+# aims
+*AI Manager System*
+
+📄 **Site:** https://eliezeravihail.github.io/aims/
 
 Lean code-development discipline for Claude Code. Five slash commands, three
 project-local hooks, idempotent bootstrap. No multi-agent pipeline, no
@@ -7,10 +10,10 @@ sessions reliable on Opus / Sonnet baselines.
 
 ## What this is for (and what it isn't)
 
-The point of ais is **not** to make the agent smarter or more correct.
-The model's reasoning capability is whatever it is — ais doesn't change it.
+The point of aims is **not** to make the agent smarter or more correct.
+The model's reasoning capability is whatever it is — aims doesn't change it.
 
-What ais actually does:
+What aims actually does:
 
 - **Keeps the human side of the work organized.** Plans on disk, decisions
   in ADRs, a router that asks before edits — a workflow you can fall into
@@ -20,7 +23,7 @@ What ais actually does:
   compaction and crosses sessions. The Claude session that picks up your
   work tomorrow has access to what was decided yesterday and why.
 
-What ais explicitly doesn't try to do:
+What aims explicitly doesn't try to do:
 
 - It doesn't change how the model reasons.
 - It doesn't turn wrong answers into right ones.
@@ -29,8 +32,8 @@ What ais explicitly doesn't try to do:
   multi-agent orchestration. (That was the previous design; see ADR-0002
   for why we dropped it.)
 
-If the agent is making bad calls, ais will not fix that — better tests,
-clearer requirements, or a different model will. ais addresses a different
+If the agent is making bad calls, aims will not fix that — better tests,
+clearer requirements, or a different model will. aims addresses a different
 problem: the human-side cost of remembering what was decided and why,
 session after session.
 
@@ -61,53 +64,135 @@ your session model after.
   also requires an in-progress plan when editing under `src/`, `lib/`,
   `app/`, etc. In `nudge` mode this check warns instead of blocking.
 
-Mode switch: `echo nudge > .claude/ais-mode` / `echo block > .claude/ais-mode`.
+Mode switch: `echo nudge > .claude/aims-mode` / `echo block > .claude/aims-mode`.
+
+## A note on plugin sprawl
+
+Command and tool pollution in AI coding environments is a real and growing
+problem, not a hypothetical one. By early 2026 unofficial registries index
+**16,000+ MCP servers** and GitHub hosts **20,000+ repositories**
+implementing them. Teams routinely exceed Claude's 128-tool soft ceiling,
+at which point tool-calling accuracy degrades — and every enabled plugin
+contributes its full surface area (command definitions, agent descriptions,
+MCP schemas) to the model's context on every turn, whether or not the
+current task actually needs it. Five MCP servers with thirty tools each is
+already 150 tool definitions, ~150K tokens, injected into every prompt.
+
+The community is exploring partial mitigations:
+
+- **Claude Code namespaces** plugin commands (`pluginname:command`) to
+  avoid hard collisions. Helpful, but namespacing is mandatory in
+  practice even when docs say otherwise (issue #15882), and subagents
+  struggle to discover namespaced commands (issue #11328).
+- **MCP gateways** apply the API-gateway pattern to tool fan-out: a
+  single entry point, centralized auth/budgeting/filtering. Enterprise
+  scope.
+- **Dynamic / lazy tool loading** (MCP Tool Search and similar) loads a
+  tool only when invoked, instead of pre-injecting all of them.
+- **Sandboxing** (microVMs, gVisor, hardened containers) addresses
+  *runtime* isolation but doesn't help with command-namespace scope.
+
+What's still missing at the platform level is the equivalent of Python's
+`venv` or Node's per-project `node_modules` — a real **per-project
+scope** where a tool is *available here, invisible everywhere else*,
+with no global registration step. Anthropic's namespacing is a step in
+that direction but not a substitute for true per-project scoping.
+
+Until that gap closes at the Claude Code level, aims opts out of the
+global surface entirely: the four discipline commands (`/plan`, `/adr`,
+`/grunt`, `/done`) live exclusively inside target projects you've
+explicitly bootstrapped. The only file aims can ever expose globally is
+`/init-workflow`, and only if you opt into the plugin install path —
+otherwise even that stays scoped to the aims source repo.
+
+If/when Claude Code grows a real per-project plugin scope, aims should
+adopt it and retire its custom split. For now, the split below is the
+mechanism.
 
 ## Install
 
-Two paths depending on how you want commands available.
+Two paths. Both end with the same per-project state. **Only `/init-workflow`
+is ever globally available** — the four discipline commands (`/plan`,
+`/adr`, `/grunt`, `/done`) live exclusively in target projects you've
+bootstrapped.
 
-### A. Global plugin install (recommended)
+### Path A — Clone-and-bootstrap (recommended; zero global state)
 
-One-time, gives you `/plan`, `/adr`, `/grunt`, `/done`, `/init-workflow` in
-every Claude Code session, in any directory.
+1. **Clone (or download + extract) this repo** somewhere convenient.
+   ```sh
+   git clone https://github.com/eliezeravihail/aims.git ~/tools/aims
+   ```
+
+2. **Open Claude Code inside the aims source repo.**
+   ```sh
+   cd ~/tools/aims
+   claude
+   ```
+   The repo is dogfooded — its own `.claude/commands/init-workflow.md`
+   makes `/init-workflow` available locally without any global install.
+
+3. **Bootstrap your target project.**
+   ```
+   /init-workflow /path/to/my-project
+   ```
+   Sniffs the target (read-only), asks a few gap-filling questions, shows
+   a diff preview, applies only after you approve.
+
+4. **From now on, use the target project.**
+   ```sh
+   cd /path/to/my-project
+   claude
+   ```
+   The target's own `.claude/` provides `/plan`, `/adr`, `/grunt`, `/done`
+   plus hooks and CLAUDE.md. **Nothing is installed globally** — open
+   Claude in any unrelated directory and aims isn't there.
+
+### Path B — Global plugin install (one global command for ergonomics)
+
+If you'd rather not have to `cd ~/tools/aims` every time you bootstrap a
+new project:
 
 ```sh
-# inside Claude Code:
+# inside Claude Code, anywhere:
 /plugin marketplace add /path/to/this/repo
-/plugin install ais@ais
+/plugin install aims@aims
 ```
 
-Then in any project:
+This adds **only `/init-workflow`** to your global Claude config — not
+the discipline commands. From any directory:
 
 ```
-/init-workflow
+/init-workflow /path/to/my-project
 ```
 
-Bootstraps that project's `.claude/` (hooks, settings, CLAUDE.md, ADRs).
-From then on, every Claude session you open in that directory loads the
-discipline automatically — hooks fire, CLAUDE.md is in context, the router
-asks before edits.
+Bootstraps the target identically to path A. The four discipline
+commands still appear only inside bootstrapped projects.
 
-### B. Self-contained per project (no global install)
+The split is enforced by the repo layout: `commands/init-workflow.md` is
+the single globally-visible file; `templates/commands/{plan,adr,grunt,
+done}.md` are templates the bootstrap copies into each target. See
+ADR-0005 for the rationale.
 
-If you don't want the plugin in your global Claude config, or you want to
-share a repo with collaborators who don't have ais installed:
+### What ends up in the target (either path)
 
 ```
-/init-workflow --self-contained
+TARGET/
+├── CLAUDE.md                    # created or merged section-aware
+├── docs/adr/
+│   ├── README.md                # decision index
+│   ├── _template.md
+│   └── 0001-record-architecture-decisions.md
+└── .claude/
+    ├── commands/                # /plan, /adr, /grunt, /done
+    ├── hooks/                   # session-start, prompt-submit, pre-write
+    ├── settings.json            # wires the hooks
+    └── aims-mode                 # nudge | block
 ```
 
-Copies the commands into the project's `.claude/commands/`. The project
-becomes self-aware — works without anything globally installed. Trade-off:
-each project carries its own copy of the commands, so updates to ais
-require re-running `/init-workflow` to refresh.
-
-### Triggering ais without any install
-
-If you cloned this repo and want to try it before installing anything,
-the repo is itself a working ais project (dogfooded). Open Claude Code
-inside this directory and the `.claude/` config takes effect.
+Updating aims means `git pull` in the source repo (and `/plugin update` if
+you took path B) plus re-running `/init-workflow` against your existing
+targets to refresh hooks and commands. The merge-aware logic preserves
+your CLAUDE.md customizations and existing ADRs.
 
 ## How it feels in practice
 
@@ -152,23 +237,29 @@ Mechanical, no-judgment work:
 .claude-plugin/
   plugin.json
   marketplace.json
-commands/
-  init-workflow.md
-  plan.md
-  adr.md
-  grunt.md
-  done.md
-templates/
+commands/                    ← the only globally-installable surface
+  init-workflow.md           ← becomes /init-workflow if plugin is installed
+templates/                   ← never globally registered; copied per target
+  commands/                  ← these become the target's .claude/commands/
+    plan.md
+    adr.md
+    grunt.md
+    done.md
+  hooks/                     ← these become the target's .claude/hooks/
+    session-start.sh
+    prompt-submit.sh
+    pre-write.sh
   CLAUDE.md.tmpl
   adr-readme.md.tmpl
   adr-template.md.tmpl
   adr-0001.md.tmpl
   plan-template.md.tmpl
   settings.json.tmpl
-  hooks/
-    session-start.sh
-    prompt-submit.sh
-    pre-write.sh
+.claude/                     ← dogfood install (this repo is itself a target)
+  commands/                  ← lets us run /init-workflow + the 4 disciplines here
+  hooks/                     ← live hooks for working on aims itself
+  settings.json
+  aims-mode
 ```
 
 ## Design principles

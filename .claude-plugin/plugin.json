@@ -1,11 +1,11 @@
 {
-  "name": "ais",
+  "name": "aims",
   "version": "0.1.0",
   "description": "Lean code-development discipline for Claude Code: /plan with planning lock, /adr for architecture decisions, model assignment per task, and per-project hooks installed on /init-workflow.",
   "author": {
-    "name": "ais"
+    "name": "aims"
   },
-  "homepage": "https://github.com/eliezeravihail/expert-system",
+  "homepage": "https://github.com/eliezeravihail/aims",
   "license": "MIT",
   "keywords": ["workflow", "adr", "planning", "discipline", "code"]
 }
