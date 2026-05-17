@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# ais PreToolUse hook for Edit / Write / MultiEdit.
+# aims PreToolUse hook for Edit / Write / MultiEdit.
 #
 # Two responsibilities:
 #   1. Hard block while .claude/.planning-lock exists (planning is read-only).
 #   2. In `block` mode, soft-block writes to source paths without an
 #      in-progress plan AND when the target path looks like production code.
 #
-# Mode is read from .claude/ais-mode (one of: nudge | block).
+# Mode is read from .claude/aims-mode (one of: nudge | block).
 # Default if file missing: nudge (warn-only).
 #
 # Exit codes:
@@ -16,8 +16,8 @@
 set -u
 
 LOCK=".claude/.planning-lock"
-MODE_FILE=".claude/ais-mode"
-PLAN_DIR="${AIS_PLAN_DIR:-docs/plans}"
+MODE_FILE=".claude/aims-mode"
+PLAN_DIR="${AIMS_PLAN_DIR:-docs/plans}"
 
 mode="nudge"
 [ -f "$MODE_FILE" ] && mode=$(tr -d ' \n' < "$MODE_FILE")
@@ -38,7 +38,7 @@ target=$(extract_path)
 # (1) Planning lock — always blocks, regardless of mode.
 if [ -f "$LOCK" ]; then
   cat >&2 <<EOF
-[ais] Planning in progress (.claude/.planning-lock present).
+[aims] Planning in progress (.claude/.planning-lock present).
        File edits are not allowed until you call ExitPlanMode and the user
        approves the plan. After approval, /plan will remove the lock.
        To abort planning manually:  rm .claude/.planning-lock
@@ -71,9 +71,9 @@ fi
 
 if [ "$has_active_plan" -eq 0 ]; then
   cat >&2 <<EOF
-[ais] About to edit "$target" (production source) without an in-progress plan.
+[aims] About to edit "$target" (production source) without an in-progress plan.
        Run \`/plan\` first, OR set hook mode to nudge:
-         echo nudge > .claude/ais-mode
+         echo nudge > .claude/aims-mode
        OR delete this hook if you want it off entirely.
 EOF
   exit 2

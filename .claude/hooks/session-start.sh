@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ais SessionStart hook — informational only.
+# aims SessionStart hook — informational only.
 # Surfaces:
 #   - in-progress plans
 #   - recently-touched ADRs
@@ -8,8 +8,8 @@
 
 set -u
 
-ADR_DIR="${AIS_ADR_DIR:-docs/adr}"
-PLAN_DIR="${AIS_PLAN_DIR:-docs/plans}"
+ADR_DIR="${AIMS_ADR_DIR:-docs/adr}"
+PLAN_DIR="${AIMS_PLAN_DIR:-docs/plans}"
 LOCK=".claude/.planning-lock"
 
 print_section() {
@@ -26,10 +26,10 @@ if [ -f "$LOCK" ]; then
     fi
   fi
   if [ "$has_active_plan" -eq 0 ]; then
-    printf '[ais] WARNING: .claude/.planning-lock exists but no in-progress plan.\n'
+    printf '[aims] WARNING: .claude/.planning-lock exists but no in-progress plan.\n'
     printf '       If you abandoned a /plan, run: rm .claude/.planning-lock\n'
   else
-    printf '[ais] Planning lock active — Edit/Write blocked until ExitPlanMode.\n'
+    printf '[aims] Planning lock active — Edit/Write blocked until ExitPlanMode.\n'
   fi
 fi
 
@@ -37,7 +37,7 @@ fi
 if [ -d "$PLAN_DIR" ]; then
   active=$(grep -lE '^Status:\s*in-progress' "$PLAN_DIR"/*.md 2>/dev/null || true)
   if [ -n "$active" ]; then
-    printf '[ais] In-progress plans:\n'
+    printf '[aims] In-progress plans:\n'
     while IFS= read -r f; do
       title=$(awk -F': ' '/^# /{print substr($0, 3); exit}' "$f")
       printf '       %s — %s\n' "${f#$PLAN_DIR/}" "${title:-untitled}"
@@ -49,7 +49,7 @@ fi
 if [ -d "$ADR_DIR" ]; then
   recent=$(find "$ADR_DIR" -maxdepth 1 -name '[0-9]*.md' -mtime -30 2>/dev/null | sort | tail -5)
   if [ -n "$recent" ]; then
-    printf '[ais] Recent ADRs:\n'
+    printf '[aims] Recent ADRs:\n'
     while IFS= read -r f; do
       title=$(awk -F': ' '/^# /{print substr($0, 3); exit}' "$f")
       printf '       %s\n' "${title:-${f##*/}}"

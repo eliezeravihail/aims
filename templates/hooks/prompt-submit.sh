@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ais UserPromptSubmit hook — intent router.
+# aims UserPromptSubmit hook — intent router.
 #
 # Reads the user's prompt from stdin (Claude Code passes a JSON payload).
 # Classifies intent into one of: bug, feature, refactor, decision,
@@ -20,7 +20,7 @@
 
 set -u
 
-# ── Read payload ────────────────────────────────────────────────────────────
+# ── Read payload ────────────────────────────────────────────
 payload=$(cat || true)
 if command -v jq >/dev/null 2>&1; then
   prompt=$(printf '%s' "$payload" | jq -r '.prompt // empty' 2>/dev/null || true)
@@ -29,14 +29,14 @@ else
 fi
 [ -z "$prompt" ] && exit 0
 
-# ── Suppression ─────────────────────────────────────────────────────────────
+# ── Suppression ───────────────────────────────────────────────
 case "$prompt" in
   /*) exit 0 ;;
 esac
 
 [ -f .claude/.planning-lock ] && exit 0
 
-PLAN_DIR="${AIS_PLAN_DIR:-docs/plans}"
+PLAN_DIR="${AIMS_PLAN_DIR:-docs/plans}"
 has_active_plan=0
 if [ -d "$PLAN_DIR" ]; then
   if grep -lE '^Status:\s*in-progress' "$PLAN_DIR"/*.md 2>/dev/null | grep -q .; then
@@ -49,7 +49,7 @@ if [ "$has_active_plan" -eq 1 ] && [ "$prompt_len" -lt 120 ]; then
   exit 0   # short follow-up during active plan — let Claude carry on
 fi
 
-# ── Classify intent (first match wins) ──────────────────────────────────────
+# ── Classify intent (first match wins) ────────────────────────────────────
 lower=$(printf '%s' "$prompt" | tr '[:upper:]' '[:lower:]')
 
 intent=""
@@ -89,7 +89,7 @@ fi
 # ── Build router context (JSON-safe via printf + escaping) ─────────────────
 # Single-quote the heredoc and substitute $intent at the end.
 read -r -d '' router_text <<'TEXT' || true
-[ais-router] The user's most recent prompt looks like a __INTENT__ task.
+[aims-router] The user's most recent prompt looks like a __INTENT__ task.
 
 Before doing the actual work, you MUST first call the AskUserQuestion tool to
 let the user pick the workflow. Use this menu, adapting only the wording:
@@ -121,7 +121,7 @@ TEXT
 
 router_text=${router_text//__INTENT__/$intent}
 
-# ── Emit JSON for Claude Code ──────────────────────────────────────────────
+# ── Emit JSON for Claude Code ────────────────────────────────────────────
 if command -v jq >/dev/null 2>&1; then
   jq -nc --arg ctx "$router_text" \
     '{hookSpecificOutput: {hookEventName: "UserPromptSubmit", additionalContext: $ctx}}'
@@ -132,5 +132,5 @@ else
 fi
 
 # Also surface a one-line breadcrumb on stderr so the user sees what happened.
-printf '[ais-router] intent=%s — Claude will ask you which workflow.\n' "$intent" >&2
+printf '[aims-router] intent=%s — Claude will ask you which workflow.\n' "$intent" >&2
 exit 0
