@@ -1,6 +1,6 @@
 # {{PROJECT_NAME}}
 
-<!-- ais-managed sections below; safe to edit, but keep the section headings stable. -->
+<!-- aims-managed sections below; safe to edit, but keep the section headings stable. -->
 
 ## Build & test commands
 
@@ -33,10 +33,10 @@ Architecture decisions live in `{{ADR_DIR}}/`. Index: `{{ADR_DIR}}/README.md`.
 
 ## Hooks
 
-Mode: `{{HOOK_MODE}}` (configured at `.claude/ais-mode`). Change with:
+Mode: `{{HOOK_MODE}}` (configured at `.claude/aims-mode`). Change with:
 ```
-echo nudge > .claude/ais-mode    # warn only
-echo block > .claude/ais-mode    # block source edits without active plan
+echo nudge > .claude/aims-mode    # warn only
+echo block > .claude/aims-mode    # block source edits without active plan
 ```
 The planning lock (`.claude/.planning-lock`) always blocks edits regardless
 of mode — this is what makes `/plan` actually read-only.

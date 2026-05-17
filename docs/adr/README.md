@@ -24,9 +24,9 @@ it to the index below.
 ## Index
 
 | #    | Title                                          | Status   | Date       |
-|------|------------------------------------------------|----------|------------|
+|------|------------------------------------------------|----------|-----------|
 | 0001 | Record architecture decisions                  | accepted | 2026-05-06 |
 | 0002 | Single-dispatch over multi-agent orchestration | accepted | 2026-05-06 |
 | 0003 | Hooks default to nudge, lock always blocks     | accepted | 2026-05-06 |
 | 0004 | Router via hook-injected context, not orchestration | accepted | 2026-05-06 |
-| 0005 | AIS repo requires /init-workflow bootstrap before full workflow | proposed | 2026-05-07 |
+| 0005 | Two install paths; only /init-workflow ever goes global | accepted | 2026-05-06 |
