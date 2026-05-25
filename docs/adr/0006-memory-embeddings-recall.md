@@ -55,69 +55,143 @@ Extend `templates/hooks/session-start.sh` to also surface, if present:
 Total injected at SessionStart: ≤4KB. Designed to sit well below the
 context-rot inflection point observed across 2026 frontier models.
 
-### Tier 2 — Recall memory (on-demand, UserPromptSubmit)
+### Tier 2 — Recall memory (event-driven, not per-prompt)
 
-A new path inside `templates/hooks/prompt-submit.sh`, gated on a local
-embedding endpoint being reachable (default: Ollama on
-`localhost:11434`). On each non-suppressed prompt:
+Recall is **not** triggered on every UserPromptSubmit. It fires only
+on two events: (a) the **first prompt of a new session**, (b) a
+detected **topic shift** mid-session. This matches the user's actual
+need (orientation up-front, refocus on transitions) and avoids the
+per-prompt orchestration cost that ADR-0002 and ADR-0004 explicitly
+rejected.
 
-1. Embed the user's prompt verbatim via the configured local model
-   (default: `bge-small-en-v1.5`, 384-d). The prompt is **not**
-   keyword-extracted client-side — most coding prompts contain English
-   identifiers (function names, file names, error names, library names)
-   that act as natural anchors and match the keyword surrogates stored
-   at write-time. Pure-Hebrew prompts with no English anchors simply
-   produce a low-similarity result and recall does not fire — an
-   acceptable degradation.
-2. Query `.claude/memory.db` for top-K=20 by cosine similarity using
-   `sqlite-vec`. The stored vectors are over each memory's **English
-   keyword surrogate** (see "Encoding" below), not the memory body —
-   the LLM does the semantic compression at write-time, so the
-   embedding only needs to do fuzzy keyword-string matching at
-   read-time.
-3. Re-rank with a Generative-Agents-style composite:
+#### Shift detector (cheap, deterministic, per-prompt)
+
+A lightweight component does run on every prompt. It maintains a
+running session "topic centroid" — the decaying mean of recent prompt
+embeddings, stored at `.claude/session-centroid.vec` (gitignored,
+deleted on SessionStart). On each prompt:
+
+1. Embed the prompt locally (~10ms on CPU with `bge-small-en-v1.5`).
+2. Compute cosine distance to the centroid.
+3. If `distance > 0.5` **and** at least 60s elapsed since the last
+   recall event → topic shift detected.
+4. Update the centroid with a 0.7 decay weight (recent prompts
+   dominate).
+
+No LLM call here. No retrieval. Just a small embedding + math.
+
+#### Recall pipeline (fires only on shift or session-first-prompt)
+
+When the detector triggers, or when this is the session's first
+prompt, the full pipeline runs:
+
+1. Embed the prompt (already done by the shift detector — reuse).
+2. Score every memory by cosine similarity between the prompt
+   embedding and the memory's stored title+keywords embedding. Drop
+   anything below `sim < 0.35` (the distractor floor). Keep top-20.
+3. Re-rank using a composite:
    `score = α·similarity + β·recency_decay + γ·importance`
-   defaults `α=0.6, β=0.2, γ=0.2` (tunable in `.claude/memory.toml`).
-   `recency_decay = exp(-Δdays / S)` with `S=14` days
-   (Ebbinghaus-style; configurable).
-4. Drop everything below a similarity floor (`sim < 0.35`). This is
-   non-negotiable — empty injection is strictly better than a poisoned
-   one.
-5. Inject the surviving top-N (N=5, ≤4KB total) into
-   `additionalContext`, tagged `[aims-recall]` so the model knows
-   these are recalled detail-memories, not directives, and so the
-   tag is visible in transcripts (parallel to `[aims-router]`).
-6. Update `last_accessed_at` and `access_count` for the surfaced
-   rows (access reinforcement).
+   defaults `α=0.6, β=0.2, γ=0.2`. `recency_decay = exp(-Δdays / 14)`.
+4. **Haiku rerank-and-filter** (Tier 2.5, see next): pass the
+   surviving top-20 plus the prompt to Haiku, get back the filtered
+   top-N (N≤5, sometimes 0). This is what catches the false
+   positives that pure-embedding similarity misses.
+5. Inject the survivors into `additionalContext`, tagged
+   `[aims-recall]`. If this was a topic shift (not the first prompt),
+   append: `Topic shift detected — consider /clear to drop accumulated
+   context from the previous topic.`
+6. Update `last_accessed_at` and `access_count` for surfaced memories.
 
-Schema:
+#### Tier 2.5 — Haiku rerank-and-filter (event-driven, low frequency)
 
-```sql
-CREATE TABLE memories (
-  id INTEGER PRIMARY KEY,
-  kind TEXT NOT NULL,           -- decision|deliberation|gotcha|episode
-  source_path TEXT,             -- e.g. docs/adr/0004-...md
-  title TEXT NOT NULL,          -- LLM-generated, one line, English
-  keywords TEXT NOT NULL,       -- LLM-generated, 5–10 tokens, English,
-                                -- space-separated; the embedded surface
-  body TEXT NOT NULL,           -- the actual memory, 1–10 sentences,
-                                -- any language; NEVER embedded
-  importance REAL DEFAULT 0.5,  -- 0..1, set at ingest
-  created_at INTEGER NOT NULL,
-  last_accessed_at INTEGER,
-  access_count INTEGER DEFAULT 0
-);
-CREATE VIRTUAL TABLE memories_vec USING vec0(embedding FLOAT[384]);
+A small Anthropic API call to `claude-haiku-4-5` runs **only on
+recall events** (~5–15 times per day at typical usage). Input: the
+prompt + the 20 candidates (title, keywords, body, source_path).
+Output: a JSON array of 0–5 chosen memories, each with a one-line
+reason. Haiku is allowed to return an **empty array** — "no memory
+is genuinely relevant right now, inject nothing." This is the killer
+capability a cross-encoder reranker cannot provide.
+
+Why Haiku is acceptable here (despite ADR-0002 and ADR-0004 rejecting
+per-prompt LLM orchestration):
+
+- **Frequency**: ~5–15 calls/day, not per-prompt. Three orders of
+  magnitude below what ADR-0002 rejected.
+- **Latency**: ~1–2s on shift moments — natural transition points
+  where a brief pause is acceptable, even useful.
+- **Cost**: ~$0.001/day per heavy user. Not a budget concern.
+- **Quality**: catches body-vs-keyword false positives that cosine
+  on keyword surrogates cannot. Also catches "context-aware"
+  rejections that a cross-encoder cannot.
+- **Disable path**: if no `ANTHROPIC_API_KEY` is configured, the
+  pipeline falls back to top-5 by composite score (no LLM
+  filtering). Tier 2 still works, just less precisely.
+
+### Storage — files, not a DB
+
+Memories live as markdown files in `docs/memories/NNNN-slug.md`, one
+file per memory, with YAML frontmatter:
+
+```yaml
+---
+id: 0042
+kind: decision           # decision | deliberation | gotcha | episode
+title: bge-small as the default embedding model
+keywords: bge-small embedding ollama local cpu cross-lingual
+importance: 0.8          # 0..1
+created: 2026-05-25T12:34:56Z
+source: docs/adr/0006-memory-embeddings-recall.md
+last_accessed: null
+access_count: 0
+---
+We chose bge-small-en-v1.5 because [body in any language] ...
 ```
 
-The body is stored raw (any language) but never embedded; it is only
-ever surfaced into the prompt after a successful match. The
-embedding is computed over `title + " " + keywords` — a short, dense,
-English surrogate that the LLM produced at write-time. This split
-(LLM compresses meaning into English keywords; small embedding model
-matches keyword strings) means the embedding model can be tiny and
-English-only without sacrificing recall quality on Hebrew or mixed
-prompts.
+Two reasons not to use sqlite-vec or any vector DB at v1:
+
+- **Scale**: typical project ends up with tens to low-hundreds of
+  memories. Sequential awk-cosine over 100 sidecar embedding files
+  runs in well under 100ms — orders of magnitude below the
+  Haiku-rerank step. A vector DB is unnecessary infrastructure.
+- **Source-of-truth clarity**: when the .md file IS the memory,
+  there is nothing to migrate, nothing to dump-restore, nothing
+  to "rebuild the index" except recompute embeddings from text
+  the user can already read.
+
+The embeddings cache lives at `.claude/embeddings/NNNN.vec`
+(newline-separated floats, gitignored). Regenerable from the .md
+files at any time via the `index` script.
+
+### Relationship to git
+
+Memories are tracked in git **by default** because they are the
+informal-knowledge counterpart of ADRs and plans:
+
+| Layer | What it captures | Cadence | Formality |
+|-------|------------------|---------|-----------|
+| Git history | What changed, when, by whom | Per commit | Terse |
+| ADRs / plans | Why a major decision was made | Event-driven | Formal, reviewed |
+| **Memories** | Gotchas, dead-ends, mental models, contextual hints | Lightweight, ad-hoc | Informal |
+
+This three-layer split fills the gap between "commit message" (too
+terse) and "ADR" (too ceremonious for a passing observation). It is
+**not** parallel documentation: each layer captures something the
+others do not.
+
+Users who want private (machine-local) memories can `.gitignore
+docs/memories/` themselves. The default is share-by-commit, matching
+how ADRs already work.
+
+### When the embedding model can be tiny
+
+The embedded surface is `title + " " + keywords` — an LLM-generated,
+short, dense, English surrogate. The body is stored raw (any
+language, any length) but **never embedded**; it is surfaced into
+the prompt only after a successful match. This split (LLM compresses
+meaning into English keywords at write-time; small embedding model
+matches keyword strings at read-time) is what lets the embedding
+model be tiny (`bge-small-en-v1.5`, 33M params) and English-only
+without sacrificing recall on Hebrew or mixed prompts.
 
 ### Encoding (how memories get in)
 
@@ -200,18 +274,20 @@ to function — recall is strictly additive.
 - ⚠️ Adds one external dependency: `sqlite-vec` (single-file
   extension; pip-installable or prebuilt binary). Acceptable — no
   server, no daemon, the DB is one file under `.claude/`.
-- ⚠️ Adds one local embedding call per non-suppressed prompt
-  (~5–15ms on a modern laptop CPU with `bge-small-en-v1.5`). If a
-  remote provider is configured instead, expect ~50–150ms network
-  round-trip.
-- ⚠️ Requires a running Ollama daemon (or equivalent) for the default
-  path. This is a per-user, not per-project, install; it does not
-  violate aims's "no global state per project" rule (ADR-0005). Users
-  who refuse Ollama can either set a remote-provider key or accept
-  Tier 1-only.
-- ⚠️ `.claude/memory.db` is gitignored by default. Memory does not
-  sync across machines or collaborators without an opt-in mechanism;
-  a `/memory sync` command is out of scope for this ADR.
+- ⚠️ Adds one local embedding call **per prompt** for the shift
+  detector (~10ms with `bge-small-en-v1.5`). The full recall +
+  Haiku pipeline fires only on shift events (~5–15/day).
+- ⚠️ Requires a running Ollama daemon (or equivalent) for the
+  default embedding path. Per-user, not per-project; does not
+  violate ADR-0005. Users who refuse Ollama can either set a
+  remote-provider key or accept Tier 1-only.
+- ⚠️ Requires `ANTHROPIC_API_KEY` for the Haiku rerank/filter step.
+  If unset, the pipeline falls back to top-5 by composite score
+  (no LLM filtering). Tier 2 still works, just less precisely.
+- ⚠️ Memory files in `docs/memories/` are tracked in git by default.
+  This is intentional (shareable with collaborators) but means
+  users must be deliberate about what they write — same discipline
+  as ADRs.
 - 🔒 Closes the door on multi-step LLM retrieval (HyDE, query
   rewriting, LLM re-ranking). Same reasoning as ADR-0002 and
   ADR-0004: one deterministic shell+SQL hop, no orchestration. If
@@ -276,25 +352,56 @@ to function — recall is strictly additive.
   CI environments where the embedding step needs to be reproducible
   without a daemon.
 
+- **`sqlite-vec` as the storage backend** — initially proposed, then
+  rejected. At v1 scale (tens to low-hundreds of memories per
+  project), sequential cosine over per-memory `.vec` sidecar files
+  finishes in under 100ms — far below the Haiku rerank step that
+  dominates. A vector DB adds an extension dependency, a binary
+  format, and a "rebuild the index" failure mode, for no observable
+  win. If a project ever exceeds ~1,000 memories the trade-off
+  flips; that is a follow-up problem, not a v1 problem.
+
+- **Anthropic's `memory_20250818` tool as the primary mechanism** —
+  rejected as primary (it is runtime-driven, not system-proactive),
+  but explicitly kept compatible: the storage layout (markdown files
+  in a directory with frontmatter) is intentionally similar to
+  Anthropic's `/memories` convention, so a future bridge that
+  exposes the same files through the official tool requires no
+  migration.
+
+- **Per-prompt recall (the original draft)** — superseded by the
+  event-driven shift-detector design. Per-prompt recall meant an
+  embedding call + rerank + injection on every turn, with all the
+  associated context-rot and orchestration costs. Event-driven
+  triggers (session start, topic shift) match how a person
+  re-orients themselves around a topic, and reduce LLM rerank to a
+  few calls a day — at which frequency Haiku becomes feasible.
+
 ## Verification
 
-- `.claude/memory.db` exists after first ingest and contains the
-  schema above (`sqlite3 .claude/memory.db .schema | grep -E
-  'memories|vec0'`).
+- `docs/memories/` exists and is tracked in git; `.claude/embeddings/`
+  exists and is gitignored. Verify with `git check-ignore -v
+  .claude/embeddings/0001.vec` (should report ignored) and
+  `git ls-files docs/memories | head` (should list any committed
+  memory files).
 - `templates/hooks/prompt-submit.sh` makes at most one embedding
-  call and one SQL query per non-suppressed prompt; tracing via
-  `AIMS_RECALL_TRACE=1` prints the scored top-K plus the chosen
-  top-N to stderr.
+  call per prompt (shift detector). Full recall + Haiku rerank
+  runs only on shift events; trace with `AIMS_RECALL_TRACE=1`.
 - Injected `additionalContext` for recall is ≤4KB and prefixed
   `[aims-recall]` so it is visually distinct from `[aims-router]`
-  in transcripts.
+  in transcripts. On topic-shift events the injection includes a
+  `/clear` recommendation in the same block.
 - Ollama unreachable on `localhost:11434` AND no remote provider
   configured → SessionStart and the router behave identically to
   pre-ADR-0006; no recall block injected; no error on stderr.
+- `ANTHROPIC_API_KEY` unset → Tier 2 still fires on shifts, but
+  uses top-5 by composite score without LLM filtering. A breadcrumb
+  on stderr notes the fallback.
 - Distractor floor enforced: a unit test (`tests/recall.sh`) inserts
   a known-irrelevant memory, runs a query whose true top match is
   above the floor, asserts the irrelevant memory is filtered out
   before injection.
 - README "Design principles" gains a fifth point referencing this
-  ADR: "Memory is two-tier — light always-on, deep on-demand —
-  to respect context-rot and distractor evidence."
+  ADR: "Memory is event-driven — light always-on at SessionStart,
+  deep recall on topic-shift, with LLM filtering only at those
+  inflection points."
