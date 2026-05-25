@@ -61,8 +61,9 @@ Every leaf has the fixed shape documented in ADR-0007 § "Leaf content
 schema":
 
 - **Frontmatter** (required keys: `node`, `kind`, `code`; optional:
-  `commits`, `sessions`, `related`, `owners`; system-managed:
-  `dirty`, `last_touched`, `last_consolidated`).
+  `commits`, `sessions`, `related`, `claude_md_refs`,
+  `external_refs`, `owners`; system-managed: `dirty`,
+  `last_touched`, `last_consolidated`).
 - **Body** — five named sections, fixed names, each may be empty:
   `## Purpose`, `## Logical rules & invariants`,
   `## Editing considerations`, `## Deliberations & history`,
@@ -70,10 +71,22 @@ schema":
 - `commits:` carries only anchor SHAs (curated, ~5-10 max);
   no `{sha, why}` tuples — the commit message itself holds the
   reason. The git log holds the non-anchor history.
+- `claude_md_refs:` and `external_refs:` point to memory that lives
+  OUTSIDE the tree (CLAUDE.md sections, `~/.claude/memory/` notes,
+  ADRs, plans). Read-only references — the tree never overwrites
+  them.
 - `kind: module|decision|topic|runbook` is a hint about which body
   section dominates, not a schema variant.
 - **No size cap** on leaves. Splitting into sub-leaves is a
   deliberate edit, not a lint rule.
+
+## Non-duplication invariant (per ADR-0007 § Relationship)
+
+The tree is a navigator, not a copy. CLAUDE.md, the `/memory` slash
+command, and Anthropic's `memory_20250818` tool all continue to work
+unchanged. The tree REFERENCES content stored in those places; it
+never mirrors or overwrites it. This is the design constraint that
+the helpers and hooks below all respect.
 
 The helpers and hooks below assume this shape.
 
@@ -95,27 +108,47 @@ Pure bash; no math, no embeddings. All operate on the schema above.
   Idempotent: refuses if the leaf already exists.
 - `find-dirty.sh` — print, one per line, the relative path of every
   leaf with `dirty: true`. Empty output if nothing dirty.
-- `lint.sh` — for every leaf, check that each path in `code:`
+- `lint.sh` — for every leaf, check that each path in `code:`,
+  `external_refs.path`, and CLAUDE.md heading in `claude_md_refs`
   exists; report orphans. Exit 0 (informational).
+- `check-refs.sh` — for every leaf, compare current mtime/hash of
+  each `external_refs.path` and `claude_md_refs` section against
+  the leaf's `last_consolidated`. Emit a list of
+  `<leaf>\t<ref>\tchanged` rows. Used by consolidate.sh; never
+  modifies anything.
 - `consolidate.sh <leaf_path>` — given a dirty leaf, build the
-  Sonnet/Opus request (current body + diffs of referenced sources
-  since `last_touched`), POST to Anthropic, write back the updated
-  body, set `dirty: false`. Fallback: if no `ANTHROPIC_API_KEY`,
-  print "skipping consolidation" to stderr and exit 0.
-- `classify-inbox.sh` — read `_inbox.md`, call Sonnet/Opus to
-  propose for each entry: `existing-leaf <path>` or `new-leaf
-  <proposed-path>`. Print proposals as TSV for `/done` to act on.
+  Sonnet/Opus request: current body + diffs of referenced sources
+  since `last_touched` + a list of changed external_refs from
+  check-refs.sh. POST to Anthropic, write back the updated body,
+  append breadcrumb lines for changed external_refs in `##
+  Deliberations & history` (never modify the external files
+  themselves), set `dirty: false`, bump `last_consolidated`.
+  Fallback: if no `ANTHROPIC_API_KEY`, print "skipping
+  consolidation" to stderr and exit 0.
+- `classify-inbox.sh` — read `_inbox.md` (which includes both code
+  paths and CLAUDE.md section names), call Sonnet/Opus to propose
+  for each entry: `existing-leaf <path>` (add to its `code:` or
+  `claude_md_refs:`) or `new-leaf <proposed-path>`. Print
+  proposals as TSV for `/done` to act on.
 
 Verify: `bash -n templates/memory/*.sh` clean. Each script's
 `--help` (if no args) prints usage and exits 0.
 
 ### 2. Cold-start command `templates/commands/memory-init.md`
 
-Sonnet, idempotent. Reads the codebase via Glob/Read, classifies
-modules into 5–10 domain tags (interface/network/implementation/
-documentation by default; refined to project specifics), drafts
-`docs/memory/README.md` plus per-tag `README.md` plus leaf stubs
-for the most prominent modules with `code:` frontmatter populated.
+Sonnet, idempotent. Reads the codebase via Glob/Read AND reads the
+existing CLAUDE.md, classifies modules into 5–10 domain tags
+(interface/network/implementation/documentation by default; refined
+to project specifics), drafts `docs/memory/README.md` plus per-tag
+`README.md` plus leaf stubs for the most prominent modules with
+`code:` frontmatter populated.
+
+For each seeded leaf, also populates `claude_md_refs:` from the
+existing CLAUDE.md sections that the leaf's domain plausibly relates
+to (e.g. an `implementation/` leaf references the `Build & test
+commands` and `Hooks` sections of CLAUDE.md). Does NOT copy CLAUDE.md
+content into the tree — references only (the non-duplication
+invariant).
 
 Discipline:
 - Read-only scan first (no writes during exploration).
@@ -123,9 +156,12 @@ Discipline:
 - Refusal if `docs/memory/` already non-empty — instead suggest
   manual extension or a separate `/memory-augment` (out of scope
   for this plan).
+- Refusal if CLAUDE.md is missing — it must exist before
+  /memory-init so references are valid.
 
 Verify: file exists with the right Sonnet frontmatter; dry-run
-on a small fake project produces a sensible tree.
+on a small fake project produces a sensible tree where leaves
+reference CLAUDE.md sections without duplicating content.
 
 ### 3. Edit-marker hook `templates/hooks/post-edit-marker.sh`
 
@@ -138,24 +174,59 @@ Verify: `bash -n templates/hooks/post-edit-marker.sh`. Smoke test:
 seed a leaf with `code: [src/foo.py]`, simulate a hook invocation
 for `src/foo.py`, assert `dirty: true` after.
 
-### 4. Stop-hook consolidation `templates/hooks/session-stop.sh`
+### 4. Stop-hook consolidation with throttle `templates/hooks/stop-consolidate.sh`
 
-New hook (was deferred from the prior plan, now repurposed):
+Wired to `Stop`, not `SessionEnd`. Most fires are no-ops thanks to
+a bash-level throttle; the LLM call happens only at natural pause
+points.
 
-- Read every dirty leaf via `find-dirty.sh`.
-- For each, call `consolidate.sh <leaf>`.
-- Run `classify-inbox.sh` over `_inbox.md`; for clear matches,
-  apply automatically; for uncertain matches, leave the inbox
-  entries pending (the user will see them at next `/done`).
-- Print a one-line summary to stderr:
-  `[aims-memory] consolidated N leaves, classified M inbox items.`
+Pseudocode:
 
-Never blocks. Always exits 0. Tolerates missing API key (skips
-LLM steps, leaves `dirty: true` intact).
+```bash
+N_DIRTY=$(bash .claude/memory/find-dirty.sh | wc -l)
+[ "$N_DIRTY" -eq 0 ] && exit 0    # nothing to do; ~5ms
 
-Verify: `bash -n templates/hooks/session-stop.sh`. With mocked
-Anthropic: seed two dirty leaves, run the hook, assert both are
-clean and bodies updated.
+LAST_FILE=".claude/memory/.last-consolidated"
+NOW=$(date +%s)
+LAST=$([ -f "$LAST_FILE" ] && cat "$LAST_FILE" || echo 0)
+ELAPSED=$((NOW - LAST))
+
+THRESHOLD_DIRTY=${AIMS_MEMORY_DIRTY_MAX:-5}
+THRESHOLD_SEC=${AIMS_MEMORY_INTERVAL_SEC:-1800}   # 30 min
+
+if [ "$N_DIRTY" -ge "$THRESHOLD_DIRTY" ] || [ "$ELAPSED" -ge "$THRESHOLD_SEC" ]; then
+  # threshold tripped — run real consolidation
+  bash .claude/memory/find-dirty.sh | while read leaf; do
+    bash .claude/memory/consolidate.sh "$leaf"
+  done
+  bash .claude/memory/classify-inbox.sh | bash .claude/memory/apply-confident-classifications.sh
+  printf '%s' "$NOW" > "$LAST_FILE"
+  printf '[aims-memory] consolidated %d leaves\n' "$N_DIRTY" >&2
+fi
+
+exit 0
+```
+
+Defaults: 5 dirty leaves OR 30 minutes since last consolidation,
+whichever first. Override via `.claude/memory/throttle.conf` (sourced
+by the hook) for project-specific tuning.
+
+Never blocks. Always exits 0. Tolerates missing API key (consolidate.sh
+itself exits 0 when key missing; dirty leaves wait for the next fire
+where the key is present).
+
+Verify: `bash -n templates/hooks/stop-consolidate.sh`. Smoke tests:
+(a) 0 dirty → hook exits in <10ms. (b) 4 dirty, time < threshold →
+exits in <50ms. (c) 5 dirty → consolidation triggers (mocked
+Anthropic). (d) 1 dirty, time > 30 min → consolidation triggers.
+
+### 4b. SessionEnd safety-net hook `templates/hooks/session-end.sh`
+
+Same body as the Stop hook but **without** the throttle: if any
+leaves are dirty when SessionEnd fires, consolidate immediately.
+Cheap when nothing is dirty (exits in ~5ms). For users who DO close
+the CLI, this is the catch-up. For users who never close, it never
+fires — and the Stop throttle covers them.
 
 ### 5. SessionStart hook update `templates/hooks/session-start.sh`
 
@@ -168,30 +239,39 @@ exists, the hook's stdout contains the README's first heading.
 
 ### 6. New command `templates/commands/remember.md`
 
-Haiku. Takes a note in `$ARGUMENTS`. Asks the model (still Haiku,
-same call) to:
+Haiku. Takes a note in `$ARGUMENTS`. Asks the model (Haiku, single
+call) to:
 - pick the best-fit existing leaf, OR
 - propose a new leaf path,
-then append the note to the leaf's body in a `## Notes` section
-(create the section if missing).
+then append the note to the appropriate body section of that leaf
+(by default `## Open questions`, or another section if the note
+clearly fits Logic/Editing/Deliberations).
+
+Does NOT write to CLAUDE.md — that path is reserved for the
+Claude-native `/memory` slash command. The non-duplication invariant.
 
 Verify: file exists with Haiku frontmatter; dry-run on a seeded
-tree picks a sensible leaf.
+tree picks a sensible leaf and the right body section.
 
 ### 7. `/done` extension `templates/commands/done.md`
 
 Add a "before reporting" step:
-- Invoke `bash .claude/hooks/session-stop.sh` directly (consolidation).
+- Invoke `bash .claude/hooks/stop-consolidate.sh --force` directly
+  (consolidation, ignoring the throttle).
 - Print the consolidation summary as part of the `/done` report.
 - For any classify-inbox results that need user input, ask via
   `AskUserQuestion` before finalizing.
+- Also: scan CLAUDE.md for sections changed since the leaves'
+  `last_consolidated` and not yet linked from any leaf; offer to
+  add `claude_md_refs:` to the relevant leaves.
 
 Verify: read existing done.md; the added section is at the right
-place; running `/done` on a seeded tree triggers consolidation.
+place; running `/done` on a seeded tree triggers consolidation
+regardless of throttle state.
 
 ### 8. Settings wiring `templates/settings.json.tmpl`
 
-Add two hook entries:
+Add three hook entries:
 
 ```json
 "PostToolUse": [
@@ -199,12 +279,15 @@ Add two hook entries:
     "hooks": [{ "type": "command", "command": "bash .claude/hooks/post-edit-marker.sh" }] }
 ],
 "Stop": [
-  { "hooks": [{ "type": "command", "command": "bash .claude/hooks/session-stop.sh" }] }
+  { "hooks": [{ "type": "command", "command": "bash .claude/hooks/stop-consolidate.sh" }] }
+],
+"SessionEnd": [
+  { "hooks": [{ "type": "command", "command": "bash .claude/hooks/session-end.sh" }] }
 ]
 ```
 
-Note: the PreToolUse entry for `pre-write.sh` stays. PostToolUse is
-a separate event and they do not conflict.
+Note: the PreToolUse entry for `pre-write.sh` stays. PostToolUse,
+Stop, and SessionEnd are independent events and none of them conflict.
 
 Verify: `jq . templates/settings.json.tmpl` parses cleanly; the
 existing PreToolUse entry is unchanged.
