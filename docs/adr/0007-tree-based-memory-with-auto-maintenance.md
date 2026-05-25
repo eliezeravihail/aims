@@ -71,35 +71,100 @@ docs/memory/
 └── documentation/
 ```
 
-Each leaf `.md` carries YAML frontmatter:
+### Leaf content schema
+
+Each leaf carries fixed-shape frontmatter and five named body sections.
+The shape is rigid enough that hooks and the model can navigate it
+mechanically, and loose enough that any section may be empty.
+
+**Frontmatter** (machine-readable; the contract the hooks rely on):
 
 ```yaml
 ---
 node: interface/auth/oauth-callback
-related: [network/http-client/auth-headers]
-code:
+kind: module                    # module | decision | topic | runbook
+code:                           # source files this leaf documents
   - src/auth/callback.py
   - src/auth/handlers.py:42-90
-commits: [a1b2c3d, e4f5g6h]
-sessions: [docs/plans/oauth-callback-2026-04.md]
-dirty: false                  # flipped by the edit-marker hook
-last_touched: 2026-05-25T12:34:56Z
+commits: [a1b2c3d, e4f5g6h]     # only seminal/anchor SHAs (~5-10 max);
+                                # the git log holds the rest
+sessions:                       # plans/ADRs that fed this leaf
+  - docs/plans/oauth-callback-2026-04.md
+  - docs/adr/0012-pkce-required.md
+related:                        # cross-refs to other leaves
+  - network/http-client/auth-headers
+owners: [ema]                   # optional — who knows this best
+dirty: false                    # system: flipped by post-edit marker
+last_touched: 2026-05-25T12:34:56Z       # system
+last_consolidated: 2026-05-20T09:00:00Z  # system
 ---
-
-# OAuth callback handling
-
-## What this is
-…
-
-## Gotchas
-…
-
-## Instructions for working here
-…
 ```
 
-`code:` is a list of paths (optionally `:start-end`). It is what
-lets the edit hook find which nodes a changed source file touches.
+`code:` is a list of paths (optionally `:start-end`). It is what lets
+the edit-marker hook find which leaves a changed source file touches.
+
+`commits:` is a **curated, append-only list of anchor SHAs**, not a
+mirror of `git log`. A SHA goes in when it is the commit you would
+point a newcomer to in order to explain how this leaf came to be —
+the introduction of a feature, a bug-fix that established an
+invariant, a rollback that closed a door. The git log holds the rest;
+duplicating it here would just decay.
+
+`kind:` hints which body section is the centre of the leaf — it does
+not change the schema:
+
+| kind       | centre of attention                              |
+|------------|--------------------------------------------------|
+| `module`   | Editing considerations + Logical rules           |
+| `decision` | Deliberations & history                          |
+| `topic`    | Logical rules & invariants                       |
+| `runbook`  | Editing considerations (as step-by-step actions) |
+
+**Body — five named sections, fixed names, all optional:**
+
+```markdown
+# OAuth callback handling
+
+## Purpose
+One or two lines: what this leaf documents. Filled at cold-start by
+the LLM scan; refined by hand if the scan's summary is off.
+
+## Logical rules & invariants
+Things that MUST hold, whether or not they are enforced in code.
+Business rules, security invariants, contracts with callers.
+  - "state param MUST be a nonce with TTL ≤ 5 min."
+  - "redirect_uri MUST match the whitelist exactly — substring
+    matching is unsafe (CVE-2026-1234)."
+
+## Editing considerations
+What to check before touching the referenced code. The section that
+saves the next session from re-discovering past mistakes.
+  - "Changing verify_state() requires re-running tests/integration/
+    test_csrf.py — unit tests don't cover all paths."
+  - "Token shape changes propagate to migrations/0042_*.sql."
+  - "Making the callback async requires updating the timeout in
+    src/auth/middleware.py."
+
+## Deliberations & history
+Why it is the way it is. What was considered and rejected. The
+referenced commits (and ADRs/plans) reappear here as narrative:
+  - "Considered JWT vs server-side session cookies (ADR-0012).
+    Chose cookies because the mobile client could not store JWT
+    securely at the time."
+  - "Tried refresh-token rotation in 2026-03 (commit a1b2c3d);
+    rolled back in e4f5g6h after mobile races caused logouts."
+
+## Open questions
+What we do not yet know but probably should:
+  - "Is the current refresh policy SOC2-compliant?"
+  - "Should callback success emit to the event bus?"
+
+`/done` will surface these for periodic review.
+```
+
+No size cap. A leaf is as big as the topic justifies; if a section
+grows long enough that the model fails to use it well, splitting
+into sub-leaves is a deliberate edit, not a rule the linter enforces.
 
 ### Cold start — LLM proposes, user refines (one-time, at /init-workflow)
 
