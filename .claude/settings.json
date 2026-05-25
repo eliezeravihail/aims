@@ -21,6 +21,28 @@
           { "type": "command", "command": "bash .claude/hooks/pre-write.sh" }
         ]
       }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          { "type": "command", "command": "bash .claude/hooks/post-edit-marker.sh" }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "bash .claude/hooks/stop-consolidate.sh" }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          { "type": "command", "command": "bash .claude/hooks/session-end.sh" }
+        ]
+      }
     ]
   }
 }
