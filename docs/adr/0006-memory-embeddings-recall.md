@@ -1,8 +1,22 @@
 # ADR-0006: Two-tier project memory — core context plus embedding-based recall
-Status: proposed
+Status: superseded
 Date: 2026-05-25
 Supersedes: —
-Superseded by: —
+Superseded by: ADR-0007 (tree-based memory with automatic build and maintenance)
+
+> **Note on supersession.** This ADR explored an embedding-based recall
+> design through three revisions (per-prompt → event-driven → keyword-
+> surrogate). During the implementation step (three commits later
+> reverted, never pushed), the user concluded that the runtime cost
+> of an embedding model plus the rerank step was overkill for the
+> realistic memory corpus size (<500 items per project). The decision
+> was to pivot to a navigable hierarchical knowledge graph — see
+> ADR-0007 for the chosen design.
+>
+> The full text below is preserved as the design conversation we ran
+> through. Treat it as historical; do not implement.
+
+---
 
 ## Context
 
