@@ -40,3 +40,25 @@ echo block > .claude/aims-mode    # block source edits without active plan
 ```
 The planning lock (`.claude/.planning-lock`) always blocks edits regardless
 of mode — this is what makes `/plan` actually read-only.
+
+## Memory tree
+
+The repo carries a navigable memory layer under `docs/memory/` (see
+`docs/adr/0007-tree-based-memory-with-auto-maintenance.md` for the
+full design). It is a NAVIGATOR over `CLAUDE.md`, ADRs, plans, and
+external memory — never a copy of them.
+
+- `/memory-init` (one-time) — seed `docs/memory/` from a codebase scan.
+- `/remember <note>` — file a note into the right leaf.
+- The `PostToolUse` marker hook flips affected leaves to
+  `dirty: true` after every Edit/Write. The `Stop` hook
+  consolidates dirty leaves via an LLM call, but only when the
+  throttle trips (5 dirty leaves OR 30 min since last
+  consolidation). `SessionEnd` runs the same consolidation
+  un-throttled if the CLI is actually closed.
+- `/done` forces a consolidation regardless of throttle.
+- To browse the tree manually: `cat docs/memory/README.md`, then any
+  leaf under `docs/memory/<tag>/<name>.md`.
+
+Project conventions (build/test, models, hooks, layout) stay in
+CLAUDE.md; the tree references them via `claude_md_refs:`.

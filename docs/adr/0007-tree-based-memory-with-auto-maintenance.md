@@ -1,8 +1,13 @@
 # ADR-0007: Tree-based project memory with automatic build and maintenance
-Status: proposed
+Status: accepted
 Date: 2026-05-25
 Supersedes: ADR-0006 (embedding-based recall)
 Superseded by: —
+
+Implemented in commits a0f4913, 2d967a8, 47977ae and the dogfood/test
+commit that follows this ADR's status flip. Tests under `tests/marker.sh`
+and `tests/consolidate.sh` cover the marker-flips-dirty path and the
+throttled-consolidation path (with a mocked Anthropic endpoint).
 
 ## Context
 

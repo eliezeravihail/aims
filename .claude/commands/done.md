@@ -42,13 +42,33 @@ in-progress plan in `docs/plans/`).
    CLAUDE.md? (e.g., new build command, directory layout, naming rule.)
    If yes, propose the diff and ask for approval before merging.
 
-7. **Final report.**
+7. **Memory consolidation (ADR-0007).**
+   If `docs/memory/` exists:
+   - Force a full consolidation pass:
+     `bash .claude/hooks/stop-consolidate.sh --force`
+     (the `--force` bypasses the per-session throttle).
+   - Run `bash .claude/memory/classify-inbox.sh` if `_inbox.md` is
+     non-empty.  Apply confident `existing-leaf` proposals via Edit;
+     for `new-leaf` and `uncertain` proposals, ask the user via
+     `AskUserQuestion` before acting.
+   - Detect new CLAUDE.md sections changed during this plan that
+     aren't yet linked from any leaf:
+     ```
+     git log --since="<plan-started-date>" --pretty=format: --name-only \
+       -- CLAUDE.md | sort -u
+     ```
+     If CLAUDE.md changed and no leaf references the new section,
+     offer to add a `claude_md_refs:` entry to the most relevant
+     leaf.
+
+8. **Final report.**
 
    ```
    Plan: docs/plans/YYYY-MM-DD-<slug>.md → completed
    Verification: <N pass / M fail>
    ADRs created: ADR-NNNN, ADR-MMMM
    CLAUDE.md: unchanged | +<sections>
+   Memory: <N leaves consolidated, M inbox entries classified>
    ```
 
 ## Hard rules
