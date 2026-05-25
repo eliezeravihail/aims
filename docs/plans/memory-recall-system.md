@@ -1,6 +1,13 @@
 # Plan: Memory-recall system implementation (ADR-0006)
-Status: in-progress
+Status: superseded
 Started: 2026-05-25
+Superseded by: docs/plans/memory-tree-system.md (per ADR-0007)
+
+> The user pivoted away from the embedding-based recall this plan
+> describes; it was never implemented end-to-end on a pushed branch.
+> See `docs/plans/memory-tree-system.md` for the active plan.
+
+---
 
 ## Context
 
