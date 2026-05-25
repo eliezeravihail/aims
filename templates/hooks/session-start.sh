@@ -57,4 +57,18 @@ if [ -d "$ADR_DIR" ]; then
   fi
 fi
 
+# Memory tree top-level (ADR-0007). Surface the README so the model
+# knows the tag list to navigate. Capped at 2KB to keep the prompt
+# injection light.
+MEMORY_DIR="${AIMS_MEMORY_DIR:-docs/memory}"
+MEMORY_README="$MEMORY_DIR/README.md"
+if [ -r "$MEMORY_README" ]; then
+  printf '[aims] Memory tree (%s):\n' "$MEMORY_DIR"
+  head -c 2048 "$MEMORY_README" | sed 's/^/       /'
+  size=$(wc -c < "$MEMORY_README")
+  if [ "$size" -gt 2048 ]; then
+    printf '       … (%d bytes truncated; view with: cat %s)\n' "$((size - 2048))" "$MEMORY_README"
+  fi
+fi
+
 exit 0
