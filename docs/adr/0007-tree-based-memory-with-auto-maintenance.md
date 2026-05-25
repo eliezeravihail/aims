@@ -93,6 +93,18 @@ sessions:                       # plans/ADRs that fed this leaf
   - docs/adr/0012-pkce-required.md
 related:                        # cross-refs to other leaves
   - network/http-client/auth-headers
+
+# Pointers to memory that lives OUTSIDE the tree.
+# These are read-only references; the tree never overwrites them.
+claude_md_refs:                 # sections in project or user CLAUDE.md
+  - "Models policy"
+  - "Hooks"
+external_refs:                  # other files holding relevant memory
+  - { path: ~/.claude/memory/auth-notes.md, kind: user-memory,
+      why: "cross-project auth conventions" }
+  - { path: docs/adr/0012-pkce-required.md, kind: adr,
+      why: "established PKCE invariant" }
+
 owners: [ema]                   # optional — who knows this best
 dirty: false                    # system: flipped by post-edit marker
 last_touched: 2026-05-25T12:34:56Z       # system
@@ -218,28 +230,58 @@ A `PostToolUse` hook on `Edit|Write|MultiEdit|NotebookEdit`:
 
 The hook never blocks edits. It is fire-and-forget bookkeeping.
 
-**Phase B — Consolidation (deferred, LLM-driven, automatic).**
-The `Stop` hook (session end) and the `/done` command both invoke
-the consolidation pass:
+**Phase B — Consolidation (deferred, LLM-driven, throttled).**
+
+`Stop` is the chosen trigger because real users often leave Claude
+Code open for days without ever firing `SessionEnd`. But `Stop` fires
+after **every** Claude turn, so an unconditional LLM call there would
+mean ~30 LLM calls per active session. Throttle in bash before
+calling the LLM:
+
+```
+Stop hook fires:
+  ↓
+bash check:  N_DIRTY = count of leaves with dirty: true
+             T_LAST  = mtime of .claude/memory/.last-consolidated
+  ↓
+  if  N_DIRTY ≥ 5   OR
+      (now - T_LAST > 30 min  AND  N_DIRTY > 0)  →  run consolidation
+  else                                            →  exit 0 (≈5ms, invisible)
+```
+
+When the threshold trips, the consolidation pass does:
 
 1. Find every leaf with `dirty: true`.
 2. For each, build a Sonnet/Opus call: "Here is the leaf's current
    body + the diffs to its referenced source files since
    `last_touched`. Update the leaf's content to reflect what
    changed; preserve voice; do not invent."
-3. Write back, set `dirty: false`, update `last_touched`.
-4. Also process `_inbox.md`: ask the LLM to classify each pending
-   path into an existing leaf (or propose a new leaf), one round
-   per session.
+3. **Check `external_refs` and `claude_md_refs`** for mtime/hash
+   changes since `last_consolidated`; for each changed reference,
+   append a one-line breadcrumb in the leaf's `## Deliberations &
+   history` section: `"<path> updated <date>, review for impact"`.
+   **Never overwrites the referenced file.**
+4. Write back, set `dirty: false`, update `last_touched` and
+   `last_consolidated`.
+5. Also process `_inbox.md`: ask the LLM to classify each pending
+   path into an existing leaf (or propose a new leaf). Apply
+   confident matches; leave ambiguous ones for `/done`.
 
-Stop is the strongest natural trigger because the session is already
-ending — even a multi-second consolidation pass is invisible to the
-user. `/done` is the redundant explicit trigger for users who run
-long sessions and want consolidation mid-stream.
+Default thresholds: `N_DIRTY_MAX=5`, `T_INTERVAL=30min`. Configurable
+per project via `.claude/memory/throttle.conf`.
 
-This split satisfies the user's "must be automatic" requirement
-**without** introducing per-prompt orchestration: the per-edit
-cost is bash+sed; the per-session cost is one LLM call.
+`/done` runs the same consolidation **unconditionally** (ignores the
+throttle); it is the explicit trigger when you want everything
+caught up right now.
+
+`SessionEnd` (when it does fire) also runs the consolidation as a
+safety net — cheap when no dirty leaves, ensures nothing waits if
+you actually do close the CLI.
+
+This satisfies the "must be automatic" requirement without per-
+prompt orchestration: the per-edit cost is bash+sed (~30ms); the
+per-Stop cost is bash-only (~5ms) until threshold; the LLM call
+happens only at natural pause points.
 
 ### Cross-cutting concepts — tree plus front-matter cross-refs
 
@@ -249,6 +291,39 @@ and `network/http-client`) lives in **one canonical leaf** with a
 canonical placement avoids drift; the cross-ref keeps the graph
 navigable from either side. No bidirectional sync — `related:` is
 declared, not derived.
+
+### Relationship to existing Claude Code memory mechanisms
+
+aims's tree does NOT replace or duplicate Claude Code's native
+memory. The tree is a **navigator over multiple memory sources**;
+each piece of information has exactly one home, and the tree points
+to it.
+
+| Mechanism                       | Owner             | aims tree's role                                                                 |
+|---------------------------------|-------------------|----------------------------------------------------------------------------------|
+| `CLAUDE.md` (project/user)      | Claude Code       | Unchanged. Leaves reference relevant sections via `claude_md_refs:`.            |
+| `/memory` slash command         | Claude Code       | Unchanged. Output goes to `CLAUDE.md`; tree picks it up at next consolidation. |
+| `memory_20250818` tool          | Claude Code (when exposed) | When the tool is available, configure it to target `docs/memory/` (via symlink `/memories → docs/memory` if the path prefix is fixed). The tree's file layout works with Read/Glob regardless. |
+| `docs/adr/`, `docs/plans/`      | aims (existing)   | Formal records. Leaves reference via `sessions:` and prose in `## Deliberations & history`. |
+| `docs/memory/` (this ADR)       | aims (new)        | The map. Owns per-topic Logic/Editing/Deliberations/Open questions; points to everything else. |
+
+**No content migration at install.** CLAUDE.md keeps its current
+contents (build/test commands, workflow, hook config, plugin notes).
+The cold-start `/memory-init` reads CLAUDE.md and seeds
+`claude_md_refs:` in the relevant leaves; it does **not** copy
+content into the tree.
+
+**The `/memory` slash command keeps working as Claude Code defines
+it** — appends to CLAUDE.md. The next consolidation pass detects the
+CLAUDE.md change, identifies which leaf (if any) should reference
+the new section, and adds a `claude_md_refs:` entry. If no leaf
+fits, the change goes to `_inbox.md` for classification at the next
+`/done`. The user never has to choose between `/memory` and
+`/remember`; both feed the same map.
+
+**The tree's update never modifies CLAUDE.md or user-memory files.**
+External references are read-only. This is the **non-duplication
+invariant**.
 
 ### Commands
 
