@@ -1,6 +1,7 @@
 # Plan: Tree-based memory system (ADR-0007)
-Status: in-progress
+Status: completed
 Started: 2026-05-25
+Completed: 2026-05-25
 
 ## Context
 
@@ -397,7 +398,48 @@ End-to-end commands:
 
 ## ADRs to record after implementation
 
-- [ ] ADR-0007 status `proposed → accepted` when implementation
-      lands and both smoke tests pass.
+- [x] ADR-0007 status `proposed → accepted` — done in the same
+      commit that closed this plan; both smoke tests pass.
 - [ ] Optional ADR-0009 documenting the two-phase choice if it
-      proves controversial in review.
+      proves controversial in review. Deferred — the design holds
+      up in dogfood without needing a separate record; revisit
+      only if review pushback warrants.
+
+## Outcome
+
+All 13 steps landed across four commits on the
+`claude/memory-embeddings-context-cL7EE` branch:
+
+- a0f4913 — step 1 (7 helper scripts + _lib.sh under `templates/memory/`).
+- 2d967a8 — steps 3+4+4b+8 (marker hook, throttled Stop hook,
+  SessionEnd safety net, settings.json wiring).
+- 47977ae — steps 2+5+6+7 (SessionStart surfaces the tree;
+  /memory-init, /remember; /done extended with --force
+  consolidation + CLAUDE.md→tree link offers).
+- The closing commit (this one) — steps 9+10+11+12+13
+  (init-workflow extension, CLAUDE.md.tmpl section, dogfood
+  install under .claude/, marker.sh + consolidate.sh smoke tests
+  with a Python mock Anthropic endpoint, ADR-0007 status flip).
+
+Smoke-test results: both `tests/marker.sh` and `tests/consolidate.sh`
+pass. The marker hook flips dirty in ~27ms on a tiny tree; the
+Stop hook exits in ~18ms when there's nothing to do (well under
+the <50ms budget).
+
+Design refinement landed AFTER the original ADR draft:
+- Frontmatter gained `claude_md_refs:` and `external_refs:` so the
+  tree can REFERENCE CLAUDE.md and other memory without copying.
+- Consolidation wired to `Stop` (with bash-level throttle:
+  N_DIRTY≥5 OR T>30min) rather than only `SessionEnd`. Real users
+  rarely close the CLI; the throttle gives us automatic
+  maintenance without per-prompt LLM calls.
+- SessionEnd kept as an un-throttled safety net.
+- /done forces consolidation, ignoring the throttle, so explicit
+  closure is always definitive.
+
+Deferred to follow-ups:
+- `/memory-augment` for incremental tree growth (out of scope).
+- A real `/memory-init` dogfood pass on this very repo —
+  scaffolding only the leaves whose code: paths actually exist
+  (`templates/`, `commands/`, hooks). Left as the first manual
+  exercise to validate the cold-start UX in the field.
