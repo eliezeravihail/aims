@@ -55,19 +55,44 @@ mocked Anthropic.
 - **C — Manual maintenance only.** Rejected — user explicitly
   required automation.
 
+## Leaf content schema (firmed-up since ADR-0007 draft)
+
+Every leaf has the fixed shape documented in ADR-0007 § "Leaf content
+schema":
+
+- **Frontmatter** (required keys: `node`, `kind`, `code`; optional:
+  `commits`, `sessions`, `related`, `owners`; system-managed:
+  `dirty`, `last_touched`, `last_consolidated`).
+- **Body** — five named sections, fixed names, each may be empty:
+  `## Purpose`, `## Logical rules & invariants`,
+  `## Editing considerations`, `## Deliberations & history`,
+  `## Open questions`.
+- `commits:` carries only anchor SHAs (curated, ~5-10 max);
+  no `{sha, why}` tuples — the commit message itself holds the
+  reason. The git log holds the non-anchor history.
+- `kind: module|decision|topic|runbook` is a hint about which body
+  section dominates, not a schema variant.
+- **No size cap** on leaves. Splitting into sub-leaves is a
+  deliberate edit, not a lint rule.
+
+The helpers and hooks below assume this shape.
+
 ## Steps
 
 Independently verifiable; order matters only where called out.
 
 ### 1. Helper scripts under `templates/memory/`
 
-Pure bash; no math, no embeddings.
+Pure bash; no math, no embeddings. All operate on the schema above.
 
 - `mark.sh <changed_path>` — for each leaf under `docs/memory/`
   whose frontmatter `code:` list includes `<changed_path>` (or a
   prefix match for paths with `:line` ranges), set `dirty: true`
   and update `last_touched`. If no leaf matches, append the path
   to `docs/memory/_inbox.md`. Output: count of leaves marked.
+- `new-leaf.sh <node-path> <kind>` — scaffold a new leaf with the
+  required frontmatter keys and the five empty body sections.
+  Idempotent: refuses if the leaf already exists.
 - `find-dirty.sh` — print, one per line, the relative path of every
   leaf with `dirty: true`. Empty output if nothing dirty.
 - `lint.sh` — for every leaf, check that each path in `code:`
