@@ -19,23 +19,30 @@ thing to a test is a syntax check on the hook scripts:
 ## Decision records
 
 Architecture decisions live in `docs/adr/`. Index: `docs/adr/README.md`.
-
-- New decision → `/adr <title>`
-- Past decisions are append-only. To change one, write a new ADR that
-  supersedes it; do not edit the old.
+ADRs are proposed automatically during plan close-out (the implementation
+session decides per a confidence rule; see `/plan` Phase 4). For ad-hoc
+decisions outside a plan, write `docs/adr/NNNN-slug.md` directly with
+status `proposed`. Past decisions are append-only — to change one, write
+a new ADR that supersedes it.
 
 ## Workflow
 
-- Non-trivial change → `/plan <task>` first. Plans live in `docs/plans/`.
-- Mechanical work (renames, formatting, log/config edits) → `/grunt`.
-- Closing a plan → `/done` (verifies steps and prompts for ADRs).
+Two slash commands only:
+
+- `/plan <task>` — non-trivial change. Read-only planning, durable
+  artifact in `docs/plans/`, then implementation, then **inline
+  close-out** (verify, auto-ADR, mark completed, memory consolidation).
+- `/install-on <path>` — install or re-install aims into a target
+  project. Idempotent; never destroys hand-edited content.
+
+Everything else (bug-fix patches, refactors with obvious scope,
+mechanical edits, ad-hoc questions): just do the work inline. The
+hooks layer keeps you honest.
 
 ## Models policy
 
-- Planning, ADR, closing → **Opus** (auto via slash command frontmatter).
-- Implementation → **Sonnet** (run `/model sonnet` once per session).
-- Mechanical / log / config edits → `/grunt` runs on **Haiku**.
-- Override anytime with `/model <name>`.
+- Planning + plan close-out → **Opus** (auto via slash command frontmatter).
+- Implementation → any model — switch with `/model <name>` per preference.
 
 ## Hooks
 
