@@ -26,8 +26,8 @@ external_refs:
 owners:
   - ema
 dirty: false
-last_touched: 2026-05-27T18:40:53Z
-last_consolidated: 2026-05-27T18:40:53Z
+last_touched: 2026-05-27T21:44:32Z
+last_consolidated: 2026-05-27T21:44:32Z
 ---
 
 ## Purpose
@@ -51,6 +51,12 @@ breadcrumbs (non-duplication invariant).
   API key, no `curl`, no parallel curl path.
 - Per-turn cap of 10 nodes (`stop-consolidate.sh:117`) keeps prompt
   size bounded; remaining nodes are re-queued on the next `Stop`.
+- `consolidate.sh` emits **two** diff sections per source: committed
+  history since `last_touched` (4 KB cap) and the current working
+  tree + index diff (4 KB cap). The split lets a Stop-throttled
+  consolidation fire mid-session — before any commit — and still
+  give the model real signal about what just changed. Combined cap
+  remains 8 KB per source.
 - Transcript URLs are harvested in bash and offered to the model
   under "## Pointers > External" rather than synthesized inside the
   model — keeps the network surface in bash.
