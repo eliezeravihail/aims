@@ -30,8 +30,8 @@ external_refs:
 owners:
   - ema
 dirty: false
-last_touched: 2026-05-27T18:41:55Z
-last_consolidated: 2026-05-27T18:41:55Z
+last_touched: 2026-05-27T21:44:32Z
+last_consolidated: 2026-05-27T21:44:32Z
 ---
 
 ## Purpose
@@ -56,9 +56,19 @@ No external network call lives in any helper.
 - `doctor.sh` reports node count, dirty count, last-consolidated age,
   lint summary, and >4 KB node count — every signal a maintainer
   needs without any "missing key" caveat.
+- `path_matches` in `_lib.sh` accepts both relative and absolute
+  needles — defense in depth against a future hook (or direct
+  `mark.sh` caller) that forgets to normalize. The marker still
+  normalizes first; this is the belt under the suspenders.
 
 ## Invariants & gotchas
 
+- The marker MUST normalize absolute `tool_input.file_path` against
+  `git rev-parse --show-toplevel` before passing to `mark.sh`;
+  otherwise the skip-list (`.claude/*`, `docs/memory/*`) misses and
+  every edit leaks into `_inbox.md`. `path_matches` will also catch
+  the absolute form as a fallback, but the marker is the canonical
+  normalization point.
 - Only `mark.sh consolidated` may write
   `dirty/last_touched/last_consolidated`. Other helpers (and the
   in-band model executing consolidation prompts) MUST leave that

@@ -32,6 +32,19 @@ extract_path() {
 target=$(extract_path)
 [ -z "$target" ] && exit 0
 
+# Claude Code emits absolute paths in tool_input.file_path. The
+# memory-tree `code:` lists and the skip-list globs below are all
+# repo-relative (per ADR-0008). Normalize before either match.
+repo_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+case "$target" in
+  /*)
+    case "$target" in
+      "$repo_root"/*) target="${target#$repo_root/}" ;;
+      *) exit 0 ;;   # absolute path outside the repo — nothing to mark
+    esac
+    ;;
+esac
+
 # Skip paths that aren't project source (no point marking them):
 #   - inside .claude/, .git/, node_modules/, dist/, build/
 #   - the memory tree itself
