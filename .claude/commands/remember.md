@@ -32,7 +32,7 @@ The note maps to one of three outcomes:
 | Note is about…                              | Action                                                  |
 |---------------------------------------------|---------------------------------------------------------|
 | an existing leaf's domain                   | append to that leaf                                     |
-| a domain not yet covered, but significant   | scaffold a new leaf with `new-leaf.sh`, then append    |
+| a domain not yet covered, but significant   | scaffold a new leaf with `new-node.sh`, then append    |
 | a project convention / build / models       | tell the user to use `/memory` (Claude-native) instead |
 
 ### 3. Pick the body section

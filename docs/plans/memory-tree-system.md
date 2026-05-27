@@ -104,7 +104,7 @@ Pure bash; no math, no embeddings. All operate on the schema above.
   prefix match for paths with `:line` ranges), set `dirty: true`
   and update `last_touched`. If no leaf matches, append the path
   to `docs/memory/_inbox.md`. Output: count of leaves marked.
-- `new-leaf.sh <node-path> <kind>` — scaffold a new leaf with the
+- `new-node.sh <node-path> <kind>` — scaffold a new leaf with the
   required frontmatter keys and the five empty body sections.
   Idempotent: refuses if the leaf already exists.
 - `find-dirty.sh` — print, one per line, the relative path of every

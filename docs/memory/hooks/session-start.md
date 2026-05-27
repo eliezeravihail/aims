@@ -7,6 +7,8 @@ code:
 commits: []
 sessions:
   - docs/plans/memory-tree-system.md
+parents: []
+children: []
 related:
   - memory/phase-b-consolidation
 claude_md_refs:
@@ -26,10 +28,13 @@ last_consolidated: 2026-05-25T11:46:53Z
 
 SessionStart hook — informational only, never blocks. Surfaces in-progress plans, recently-touched ADRs, stale-planning-lock warnings, and (per ADR-0007) the memory tree's top-level README.md so the model knows the tag list to navigate from.
 
-## Logical rules & invariants
+## Design rationale
 
-## Editing considerations
+## Invariants & gotchas
 
-## Deliberations & history
+## Known issues
+
+
+## Pointers
 
 ## Open questions

@@ -10,6 +10,8 @@ code:
   - templates/plan-template.md.tmpl
 commits: []
 sessions: []
+parents: []
+children: []
 related:
   - installer/init-workflow
 claude_md_refs:
@@ -27,10 +29,13 @@ last_consolidated: 2026-05-25T11:46:53Z
 
 The .tmpl files under templates/ that /init-workflow substitutes into a target project. Substitution variables: {{PROJECT_NAME}}, {{TEST_CMD}}, {{LINT_CMD}}, {{TYPECHECK_CMD}}, {{ADR_DIR}}, {{HOOK_MODE}}, {{DATE}}. CLAUDE.md.tmpl gained a `## Memory tree` section in the ADR-0007 implementation.
 
-## Logical rules & invariants
+## Design rationale
 
-## Editing considerations
+## Invariants & gotchas
 
-## Deliberations & history
+## Known issues
+
+
+## Pointers
 
 ## Open questions

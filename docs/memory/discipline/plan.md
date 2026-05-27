@@ -6,6 +6,8 @@ code:
   - .claude/commands/plan.md
 commits: []
 sessions: []
+parents: []
+children: []
 related:
   - hooks/pre-write
   - discipline/done
@@ -26,10 +28,13 @@ last_consolidated: 2026-05-25T11:46:53Z
 
 Documents the /plan slash command — the entry point to non-trivial work in aims. /plan creates `.claude/.planning-lock`, runs read-only discovery, and writes a durable plan under `docs/plans/` before any Edit/Write is allowed. The planning-lock convention is enforced by the `pre-write.sh` hook (see hooks/pre-write).
 
-## Logical rules & invariants
+## Design rationale
 
-## Editing considerations
+## Invariants & gotchas
 
-## Deliberations & history
+## Known issues
+
+
+## Pointers
 
 ## Open questions

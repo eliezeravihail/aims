@@ -6,6 +6,8 @@ code:
   - .claude/commands/init-workflow.md
 commits: []
 sessions: []
+parents: []
+children: []
 related:
   - installer/templates
   - discipline/plan
@@ -26,10 +28,13 @@ last_consolidated: 2026-05-25T11:46:53Z
 
 Documents /init-workflow — the clone-and-bootstrap installer. Five phases: sniff (read-only on TARGET), interview (fill gaps via AskUserQuestion), show plan + ask approval, apply (copy from AIMS_ROOT to TARGET), doctor (final report). Question 7 (memory tree) and the corresponding file-table rows enable the ADR-0007 layer on install.
 
-## Logical rules & invariants
+## Design rationale
 
-## Editing considerations
+## Invariants & gotchas
 
-## Deliberations & history
+## Known issues
+
+
+## Pointers
 
 ## Open questions

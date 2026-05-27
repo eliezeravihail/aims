@@ -6,6 +6,8 @@ code:
   - .claude/commands/grunt.md
 commits: []
 sessions: []
+parents: []
+children: []
 related: []
 claude_md_refs:
   - "Models policy"
@@ -22,10 +24,13 @@ last_consolidated: 2026-05-25T11:46:53Z
 
 Documents the /grunt slash command — the cheap, fast lane for mechanical edits (renames, log/config tweaks, format fixes) that require no architectural judgment. Runs on Haiku via slash-command frontmatter; never asks AskUserQuestion for architectural choices.
 
-## Logical rules & invariants
+## Design rationale
 
-## Editing considerations
+## Invariants & gotchas
 
-## Deliberations & history
+## Known issues
+
+
+## Pointers
 
 ## Open questions

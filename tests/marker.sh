@@ -17,7 +17,7 @@ fail() { printf '[FAIL] %s\n' "$1" >&2; exit 1; }
 export AIMS_MEMORY_DIR="$TMP/memory"
 
 # Seed a leaf with a couple of code paths.
-bash "$ROOT/templates/memory/new-leaf.sh" interface/foo module >/dev/null
+bash "$ROOT/templates/memory/new-node.sh" interface/foo module >/dev/null
 LEAF="$AIMS_MEMORY_DIR/interface/foo.md"
 [ -f "$LEAF" ] || fail "scaffold did not create $LEAF"
 python3 -c "
