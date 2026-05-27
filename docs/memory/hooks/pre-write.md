@@ -6,6 +6,8 @@ code:
   - .claude/hooks/pre-write.sh
 commits: []
 sessions: []
+parents: []
+children: []
 related:
   - discipline/plan
 claude_md_refs:
@@ -23,10 +25,13 @@ last_consolidated: 2026-05-25T11:46:53Z
 
 PreToolUse hook on Edit | Write | MultiEdit | NotebookEdit. Two responsibilities: (1) hard-block while `.claude/.planning-lock` exists (planning is read-only); (2) in `block` mode, soft-block writes to recognised source paths without an in-progress plan. Exit 2 surfaces stderr to the model and the user.
 
-## Logical rules & invariants
+## Design rationale
 
-## Editing considerations
+## Invariants & gotchas
 
-## Deliberations & history
+## Known issues
+
+
+## Pointers
 
 ## Open questions

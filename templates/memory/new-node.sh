@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Scaffold a new memory leaf.
 #
-# Usage:  new-leaf.sh <node-path> <kind>
+# Usage:  new-node.sh <node-path> <kind>
 #   <node-path>  e.g. interface/auth/oauth-callback (NO .md suffix)
 #   <kind>       module | decision | topic | runbook
 #
@@ -15,7 +15,7 @@ SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 if [ $# -lt 2 ]; then
   cat <<'EOF'
-usage: new-leaf.sh <node-path> <kind>
+usage: new-node.sh <node-path> <kind>
 
   <node-path>  dotted/slash path under docs/memory/, no .md suffix
                e.g.  interface/auth/oauth-callback
@@ -54,6 +54,8 @@ kind: $kind
 code: []
 commits: []
 sessions: []
+parents: []
+children: []
 related: []
 claude_md_refs: []
 external_refs: []
@@ -65,25 +67,32 @@ last_consolidated: $NOW
 
 ## Purpose
 
-(One paragraph: what this leaf documents and why it deserves a home.)
+(One paragraph: what this code does.)
 
-## Logical rules & invariants
+## Design rationale
 
-(What must always hold here? Constraints the code is built around.)
+(2–4 bullets: why it is shaped this way. Each bullet may end with a
+repo-relative pointer — ADR-NNNN, commit SHA, plan slug.)
 
-## Editing considerations
+## Invariants & gotchas
 
-(What surprises a contributor editing the referenced code? Gotchas,
-ordering requirements, things-not-to-do.)
+(What must not break when editing. Concise.)
 
-## Deliberations & history
+## Known issues
 
-(Why is it like this? Choices made, alternatives rejected, links to
-ADRs / plans / pivotal commits.)
+(- open:  one-line — pointer: commit SHA / repo-relative file:line / external URL)
+(- fixed: one-line: what broke and why — commit SHA)
+
+## Pointers
+
+(- ADRs:     ADR-NNNN)
+(- Plans:    docs/plans/<slug>.md (in-progress | done))
+(- Commits:  <SHA> — one-line  (anchor commits only))
+(- External: <URL> — one-line  (Slack threads, issues, third-party docs))
 
 ## Open questions
 
-(Things we deferred or don't know yet.)
+(Design questions not yet decided. Distinct from bugs.)
 EOF
 
 printf 'created: %s\n' "$leaf"

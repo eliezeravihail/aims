@@ -7,6 +7,8 @@ code:
 commits: []
 sessions:
   - docs/plans/memory-tree-system.md
+parents: []
+children: []
 related:
   - discipline/plan
   - memory/phase-b-consolidation
@@ -26,10 +28,13 @@ last_consolidated: 2026-05-25T11:46:53Z
 
 Documents the /done slash command — closes an active plan, verifies each step, runs verification commands, prompts for ADRs, forces a memory consolidation pass (step 7, bypassing the throttle), and offers to link new CLAUDE.md sections from the memory tree. Final report includes the memory-tree status.
 
-## Logical rules & invariants
+## Design rationale
 
-## Editing considerations
+## Invariants & gotchas
 
-## Deliberations & history
+## Known issues
+
+
+## Pointers
 
 ## Open questions

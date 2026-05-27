@@ -40,6 +40,28 @@ case "${1:-}" in
   --force|-f) FORCE=1 ;;
 esac
 
+# Read the hook payload from stdin (Claude Code Stop hook contract:
+# JSON with `transcript_path`). Used to harvest URLs cited in the
+# session — those that survive the consolidate.sh LLM filter become
+# "## Pointers > External" entries on nodes touched this session.
+# Empty/unreadable transcript → empty URL list (no abort).
+TRANSCRIPT_URLS=""
+if [ "$FORCE" -ne 1 ] && [ ! -t 0 ]; then
+  payload=$(cat 2>/dev/null || true)
+  if [ -n "$payload" ] && command -v jq >/dev/null 2>&1; then
+    transcript_path=$(printf '%s' "$payload" \
+      | jq -r '.transcript_path // empty' 2>/dev/null || true)
+    if [ -n "$transcript_path" ] && [ -r "$transcript_path" ]; then
+      TRANSCRIPT_URLS=$(grep -oE 'https?://[^[:space:]"<>)\\]+' \
+        "$transcript_path" 2>/dev/null \
+        | sort -u \
+        | head -50 \
+        || true)
+    fi
+  fi
+fi
+export AIMS_TRANSCRIPT_URLS="$TRANSCRIPT_URLS"
+
 # Discover dirty leaves cheaply.
 mapfile -t DIRTY < <(bash "$MEM_HELPERS/find-dirty.sh" 2>/dev/null || true)
 N_DIRTY=${#DIRTY[@]}
