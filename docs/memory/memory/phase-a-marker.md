@@ -21,21 +21,42 @@ external_refs:
 owners:
   - ema
 dirty: false
-last_touched: 2026-05-25T11:46:53Z
-last_consolidated: 2026-05-25T11:46:53Z
+last_touched: 2026-05-27T18:40:53Z
+last_consolidated: 2026-05-27T18:40:53Z
 ---
 
 ## Purpose
 
-Phase A of the two-phase maintenance design: a PostToolUse hook that runs after every Edit/Write/MultiEdit/NotebookEdit and flips `dirty: true` on every leaf whose `code:` list references the edited file. Pure bash + sed; ~27ms per call on a tiny tree. Unknown paths go to `docs/memory/_inbox.md` for later classification. The hook never blocks and always exits 0.
+Phase A of the two-phase maintenance design: a PostToolUse hook that
+runs after every Edit/Write/MultiEdit/NotebookEdit and flips
+`dirty: true` on every node whose `code:` list references the edited
+file. Pure bash + sed; ~27 ms per call on a tiny tree. Unknown paths
+go to `docs/memory/_inbox.md` for later classification. The hook
+never blocks and always exits 0.
 
 ## Design rationale
 
+- The marker is dumb on purpose: it doesn't try to summarize the
+  change, only flag it. All judgment is deferred to Phase B
+  (ADR-0007) and now runs in-band (ADR-0009).
+- `mark.sh` carries the inverse `consolidated` subcommand used by
+  the in-band model to flip the same flag clean after a successful
+  body rewrite — keeps both transitions in one helper.
+
 ## Invariants & gotchas
+
+- Never blocks. Never exits non-zero. A broken marker must not
+  block the user's edit.
+- `path_matches` (in `_lib.sh`) handles trailing slashes and the
+  optional `:line` suffix in `code:` entries; don't reimplement
+  matching elsewhere.
 
 ## Known issues
 
-
 ## Pointers
+
+- ADR-0007 — Phase A specification.
+- ADR-0009 — adds the `consolidated` mode to `mark.sh`.
+- `templates/memory/mark.sh:34-46` — `consolidated` subcommand.
 
 ## Open questions

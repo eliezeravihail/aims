@@ -4,9 +4,11 @@
 #   - total nodes
 #   - dirty count
 #   - last-consolidated timestamp (or "never")
-#   - ANTHROPIC_API_KEY presence (yes/no — value never printed)
 #   - lint summary
 #   - count of nodes over the 4 KB soft limit (ADR-0008)
+#
+# Per ADR-0009 there is no API key field: consolidation runs in-band
+# in the active Claude Code session.
 #
 # Usage:  doctor.sh [--brief]
 #   --brief: one-line output for SessionStart hooks.
@@ -59,12 +61,6 @@ else
   LAST_HUMAN="never"
 fi
 
-if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
-  API_KEY_STATUS="yes"
-else
-  API_KEY_STATUS="no (consolidation will skip)"
-fi
-
 # Run lint silently; capture issue count from stderr "clean (N nodes)" or
 # count of issue lines on stdout.
 LINT_OUT=$(bash "$SCRIPT_DIR/lint.sh" 2>&1 || true)
@@ -86,8 +82,7 @@ fi
 if [ "$BRIEF" -eq 1 ]; then
   # One line for SessionStart. Highlight unhealthy states.
   if [ "$LAST_HUMAN" = "never" ] && [ "$DIRTY_COUNT" -gt 0 ]; then
-    printf '[aims-memory] consolidation never ran (%d dirty, API key: %s)\n' \
-      "$DIRTY_COUNT" "$API_KEY_STATUS"
+    printf '[aims-memory] consolidation never ran (%d dirty)\n' "$DIRTY_COUNT"
   elif [ "$LAST_HUMAN" = "never" ]; then
     printf '[aims-memory] %d nodes, consolidation never ran, lint %s\n' \
       "$NODE_COUNT" "$LINT_HUMAN"
@@ -103,7 +98,6 @@ aims memory pipeline health
   nodes total:        $NODE_COUNT
   dirty:              $DIRTY_COUNT
   last consolidated:  $LAST_HUMAN
-  ANTHROPIC_API_KEY:  $API_KEY_STATUS
   lint:               $LINT_HUMAN
   nodes > 4 KB:       $LARGE_COUNT
 EOF
