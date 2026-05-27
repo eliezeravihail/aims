@@ -4,6 +4,10 @@
 # Planning lock (set by /plan during read-only phase)
 .claude/.planning-lock
 
+# Memory subsystem runtime queue (written by post-edit-marker hook,
+# drained by stop-consolidate)
+docs/memory/_inbox.md
+
 # Editor / OS noise
 .DS_Store
 *.swp
