@@ -84,6 +84,20 @@ elif match '^(how |what |why |when |where |can |could |should |does |is |are |do
   intent="question"
 fi
 
+# Multilingual fallback: regex matchers above are English-only. If no
+# intent was inferred but the prompt is long enough to be actionable
+# (and isn't pasted code), assume an ambiguous task and let the model
+# disambiguate via AskUserQuestion. Keeps the router useful for
+# Hebrew/etc. prompts without per-language pattern maintenance.
+if [ -z "$intent" ]; then
+  plen=${#prompt}
+  # Skip code-paste-looking prompts.
+  if [ "$plen" -ge 40 ] && [ "$plen" -le 2048 ] \
+     && ! printf '%s' "$prompt" | grep -q '```'; then
+    intent="ambiguous"
+  fi
+fi
+
 [ -z "$intent" ] && exit 0
 
 # ── Build router context (JSON-safe via printf + escaping) ─────────────────
@@ -105,6 +119,8 @@ let the user pick the workflow. Use this menu, adapting only the wording:
   mechanical  → (a) /grunt it now (fast, Haiku)
                 (b) /plan first if the scope is unclear
   question    → (a) just answer  (b) answer then /plan if it leads to changes
+  ambiguous   → no English keyword matched; ask the user "Which workflow:
+                /plan, /grunt, /adr, or just answer?" and proceed by their pick.
 
 After the user picks, follow that workflow's discipline AS IF they had typed
 the slash command:

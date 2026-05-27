@@ -80,6 +80,12 @@ changed_refs=$(bash "$SCRIPT_DIR/check-refs.sh" "$leaf" || true)
 # (newline-separated). Filtered downstream by the LLM.
 transcript_urls="${AIMS_TRANSCRIPT_URLS:-}"
 
+# Optional extra context (typically plan / ADR bodies, injected by
+# /done's propagation step). The LLM is asked to mine this for
+# invariants, design rationale, and fixed-bug entries — but ONLY to
+# add content that is clearly about this node's code.
+extra_context="${AIMS_EXTRA_CONTEXT:-}"
+
 # Build the prompt.
 node_body=$(cat "$leaf")
 prompt=$(cat <<EOF
@@ -138,6 +144,15 @@ URLS CITED IN SESSION TRANSCRIPT (consider for "## Pointers > External".
 ONLY add a URL if it is clearly about this node's code; otherwise
 drop it. Format: "- External: <URL> — <one-line context>"):
 ${transcript_urls:-(none)}
+
+ADDITIONAL CONTEXT (plan / ADR text driving this consolidation, if any).
+Mine for invariants (→ "## Invariants & gotchas"), design rationale
+(→ "## Design rationale"), fixed bugs (→ "## Known issues > fixed",
+ONLY if a commit SHA from the diffs above can be cited), and open
+design questions (→ "## Open questions"). DO NOT add content unless
+the connection between this context and this node's code is clear.
+If the connection is weak, leave sections empty:
+${extra_context:-(none)}
 EOF
 )
 

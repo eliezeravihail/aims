@@ -106,7 +106,9 @@ Copy from `AIMS_ROOT` into `TARGET`. Substitute `{{VARS}}` while writing.
 | `TARGET/.claude/hooks/stop-consolidate.sh`                 | `AIMS_ROOT/templates/hooks/stop-consolidate.sh`  |
 | `TARGET/.claude/hooks/session-end.sh`                      | `AIMS_ROOT/templates/hooks/session-end.sh`       |
 | `TARGET/.claude/commands/memory-init.md`                   | `AIMS_ROOT/templates/commands/memory-init.md`    |
+| `TARGET/.claude/commands/memory-augment.md`                | `AIMS_ROOT/templates/commands/memory-augment.md` |
 | `TARGET/.claude/commands/remember.md`                      | `AIMS_ROOT/templates/commands/remember.md`       |
+| `TARGET/.claude/memory/doctor.sh`                          | `AIMS_ROOT/templates/memory/doctor.sh`           |
 
 Notes:
 

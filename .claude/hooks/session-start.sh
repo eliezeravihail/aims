@@ -45,15 +45,27 @@ if [ -d "$PLAN_DIR" ]; then
   fi
 fi
 
-# Recently-touched ADRs (last 30 days).
+# Recently-touched ADRs (last 30 days). Skip superseded/deprecated;
+# suffix non-accepted statuses so the model knows what is in force.
 if [ -d "$ADR_DIR" ]; then
-  recent=$(find "$ADR_DIR" -maxdepth 1 -name '[0-9]*.md' -mtime -30 2>/dev/null | sort | tail -5)
+  recent=$(find "$ADR_DIR" -maxdepth 1 -name '[0-9]*.md' -mtime -30 2>/dev/null | sort | tail -8)
   if [ -n "$recent" ]; then
-    printf '[aims] Recent ADRs:\n'
+    out=""
     while IFS= read -r f; do
+      status=$(awk -F': *' '/^Status:/{print tolower($2); exit}' "$f" 2>/dev/null | tr -d '\r ')
+      case "$status" in
+        superseded|deprecated) continue ;;
+      esac
       title=$(awk -F': ' '/^# /{print substr($0, 3); exit}' "$f")
-      printf '       %s\n' "${title:-${f##*/}}"
+      case "$status" in
+        ''|accepted) suffix='' ;;
+        *)           suffix=" ($status)" ;;
+      esac
+      out+="       ${title:-${f##*/}}${suffix}"$'\n'
     done <<< "$recent"
+    if [ -n "$out" ]; then
+      printf '[aims] Recent ADRs:\n%s' "$out"
+    fi
   fi
 fi
 
@@ -69,6 +81,18 @@ if [ -r "$MEMORY_README" ]; then
   if [ "$size" -gt 2048 ]; then
     printf '       … (%d bytes truncated; view with: cat %s)\n' "$((size - 2048))" "$MEMORY_README"
   fi
+fi
+
+# Memory pipeline health one-liner (ADR-0008 visibility).
+MEMORY_HELPERS=""
+if [ -r ".claude/memory/doctor.sh" ]; then
+  MEMORY_HELPERS=".claude/memory"
+elif [ -r "templates/memory/doctor.sh" ]; then
+  MEMORY_HELPERS="templates/memory"
+fi
+if [ -n "$MEMORY_HELPERS" ]; then
+  brief=$(bash "$MEMORY_HELPERS/doctor.sh" --brief 2>/dev/null || true)
+  [ -n "$brief" ] && printf '%s\n' "$brief"
 fi
 
 exit 0

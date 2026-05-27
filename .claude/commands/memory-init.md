@@ -11,9 +11,9 @@ markdown layer that documents the codebase's invariants, editing
 considerations, and history. The design is in `docs/adr/0007-tree-based-memory-with-auto-maintenance.md`.
 
 This command runs **once** per project. If `docs/memory/` already
-contains any non-README files, refuse and tell the user to extend the
-tree manually (a future `/memory-augment` will handle incremental
-growth).
+contains any non-README files, refuse and tell the user to use
+`/memory-augment add tag <name>` or `/memory-augment add node <path>`
+for incremental growth.
 
 Argument: **$ARGUMENTS** (optional; comma-separated tag focus —
 e.g. "interface,network" restricts the seed to those tags).
