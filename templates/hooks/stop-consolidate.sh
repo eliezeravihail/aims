@@ -67,7 +67,14 @@ INBOX_NONEMPTY=0
 INBOX_PATH="${AIMS_MEMORY_DIR:-docs/memory}/_inbox.md"
 [ -s "$INBOX_PATH" ] && INBOX_NONEMPTY=1
 
-if [ "$N_DIRTY" -eq 0 ] && [ "$INBOX_NONEMPTY" -eq 0 ]; then
+# In-progress plan detection (for close-out nudge).
+IN_PROGRESS_PLAN=""
+if [ -d "docs/plans" ]; then
+  IN_PROGRESS_PLAN=$(grep -lE '^Status:[[:space:]]*in-progress' \
+    docs/plans/*.md 2>/dev/null | head -1 || true)
+fi
+
+if [ "$N_DIRTY" -eq 0 ] && [ "$INBOX_NONEMPTY" -eq 0 ] && [ -z "$IN_PROGRESS_PLAN" ]; then
   exit 0
 fi
 
@@ -90,6 +97,8 @@ elif [ "$ELAPSED" -ge "$INTERVAL_SEC" ] && [ "$N_DIRTY" -gt 0 ]; then
   should_run=1
 elif [ "$ELAPSED" -ge "$INTERVAL_SEC" ] && [ "$INBOX_NONEMPTY" -eq 1 ]; then
   should_run=1
+elif [ "$ELAPSED" -ge "$INTERVAL_SEC" ] && [ -n "$IN_PROGRESS_PLAN" ]; then
+  should_run=1
 fi
 
 [ "$should_run" -eq 0 ] && exit 0
@@ -106,8 +115,19 @@ dirty nodes, handle the first 10 and report that the rest will be
 caught on the next turn. Do NOT touch frontmatter dirty/last_touched/
 last_consolidated — mark.sh owns those.")
 
+if [ -n "$IN_PROGRESS_PLAN" ]; then
+  prompt_parts+=("[aims-plan] In-progress plan detected: $IN_PROGRESS_PLAN
+If the implementation steps in that plan are complete (or you just
+finished implementing them), run the inline close-out per the /plan
+command's Phase 4: verify steps, run \`## Verification\`, auto-decide
+ADRs (create when clear architectural commitment; skip when bug/
+refactor/doc/test/mechanical; ask only when borderline), set
+\`Status: completed\`, append \`## Outcome\` + \`## Closing checks\`.
+If implementation isn't done yet, ignore this nudge.")
+fi
+
 if [ -n "$EXTRA_CTX" ]; then
-  prompt_parts+=("=== ADDITIONAL CONTEXT (from /done or caller) ===
+  prompt_parts+=("=== ADDITIONAL CONTEXT (from caller) ===
 Mine for invariants (→ ## Invariants & gotchas), design rationale
 (→ ## Design rationale), fixed bugs (→ ## Known issues > fixed, ONLY
 if a real commit SHA is cited), and open design questions

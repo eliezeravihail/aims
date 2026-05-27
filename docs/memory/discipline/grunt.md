@@ -1,9 +1,8 @@
 ---
 node: discipline/grunt
 kind: module
-code:
-  - templates/commands/grunt.md
-  - .claude/commands/grunt.md
+code: []
+# (was: templates/commands/grunt.md, .claude/commands/grunt.md — both removed per ADR-0010)
 commits: []
 sessions: []
 parents: []
@@ -29,6 +28,10 @@ Documents the /grunt slash command — the cheap, fast lane for mechanical edits
 ## Invariants & gotchas
 
 ## Known issues
+
+- superseded by ADR-0010: `/grunt` is removed. Mechanical edits
+  (renames, log/config tweaks, format fixes) are now just ordinary
+  inline work — no special command needed.
 
 
 ## Pointers
