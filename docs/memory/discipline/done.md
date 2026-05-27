@@ -1,9 +1,8 @@
 ---
 node: discipline/done
 kind: module
-code:
-  - templates/commands/done.md
-  - .claude/commands/done.md
+code: []
+# (was: templates/commands/done.md, .claude/commands/done.md — both removed per ADR-0010)
 commits: []
 sessions:
   - docs/plans/memory-tree-system.md
@@ -55,6 +54,10 @@ report includes memory-tree status from `doctor.sh`.
 
 ## Known issues
 
+- superseded by ADR-0010: `/done` is removed. Close-out (verify
+  steps, run `## Verification`, auto-decide ADRs, mark completed,
+  consolidate memory) is now embedded in `/plan` Phase 4 and runs
+  inline at the end of the implementation session.
 - fixed: step 7 used to skip silently when `ANTHROPIC_API_KEY` was
   absent, leaving the memory tree un-propagated; replaced with the
   in-band path (commit 0c0852f).

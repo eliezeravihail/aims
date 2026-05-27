@@ -13,23 +13,28 @@
 ## Decision records
 
 Architecture decisions live in `{{ADR_DIR}}/`. Index: `{{ADR_DIR}}/README.md`.
-
-- New decision → `/adr <title>`
-- Past decisions are append-only. To change one, write a new ADR that
-  supersedes it; do not edit the old.
+ADRs are proposed automatically during plan close-out (the implementation
+session decides per a confidence rule; see `/plan` Phase 4). For ad-hoc
+decisions outside a plan, write `{{ADR_DIR}}/NNNN-slug.md` directly with
+status `proposed`. Past decisions are append-only — to change one, write
+a new ADR that supersedes it.
 
 ## Workflow
 
-- Non-trivial change → `/plan <task>` first. Plans live in `docs/plans/`.
-- Mechanical work (renames, formatting, log/config edits) → `/grunt`.
-- Closing a plan → `/done` (verifies steps and prompts for ADRs).
+Two slash commands only:
+
+- `/plan <task>` — non-trivial change. Read-only planning, durable
+  artifact in `docs/plans/`, then implementation, then inline
+  close-out (verify, auto-ADR, mark completed, memory consolidation).
+- `/install-on <path>` — install or re-install aims (idempotent).
+
+Everything else (bug-fix patches, refactors with obvious scope,
+mechanical edits, ad-hoc questions): just do the work inline.
 
 ## Models policy
 
-- Planning, ADR, closing → **Opus** (auto via slash command frontmatter).
-- Implementation → **Sonnet** (run `/model sonnet` once per session).
-- Mechanical / log / config edits → `/grunt` runs on **Haiku**.
-- Override anytime with `/model <name>`.
+- Planning + plan close-out → **Opus** (auto via slash command frontmatter).
+- Implementation → any model — switch with `/model <name>` per preference.
 
 ## Hooks
 
@@ -48,15 +53,18 @@ The repo carries a navigable memory layer under `docs/memory/` (see
 full design). It is a NAVIGATOR over `CLAUDE.md`, ADRs, plans, and
 external memory — never a copy of them.
 
-- `/memory-init` (one-time) — seed `docs/memory/` from a codebase scan.
-- `/remember <note>` — file a note into the right leaf.
+- The tree is bootstrapped by `/install-on` (Phase 5) — fresh
+  install runs a cold-start scan; re-install only augments
+  (adds nodes for newly-discovered code areas; never overwrites
+  existing node bodies).
 - The `PostToolUse` marker hook flips affected leaves to
   `dirty: true` after every Edit/Write. The `Stop` hook
-  consolidates dirty leaves via an LLM call, but only when the
+  consolidates dirty leaves in-band (ADR-0009), but only when the
   throttle trips (5 dirty leaves OR 30 min since last
   consolidation). `SessionEnd` runs the same consolidation
   un-throttled if the CLI is actually closed.
-- `/done` forces a consolidation regardless of throttle.
+- Plan close-out (inline at end of `/plan` implementation) also
+  forces consolidation of nodes touched by the plan.
 - To browse the tree manually: `cat docs/memory/README.md`, then any
   leaf under `docs/memory/<tag>/<name>.md`.
 

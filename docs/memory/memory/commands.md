@@ -2,12 +2,11 @@
 node: memory/commands
 kind: module
 code:
-  - templates/commands/memory-init.md
-  - templates/commands/remember.md
-  - templates/commands/memory-augment.md
-  - .claude/commands/memory-init.md
-  - .claude/commands/remember.md
-  - .claude/commands/memory-augment.md
+  - templates/commands/install-on.md
+  - .claude/commands/install-on.md
+# (was: memory-init.md, memory-augment.md, remember.md — all removed per ADR-0010;
+#  memory bootstrap + augment moved inline into /install-on Phase 5;
+#  note-filing into nodes is now ordinary Edit work)
 commits: []
 sessions:
   - docs/plans/memory-tree-system.md
@@ -55,6 +54,11 @@ path stays reserved for Claude-native `/memory`).
 
 ## Known issues
 
+- superseded by ADR-0010: `/memory-init`, `/memory-augment`, and
+  `/remember` are removed. Cold-start scan and augment-only refresh
+  moved into `/install-on` Phase 5 (runs at the end of every
+  install or re-install). Note-filing into a node is just an
+  ordinary Edit.
 - fixed: `/remember` guidance referenced an "Anthropic API" rule
   that no longer made sense after consolidation moved in-band;
   the obsolete bullet was removed (commit 0c0852f).

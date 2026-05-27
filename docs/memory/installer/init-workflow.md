@@ -2,8 +2,9 @@
 node: installer/init-workflow
 kind: module
 code:
-  - commands/init-workflow.md
-  - .claude/commands/init-workflow.md
+  - templates/commands/install-on.md
+  - .claude/commands/install-on.md
+# renamed from init-workflow.md per ADR-0010 (idempotent install + memory bootstrap)
 commits: []
 sessions: []
 parents: []

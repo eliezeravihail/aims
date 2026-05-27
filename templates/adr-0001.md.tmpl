@@ -26,7 +26,10 @@ We will record architecture decisions as **Architecture Decision Records
   produces a new ADR that supersedes the old one (only the status pointer on
   the old record may be updated).
 
-New ADRs are drafted via the `/adr <title>` slash command.
+New ADRs are proposed automatically during plan close-out (the `/plan`
+command's Phase 4 decides per a confidence rule). For ad-hoc decisions
+outside a plan, copy `_template.md` to `NNNN-slug.md` with status
+`proposed`.
 
 ## Consequences
 
@@ -48,5 +51,6 @@ New ADRs are drafted via the `/adr <title>` slash command.
 ## Verification
 
 - This file exists.
-- New decisions arrive as `docs/adr/NNNN-*.md` files via `/adr`.
+- New decisions arrive as `docs/adr/NNNN-*.md` files (auto-created
+  during plan close-out, or written manually).
 - The index in `docs/adr/README.md` lists every ADR with its current status.

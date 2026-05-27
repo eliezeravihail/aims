@@ -14,12 +14,11 @@ one decision: its context, the choice made, and the consequences accepted.
 
 ## How to write one
 
-```
-/adr <title>
-```
-
-This drafts a record from `_template.md`, picks the next number, and adds
-it to the index below.
+ADRs are proposed automatically during plan close-out — the implementation
+session decides per a confidence rule (see `/plan` Phase 4 in
+`.claude/commands/plan.md`). For ad-hoc decisions outside a plan, copy
+`_template.md` to `NNNN-<slug>.md` (next number, status `proposed`) and
+add a row to the index below.
 
 ## Index
 
@@ -34,3 +33,4 @@ it to the index below.
 | 0007 | Tree-based project memory with automatic build and maintenance | accepted (partial 0009) | 2026-05-25 |
 | 0008 | Node as primary context interface                 | accepted | 2026-05-27 |
 | 0009 | Memory consolidation runs in-band via hook-injected instructions | accepted | 2026-05-27 |
+| 0010 | Two-command surface; idempotent install; auto plan close-out | proposed | 2026-05-27 |
