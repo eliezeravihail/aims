@@ -44,9 +44,19 @@ in-progress plan in `docs/plans/`).
 
 7. **Memory consolidation (ADR-0007 / ADR-0008).**
    If `docs/memory/` exists:
-   - Force a full consolidation pass:
-     `bash .claude/hooks/stop-consolidate.sh --force`
-     (the `--force` bypasses the per-session throttle).
+   - **Propagate plan + new ADRs into the tree.** Build the bridge
+     context by concatenating: this plan file's body, plus each ADR
+     created in step 4. Export it as `AIMS_EXTRA_CONTEXT` so the
+     consolidator can mine it for invariants, design rationale, and
+     fixed-bug entries:
+     ```
+     ctx=$(cat docs/plans/<this-plan>.md \
+                $(for n in <new-adrs>; do echo docs/adr/$n-*.md; done))
+     AIMS_EXTRA_CONTEXT="$ctx" \
+       bash .claude/hooks/stop-consolidate.sh --force
+     ```
+     The `--force` bypasses the per-session throttle. If no ADRs
+     were created, pass only the plan body.
    - Run `bash .claude/memory/classify-inbox.sh` if `_inbox.md` is
      non-empty.  Apply confident `existing-node` proposals via Edit;
      for `new-node` and `uncertain` proposals, ask the user via
@@ -71,6 +81,10 @@ in-progress plan in `docs/plans/`).
      reported issue (orphan refs, section/order violations,
      non-portable pointers, fixed-bug commits not in git, parent
      cycles). Offer to fix each interactively.
+   - **Pipeline health:** run `bash .claude/memory/doctor.sh` and
+     include its output verbatim in the final report. If
+     `ANTHROPIC_API_KEY` is absent, warn the user that propagation
+     was skipped and the tree did not absorb this plan's content.
 
 8. **Final report.**
 
