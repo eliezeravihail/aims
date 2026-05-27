@@ -6,6 +6,8 @@ code:
   - .claude/hooks/prompt-submit.sh
 commits: []
 sessions: []
+parents: []
+children: []
 related:
   - hooks/session-start
 claude_md_refs:
@@ -23,10 +25,13 @@ last_consolidated: 2026-05-25T11:46:53Z
 
 UserPromptSubmit hook — runs before each user prompt is sent to the model. Currently surfaces routing hints (e.g. reminders about in-progress plans) per ADR-0004's hook-injected-context model.
 
-## Logical rules & invariants
+## Design rationale
 
-## Editing considerations
+## Invariants & gotchas
 
-## Deliberations & history
+## Known issues
+
+
+## Pointers
 
 ## Open questions

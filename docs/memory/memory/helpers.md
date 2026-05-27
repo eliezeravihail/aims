@@ -4,7 +4,7 @@ kind: module
 code:
   - templates/memory/_lib.sh
   - templates/memory/mark.sh
-  - templates/memory/new-leaf.sh
+  - templates/memory/new-node.sh
   - templates/memory/find-dirty.sh
   - templates/memory/lint.sh
   - templates/memory/check-refs.sh
@@ -14,6 +14,8 @@ code:
 commits: []
 sessions:
   - docs/plans/memory-tree-system.md
+parents: []
+children: []
 related:
   - memory/phase-a-marker
   - memory/phase-b-consolidation
@@ -34,10 +36,13 @@ last_consolidated: 2026-05-25T11:46:53Z
 
 The eight bash helpers that form the deterministic substrate for the memory tree. _lib.sh owns the frontmatter parsing/edit primitives (fm_get, fm_set, fm_list, list_leaves). The other seven are thin commands built on top: mark, new-leaf, find-dirty, lint, check-refs, consolidate, classify-inbox. All are POSIX-friendly (mawk/BSD-awk compatible) and degrade gracefully when ANTHROPIC_API_KEY is missing.
 
-## Logical rules & invariants
+## Design rationale
 
-## Editing considerations
+## Invariants & gotchas
 
-## Deliberations & history
+## Known issues
+
+
+## Pointers
 
 ## Open questions

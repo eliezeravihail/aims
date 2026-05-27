@@ -12,6 +12,8 @@ code:
 commits: []
 sessions:
   - docs/plans/memory-tree-system.md
+parents: []
+children: []
 related:
   - memory/phase-a-marker
   - memory/helpers
@@ -32,10 +34,13 @@ last_consolidated: 2026-05-25T11:46:53Z
 
 Phase B of the two-phase design: the LLM consolidation pass. Wired to `Stop` with a bash throttle (default: 5 dirty leaves OR 30 min since last consolidation) so the hot path stays at ~18ms when there's nothing to do. SessionEnd runs the same consolidation un-throttled as a safety net. /done forces it. consolidate.sh asks the model to update the leaf body from git diffs of referenced sources and to append breadcrumbs for changed external_refs / claude_md_refs — never overwrites the referenced files themselves (non-duplication invariant).
 
-## Logical rules & invariants
+## Design rationale
 
-## Editing considerations
+## Invariants & gotchas
 
-## Deliberations & history
+## Known issues
+
+
+## Pointers
 
 ## Open questions
