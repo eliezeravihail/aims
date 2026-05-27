@@ -101,4 +101,37 @@ n=$(grep -cxF -- "- src/unknown.py" "$AIMS_MEMORY_DIR/_inbox.md" || true)
 [ "$n" = "1" ] || fail "case 6: expected 1 inbox entry for src/unknown.py, got $n"
 pass "inbox de-duplicates identical paths"
 
+# Case 7: absolute path inside repo gets normalized and marks dirty.
+python3 -c "
+import re
+p='$LEAF'
+s=open(p).read()
+s=re.sub(r'dirty: true', 'dirty: false', s, count=1)
+open(p,'w').write(s)
+"
+REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "$ROOT")
+printf '{"tool_input":{"file_path":"%s/src/foo.py"}}' "$REPO_ROOT" | \
+  bash "$ROOT/templates/hooks/post-edit-marker.sh"
+v=$(fm_get "$LEAF" dirty)
+[ "$v" = "true" ] || fail "case 7: absolute repo path should normalize and mark dirty, got '$v'"
+pass "marker normalizes absolute repo paths"
+
+# Case 8: absolute path under .claude/ gets skipped (not added to inbox).
+prev_inbox=$(wc -l < "$AIMS_MEMORY_DIR/_inbox.md" 2>/dev/null || echo 0)
+printf '{"tool_input":{"file_path":"%s/.claude/settings.json"}}' "$REPO_ROOT" | \
+  bash "$ROOT/templates/hooks/post-edit-marker.sh"
+new_inbox=$(wc -l < "$AIMS_MEMORY_DIR/_inbox.md" 2>/dev/null || echo 0)
+[ "$prev_inbox" = "$new_inbox" ] || \
+  fail "case 8: absolute .claude/ path should be skipped, inbox grew $prev_inbox→$new_inbox"
+pass "marker skips absolute paths under .claude/"
+
+# Case 9: absolute path outside the repo is dropped silently.
+prev_inbox=$(wc -l < "$AIMS_MEMORY_DIR/_inbox.md" 2>/dev/null || echo 0)
+printf '%s' '{"tool_input":{"file_path":"/etc/hosts"}}' | \
+  bash "$ROOT/templates/hooks/post-edit-marker.sh"
+new_inbox=$(wc -l < "$AIMS_MEMORY_DIR/_inbox.md" 2>/dev/null || echo 0)
+[ "$prev_inbox" = "$new_inbox" ] || \
+  fail "case 9: out-of-repo absolute path should be dropped, inbox grew $prev_inbox→$new_inbox"
+pass "marker drops absolute paths outside the repo"
+
 printf '\nAll marker tests passed.\n'

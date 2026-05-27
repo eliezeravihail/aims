@@ -32,6 +32,20 @@ extract_path() {
 target=$(extract_path)
 [ -z "$target" ] && exit 0
 
+# Normalize to a repo-relative path. Claude Code emits absolute
+# file_path in tool_input; node code: lists are all repo-relative
+# (ADR-0008), so without this normalization every edit falls through
+# to mark.sh's "unknown path" branch and leaks an absolute path into
+# _inbox.md.
+if [ "${target#/}" != "$target" ]; then
+  repo_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+  case "$target" in
+    "$repo_root"/*) target="${target#$repo_root/}" ;;
+    "$repo_root")   exit 0 ;;
+    *)              exit 0 ;;  # absolute but outside repo
+  esac
+fi
+
 # Skip paths that aren't project source (no point marking them):
 #   - inside .claude/, .git/, node_modules/, dist/, build/
 #   - the memory tree itself
