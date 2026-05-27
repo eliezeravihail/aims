@@ -1,5 +1,5 @@
 # Plan: Fix #17 — marker absolute-path leak + consolidate working-tree diff
-Status: in-progress
+Status: completed
 Started: 2026-05-27
 
 ## Context
@@ -98,3 +98,44 @@ prompt includes both the committed diff *and* the working-tree diff.
 ## ADRs to record after implementation
 
 - [ ] None expected.
+
+## Outcome
+
+- `templates/hooks/post-edit-marker.sh`: normalizes absolute
+  `tool_input.file_path` to repo-relative via `git rev-parse
+  --show-toplevel` before the skip-list runs. Out-of-repo
+  absolute paths are dropped silently.
+- `templates/memory/_lib.sh`: `path_matches` retries with a
+  stripped repo-root prefix when the needle is absolute.
+  Defense-in-depth — callers should still normalize.
+- `templates/memory/consolidate.sh`: emits two separate sections
+  per `code:` path — `--- committed since last_touched ---`
+  (4 KB cap) and `--- uncommitted (working tree + index) ---`
+  (4 KB cap, `git diff HEAD`). Total cap per path unchanged at
+  8 KB.
+- All three fixes mirrored into `.claude/` for dogfooding.
+- `tests/marker.sh` gained three cases for absolute paths
+  (repo-relative normalization, `.claude/` skip, out-of-repo
+  drop).
+- No ADR — these are implementation fixes; ADR-0007/0008/0009
+  stand unchanged.
+
+Deviations:
+- `tests/consolidate.sh` was already broken before this plan
+  (it mocks an HTTP Anthropic endpoint that ADR-0009 removed).
+  Working-tree diff emission was verified by ad-hoc smoke
+  instead of reviving the full mock test. The broken test is
+  out of scope here.
+
+## Closing checks
+
+- `bash tests/marker.sh` → **9/9 PASS** (includes 3 new absolute-path cases).
+- `bash -n` over all hooks + memory scripts → **clean**.
+- `bash .claude/memory/lint.sh` → **clean (13 nodes)**.
+- Smoke: ephemeral repo + uncommitted change → consolidate prompt
+  contains both `committed since last_touched` and `uncommitted
+  (working tree + index)` sections and includes the working-tree
+  text → **pass**.
+- Live: latest marker invocation in this session routed
+  `tests/marker.sh` to inbox as a clean relative path (not
+  absolute) → marker fix confirmed active in `.claude/hooks/`.

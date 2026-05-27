@@ -38,17 +38,25 @@ fi
 
 LAST_TOUCHED=$(fm_get "$node" last_touched)
 diffs=""
+in_repo=0
+git -C . rev-parse --is-inside-work-tree >/dev/null 2>&1 && in_repo=1
 while IFS= read -r p; do
   [ -z "$p" ] && continue
   base="${p%%:*}"
   [ -e "$base" ] || continue
-  if git -C . rev-parse --is-inside-work-tree >/dev/null 2>&1 && [ -n "$LAST_TOUCHED" ]; then
-    d=$(git -C . log --since="$LAST_TOUCHED" --no-merges -p -- "$base" 2>/dev/null | head -c 8000)
+  [ "$in_repo" -eq 1 ] || continue
+
+  if [ -n "$LAST_TOUCHED" ]; then
+    committed=$(git -C . log --since="$LAST_TOUCHED" --no-merges -p -- "$base" 2>/dev/null | head -c 4000)
   else
-    d=""
+    committed=""
   fi
-  if [ -n "$d" ]; then
-    diffs+=$'\n\n=== diff: '"$p"$' ===\n'"$d"
+  uncommitted=$(git -C . diff HEAD -- "$base" 2>/dev/null | head -c 4000)
+
+  if [ -n "$committed" ] || [ -n "$uncommitted" ]; then
+    diffs+=$'\n\n=== diff: '"$p"$' ==='
+    [ -n "$committed" ]   && diffs+=$'\n--- committed since last_touched ---\n'"$committed"
+    [ -n "$uncommitted" ] && diffs+=$'\n--- uncommitted (working tree + index) ---\n'"$uncommitted"
   fi
 done < <(fm_list "$node" code)
 
