@@ -2,11 +2,10 @@
 node: discipline/adr
 kind: module
 code:
-  - templates/commands/adr.md
-  - .claude/commands/adr.md
   - templates/adr-template.md.tmpl
   - templates/adr-readme.md.tmpl
   - templates/adr-0001.md.tmpl
+# (was: templates/commands/adr.md, .claude/commands/adr.md â€” both removed per ADR-0010)
 commits: []
 sessions: []
 parents: []
@@ -33,6 +32,13 @@ Documents the /adr slash command and the ADR convention. ADRs are append-only â€
 ## Invariants & gotchas
 
 ## Known issues
+
+- superseded by ADR-0010: `/adr` is removed. ADRs are now proposed
+  automatically during plan close-out per a confidence rule
+  (create on clear architectural commitment; skip on
+  bug/refactor/doc/test/mechanical; ask when borderline). Manual
+  ADR creation is still supported: copy `_template.md` to
+  `NNNN-slug.md`, status `proposed`.
 
 
 ## Pointers

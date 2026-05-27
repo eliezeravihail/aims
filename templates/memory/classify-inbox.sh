@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Build the inbox-classification prompt (no network call).
 #
-# Per ADR-0009, classification runs in-band: the Stop hook (or /done)
+# Per ADR-0009, classification runs in-band: the Stop hook (or plan close-out)
 # injects this prompt as additionalContext; the active Claude Code
 # session classifies each entry and either Edits it into an existing
 # node, scaffolds a new one, or surfaces it via AskUserQuestion.
@@ -63,6 +63,6 @@ INBOX ($INBOX):
 $inbox_entries
 
 After applying any confident matches and asking the user about the
-rest, the next run of this script (next session or /done) will only
+rest, the next run of this script (next session or plan close-out) will only
 see whatever remains.
 EOF

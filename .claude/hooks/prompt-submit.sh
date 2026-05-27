@@ -108,27 +108,28 @@ read -r -d '' router_text <<'TEXT' || true
 Before doing the actual work, you MUST first call the AskUserQuestion tool to
 let the user pick the workflow. Use this menu, adapting only the wording:
 
-  bug         → (a) /plan a real fix  (b) /grunt a quick patch
+  bug         → (a) /plan a real fix  (b) quick patch inline
                 (c) diagnose only — explain root cause, no edits
   feature     → (a) /plan it (recommended)  (b) sketch a quick prototype
                 (c) just discuss the design first
   refactor    → (a) /plan it (almost always the right answer)
-                (b) /grunt — only if it's a pure rename/format
-  decision    → (a) /plan to explore options first, then /adr
-                (b) /adr now — only if the choice is already clear
-  mechanical  → (a) /grunt it now (fast, Haiku)
+                (b) quick rename/format inline if scope is obvious
+  decision    → (a) /plan to explore options first
+                (b) just write the decision to docs/adr/ if it's already clear
+  mechanical  → (a) edit inline (fast)
                 (b) /plan first if the scope is unclear
   question    → (a) just answer  (b) answer then /plan if it leads to changes
   ambiguous   → no English keyword matched; ask the user "Which workflow:
-                /plan, /grunt, /adr, or just answer?" and proceed by their pick.
+                /plan or just answer/edit?" and proceed by their pick.
 
 After the user picks, follow that workflow's discipline AS IF they had typed
 the slash command:
   - /plan choice  → create .claude/.planning-lock first, do read-only
-                    exploration, end with ExitPlanMode, then write plan to
-                    docs/plans/ and remove the lock.
-  - /grunt choice → mechanical edits only, refuse on judgment calls.
-  - /adr choice   → draft to docs/adr/NNNN-slug.md, status: proposed.
+                    exploration, end with an in-line plan + approval, then
+                    write to docs/plans/ and remove the lock.
+  - inline edit   → make the change. ADRs are proposed automatically during
+                    plan close-out; for ad-hoc decisions outside a plan, write
+                    docs/adr/NNNN-slug.md status: proposed directly.
   - diagnose / answer / discuss → no file changes.
 
 Skip this routing only if the user's prompt explicitly chose a path

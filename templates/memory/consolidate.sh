@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Build the consolidation prompt for ONE node (no network call).
 #
-# Per ADR-0009, consolidation runs in-band: the Stop hook (or /done)
+# Per ADR-0009, consolidation runs in-band: the Stop hook (or plan close-out)
 # composes a prompt and injects it as additionalContext; the active
 # Claude Code session does the Edit work and calls
 # `mark.sh <node> consolidated` at the end. This script's job is to
