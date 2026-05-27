@@ -9,6 +9,8 @@ code:
   - templates/adr-0001.md.tmpl
 commits: []
 sessions: []
+parents: []
+children: []
 related:
   - discipline/done
 claude_md_refs:
@@ -26,10 +28,13 @@ last_consolidated: 2026-05-25T11:46:53Z
 
 Documents the /adr slash command and the ADR convention. ADRs are append-only — a superseded decision gets a new ADR with a `Superseded by:` pointer, not an in-place edit. The templates under `templates/adr-*.tmpl` are seeded into a target project by /init-workflow.
 
-## Logical rules & invariants
+## Design rationale
 
-## Editing considerations
+## Invariants & gotchas
 
-## Deliberations & history
+## Known issues
+
+
+## Pointers
 
 ## Open questions

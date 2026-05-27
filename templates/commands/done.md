@@ -42,24 +42,49 @@ in-progress plan in `docs/plans/`).
    CLAUDE.md? (e.g., new build command, directory layout, naming rule.)
    If yes, propose the diff and ask for approval before merging.
 
-7. **Memory consolidation (ADR-0007).**
+7. **Memory consolidation (ADR-0007 / ADR-0008).**
    If `docs/memory/` exists:
-   - Force a full consolidation pass:
-     `bash .claude/hooks/stop-consolidate.sh --force`
-     (the `--force` bypasses the per-session throttle).
+   - **Propagate plan + new ADRs into the tree.** Build the bridge
+     context by concatenating: this plan file's body, plus each ADR
+     created in step 4. Export it as `AIMS_EXTRA_CONTEXT` so the
+     consolidator can mine it for invariants, design rationale, and
+     fixed-bug entries:
+     ```
+     ctx=$(cat docs/plans/<this-plan>.md \
+                $(for n in <new-adrs>; do echo docs/adr/$n-*.md; done))
+     AIMS_EXTRA_CONTEXT="$ctx" \
+       bash .claude/hooks/stop-consolidate.sh --force
+     ```
+     The `--force` bypasses the per-session throttle. If no ADRs
+     were created, pass only the plan body.
    - Run `bash .claude/memory/classify-inbox.sh` if `_inbox.md` is
-     non-empty.  Apply confident `existing-leaf` proposals via Edit;
-     for `new-leaf` and `uncertain` proposals, ask the user via
+     non-empty.  Apply confident `existing-node` proposals via Edit;
+     for `new-node` and `uncertain` proposals, ask the user via
      `AskUserQuestion` before acting.
    - Detect new CLAUDE.md sections changed during this plan that
-     aren't yet linked from any leaf:
+     aren't yet linked from any node:
      ```
      git log --since="<plan-started-date>" --pretty=format: --name-only \
        -- CLAUDE.md | sort -u
      ```
-     If CLAUDE.md changed and no leaf references the new section,
+     If CLAUDE.md changed and no node references the new section,
      offer to add a `claude_md_refs:` entry to the most relevant
-     leaf.
+     node.
+   - **Node health (ADR-0008 ~1–2 KB target):** list any node files
+     larger than 4 KB. For each, ask the user whether to split into
+     sibling nodes or extract content to an ADR.
+     ```
+     find docs/memory -name '*.md' -not -name 'README.md' \
+       -not -name '_inbox.md' -size +4k -printf '%p %s\n'
+     ```
+   - **Lint pass:** run `bash .claude/memory/lint.sh`. Surface every
+     reported issue (orphan refs, section/order violations,
+     non-portable pointers, fixed-bug commits not in git, parent
+     cycles). Offer to fix each interactively.
+   - **Pipeline health:** run `bash .claude/memory/doctor.sh` and
+     include its output verbatim in the final report. If
+     `ANTHROPIC_API_KEY` is absent, warn the user that propagation
+     was skipped and the tree did not absorb this plan's content.
 
 8. **Final report.**
 
@@ -68,7 +93,8 @@ in-progress plan in `docs/plans/`).
    Verification: <N pass / M fail>
    ADRs created: ADR-NNNN, ADR-MMMM
    CLAUDE.md: unchanged | +<sections>
-   Memory: <N leaves consolidated, M inbox entries classified>
+   Memory: <N nodes consolidated, M inbox entries classified,
+           K nodes >4KB flagged, L lint issues>
    ```
 
 ## Hard rules

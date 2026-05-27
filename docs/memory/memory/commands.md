@@ -9,6 +9,8 @@ code:
 commits: []
 sessions:
   - docs/plans/memory-tree-system.md
+parents: []
+children: []
 related:
   - discipline/done
   - memory/phase-a-marker
@@ -29,10 +31,13 @@ last_consolidated: 2026-05-25T11:46:53Z
 
 User-facing entry points to the memory tree. /memory-init (Sonnet, one-time) scans the codebase, proposes a tree, and seeds docs/memory/ after user approval. /remember (Haiku) files a note into the right leaf and section — does NOT write to CLAUDE.md (that path stays reserved for Claude-native /memory).
 
-## Logical rules & invariants
+## Design rationale
 
-## Editing considerations
+## Invariants & gotchas
 
-## Deliberations & history
+## Known issues
+
+
+## Pointers
 
 ## Open questions

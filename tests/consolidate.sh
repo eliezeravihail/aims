@@ -73,7 +73,7 @@ done
 export AIMS_ANTHROPIC_URL="http://127.0.0.1:$PORT/v1/messages"
 
 # Seed a dirty leaf.
-bash "$ROOT/templates/memory/new-leaf.sh" interface/foo module >/dev/null
+bash "$ROOT/templates/memory/new-node.sh" interface/foo module >/dev/null
 LEAF="$AIMS_MEMORY_DIR/interface/foo.md"
 python3 -c "
 p='$LEAF'
