@@ -1,6 +1,14 @@
-# Plan: Implement ADR-0008 — leaf as primary context interface
-Status: in-progress
+# Plan: Implement ADR-0008 — node as primary context interface
+Status: completed
 Started: 2026-05-27
+Completed: 2026-05-27
+
+## Outcome
+
+Shipped in commit c3b7d07. ADR-0008 promoted from proposed to accepted
+following clean verification: bash -n on all hooks/helpers, lint clean
+on all 13 migrated nodes, scaffold smoke-test produces six-section
+nodes, absolute-path detection verified manually.
 
 ## Context
 
