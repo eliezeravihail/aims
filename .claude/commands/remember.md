@@ -113,8 +113,6 @@ Print: `noted in <node-path> → ## <Section>`
 
 - **Don't write to CLAUDE.md from this command.** If the note belongs
   there, suggest `/memory` and stop.
-- **Don't open the Anthropic API.** This is a structural file-edit;
-  Haiku's job is just to pick the right node and section.
 - **Don't create a new node for a one-off note.** If the note doesn't
   justify a whole topic, file it under the nearest existing node's
   `## Open questions`.

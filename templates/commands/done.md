@@ -42,25 +42,24 @@ in-progress plan in `docs/plans/`).
    CLAUDE.md? (e.g., new build command, directory layout, naming rule.)
    If yes, propose the diff and ask for approval before merging.
 
-7. **Memory consolidation (ADR-0007 / ADR-0008).**
+7. **Memory consolidation (ADR-0007 / ADR-0008 / ADR-0009).**
    If `docs/memory/` exists:
-   - **Propagate plan + new ADRs into the tree.** Build the bridge
-     context by concatenating: this plan file's body, plus each ADR
-     created in step 4. Export it as `AIMS_EXTRA_CONTEXT` so the
-     consolidator can mine it for invariants, design rationale, and
-     fixed-bug entries:
-     ```
-     ctx=$(cat docs/plans/<this-plan>.md \
-                $(for n in <new-adrs>; do echo docs/adr/$n-*.md; done))
-     AIMS_EXTRA_CONTEXT="$ctx" \
-       bash .claude/hooks/stop-consolidate.sh --force
-     ```
-     The `--force` bypasses the per-session throttle. If no ADRs
-     were created, pass only the plan body.
-   - Run `bash .claude/memory/classify-inbox.sh` if `_inbox.md` is
-     non-empty.  Apply confident `existing-node` proposals via Edit;
-     for `new-node` and `uncertain` proposals, ask the user via
-     `AskUserQuestion` before acting.
+   - **Propagate plan + new ADRs into the tree, in-band.** Per
+     ADR-0009 there is no API key — you (the active model) do this
+     work yourself. For each node whose `code:` overlaps a file
+     touched by this plan: read the prompt produced by
+     `bash .claude/memory/consolidate.sh <node>`, plus the plan
+     body + any new ADR bodies as ADDITIONAL CONTEXT, then Edit
+     the node body per the ADR-0008 schema. Finish each with
+     `bash .claude/memory/mark.sh <node> consolidated`. Skip
+     gracefully if no node overlaps.
+   - **Process the inbox in-band.** If `_inbox.md` is non-empty,
+     read the prompt from `bash .claude/memory/classify-inbox.sh`
+     and act on it: apply confident `existing-node` proposals via
+     Edit (add the path to that node's `code:` list and remove the
+     bullet from `_inbox.md`); for `new-node` or `uncertain`
+     entries, ask via `AskUserQuestion` before scaffolding or
+     leaving in place.
    - Detect new CLAUDE.md sections changed during this plan that
      aren't yet linked from any node:
      ```
@@ -82,9 +81,7 @@ in-progress plan in `docs/plans/`).
      non-portable pointers, fixed-bug commits not in git, parent
      cycles). Offer to fix each interactively.
    - **Pipeline health:** run `bash .claude/memory/doctor.sh` and
-     include its output verbatim in the final report. If
-     `ANTHROPIC_API_KEY` is absent, warn the user that propagation
-     was skipped and the tree did not absorb this plan's content.
+     include its output verbatim in the final report.
 
 8. **Final report.**
 

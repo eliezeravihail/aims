@@ -1,17 +1,13 @@
 #!/usr/bin/env bash
-# Classify entries in docs/memory/_inbox.md.
-# For each entry (a path that was edited but matched no leaf), ask the
-# model to propose either an existing leaf or a new leaf path.
+# Build the inbox-classification prompt (no network call).
 #
-# Output (TSV, one row per entry):
-#   <inbox-entry>\texisting-leaf\t<leaf-path>
-#   <inbox-entry>\tnew-leaf\t<proposed-node-path>\t<proposed-kind>
-#   <inbox-entry>\tuncertain\t<reason>
+# Per ADR-0009, classification runs in-band: the Stop hook (or /done)
+# injects this prompt as additionalContext; the active Claude Code
+# session classifies each entry and either Edits it into an existing
+# node, scaffolds a new one, or surfaces it via AskUserQuestion.
 #
-# Caller (Stop hook / /done) is responsible for applying confident
-# proposals and surfacing uncertain ones to the user.
-#
-# Behaviour mirrors consolidate.sh: silent skip if no API key.
+# Usage:  classify-inbox.sh
+# Output: prompt text on stdout (empty if inbox is empty or absent).
 
 set -u
 
@@ -23,8 +19,8 @@ if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
   cat <<'EOF'
 usage: classify-inbox.sh
 
-Reads docs/memory/_inbox.md, asks the model to propose a leaf for
-each entry. Prints TSV proposals to stdout.
+Emits a prompt for in-band classification of docs/memory/_inbox.md
+entries. Pure bash, no LLM call. Empty stdout if inbox is empty.
 EOF
   exit 0
 fi
@@ -32,17 +28,6 @@ fi
 [ -f "$INBOX" ] || exit 0
 [ -s "$INBOX" ] || exit 0
 
-if [ -z "${ANTHROPIC_API_KEY:-}" ] \
-   || ! command -v curl >/dev/null 2>&1 \
-   || ! command -v jq >/dev/null 2>&1; then
-  printf 'skipping inbox classification (no API key / curl / jq)\n' >&2
-  exit 0
-fi
-
-MODEL="${AIMS_MEMORY_MODEL:-claude-sonnet-4-6}"
-API_URL="${AIMS_ANTHROPIC_URL:-https://api.anthropic.com/v1/messages}"
-
-# Build the list of existing leaves with their node + code paths, for context.
 leaves_summary=""
 while IFS= read -r leaf; do
   [ -z "$leaf" ] && continue
@@ -54,44 +39,30 @@ done < <(list_leaves)
 
 inbox_entries=$(cat "$INBOX")
 
-prompt=$(cat <<EOF
-You are classifying unrecognised edited paths into the aims memory tree.
+cat <<EOF
+=== INBOX CLASSIFICATION ===
 
-For EACH bullet in INBOX below, produce exactly ONE line of output in
-this TSV format (no extra commentary):
+Each bullet in INBOX below is a source path that was edited this
+session but matched no existing node. For each, decide one of:
 
-  <entry>\texisting-leaf\t<leaf-path>
-  <entry>\tnew-leaf\t<proposed-node-path>\t<module|decision|topic|runbook>
-  <entry>\tuncertain\t<short-reason>
+  - existing-node  → the path clearly belongs to an existing node.
+                     Action: Edit that node's frontmatter `code:` list
+                     to include the new path, then remove the bullet
+                     from $INBOX.
+  - new-node       → the path is significant enough to deserve its
+                     own node. Action: ask the user via
+                     AskUserQuestion before scaffolding; on approval
+                     run new-node.sh and remove the bullet.
+  - uncertain      → not enough signal. Action: leave the bullet in
+                     place; surface to the user via AskUserQuestion.
 
-Use "existing-leaf" only if a leaf below clearly fits.
-Use "new-leaf" only if the path is significant enough to deserve one.
-Otherwise "uncertain".
-
-EXISTING LEAVES:
+EXISTING NODES:
 ${leaves_summary:-(none)}
 
-INBOX:
+INBOX ($INBOX):
 $inbox_entries
+
+After applying any confident matches and asking the user about the
+rest, the next run of this script (next session or /done) will only
+see whatever remains.
 EOF
-)
-
-req=$(jq -n \
-  --arg model "$MODEL" \
-  --arg prompt "$prompt" \
-  '{model: $model, max_tokens: 2048, messages: [{role: "user", content: $prompt}]}')
-
-resp=$(curl -sS -X POST "$API_URL" \
-  -H "x-api-key: $ANTHROPIC_API_KEY" \
-  -H "anthropic-version: 2023-06-01" \
-  -H "content-type: application/json" \
-  -d "$req" 2>&1) || {
-    printf 'inbox classification API call failed: %s\n' "$resp" >&2
-    exit 0
-  }
-
-text=$(printf '%s' "$resp" | jq -r '.content[0].text // empty' 2>/dev/null)
-[ -z "$text" ] && exit 0
-
-# Pass through only well-formed TSV lines (contain at least one tab).
-printf '%s\n' "$text" | awk -F'\t' 'NF >= 2 { print }'
