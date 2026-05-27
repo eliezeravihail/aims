@@ -101,4 +101,49 @@ n=$(grep -cxF -- "- src/unknown.py" "$AIMS_MEMORY_DIR/_inbox.md" || true)
 [ "$n" = "1" ] || fail "case 6: expected 1 inbox entry for src/unknown.py, got $n"
 pass "inbox de-duplicates identical paths"
 
+# Case 7 (regression for issue #17): absolute path inside the repo
+# is normalized and matched against a relative `code:` entry.
+python3 -c "
+import re
+p='$LEAF'
+s=open(p).read()
+s=re.sub(r'dirty: true', 'dirty: false', s, count=1)
+open(p,'w').write(s)
+"
+rm -f "$AIMS_MEMORY_DIR/_inbox.md"
+printf '%s' "{\"tool_input\":{\"file_path\":\"$ROOT/src/foo.py\"}}" | \
+  bash "$ROOT/templates/hooks/post-edit-marker.sh"
+v=$(fm_get "$LEAF" dirty)
+[ "$v" = "true" ] || fail "case 7: absolute path inside repo should mark dirty, got '$v'"
+[ ! -f "$AIMS_MEMORY_DIR/_inbox.md" ] || \
+  fail "case 7: absolute matching path must NOT leak into _inbox.md"
+pass "marker normalizes absolute repo-path before matching (issue #17)"
+
+# Case 8: absolute path under the skip-list (.claude/) is silently
+# dropped, not added to the inbox.
+python3 -c "
+import re
+p='$LEAF'
+s=open(p).read()
+s=re.sub(r'dirty: true', 'dirty: false', s, count=1)
+open(p,'w').write(s)
+"
+rm -f "$AIMS_MEMORY_DIR/_inbox.md"
+printf '%s' "{\"tool_input\":{\"file_path\":\"$ROOT/.claude/settings.json\"}}" | \
+  bash "$ROOT/templates/hooks/post-edit-marker.sh"
+v=$(fm_get "$LEAF" dirty)
+[ "$v" = "false" ] || fail "case 8: .claude/ edit should not mark anything"
+[ ! -f "$AIMS_MEMORY_DIR/_inbox.md" ] || \
+  fail "case 8: absolute .claude/ path must NOT leak into inbox"
+pass "marker skip-list catches absolute paths under .claude/"
+
+# Case 9: absolute path outside the repo bails out silently (no
+# match, no inbox pollution).
+rm -f "$AIMS_MEMORY_DIR/_inbox.md"
+printf '%s' '{"tool_input":{"file_path":"/etc/passwd"}}' | \
+  bash "$ROOT/templates/hooks/post-edit-marker.sh"
+[ ! -f "$AIMS_MEMORY_DIR/_inbox.md" ] || \
+  fail "case 9: outside-repo path must NOT be added to the inbox"
+pass "marker bails out on absolute paths outside the repo"
+
 printf '\nAll marker tests passed.\n'
