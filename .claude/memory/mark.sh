@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
-# Mark every leaf that references <changed_path> as dirty.
-# If no leaf references it, append to docs/memory/_inbox.md.
+# Mark leaves dirty (when source paths change) or consolidated
+# (when the in-band model finishes updating a node body).
 #
-# Usage:  mark.sh <changed_path>
-# Output: count of leaves marked (single integer to stdout).
+# Usage:
+#   mark.sh <changed_path>                  # mark dirty (default)
+#   mark.sh <node_file> consolidated        # flip clean + bump timestamps
+#
+# Output (dirty mode): count of leaves marked (single integer to stdout).
+# Output (consolidated mode): silent on success.
 #
 # Pure bash + awk + sed. No LLM. Designed to run in <50ms.
 
@@ -16,12 +20,28 @@ SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 if [ $# -lt 1 ] || [ -z "${1:-}" ] || [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
   cat <<'EOF'
-usage: mark.sh <changed_path>
-
-Marks every leaf whose `code:` frontmatter list contains <changed_path>
-as dirty (sets `dirty: true` and updates `last_touched`).
-If no leaf matches, appends the path to docs/memory/_inbox.md.
+usage:
+  mark.sh <changed_path>                  # mark every leaf that references
+                                          # <changed_path> as dirty; if no
+                                          # leaf matches, append to inbox.
+  mark.sh <node_file> consolidated        # flip <node_file> clean: set
+                                          # dirty:false and bump last_touched
+                                          # + last_consolidated.
 EOF
+  exit 0
+fi
+
+# Consolidated mode: <node_file> consolidated
+if [ "${2:-}" = "consolidated" ]; then
+  node="$1"
+  if [ ! -f "$node" ]; then
+    printf 'mark.sh: not a file: %s\n' "$node" >&2
+    exit 1
+  fi
+  NOW=$(now_iso)
+  fm_set "$node" dirty false
+  fm_set "$node" last_touched "$NOW"
+  fm_set "$node" last_consolidated "$NOW"
   exit 0
 fi
 

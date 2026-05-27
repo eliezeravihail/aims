@@ -2,9 +2,11 @@
 
 Navigable, hand-curated documentation of what lives where, why it's
 shaped the way it is, and what you should know before editing it.
-Maintained automatically per ADR-0007: the `post-edit-marker` hook
-flags leaves as `dirty` when their referenced source changes; the
-throttled `Stop` hook calls Sonnet to update them.
+Maintained automatically per ADR-0007 + ADR-0009: the
+`post-edit-marker` hook flags leaves as `dirty` when their referenced
+source changes; the throttled `Stop` hook injects an in-band
+consolidation prompt that the active Claude Code session executes
+via Edit (no external API key required).
 
 This tree is a **navigator** over other memory sources. It references
 `CLAUDE.md` sections, ADRs, plans, and tests — it never copies them.

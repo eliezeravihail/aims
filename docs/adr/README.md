@@ -31,5 +31,6 @@ it to the index below.
 | 0004 | Router via hook-injected context, not orchestration | accepted | 2026-05-06 |
 | 0005 | Two install paths; only /init-workflow ever goes global | accepted | 2026-05-06 |
 | 0006 | Two-tier project memory — core context plus embedding-based recall | superseded by 0007 | 2026-05-25 |
-| 0007 | Tree-based project memory with automatic build and maintenance | accepted | 2026-05-25 |
+| 0007 | Tree-based project memory with automatic build and maintenance | accepted (partial 0009) | 2026-05-25 |
 | 0008 | Node as primary context interface                 | accepted | 2026-05-27 |
+| 0009 | Memory consolidation runs in-band via hook-injected instructions | accepted | 2026-05-27 |

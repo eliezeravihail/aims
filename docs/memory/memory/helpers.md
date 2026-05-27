@@ -10,7 +10,9 @@ code:
   - templates/memory/check-refs.sh
   - templates/memory/consolidate.sh
   - templates/memory/classify-inbox.sh
+  - templates/memory/doctor.sh
   - .claude/memory/_lib.sh
+  - .claude/memory/doctor.sh
 commits: []
 sessions:
   - docs/plans/memory-tree-system.md
@@ -28,21 +30,57 @@ external_refs:
 owners:
   - ema
 dirty: false
-last_touched: 2026-05-25T11:46:53Z
-last_consolidated: 2026-05-25T11:46:53Z
+last_touched: 2026-05-27T18:41:55Z
+last_consolidated: 2026-05-27T18:41:55Z
 ---
 
 ## Purpose
 
-The eight bash helpers that form the deterministic substrate for the memory tree. _lib.sh owns the frontmatter parsing/edit primitives (fm_get, fm_set, fm_list, list_leaves). The other seven are thin commands built on top: mark, new-leaf, find-dirty, lint, check-refs, consolidate, classify-inbox. All are POSIX-friendly (mawk/BSD-awk compatible) and degrade gracefully when ANTHROPIC_API_KEY is missing.
+The bash helpers that form the deterministic substrate for the memory
+tree. `_lib.sh` owns the frontmatter parsing/edit primitives
+(`fm_get`, `fm_set`, `fm_list`, `list_leaves`, `path_matches`,
+`now_iso`). Eight thin commands sit on top: `mark`, `new-node`,
+`find-dirty`, `lint`, `check-refs`, `doctor`, `consolidate`,
+`classify-inbox`. All are POSIX-friendly (mawk/BSD-awk compatible).
+No external network call lives in any helper.
 
 ## Design rationale
 
+- `consolidate.sh` and `classify-inbox.sh` emit prompt text only
+  (ADR-0009); the active Claude Code session executes the work.
+  Keeps every helper pure-bash and credential-free.
+- `mark.sh` carries two modes — `mark.sh <path>` flips dirty for
+  every node that references `<path>`; `mark.sh <node> consolidated`
+  flips clean. Both modes route through the same `fm_set` primitives
+  for consistency.
+- `doctor.sh` reports node count, dirty count, last-consolidated age,
+  lint summary, and >4 KB node count — every signal a maintainer
+  needs without any "missing key" caveat.
+
 ## Invariants & gotchas
+
+- Only `mark.sh consolidated` may write
+  `dirty/last_touched/last_consolidated`. Other helpers (and the
+  in-band model executing consolidation prompts) MUST leave that
+  frontmatter alone.
+- `consolidate.sh` caps each per-source diff at 8 KB so the assembled
+  Stop-hook prompt stays bounded even with many dirty nodes.
+- All helpers exit 0 on a missing `docs/memory/` so the plugin is
+  safe to install in projects that haven't run `/memory-init` yet.
 
 ## Known issues
 
+- fixed: helpers used to gate work on `ANTHROPIC_API_KEY` and call
+  `api.anthropic.com` via `curl`; removed in favor of prompt
+  builders consumed in-band (commit 0c0852f).
 
 ## Pointers
+
+- ADR-0007 — design these helpers implement.
+- ADR-0008 — node body schema enforced by `lint.sh` and produced by
+  the `consolidate.sh` prompt.
+- ADR-0009 — removed the LLM/curl path from `consolidate.sh` and
+  `classify-inbox.sh`.
+- `templates/memory/_lib.sh` — shared primitives.
 
 ## Open questions
