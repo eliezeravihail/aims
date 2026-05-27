@@ -1,17 +1,22 @@
 #!/usr/bin/env bash
-# aims Stop hook — throttled memory consolidation.
+# aims Stop hook — throttled in-band memory consolidation (ADR-0009).
 #
-# Stop fires after every Claude turn. An unconditional LLM call here
-# would mean ~30 LLM calls per active session. Throttle in bash:
+# Stop fires after every Claude turn. Unconditional work here would
+# spike turn cost, so throttle in bash:
 #
 #   Run consolidation only when
 #       N_DIRTY >= AIMS_MEMORY_DIRTY_MAX   (default 5)
 #     OR
 #       (now - last_consolidated) >= AIMS_MEMORY_INTERVAL_SEC  (default 1800s)
 #
-# Override per project via .claude/memory/throttle.conf
-# (a shell snippet that sets the two AIMS_MEMORY_* variables).
+# When the threshold trips, this hook does NOT call any LLM directly
+# (per ADR-0009: there is no ANTHROPIC_API_KEY in this environment).
+# Instead it builds a consolidation prompt in bash and emits it as
+# `additionalContext`; the active Claude Code session reads the
+# injection on its next turn and performs the Edits in-band, ending
+# with `bash .claude/memory/mark.sh <node> consolidated`.
 #
+# Override per project via .claude/memory/throttle.conf.
 # Never blocks. Always exits 0.
 
 set -u
@@ -24,7 +29,6 @@ else
   exit 0
 fi
 
-# Pick up project overrides, if any.
 if [ -r ".claude/memory/throttle.conf" ]; then
   # shellcheck disable=SC1091
   . ".claude/memory/throttle.conf"
@@ -35,16 +39,11 @@ INTERVAL_SEC="${AIMS_MEMORY_INTERVAL_SEC:-1800}"
 STATE_FILE="${AIMS_MEMORY_STATE_FILE:-.claude/memory/.last-consolidated}"
 FORCE=0
 
-# --force / -f: ignore the throttle (used by /done).
 case "${1:-}" in
   --force|-f) FORCE=1 ;;
 esac
 
-# Read the hook payload from stdin (Claude Code Stop hook contract:
-# JSON with `transcript_path`). Used to harvest URLs cited in the
-# session — those that survive the consolidate.sh LLM filter become
-# "## Pointers > External" entries on nodes touched this session.
-# Empty/unreadable transcript → empty URL list (no abort).
+# Harvest URLs from the session transcript (pure bash; no LLM).
 TRANSCRIPT_URLS=""
 if [ "$FORCE" -ne 1 ] && [ ! -t 0 ]; then
   payload=$(cat 2>/dev/null || true)
@@ -60,12 +59,17 @@ if [ "$FORCE" -ne 1 ] && [ ! -t 0 ]; then
     fi
   fi
 fi
-export AIMS_TRANSCRIPT_URLS="$TRANSCRIPT_URLS"
 
-# Discover dirty leaves cheaply.
 mapfile -t DIRTY < <(bash "$MEM_HELPERS/find-dirty.sh" 2>/dev/null || true)
 N_DIRTY=${#DIRTY[@]}
-[ "$N_DIRTY" -eq 0 ] && exit 0
+
+INBOX_NONEMPTY=0
+INBOX_PATH="${AIMS_MEMORY_DIR:-docs/memory}/_inbox.md"
+[ -s "$INBOX_PATH" ] && INBOX_NONEMPTY=1
+
+if [ "$N_DIRTY" -eq 0 ] && [ "$INBOX_NONEMPTY" -eq 0 ]; then
+  exit 0
+fi
 
 NOW=$(date -u +%s)
 LAST=0
@@ -82,32 +86,80 @@ if [ "$FORCE" -eq 1 ]; then
   should_run=1
 elif [ "$N_DIRTY" -ge "$DIRTY_MAX" ]; then
   should_run=1
-elif [ "$ELAPSED" -ge "$INTERVAL_SEC" ]; then
+elif [ "$ELAPSED" -ge "$INTERVAL_SEC" ] && [ "$N_DIRTY" -gt 0 ]; then
+  should_run=1
+elif [ "$ELAPSED" -ge "$INTERVAL_SEC" ] && [ "$INBOX_NONEMPTY" -eq 1 ]; then
   should_run=1
 fi
 
 [ "$should_run" -eq 0 ] && exit 0
 
-# Run consolidation per dirty leaf. consolidate.sh handles its own
-# graceful-skip when no API key is present (leaf stays dirty).
-for leaf in "${DIRTY[@]}"; do
-  [ -z "$leaf" ] && continue
-  bash "$MEM_HELPERS/consolidate.sh" "$leaf" || true
-done
+# ── Build the per-node prompt sections in bash ────────────────
+EXTRA_CTX="${AIMS_EXTRA_CONTEXT:-}"
 
-# Classify any inbox entries — apply confident proposals; surface
-# uncertain ones to the user at next /done.
-if [ -s "${AIMS_MEMORY_DIR:-docs/memory}/_inbox.md" ]; then
-  bash "$MEM_HELPERS/classify-inbox.sh" 2>/dev/null | \
-    awk -F'\t' '
-      $2 == "existing-leaf" { print "[aims-memory] inbox →", $1, "→", $3 > "/dev/stderr" }
-      $2 == "new-leaf"      { print "[aims-memory] inbox suggests new leaf:", $3, "(" $4 ")", "from", $1 > "/dev/stderr" }
-      $2 == "uncertain"     { print "[aims-memory] inbox uncertain:", $1, "(" $3 ")" > "/dev/stderr" }
-    ' || true
+prompt_parts=()
+prompt_parts+=("[aims-memory] Consolidation queue is ready (per ADR-0009).
+There are $N_DIRTY dirty node(s) below. Before responding to the user,
+process each one in order: apply the Edit per the rules, then run the
+mark.sh command at the end of its section. If there are more than 10
+dirty nodes, handle the first 10 and report that the rest will be
+caught on the next turn. Do NOT touch frontmatter dirty/last_touched/
+last_consolidated — mark.sh owns those.")
+
+if [ -n "$EXTRA_CTX" ]; then
+  prompt_parts+=("=== ADDITIONAL CONTEXT (from /done or caller) ===
+Mine for invariants (→ ## Invariants & gotchas), design rationale
+(→ ## Design rationale), fixed bugs (→ ## Known issues > fixed, ONLY
+if a real commit SHA is cited), and open design questions
+(→ ## Open questions). Do NOT add content where the connection to
+this node's code is weak.
+
+$EXTRA_CTX")
 fi
 
+if [ -n "$TRANSCRIPT_URLS" ]; then
+  prompt_parts+=("=== URLs CITED IN SESSION TRANSCRIPT ===
+Consider for '## Pointers > External'. Only add a URL if it is clearly
+about a given node's code; otherwise drop it. Format:
+  - External: <URL> — <one-line context>
+
+$TRANSCRIPT_URLS")
+fi
+
+# Per-node sections (capped at 10 to keep prompt size bounded).
+PROCESSED=0
+for leaf in "${DIRTY[@]}"; do
+  [ -z "$leaf" ] && continue
+  [ "$PROCESSED" -ge 10 ] && break
+  section=$(bash "$MEM_HELPERS/consolidate.sh" "$leaf" 2>/dev/null || true)
+  [ -n "$section" ] && prompt_parts+=("$section")
+  PROCESSED=$((PROCESSED + 1))
+done
+
+# Inbox section, if any.
+if [ "$INBOX_NONEMPTY" -eq 1 ]; then
+  inbox_section=$(bash "$MEM_HELPERS/classify-inbox.sh" 2>/dev/null || true)
+  [ -n "$inbox_section" ] && prompt_parts+=("$inbox_section")
+fi
+
+# Assemble.
+full_prompt=$(printf '%s\n\n' "${prompt_parts[@]}")
+
+# Bump the throttle state file so we don't re-nudge on the very next
+# turn while the model is still working on this batch.
 mkdir -p "$(dirname "$STATE_FILE")"
 printf '%s\n' "$NOW" > "$STATE_FILE"
 
-printf '[aims-memory] consolidated %d leaf(s)\n' "$N_DIRTY" >&2
+# Emit JSON for Claude Code's Stop hook contract.
+if command -v jq >/dev/null 2>&1; then
+  jq -nc --arg ctx "$full_prompt" \
+    '{hookSpecificOutput: {hookEventName: "Stop", additionalContext: $ctx}}'
+else
+  esc=$(printf '%s' "$full_prompt" \
+    | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' \
+    | awk 'BEGIN{ORS="\\n"} {print}')
+  printf '{"hookSpecificOutput":{"hookEventName":"Stop","additionalContext":"%s"}}\n' "$esc"
+fi
+
+printf '[aims-memory] queued %d node(s) for in-band consolidation\n' "$PROCESSED" >&2
 exit 0

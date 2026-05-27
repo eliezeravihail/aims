@@ -1,6 +1,13 @@
 # ADR-0007: Tree-based project memory with automatic build and maintenance
-Status: accepted
+Status: accepted (partially superseded by ADR-0009)
 Date: 2026-05-25
+
+> **Partially superseded by [ADR-0009](0009-in-band-memory-consolidation.md).**
+> The "Stop hook calls Sonnet via curl" mechanism and the ⚠️
+> `ANTHROPIC_API_KEY` consequence below no longer apply. Consolidation now
+> runs in-band: the Stop hook injects the prompt as `additionalContext`
+> and the active session executes the Edits. Everything else in this ADR
+> (tree shape, Phase A marker, throttle thresholds, commands) is unchanged.
 Supersedes: ADR-0006 (embedding-based recall)
 Superseded by: —
 
