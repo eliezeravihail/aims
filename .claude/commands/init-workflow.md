@@ -66,8 +66,16 @@ Use AskUserQuestion to confirm/fill (one question per gap, defaults pre-filled):
    - `off`: hooks not installed.
 6. **Snapshot** — offer a one-time codebase summary at `TARGET/.claude-context.md`
    (gitignored). Default: skip; user can run `/snapshot` later.
-
 Skip any question whose answer is unambiguous from sniffing.
+
+**Memory tree (ADR-0007) is always installed** — it is not optional and
+not subject to user choice. The eight `templates/memory/` helpers, the
+`post-edit-marker`/`stop-consolidate`/`session-end` hooks, and the
+`/memory-init` + `/remember` commands are copied unconditionally, and
+the corresponding hook entries are added to `settings.json`. The tree
+itself is not seeded here; the user runs `/memory-init` once they're
+in TARGET. The CLAUDE.md template already describes this layer as
+active, so any installation that omits it leaves the target broken.
 
 ## Phase 3 — Show plan, do not write yet
 
@@ -93,6 +101,12 @@ Copy from `AIMS_ROOT` into `TARGET`. Substitute `{{VARS}}` while writing.
 | `TARGET/.claude/settings.json` (merge if exists)          | `AIMS_ROOT/templates/settings.json.tmpl`      |
 | `TARGET/.claude/aims-mode`                                 | one line: the chosen hook mode               |
 | `TARGET/.claude/commands/{adr,done,grunt,plan}.md`        | `AIMS_ROOT/templates/commands/{adr,done,grunt,plan}.md` |
+| `TARGET/.claude/memory/{_lib,mark,new-leaf,find-dirty,lint,check-refs,consolidate,classify-inbox}.sh` | `AIMS_ROOT/templates/memory/<same>` |
+| `TARGET/.claude/hooks/post-edit-marker.sh`                 | `AIMS_ROOT/templates/hooks/post-edit-marker.sh`  |
+| `TARGET/.claude/hooks/stop-consolidate.sh`                 | `AIMS_ROOT/templates/hooks/stop-consolidate.sh`  |
+| `TARGET/.claude/hooks/session-end.sh`                      | `AIMS_ROOT/templates/hooks/session-end.sh`       |
+| `TARGET/.claude/commands/memory-init.md`                   | `AIMS_ROOT/templates/commands/memory-init.md`    |
+| `TARGET/.claude/commands/remember.md`                      | `AIMS_ROOT/templates/commands/remember.md`       |
 
 Notes:
 
@@ -140,6 +154,8 @@ aims installed into <TARGET>:
   ADR root: docs/adr/  (3 files)
   CLAUDE.md: created | merged (+N sections) | unchanged
   commands: 4 copied to .claude/commands/  (no global pollution)
+  memory tree: enabled | skipped
+               (if enabled: run `/memory-init` to seed docs/memory/)
   next: cd <TARGET> && claude
         try `/plan <task>` for non-trivial work
 ```

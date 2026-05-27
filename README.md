@@ -41,11 +41,13 @@ session after session.
 
 | Command            | Model  | Purpose                                                               |
 |--------------------|--------|-----------------------------------------------------------------------|
-| `/init-workflow`   | Sonnet | Bootstrap ADRs, hooks, CLAUDE.md sections in any project (idempotent) |
+| `/init-workflow`   | Sonnet | Bootstrap ADRs, hooks, memory tree, CLAUDE.md sections (idempotent)   |
 | `/plan <task>`     | Opus   | Read-only exploration → ExitPlanMode → durable plan file              |
 | `/adr <title>`     | Opus   | Record an architecture decision (append-only log)                     |
 | `/grunt <task>`    | Haiku  | Mechanical edits: renames, formatting, log/config tweaks              |
 | `/done [plan]`     | Opus   | Verify a plan's steps & checks; prompt for ADRs                       |
+| `/memory-init`     | Sonnet | One-time scan to seed `docs/memory/` (per ADR-0007)                   |
+| `/remember <note>` | Sonnet | Append a note to the right leaf of the memory tree                    |
 
 The model is pinned per command — it switches automatically and returns to
 your session model after.
@@ -143,9 +145,18 @@ bootstrapped.
    cd /path/to/my-project
    claude
    ```
-   The target's own `.claude/` provides `/plan`, `/adr`, `/grunt`, `/done`
-   plus hooks and CLAUDE.md. **Nothing is installed globally** — open
-   Claude in any unrelated directory and aims isn't there.
+   The target's own `.claude/` provides `/plan`, `/adr`, `/grunt`, `/done`,
+   `/memory-init`, `/remember` plus hooks and CLAUDE.md. **Nothing is
+   installed globally** — open Claude in any unrelated directory and
+   aims isn't there.
+
+5. **Seed the memory tree (one-time).**
+   ```
+   /memory-init
+   ```
+   Inside the target, run this once to scan the codebase and populate
+   `docs/memory/` (see ADR-0007). After that the tree maintains itself
+   via the `post-edit-marker` and `stop-consolidate` hooks.
 
 ### Path B — Global plugin install (one global command for ergonomics)
 
@@ -178,15 +189,20 @@ ADR-0005 for the rationale.
 ```
 TARGET/
 ├── CLAUDE.md                    # created or merged section-aware
-├── docs/adr/
-│   ├── README.md                # decision index
-│   ├── _template.md
-│   └── 0001-record-architecture-decisions.md
+├── docs/
+│   ├── adr/
+│   │   ├── README.md            # decision index
+│   │   ├── _template.md
+│   │   └── 0001-record-architecture-decisions.md
+│   └── memory/                  # seeded later by /memory-init (ADR-0007)
 └── .claude/
-    ├── commands/                # /plan, /adr, /grunt, /done
-    ├── hooks/                   # session-start, prompt-submit, pre-write
+    ├── commands/                # /plan, /adr, /grunt, /done, /memory-init, /remember
+    ├── hooks/                   # session-start, prompt-submit, pre-write,
+    │                            # post-edit-marker, stop-consolidate, session-end
+    ├── memory/                  # _lib, mark, new-leaf, find-dirty, lint,
+    │                            # check-refs, consolidate, classify-inbox (.sh)
     ├── settings.json            # wires the hooks
-    └── aims-mode                 # nudge | block
+    └── aims-mode                # nudge | block
 ```
 
 Updating aims means `git pull` in the source repo (and `/plugin update` if
