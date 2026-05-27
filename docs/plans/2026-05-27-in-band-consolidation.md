@@ -1,6 +1,7 @@
 # Plan: in-band memory consolidation (no API key)
-Status: in-progress
+Status: completed
 Started: 2026-05-27
+Completed: 2026-05-27
 
 ## Context
 
@@ -139,3 +140,68 @@ ADR-0007.
 ## ADRs to record after implementation
 
 - [x] ADR-0009 — drafted as part of step 8 (the decision IS this plan).
+
+## Outcome
+
+Shipped in commit `0c0852f` on branch `claude/stoic-goodall-ScbPt`;
+opened as draft PR #16.
+
+All nine planned steps landed as designed:
+
+1. `templates/hooks/stop-consolidate.sh` rewritten — no `curl`, no
+   API key. Emits a single JSON `additionalContext` with per-node
+   prompts (cap 10/turn), optional inbox section, and an optional
+   `AIMS_EXTRA_CONTEXT` bridge for `/done`. Bumps
+   `.last-consolidated` the moment the prompt is queued.
+2. `templates/memory/consolidate.sh` reduced to a pure per-node
+   prompt builder (current body + diffs since `last_touched` + the
+   ADR-0008 schema rules + a `mark.sh ... consolidated` footer).
+3. `templates/memory/classify-inbox.sh` reduced to a pure
+   inbox-triage prompt builder.
+4. `templates/memory/mark.sh` grew a `consolidated` subcommand that
+   flips `dirty:false` and bumps `last_touched`/`last_consolidated`
+   for the in-band model to call after each Edit.
+5. `templates/memory/doctor.sh` no longer reports an
+   `ANTHROPIC_API_KEY` field.
+6. `templates/commands/done.md` step 7 was rewritten for in-band
+   propagation.
+7. `templates/commands/remember.md` lost the obsolete "don't open
+   the Anthropic API" bullet.
+8. ADR-0009 written; ADR-0007 carries a partial-supersede banner;
+   ADR index updated.
+9. All `.claude/...` mirror copies updated.
+
+Deviations from the plan:
+- Also touched `docs/memory/README.md` (stale "calls Sonnet" line) —
+  scope creep but trivially correct.
+- During `/done`, used the in-band pattern to consolidate 5 nodes
+  whose `code:` overlapped this plan (`memory/phase-b-consolidation`,
+  `memory/helpers`, `memory/phase-a-marker`, `discipline/done`,
+  `memory/commands`) and added a missing
+  `templates/commands/memory-augment.md` + `templates/memory/doctor.sh`
+  to the appropriate nodes' `code:` lists. Also normalized the
+  historical inbox by stripping absolute `/home/user/aims/` prefixes
+  and dropping the obsolete `templates/memory/new-leaf.sh` entry.
+
+## Closing checks
+
+- `bash -n templates/{hooks,memory}/*.sh .claude/{hooks,memory}/*.sh`
+  — **pass**.
+- `grep -rn 'ANTHROPIC_API_KEY\|api\.anthropic\.com' templates/ .claude/`
+  excluding ADRs — only an explanatory comment in
+  `stop-consolidate.sh:13` referencing ADR-0009. **pass**.
+- `grep -rn curl templates/{hooks,memory} .claude/{hooks,memory}` —
+  empty. **pass**.
+- `bash .claude/memory/doctor.sh` — 13 nodes, 0 dirty, lint clean,
+  0 nodes >4 KB. **pass**.
+- `bash .claude/memory/lint.sh` — clean (13 nodes). **pass**.
+- Smoke: marked one source path dirty, ran
+  `stop-consolidate.sh --force`, confirmed JSON event=`Stop`, prompt
+  contains the schema rules (`## Purpose`, `## Design rationale`)
+  and the `mark.sh ... consolidated` footer; no `curl` invoked.
+  **pass**.
+
+Remaining inbox entries (15) are all `docs/{adr,plans,memory}/*`,
+`README.md`, `.gitignore` — meta files that the marker should
+arguably skip; not source files any node would track via `code:`.
+Out of scope for this plan; safe to leave in the inbox.
