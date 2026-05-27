@@ -1,5 +1,5 @@
 # Plan: 2 commands only; idempotent install + auto memory
-Status: in-progress
+Status: completed
 Started: 2026-05-27
 
 ## TL;DR
@@ -127,3 +127,34 @@ target ≤80 lines.
 - [ ] ADR-0010 — Two-command surface; idempotent install; auto
       close-out. (Clear yes — architectural commitment; supersedes
       parts of ADR-0002/0007.)
+
+## Outcome
+
+Shipped in commit 7243a88. Command surface reduced from 8 → 2
+(`/plan`, `/install-on`). `/install-on` is now strictly idempotent
+with per-class rules documented in Phase 3. Close-out (verify,
+auto-ADR, mark completed, memory consolidation) is embedded in
+`/plan` Phase 4 and nudged by the Stop hook when an in-progress
+plan exists. Plan template leads with `## TL;DR` and "Options
+considered" is now conditional. ADR-0010 records the decision
+(status `proposed`).
+
+Deviations from plan:
+- `/install-on` was rewritten to use `AskUserQuestion: yes |
+  per-class | abort` rather than a per-file diff-and-ask loop, to
+  avoid the large-repo UX issue flagged in the Risks section.
+
+ADRs created: ADR-0010 (clear yes — architectural commitment).
+
+## Closing checks
+
+- `bash -n templates/hooks/*.sh .claude/hooks/*.sh templates/memory/*.sh .claude/memory/*.sh` → **pass**.
+- `bash .claude/memory/lint.sh` → **clean (13 nodes)**.
+- `bash .claude/memory/doctor.sh` → **0 dirty, lint clean, 0 nodes > 4 KB**.
+- `ls .claude/commands/` = `install-on.md plan.md` → **pass**.
+- `ls templates/commands/` = `install-on.md plan.md` → **pass**.
+- `grep -rE '/(done|adr|grunt|remember|memory-(init|augment)|init-workflow)\b' .claude templates CLAUDE.md`
+  → only intentional historical mentions remain (plan.md migration
+  notes, ADR/plan files referencing prior commands).
+- Manual `/install-on` smoke (fresh + re-install) → **not run** in
+  this session; deferred to first real install attempt.
