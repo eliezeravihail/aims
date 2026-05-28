@@ -20,8 +20,8 @@ external_refs:
 owners:
   - ema
 dirty: false
-last_touched: 2026-05-25T11:46:53Z
-last_consolidated: 2026-05-25T11:46:53Z
+last_touched: 2026-05-28T15:10:11Z
+last_consolidated: 2026-05-28T15:10:11Z
 ---
 
 ## Purpose
@@ -30,7 +30,20 @@ Documents the /plan slash command — the entry point to non-trivial work in aim
 
 ## Design rationale
 
+Plan format is **signal-only**: a plan is read for its executive summary
+(`## TL;DR`), its concrete code/diffs (`## Changes` — one subsection per
+file, the real snippet IS the spec), and its `## ADRs / TODO`. Prose
+narration, multi-option essays, and phase-by-phase storytelling are
+explicitly cut. No hard line cap — length follows the code detail, not
+padding.
+
 ## Invariants & gotchas
+
+- `## Changes` carries actual code, not descriptions of code; its ordered
+  subsections double as the implementation steps and as the close-out
+  verification checklist (Phase 4 walks them).
+- No `## Options considered` section — fold a one-line "chose X over Y" into
+  the TL;DR instead.
 
 ## Known issues
 

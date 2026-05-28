@@ -27,19 +27,34 @@ after the plan is approved — there is no separate `/done`.
 3. **Investigate** existing code, ADRs (`docs/adr/`), prior plans
    (`docs/plans/`). Cite `file:line`.
 
-4. **Draft the plan**. Required sections (target ≤80 lines):
-   - `## TL;DR` — **one paragraph** summarizing what + why + how.
-   - `## Goal` — measurable, one sentence.
-   - `## Decision` — chosen approach (key choices in bullets).
-   - `## Steps` — ordered, each independently verifiable.
-   - `## Verification` — exact commands or tests that prove success.
-   - `## Risks / unknowns` — what could go wrong.
-   - `## ADRs to record after implementation` — checklist; one line
-     per candidate.
+4. **Draft the plan**. A plan is read for three things only: the
+   **executive summary**, the **concrete code/diffs**, and the
+   **ADR/TODO list**. Write those well; cut everything else. No
+   phase-by-phase narration, no restating what already exists, no
+   multi-option essays, no "what the user prefers" meta-commentary.
+   Prose earns its place only when a code snippet can't say it.
 
-   **Conditional**: include `## Options considered` only if more than
-   one real option was weighed. Otherwise fold a one-line "Why not X"
-   into the TL;DR.
+   Required sections:
+   - `## TL;DR` — executive summary: what + why + how, one short
+     paragraph. Goal/approach fold in here (no separate prose sections).
+   - `## Changes` — **the heart of the plan**. One subsection per file
+     touched. Each carries the **actual code/diff at full relevant
+     detail** — the snippet IS the spec. Order them so each is
+     independently verifiable; the list of changes doubles as the
+     implementation steps. Show real code, not descriptions of code.
+   - `## Verification` — exact commands or tests that prove success.
+   - `## ADRs / TODO after implementation` — checklist, one line each:
+     ADRs to record, follow-ups left out of scope.
+   - `## Risks / unknowns` — terse bullets; include only real ones.
+     Omit the section if there are none.
+
+   **No `## Options considered` section.** If you genuinely weighed
+   alternatives, fold a one-line "chose X over Y because Z" into the
+   TL;DR. Never narrate the deliberation.
+
+   No hard line cap — be as long as the code detail demands and as
+   short as the prose allows. A 30-line plan that is all signal beats
+   a 200-line plan padded with narration.
 
 5. **Present** the plan inline in your message and ask the user to
    approve / edit / abort. (Native ExitPlanMode is unavailable when
@@ -59,25 +74,27 @@ Status: in-progress
 Started: YYYY-MM-DD
 
 ## TL;DR
-<one paragraph>
+<executive summary: what + why + how, one short paragraph>
 
-## Goal
+## Changes
+
+### path/to/file.ext
+<one line of intent, then the actual code/diff at full relevant detail>
+```lang
+<the real snippet — this is the spec, not a description of it>
+```
+
+### path/to/other.ext
 …
-
-## Decision
-…
-
-## Steps
-1. …
 
 ## Verification
 - `<command>`
 
-## Risks / unknowns
-…
+## ADRs / TODO after implementation
+- [ ] ADR: <one line> — or — TODO: <follow-up out of scope>
 
-## ADRs to record after implementation
-- [ ] …
+## Risks / unknowns   (omit if none)
+- <terse, real risks only>
 ```
 
 5. Remove the lock: `rm -f .claude/.planning-lock`.
@@ -102,13 +119,13 @@ for the hook if you know you're done.
 
 ### Close-out steps
 
-1. **Verify steps.** Walk each step; cite `file:line` or commit hash
-   for completion. If any step is undone, list what's missing and
-   stop — do not close.
+1. **Verify changes.** Walk each `## Changes` subsection; cite
+   `file:line` or commit hash for completion. If any is undone, list
+   what's missing and stop — do not close.
 2. **Run verification.** Execute every command in `## Verification`.
    Capture pass/fail. If any fail, stop — do not close.
-3. **Auto-decide ADRs.** For each item in
-   `## ADRs to record after implementation`:
+3. **Auto-decide ADRs.** For each ADR item in
+   `## ADRs / TODO after implementation`:
    - **Create the ADR** (status: proposed) when the change is a
      clear architectural commitment: new dependency, new module
      boundary, new invariant, supersedes a prior ADR, or the entry
