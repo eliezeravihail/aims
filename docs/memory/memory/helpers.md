@@ -30,8 +30,8 @@ external_refs:
 owners:
   - ema
 dirty: false
-last_touched: 2026-05-27T21:44:32Z
-last_consolidated: 2026-05-27T21:44:32Z
+last_touched: 2026-05-28T19:28:42Z
+last_consolidated: 2026-05-28T19:28:42Z
 ---
 
 ## Purpose
@@ -54,8 +54,14 @@ No external network call lives in any helper.
   flips clean. Both modes route through the same `fm_set` primitives
   for consistency.
 - `doctor.sh` reports node count, dirty count, last-consolidated age,
-  lint summary, and >4 KB node count — every signal a maintainer
-  needs without any "missing key" caveat.
+  lint summary, >4 KB node count, and **inert count** (module nodes
+  with `code: []`) — every signal a maintainer needs without any
+  "missing key" caveat.
+- `new-node.sh` takes optional trailing `code:` globs
+  (`new-node.sh <path> <kind> [glob ...]`) and renders them as a YAML
+  block list; module nodes must get ≥1 so the marker can track them
+  (ADR-0012). `lint.sh` flags any `module` node left at `code: []` as
+  an inert node.
 - `path_matches` in `_lib.sh` accepts both relative and absolute
   needles — defense in depth against a future hook (or direct
   `mark.sh` caller) that forgets to normalize. The marker still
@@ -73,6 +79,11 @@ No external network call lives in any helper.
   `dirty/last_touched/last_consolidated`. Other helpers (and the
   in-band model executing consolidation prompts) MUST leave that
   frontmatter alone.
+- A `module` node with `code: []` is **inert**: the marker can never
+  flag it dirty, so it never consolidates (ADR-0012). If a node tracks
+  no code it must be `kind: topic`/`decision`, not `module`. `lint.sh`
+  enforces this; the freshness probe in `/install-on` Phase 5 reads
+  `last_consolidated` (never file mtime — a clone resets mtimes).
 - `consolidate.sh` caps each per-source diff at 8 KB so the assembled
   Stop-hook prompt stays bounded even with many dirty nodes.
 - All helpers exit 0 on a missing `docs/memory/` so the plugin is
@@ -91,6 +102,8 @@ No external network call lives in any helper.
   the `consolidate.sh` prompt.
 - ADR-0009 — removed the LLM/curl path from `consolidate.sh` and
   `classify-inbox.sh`.
+- ADR-0012 — `new-node.sh` glob args, mandatory `code:` for module
+  nodes, `lint.sh`/`doctor.sh` inert reporting.
 - `templates/memory/_lib.sh` — shared primitives.
 
 ## Open questions

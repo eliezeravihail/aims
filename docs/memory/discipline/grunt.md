@@ -1,6 +1,6 @@
 ---
 node: discipline/grunt
-kind: module
+kind: topic
 code: []
 # (was: templates/commands/grunt.md, .claude/commands/grunt.md — both removed per ADR-0010)
 commits: []

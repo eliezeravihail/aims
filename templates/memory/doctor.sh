@@ -79,6 +79,15 @@ if [ -d "${AIMS_MEMORY_DIR:-docs/memory}" ]; then
     -size +4k 2>/dev/null | grep -c . || true)
 fi
 
+# Inert module nodes (empty code:) — post-edit-marker can never flag them
+# dirty, so they never consolidate. The silent failure mode of the tree.
+INERT_COUNT=0
+while IFS= read -r leaf; do
+  [ -z "$leaf" ] && continue
+  [ "$(fm_get "$leaf" kind)" = "module" ] || continue
+  [ -z "$(fm_list "$leaf" code)" ] && INERT_COUNT=$((INERT_COUNT + 1))
+done < <(list_leaves)
+
 if [ "$BRIEF" -eq 1 ]; then
   # One line for SessionStart. Highlight unhealthy states.
   if [ "$LAST_HUMAN" = "never" ] && [ "$DIRTY_COUNT" -gt 0 ]; then
@@ -87,8 +96,10 @@ if [ "$BRIEF" -eq 1 ]; then
     printf '[aims-memory] %d nodes, consolidation never ran, lint %s\n' \
       "$NODE_COUNT" "$LINT_HUMAN"
   else
-    printf '[aims-memory] %d nodes, %d dirty, last consolidated %s, lint %s\n' \
-      "$NODE_COUNT" "$DIRTY_COUNT" "$LAST_HUMAN" "$LINT_HUMAN"
+    INERT_SUFFIX=""
+    [ "$INERT_COUNT" -gt 0 ] && INERT_SUFFIX=", $INERT_COUNT inert"
+    printf '[aims-memory] %d nodes, %d dirty, last consolidated %s, lint %s%s\n' \
+      "$NODE_COUNT" "$DIRTY_COUNT" "$LAST_HUMAN" "$LINT_HUMAN" "$INERT_SUFFIX"
   fi
   exit 0
 fi
@@ -100,6 +111,7 @@ aims memory pipeline health
   last consolidated:  $LAST_HUMAN
   lint:               $LINT_HUMAN
   nodes > 4 KB:       $LARGE_COUNT
+  inert (code: []):   $INERT_COUNT
 EOF
 
 if [ "$LINT_ISSUES" -gt 0 ]; then

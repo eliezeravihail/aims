@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 # Scaffold a new memory leaf.
 #
-# Usage:  new-node.sh <node-path> <kind>
+# Usage:  new-node.sh <node-path> <kind> [code-glob ...]
 #   <node-path>  e.g. interface/auth/oauth-callback (NO .md suffix)
 #   <kind>       module | decision | topic | runbook
+#   [code-glob]  zero or more repo-relative paths/globs for `code:`.
+#                A `module` node should ALWAYS get >=1 — without it the
+#                post-edit-marker can never flag the node dirty, so it
+#                never consolidates.
 #
 # Idempotent: refuses if the leaf already exists.
 
@@ -34,6 +38,15 @@ case "$kind" in
     exit 1 ;;
 esac
 
+shift 2 2>/dev/null || shift "$#"   # remaining args = code: globs
+code_globs=("$@")
+
+if [ "${#code_globs[@]}" -eq 0 ]; then
+  CODE_FM="code: []"
+else
+  CODE_FM=$(printf 'code:\n'; printf '  - %s\n' "${code_globs[@]}")
+fi
+
 # Strip any leading docs/memory/ and any .md the caller mistakenly added.
 node="${node#"$MEMORY_DIR"/}"
 node="${node%.md}"
@@ -51,7 +64,7 @@ cat > "$leaf" <<EOF
 ---
 node: $node
 kind: $kind
-code: []
+$CODE_FM
 commits: []
 sessions: []
 parents: []
