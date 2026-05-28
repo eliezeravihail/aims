@@ -15,19 +15,13 @@ only adds what's missing and refreshes deterministic infrastructure
 ## Roots
 
 - `AIMS_ROOT` — current working directory (the aims source repo).
-  Read-only **except** when `TARGET == AIMS_ROOT` (self-install /
-  dogfooding refresh): then `.claude/` and `docs/memory/` under
-  `AIMS_ROOT` may be written per the normal idempotency rules.
-- `TARGET` — resolved absolute path from `$ARGUMENTS`. The place
+  Read-only.
+- `TARGET` — resolved absolute path from `$ARGUMENTS`. The only place
   you may write.
 
 If `$ARGUMENTS` is missing or the path doesn't exist, ask for it
-first. **`TARGET == AIMS_ROOT` is allowed** — it is the dogfooding
-refresh path: it copies `templates/hooks/*` → `.claude/hooks/*`,
-`templates/memory/*` → `.claude/memory/*`, `templates/commands/*`
-→ `.claude/commands/*`, and runs the memory augment pass. ADRs,
-plans, `CLAUDE.md`, and existing memory node bodies are still
-never overwritten.
+first. If `TARGET == AIMS_ROOT`, refuse:
+`Refusing to install aims into its own source repo.`
 
 ## Phase 1 — Detect install state
 
@@ -187,9 +181,7 @@ aims installed into <TARGET> (<fresh|re-install>):
   skip the hook-mode question.
 - If user aborts at Phase 3, write nothing. Print
   `Aborted. No changes made.`
-- `TARGET == AIMS_ROOT` (self-install) is allowed and intended for
-  dogfooding refresh. The idempotency rules still hold — nothing
-  hand-edited is destroyed.
+- If `TARGET == AIMS_ROOT`, refuse.
 - The only two commands installed into the target are `install-on`
   and `plan`. Everything else (close-plan, ADR creation, memory
   consolidation, mechanical edits) happens inline or via hooks.

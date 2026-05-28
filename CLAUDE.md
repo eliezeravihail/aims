@@ -58,7 +58,7 @@ of mode — this is what makes `/plan` actually read-only.
 
 - The plugin's distributable hook sources live under `templates/hooks/`.
 - The locally-installed copies live under `.claude/hooks/` (for dogfooding).
-- If you change a hook in `templates/`, refresh `.claude/hooks/` by
-  running `/install-on .` — self-install is the dogfooding refresh path.
+- If you change a hook in `templates/`, also re-copy it to `.claude/hooks/`
+  to keep dogfooding accurate. (A future ADR may automate this.)
 - This repo has no `src/`, `lib/`, or `app/` paths, so the `pre-write` hook
   in `block` mode would be a no-op here. `nudge` is the appropriate default.

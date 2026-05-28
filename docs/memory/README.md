@@ -13,19 +13,17 @@ This tree is a **navigator** over other memory sources. It references
 
 ## Tags
 
-- **discipline/** — the slash commands that define the aims workflow.
-  Post-ADR-0010 the active surface is `/plan` and `/install-on`;
-  historical nodes for `/done`, `/adr`, `/grunt`, `/remember` are
-  kept as superseded breadcrumbs.
-- **hooks/** — the runtime enforcement layer outside the memory
-  subsystem (pre-write gating, session-start info, prompt-submit
-  context injection).
+- **discipline/** — the four slash commands that define the aims
+  workflow (`/plan`, `/done`, `/adr`, `/grunt`). Where you go to
+  understand how aims wants you to work.
+- **hooks/** — the runtime enforcement layer that lives outside the
+  memory subsystem (pre-write gating, session-start info,
+  prompt-submit context injection).
 - **memory/** — the ADR-0007 subsystem itself: helpers, Phase A
-  marker, Phase B throttled in-band consolidation (ADR-0009).
-- **installer/** — the clone-and-bootstrap path (`/install-on` +
-  the `templates/*.tmpl` files it substitutes).
-- **testing/** — bash smoke tests for the marker + consolidation
-  pipeline.
+  marker, Phase B throttled consolidation, and the user-facing
+  slash commands (`/memory-init`, `/remember`).
+- **installer/** — the clone-and-bootstrap path (`/init-workflow`
+  + the `templates/*.tmpl` files it substitutes).
 
 ## Navigation
 
