@@ -88,7 +88,7 @@ Copy from `AIMS_ROOT` into `TARGET`, substituting `{{VARS}}`.
 | Path in TARGET                                                                                 | Source under AIMS_ROOT                          |
 |------------------------------------------------------------------------------------------------|-------------------------------------------------|
 | `.claude/hooks/{session-start,prompt-submit,pre-write,post-edit-marker,stop-consolidate,session-end}.sh` | `templates/hooks/<same>`                 |
-| `.claude/memory/{_lib,mark,new-leaf,find-dirty,lint,check-refs,consolidate,classify-inbox,doctor}.sh`     | `templates/memory/<same>`                |
+| `.claude/memory/{_lib,mark,new-node,find-dirty,lint,check-refs,consolidate,classify-inbox,doctor}.sh`     | `templates/memory/<same>`                |
 | `.claude/commands/{install-on,plan}.md`                                                        | `templates/commands/<same>`                     |
 | `.claude/settings.json` (merge if exists)                                                      | `templates/settings.json.tmpl`                  |
 | `.claude/aims-mode`                                                                            | one line: chosen mode                           |
@@ -128,7 +128,7 @@ Do this work yourself, in-band (no API key, per ADR-0009):
 3. Within each tag, identify the prominent modules → one **node**
    per module. Aim for ≤ ~12 nodes total on first pass; the tree
    grows via the consolidation loop.
-4. Run `bash TARGET/.claude/memory/new-leaf.sh <tag>/<slug> <kind>`
+4. Run `bash TARGET/.claude/memory/new-node.sh <tag>/<slug> <kind>`
    for each node. Then write a `docs/memory/<tag>/README.md` listing
    them.
 5. Write `docs/memory/README.md` (root) listing tags.
@@ -144,7 +144,7 @@ Do this work yourself, in-band (no API key, per ADR-0009):
    (`src/`, `lib/`, top-level directories with > N files of source).
 3. Propose new tags/nodes via `AskUserQuestion` — one batch, list
    form. Default to "create" for clear matches, "skip" otherwise.
-4. For each approved proposal: `new-leaf.sh`. Then add to the
+4. For each approved proposal: `new-node.sh`. Then add to the
    appropriate tag `README.md`.
 5. **Never overwrite existing node bodies.** Augmentation is
    additive only.
