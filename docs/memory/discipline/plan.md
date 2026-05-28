@@ -20,8 +20,8 @@ external_refs:
 owners:
   - ema
 dirty: false
-last_touched: 2026-05-28T15:10:11Z
-last_consolidated: 2026-05-28T15:10:11Z
+last_touched: 2026-05-28T18:59:07Z
+last_consolidated: 2026-05-28T18:59:07Z
 ---
 
 ## Purpose
@@ -32,7 +32,7 @@ Documents the /plan slash command — the entry point to non-trivial work in aim
 
 Plan format is **signal-only**: a plan is read for its executive summary
 (`## TL;DR`), its concrete code/diffs (`## Changes` — one subsection per
-file, the real snippet IS the spec), and its `## ADRs / TODO`. Prose
+file, the real snippet IS the spec), and its `## Close-out checklist`. Prose
 narration, multi-option essays, and phase-by-phase storytelling are
 explicitly cut. No hard line cap — length follows the code detail, not
 padding.
@@ -44,6 +44,11 @@ padding.
   verification checklist (Phase 4 walks them).
 - No `## Options considered` section — fold a one-line "chose X over Y" into
   the TL;DR instead.
+- `## Close-out checklist` is **mandatory and every line always present**
+  (ADR / Nodes / CLAUDE.md / Tests / TODO), each with an explicit verdict —
+  `NONE — reason` is written, never omitted. Phase 4 resolves each line and
+  the final report echoes them, so a skipped ADR/consolidation is visible
+  instead of silent.
 
 ## Known issues
 
