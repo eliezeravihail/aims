@@ -1,10 +1,10 @@
 ---
-node: installer/init-workflow
+node: installer/install-on
 kind: module
 code:
   - templates/commands/install-on.md
   - .claude/commands/install-on.md
-# renamed from init-workflow.md per ADR-0010 (idempotent install + memory bootstrap)
+# renamed from init-workflow per ADR-0010 (idempotent install + memory bootstrap)
 commits: []
 sessions: []
 parents: []
@@ -56,9 +56,6 @@ plugin, not freeze at first install.
   `.claude/commands/`) must stay byte-identical — verify with `md5sum`.
 
 ## Known issues
-
-- This node is still filed under the slug `init-workflow` though the command
-  is `/install-on`; renaming the node touches tree mechanics and is deferred.
 
 
 ## Pointers

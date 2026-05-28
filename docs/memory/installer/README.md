@@ -7,7 +7,7 @@ nothing is installed globally besides the `/install-on` command itself.
 
 ## Leaves
 
-- **init-workflow.md** — the six-phase `/install-on` command: detect,
+- **install-on.md** — the six-phase `/install-on` command: detect,
   interview, show changes + approval, apply (with stale-file cleanup),
   memory bootstrap/augment, doctor. Self-refreshing per ADR-0011.
 - **templates.md** — the `.tmpl` files under `templates/` and the
