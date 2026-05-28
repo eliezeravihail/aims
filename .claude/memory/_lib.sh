@@ -155,23 +155,24 @@ path_matches() {
   case "$hay" in
     "$needle":*) return 0 ;;
   esac
-  # Defense-in-depth: if needle is absolute, retry against the
-  # repo-relative form. Node code: entries are always relative
-  # (ADR-0008); callers ought to normalize, but a forgotten
-  # normalization shouldn't silently miss every match.
-  if [ "${needle#/}" != "$needle" ]; then
-    local root rel
-    root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-    case "$needle" in
-      "$root"/*)
-        rel="${needle#$root/}"
-        [ "$rel" = "$hay" ] && return 0
-        case "$hay" in
-          "$rel":*) return 0 ;;
-        esac
-        ;;
-    esac
-  fi
+  # Defense in depth: if needle is absolute, retry after stripping the
+  # repo root. Marker-side normalization should already have done this,
+  # but a future direct caller of mark.sh may forget.
+  case "$needle" in
+    /*)
+      local root rel
+      root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+      case "$needle" in
+        "$root"/*)
+          rel="${needle#$root/}"
+          [ "$rel" = "$hay" ] && return 0
+          case "$hay" in
+            "$rel":*) return 0 ;;
+          esac
+          ;;
+      esac
+      ;;
+  esac
   return 1
 }
 
