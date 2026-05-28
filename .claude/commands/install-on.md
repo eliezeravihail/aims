@@ -158,9 +158,29 @@ those directories (runtime state, user notes).
   definitions, so a stale aims hook can't survive a re-install. Keep any
   user-added hook entry that isn't one of aims' own.
 
-## Phase 5 — Memory bootstrap or augment (inline, always)
+## Phase 5 — Memory tree (inline)
 
-Decide based on `TARGET/docs/memory/`:
+Decide the mode from `TARGET/docs/memory/`:
+
+- **Missing → A) cold-start** (always initialize).
+- **Exists → freshness probe.** Read the newest node `last_consolidated`:
+  ```bash
+  newest=$(grep -h '^last_consolidated:' \
+    "$TARGET"/docs/memory/*/*.md "$TARGET"/docs/memory/*.md 2>/dev/null \
+    | sed 's/^last_consolidated:[[:space:]]*//' | sort | tail -1)
+  cutoff=$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null \
+    || date -u -v-7d +%Y-%m-%dT%H:%M:%SZ)   # GNU | BSD
+  ```
+  ISO-8601 UTC sorts lexically = chronologically. Use the **frontmatter**
+  value, NOT file mtime — a fresh `git clone` resets mtimes and would
+  falsely look new.
+  - `newest > cutoff` (updated within 7 days) → **skip all tree work**;
+    print `memory tree: fresh (updated <Nd ago>), skipped`. System files
+    were already refreshed in Phase 4.
+  - else (older, or no nodes) → **B) audit & augment**.
+
+Memory phase is **non-fatal** — if it errors, install still succeeds.
+Print the error and continue to Phase 6.
 
 ### A) Tree missing → cold-start scan
 
@@ -174,30 +194,34 @@ Do this work yourself, in-band (no API key, per ADR-0009):
 3. Within each tag, identify the prominent modules → one **node**
    per module. Aim for ≤ ~12 nodes total on first pass; the tree
    grows via the consolidation loop.
-4. Run `bash TARGET/.claude/memory/new-node.sh <tag>/<slug> <kind>`
-   for each node. Then write a `docs/memory/<tag>/README.md` listing
-   them.
+4. Run `bash TARGET/.claude/memory/new-node.sh <tag>/<slug> <kind> <glob> [<glob>...]`
+   for each node. **Every `module` node MUST get ≥1 `code:` glob** (the
+   module path(s) it represents). A node with `code: []` is **inert**: the
+   `post-edit-marker` hook can never flag it dirty, so it never
+   consolidates and its body stays empty forever. `topic`/`decision` nodes
+   may omit globs. Then write a `docs/memory/<tag>/README.md` listing them.
 5. Write `docs/memory/README.md` (root) listing tags.
 6. Run `bash TARGET/.claude/memory/lint.sh`. Fix any issue
-   interactively.
+   interactively (a reported inert node means a missing `code:` glob).
 7. Leave node bodies empty (six ADR-0008 sections, no content).
    They fill via the consolidation loop as users work.
 
-### B) Tree exists → augment
+### B) Tree exists → audit & augment
 
-1. Collect all `code:` globs from existing nodes.
-2. Identify code areas in `TARGET` not matched by any node
+1. **Backfill inert nodes first.** For each existing node with `code: []`
+   and `kind: module`, infer its globs from its tag/slug + tag README and
+   Edit the `code:` frontmatter to add them. **Frontmatter only — never
+   touch the body.** This heals an old tree that was scaffolded before
+   globs were mandatory (otherwise it stays permanently inert).
+2. Collect all `code:` globs from existing nodes.
+3. Identify code areas in `TARGET` not matched by any node
    (`src/`, `lib/`, top-level directories with > N files of source).
-3. Propose new tags/nodes via `AskUserQuestion` — one batch, list
+4. Propose new tags/nodes via `AskUserQuestion` — one batch, list
    form. Default to "create" for clear matches, "skip" otherwise.
-4. For each approved proposal: `new-node.sh`. Then add to the
-   appropriate tag `README.md`.
-5. **Never overwrite existing node bodies.** Augmentation is
-   additive only.
-6. Run `lint.sh`; surface issues; do not auto-fix human content.
-
-Memory phase is **non-fatal** — if it errors, install still
-succeeds. Print the error and continue to Phase 6.
+5. For each approved proposal: `new-node.sh <tag>/<slug> <kind> <glob>...`
+   (same glob rule as 5A.4). Then add to the appropriate tag `README.md`.
+6. **Never overwrite existing node bodies.** Augmentation is additive only.
+7. Run `lint.sh`; surface issues; do not auto-fix human content.
 
 ## Phase 6 — Doctor report
 
@@ -213,7 +237,8 @@ aims installed into <TARGET> (<fresh|re-install>):
     scaffolding: refreshed (0001, _template, README prose) | created | unchanged
     authored ADRs: <M> untouched
   CLAUDE.md: created | merged (+<N> sections) | unchanged
-  memory tree: <fresh: T tags, N nodes> | <augmented: +M nodes> | <untouched>
+  memory tree: <fresh-scan: T tags, N nodes> | <audited: +M nodes, B backfilled> | <fresh (updated <Nd ago>), skipped>
+  inert nodes (code: []): <N>
   lint: clean | <K issues>
   next: cd <TARGET> && claude
         try `/plan <task>` for non-trivial work

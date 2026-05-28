@@ -35,3 +35,4 @@ add a row to the index below.
 | 0009 | Memory consolidation runs in-band via hook-injected instructions | accepted | 2026-05-27 |
 | 0010 | Two-command surface; idempotent install; auto plan close-out | proposed (partial 0011) | 2026-05-27 |
 | 0011 | Re-install refreshes aims scaffolding and prunes stale system files | proposed | 2026-05-28 |
+| 0012 | Module nodes must carry code globs; install gates tree work on freshness | proposed | 2026-05-28 |

@@ -21,8 +21,8 @@ external_refs:
 owners:
   - ema
 dirty: false
-last_touched: 2026-05-28T15:06:22Z
-last_consolidated: 2026-05-28T15:06:22Z
+last_touched: 2026-05-28T19:28:42Z
+last_consolidated: 2026-05-28T19:28:42Z
 ---
 
 ## Purpose
@@ -31,8 +31,9 @@ Documents `/install-on` (renamed from `/init-workflow` per ADR-0010) — the
 clone-and-bootstrap installer. Six phases: (1) detect install state +
 `PRIOR_AIMS` flag, (2) interview gaps via AskUserQuestion, (3) show planned
 changes per class + approval gate, (4) apply (copy from AIMS_ROOT, clean
-stale files, merge settings/CLAUDE.md), (5) memory bootstrap or augment
-(always; ADR-0007/0009), (6) doctor report. Memory tree is always installed.
+stale files, merge settings/CLAUDE.md), (5) memory tree — cold-start, or for
+an existing tree a freshness-gated audit/augment (ADR-0007/0009/0012),
+(6) doctor report. Memory tree is always installed.
 
 ## Design rationale
 
@@ -55,6 +56,14 @@ plugin, not freeze at first install.
   wholesale (that destroys the user's ADR log).
 - All three command copies (`commands/`, `templates/commands/`,
   `.claude/commands/`) must stay byte-identical — verify with `md5sum`.
+- **Phase 5 freshness gate (ADR-0012).** A missing tree is always
+  cold-started; an existing tree is audited/augmented only if its newest
+  node `last_consolidated` is older than 7 days — within a week, tree work
+  is skipped and only system files refresh. Probe reads frontmatter, never
+  file mtime (a clone resets mtimes).
+- **Cold-start must fill `code:` globs** for every `module` node, and the
+  augment path backfills inert (`code: []`) module nodes — otherwise the
+  tree never consolidates (ADR-0012).
 
 ## Known issues
 
