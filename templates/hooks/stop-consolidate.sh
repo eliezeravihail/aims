@@ -11,13 +11,14 @@
 #
 # When the threshold trips, this hook does NOT call any LLM directly
 # (per ADR-0009: there is no ANTHROPIC_API_KEY in this environment).
-# Instead it builds a consolidation prompt in bash and emits it as
-# `additionalContext`; the active Claude Code session reads the
-# injection on its next turn and performs the Edits in-band, ending
-# with `bash .claude/memory/mark.sh <node> consolidated`.
+# Instead it builds a consolidation prompt in bash and injects it via
+# the Stop-hook `decision: block` + `reason` contract; blocking keeps
+# the turn going so the active Claude Code session performs the Edits
+# in-band, ending with `bash .claude/memory/mark.sh <node> consolidated`.
 #
 # Override per project via .claude/memory/throttle.conf.
-# Never blocks. Always exits 0.
+# Blocks the stop ONLY when the throttle trips (to inject the prompt);
+# otherwise exits 0 with no output.
 
 set -u
 
@@ -170,15 +171,19 @@ full_prompt=$(printf '%s\n\n' "${prompt_parts[@]}")
 mkdir -p "$(dirname "$STATE_FILE")"
 printf '%s\n' "$NOW" > "$STATE_FILE"
 
-# Emit JSON for Claude Code's Stop hook contract.
+# Emit JSON for Claude Code's Stop hook contract. A Stop hook injects an
+# instruction by blocking the stop: `decision: block` keeps the turn going
+# and feeds `reason` back to the model as the work to do. (`additionalContext`
+# via hookSpecificOutput is not valid for the Stop event.) The throttle state
+# is already bumped above, so this won't re-fire on the very next turn.
 if command -v jq >/dev/null 2>&1; then
-  jq -nc --arg ctx "$full_prompt" \
-    '{hookSpecificOutput: {hookEventName: "Stop", additionalContext: $ctx}}'
+  jq -nc --arg r "$full_prompt" \
+    '{decision: "block", reason: $r}'
 else
   esc=$(printf '%s' "$full_prompt" \
     | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' \
     | awk 'BEGIN{ORS="\\n"} {print}')
-  printf '{"hookSpecificOutput":{"hookEventName":"Stop","additionalContext":"%s"}}\n' "$esc"
+  printf '{"decision":"block","reason":"%s"}\n' "$esc"
 fi
 
 printf '[aims-memory] queued %d node(s) for in-band consolidation\n' "$PROCESSED" >&2

@@ -33,4 +33,5 @@ add a row to the index below.
 | 0007 | Tree-based project memory with automatic build and maintenance | accepted (partial 0009) | 2026-05-25 |
 | 0008 | Node as primary context interface                 | accepted | 2026-05-27 |
 | 0009 | Memory consolidation runs in-band via hook-injected instructions | accepted | 2026-05-27 |
-| 0010 | Two-command surface; idempotent install; auto plan close-out | proposed | 2026-05-27 |
+| 0010 | Two-command surface; idempotent install; auto plan close-out | proposed (partial 0011) | 2026-05-27 |
+| 0011 | Re-install refreshes aims scaffolding and prunes stale system files | proposed | 2026-05-28 |
