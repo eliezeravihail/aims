@@ -6,6 +6,5 @@
     "name": "aims"
   },
   "homepage": "https://github.com/eliezeravihail/aims",
-  "license": "MIT",
   "keywords": ["workflow", "adr", "planning", "discipline", "code"]
 }
