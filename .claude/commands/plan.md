@@ -43,8 +43,15 @@ after the plan is approved — there is no separate `/done`.
      independently verifiable; the list of changes doubles as the
      implementation steps. Show real code, not descriptions of code.
    - `## Verification` — exact commands or tests that prove success.
-   - `## ADRs / TODO after implementation` — checklist, one line each:
-     ADRs to record, follow-ups left out of scope.
+   - `## Close-out checklist` — **mandatory, every line always present.**
+     One line per concern with an **explicit verdict** so nothing is
+     silently skipped. Write the verdict even when it's `NONE` — an
+     omitted line is a bug. Fixed lines:
+     - `ADR: NONE — <reason>` | `ADR: WRITE — <NNNN-slug: title>`
+     - `Nodes: NONE` | `Nodes: UPDATE — <node paths to consolidate>`
+     - `CLAUDE.md: NONE` | `CLAUDE.md: UPDATE — <section>`
+     - `Tests: <path added>` | `Tests: EXISTING cover it` | `Tests: N/A — <reason>`
+     - `TODO: NONE` | `TODO: <follow-ups left out of scope>`
    - `## Risks / unknowns` — terse bullets; include only real ones.
      Omit the section if there are none.
 
@@ -90,8 +97,13 @@ Started: YYYY-MM-DD
 ## Verification
 - `<command>`
 
-## ADRs / TODO after implementation
-- [ ] ADR: <one line> — or — TODO: <follow-up out of scope>
+## Close-out checklist
+<!-- every line MUST be present; write the verdict even when NONE -->
+- ADR: NONE — <reason>            <!-- or: WRITE — NNNN-slug: title -->
+- Nodes: NONE                     <!-- or: UPDATE — docs/memory/<tag>/<node>.md -->
+- CLAUDE.md: NONE                 <!-- or: UPDATE — <section name> -->
+- Tests: <path added>             <!-- or: EXISTING cover it / N/A — reason -->
+- TODO: NONE                      <!-- or: follow-ups left out of scope -->
 
 ## Risks / unknowns   (omit if none)
 - <terse, real risks only>
@@ -124,14 +136,15 @@ for the hook if you know you're done.
    what's missing and stop — do not close.
 2. **Run verification.** Execute every command in `## Verification`.
    Capture pass/fail. If any fail, stop — do not close.
-3. **Auto-decide ADRs.** For each ADR item in
-   `## ADRs / TODO after implementation`:
+3. **Resolve the `## Close-out checklist`.** Walk every line; none may
+   be left unaddressed. For the `ADR:` line:
    - **Create the ADR** (status: proposed) when the change is a
      clear architectural commitment: new dependency, new module
      boundary, new invariant, supersedes a prior ADR, or the entry
-     itself is unambiguous.
-   - **Skip silently** when the change is a bug fix, refactor with
-     no interface change, doc-only, test-only, or mechanical.
+     itself is unambiguous. Update the line to `ADR: WROTE — NNNN-slug`.
+   - **Skip — but say so explicitly** (`ADR: NONE — <reason>`) when the
+     change is a bug fix, refactor with no interface change, doc-only,
+     test-only, or mechanical. Never drop the line.
    - **Ask** (single `AskUserQuestion`) when borderline.
 
    ADR creation logic (no `/adr` command needed):
@@ -144,7 +157,9 @@ for the hook if you know you're done.
 4. **Update the plan file.**
    - `Status: completed`.
    - Append `## Outcome` — short summary + links to any ADRs.
-   - Append `## Closing checks` — verification command outputs.
+   - Append `## Closing checks` — verification command outputs, and the
+     resolved `## Close-out checklist` (each line with its final verdict,
+     e.g. `ADR: NONE — config toggle`, `Nodes: UPDATE — impl-obb/...`).
 5. **CLAUDE.md hygiene.** If this work established a new convention
    (build command, layout rule, naming convention), propose a diff
    and ask before merging.
@@ -165,13 +180,15 @@ for the hook if you know you're done.
    - Flag nodes > 4 KB; ask whether to split or extract to ADR.
    - Run `bash .claude/memory/lint.sh` and surface issues.
    - Run `bash .claude/memory/doctor.sh` and include verbatim.
-7. **Final report.**
+7. **Final report.** Echo the resolved checklist so nothing is hidden:
    ```
    Plan: docs/plans/<file> → completed
    Verification: <N pass / M fail>
-   ADRs created: ADR-NNNN (+ list)
-   CLAUDE.md: unchanged | +<sections>
-   Memory: <N consolidated, M inbox, K >4KB, L lint issues>
+   ADR:      NONE — <reason> | WROTE ADR-NNNN (+ list)
+   Nodes:    NONE | <N consolidated> (+ M inbox, K >4KB, L lint issues)
+   CLAUDE.md: NONE | +<sections>
+   Tests:    <path> | EXISTING | N/A
+   TODO:     NONE | <follow-ups>
    ```
 
 ## If user rejects the draft
