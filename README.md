@@ -292,7 +292,3 @@ templates/                   ← never globally registered; copied per target
    to `block` after they've felt the pain themselves.
 4. **Idempotent and merge-aware.** Running `/init-workflow` on an existing
    project must not damage existing CLAUDE.md, settings, or layout.
-
-## License
-
-MIT
