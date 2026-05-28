@@ -69,6 +69,13 @@ while IFS= read -r leaf; do
     fi
   done < <(fm_list "$leaf" code)
 
+  # Inert-node check: a `module` node with no code: globs can never be
+  # flagged dirty by post-edit-marker, so it never consolidates.
+  if [ "$(fm_get "$leaf" kind)" = "module" ] && [ -z "$(fm_list "$leaf" code)" ]; then
+    printf '%s: inert node — code: [] (module not tracked by post-edit-marker)\n' "$leaf"
+    issues=$((issues + 1))
+  fi
+
   # external_refs: paths (already reduced to just the path by fm_list)
   while IFS= read -r p; do
     [ -z "$p" ] && continue

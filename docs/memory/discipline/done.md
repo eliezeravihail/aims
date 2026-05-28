@@ -1,6 +1,6 @@
 ---
 node: discipline/done
-kind: module
+kind: topic
 code: []
 # (was: templates/commands/done.md, .claude/commands/done.md — both removed per ADR-0010)
 commits: []
