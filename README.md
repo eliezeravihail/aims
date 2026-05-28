@@ -3,7 +3,7 @@
 
 📄 **Site:** https://eliezeravihail.github.io/aims/
 
-Lean code-development discipline for Claude Code. Five slash commands, three
+Lean code-development discipline for Claude Code. Two slash commands, six
 project-local hooks, idempotent bootstrap. No multi-agent pipeline, no
 orchestration overhead — just the discipline that makes single-dispatch
 sessions reliable on Opus / Sonnet baselines.
@@ -39,22 +39,34 @@ session after session.
 
 ## What you get
 
-| Command            | Model  | Purpose                                                               |
-|--------------------|--------|-----------------------------------------------------------------------|
-| `/init-workflow`   | Sonnet | Bootstrap ADRs, hooks, memory tree, CLAUDE.md sections (idempotent)   |
-| `/plan <task>`     | Opus   | Read-only exploration → ExitPlanMode → durable plan file              |
-| `/adr <title>`     | Opus   | Record an architecture decision (append-only log)                     |
-| `/grunt <task>`    | Haiku  | Mechanical edits: renames, formatting, log/config tweaks              |
-| `/done [plan]`     | Opus   | Verify a plan's steps & checks; prompt for ADRs                       |
-| `/memory-init`     | Sonnet | One-time scan to seed `docs/memory/` (per ADR-0007)                   |
-| `/remember <note>` | Sonnet | Append a note to the right leaf of the memory tree                    |
+Two slash commands — that's the whole user-facing surface (see ADR-0010):
+
+| Command              | Model | Purpose                                                                       |
+|----------------------|-------|-------------------------------------------------------------------------------|
+| `/plan <task>`       | Opus  | Read-only exploration → ExitPlanMode → durable plan file → inline close-out   |
+| `/install-on <path>` | Opus  | Bootstrap (or idempotently re-install) ADRs, hooks, memory tree, CLAUDE.md    |
+
+Everything that used to be its own command now happens **inline**, with no
+command to remember:
+
+- **Plan close-out** (verify steps, run `## Verification`, decide ADRs, mark
+  the plan `completed`, consolidate memory) runs at the end of the
+  implementation session, nudged by the Stop hook when an `in-progress` plan
+  exists.
+- **ADRs** are auto-decided per change: created when it's a clear
+  architectural commitment, skipped for bug/refactor/doc/test/mechanical work,
+  asked only when borderline. They always start `proposed`.
+- **Memory bootstrap** runs at the end of `/install-on`; maintenance after
+  that is the automatic marker + consolidation loop (ADR-0007 / ADR-0009).
+- **Mechanical edits and notes** are just ordinary edits — do the work.
 
 The model is pinned per command — it switches automatically and returns to
 your session model after.
 
-## Hooks (per-project, installed by `/init-workflow`)
+## Hooks (per-project, installed by `/install-on`)
 
-- **SessionStart** — surfaces in-progress plans and recent ADRs.
+- **SessionStart** — surfaces in-progress plans, recent ADRs, and the
+  memory-tree overview.
 - **UserPromptSubmit** — **router**. Detects intent (bug, feature, refactor,
   decision, mechanical, question) and injects context that tells Claude to
   ask via `AskUserQuestion` which workflow to follow before doing any work.
@@ -65,6 +77,13 @@ your session model after.
   file exists (the lock is set by `/plan`'s read-only phase). In `block` mode
   also requires an in-progress plan when editing under `src/`, `lib/`,
   `app/`, etc. In `nudge` mode this check warns instead of blocking.
+- **PostToolUse** (`post-edit-marker`) — when an edit touches a file a memory
+  node references, flags that node `dirty` so it gets re-consolidated
+  (ADR-0007).
+- **Stop** (`stop-consolidate`) — throttled. Injects the in-band memory
+  consolidation prompt for any `dirty` nodes (ADR-0009), and emits the plan
+  close-out nudge when an `in-progress` plan exists (ADR-0010).
+- **SessionEnd** — flushes any pending memory state at session shutdown.
 
 Mode switch: `echo nudge > .claude/aims-mode` / `echo block > .claude/aims-mode`.
 
@@ -101,11 +120,11 @@ with no global registration step. Anthropic's namespacing is a step in
 that direction but not a substitute for true per-project scoping.
 
 Until that gap closes at the Claude Code level, aims opts out of the
-global surface entirely: the four discipline commands (`/plan`, `/adr`,
-`/grunt`, `/done`) live exclusively inside target projects you've
-explicitly bootstrapped. The only file aims can ever expose globally is
-`/init-workflow`, and only if you opt into the plugin install path —
-otherwise even that stays scoped to the aims source repo.
+global surface entirely: the `/plan` discipline command lives exclusively
+inside target projects you've explicitly bootstrapped. The only file aims
+can ever expose globally is `/install-on`, and only if you opt into the
+plugin install path — otherwise even that stays scoped to the aims source
+repo.
 
 If/when Claude Code grows a real per-project plugin scope, aims should
 adopt it and retire its custom split. For now, the split below is the
@@ -113,10 +132,9 @@ mechanism.
 
 ## Install
 
-Two paths. Both end with the same per-project state. **Only `/init-workflow`
-is ever globally available** — the four discipline commands (`/plan`,
-`/adr`, `/grunt`, `/done`) live exclusively in target projects you've
-bootstrapped.
+Two paths. Both end with the same per-project state. **Only `/install-on`
+is ever globally available** — the `/plan` discipline command lives
+exclusively in target projects you've bootstrapped.
 
 ### Path A — Clone-and-bootstrap (recommended; zero global state)
 
@@ -130,33 +148,25 @@ bootstrapped.
    cd ~/tools/aims
    claude
    ```
-   The repo is dogfooded — its own `.claude/commands/init-workflow.md`
-   makes `/init-workflow` available locally without any global install.
+   The repo is dogfooded — its own `.claude/commands/install-on.md`
+   makes `/install-on` available locally without any global install.
 
 3. **Bootstrap your target project.**
    ```
-   /init-workflow /path/to/my-project
+   /install-on /path/to/my-project
    ```
    Sniffs the target (read-only), asks a few gap-filling questions, shows
-   a diff preview, applies only after you approve.
+   a diff preview, applies only after you approve, then seeds the memory
+   tree against the target as its final step.
 
 4. **From now on, use the target project.**
    ```sh
    cd /path/to/my-project
    claude
    ```
-   The target's own `.claude/` provides `/plan`, `/adr`, `/grunt`, `/done`,
-   `/memory-init`, `/remember` plus hooks and CLAUDE.md. **Nothing is
-   installed globally** — open Claude in any unrelated directory and
-   aims isn't there.
-
-5. **Seed the memory tree (one-time).**
-   ```
-   /memory-init
-   ```
-   Inside the target, run this once to scan the codebase and populate
-   `docs/memory/` (see ADR-0007). After that the tree maintains itself
-   via the `post-edit-marker` and `stop-consolidate` hooks.
+   The target's own `.claude/` provides `/plan` plus hooks and CLAUDE.md.
+   **Nothing is installed globally** — open Claude in any unrelated
+   directory and aims isn't there.
 
 ### Path B — Global plugin install (one global command for ergonomics)
 
@@ -169,20 +179,20 @@ new project:
 /plugin install aims@aims
 ```
 
-This adds **only `/init-workflow`** to your global Claude config — not
-the discipline commands. From any directory:
+This adds **only `/install-on`** to your global Claude config — not the
+`/plan` discipline command. From any directory:
 
 ```
-/init-workflow /path/to/my-project
+/install-on /path/to/my-project
 ```
 
-Bootstraps the target identically to path A. The four discipline
-commands still appear only inside bootstrapped projects.
+Bootstraps the target identically to path A. `/plan` still appears only
+inside bootstrapped projects.
 
-The split is enforced by the repo layout: `commands/init-workflow.md` is
-the single globally-visible file; `templates/commands/{plan,adr,grunt,
-done}.md` are templates the bootstrap copies into each target. See
-ADR-0005 for the rationale.
+The split is enforced by the repo layout: `commands/install-on.md` is
+the single globally-visible file; `templates/commands/{install-on,plan}.md`
+are templates the bootstrap copies into each target. See ADR-0005 for the
+rationale.
 
 ### What ends up in the target (either path)
 
@@ -194,21 +204,23 @@ TARGET/
 │   │   ├── README.md            # decision index
 │   │   ├── _template.md
 │   │   └── 0001-record-architecture-decisions.md
-│   └── memory/                  # seeded later by /memory-init (ADR-0007)
+│   └── memory/                  # seeded by /install-on's final step (ADR-0007)
 └── .claude/
-    ├── commands/                # /plan, /adr, /grunt, /done, /memory-init, /remember
+    ├── commands/                # install-on, plan
     ├── hooks/                   # session-start, prompt-submit, pre-write,
     │                            # post-edit-marker, stop-consolidate, session-end
-    ├── memory/                  # _lib, mark, new-leaf, find-dirty, lint,
+    ├── memory/                  # _lib, mark, new-node, find-dirty, lint,
     │                            # check-refs, consolidate, classify-inbox (.sh)
     ├── settings.json            # wires the hooks
     └── aims-mode                # nudge | block
 ```
 
-Updating aims means `git pull` in the source repo (and `/plugin update` if
-you took path B) plus re-running `/init-workflow` against your existing
-targets to refresh hooks and commands. The merge-aware logic preserves
-your CLAUDE.md customizations and existing ADRs.
+`/install-on` is **idempotent** and doubles as the upgrade path: re-running
+it overwrites hooks, memory scripts, and the two commands (with a diff
+preview), deletes obsolete commands from a previous install, and **never
+touches** existing CLAUDE.md sections, ADRs, plan files, or memory node
+bodies. Update aims by `git pull` in the source repo (and `/plugin update`
+if you took path B), then re-run `/install-on` against your targets.
 
 ## How it feels in practice
 
@@ -220,7 +232,7 @@ you: TypeError: cannot unpack non-iterable NoneType at parser.py:42
   [router fires, intent=bug]
   Claude (via AskUserQuestion):
     Which workflow?
-      (a) /plan a real fix       (b) /grunt a quick patch
+      (a) /plan a real fix       (b) quick patch inline
       (c) diagnose only — root cause, no edits
   you: a
   Claude: <enters /plan discipline: lock, read-only exploration,
@@ -234,17 +246,19 @@ The explicit-command case (you already know what you want):
    ↳ Opus, plan-mode discipline, ExitPlanMode → plan file written
 /model sonnet
    ↳ implement against the plan
-/adr use httpx over requests
-   ↳ records the decision before it gets buried
-/done
-   ↳ verifies steps, runs verification commands, asks about ADRs
+   ↳ httpx-over-requests is a clear architectural call → ADR written
+     inline (status: proposed), no command needed
+   ↳ at the end, the Stop hook nudges close-out: verify steps, run
+     `## Verification`, mark the plan completed, consolidate memory
 ```
 
-Mechanical, no-judgment work:
+Mechanical or note-taking work needs no command — just describe it and
+the edit happens inline:
 
 ```
-/grunt rename CamelCase to snake_case in scripts/
-   ↳ Haiku, refuses on judgment calls
+you: rename CamelCase to snake_case in scripts/
+   ↳ ordinary inline edit; the router stays out of the way for
+     obviously-scoped mechanical work
 ```
 
 ## Layout
@@ -254,17 +268,19 @@ Mechanical, no-judgment work:
   plugin.json
   marketplace.json
 commands/                    ← the only globally-installable surface
-  init-workflow.md           ← becomes /init-workflow if plugin is installed
+  install-on.md              ← becomes /install-on if plugin is installed
 templates/                   ← never globally registered; copied per target
   commands/                  ← these become the target's .claude/commands/
+    install-on.md
     plan.md
-    adr.md
-    grunt.md
-    done.md
   hooks/                     ← these become the target's .claude/hooks/
     session-start.sh
     prompt-submit.sh
     pre-write.sh
+    post-edit-marker.sh
+    stop-consolidate.sh
+    session-end.sh
+  memory/                    ← memory subsystem scripts copied per target
   CLAUDE.md.tmpl
   adr-readme.md.tmpl
   adr-template.md.tmpl
@@ -272,8 +288,9 @@ templates/                   ← never globally registered; copied per target
   plan-template.md.tmpl
   settings.json.tmpl
 .claude/                     ← dogfood install (this repo is itself a target)
-  commands/                  ← lets us run /init-workflow + the 4 disciplines here
+  commands/                  ← lets us run /install-on + /plan here
   hooks/                     ← live hooks for working on aims itself
+  memory/                    ← live memory scripts for the dogfooded tree
   settings.json
   aims-mode
 ```
@@ -290,5 +307,5 @@ templates/                   ← never globally registered; copied per target
 3. **Hooks as guardrails, not handcuffs.** The lock on `/plan` is enforced.
    Everything else is a nudge by default — the user decides when to upgrade
    to `block` after they've felt the pain themselves.
-4. **Idempotent and merge-aware.** Running `/init-workflow` on an existing
+4. **Idempotent and merge-aware.** Running `/install-on` on an existing
    project must not damage existing CLAUDE.md, settings, or layout.
