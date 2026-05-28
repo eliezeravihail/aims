@@ -7,10 +7,13 @@ model: opus
 # /install-on
 
 You are installing (or re-installing) the **aims** workflow into a
-target project. The command is **idempotent**: re-running it on an
-existing aims install must never destroy hand-edited content; it
-only adds what's missing and refreshes deterministic infrastructure
-(hooks, scripts, the two slash commands) after showing a diff.
+target project. The command is **idempotent and self-refreshing**:
+re-running it on an existing aims install brings the whole system layer
+up to date (hooks, memory scripts, the two slash commands, aims-owned
+settings hook entries, and the aims-shipped ADR scaffolding) and deletes
+stale aims files, after showing a diff — while never destroying
+hand-edited content (authored ADRs, the ADR index, CLAUDE.md sections,
+plans, memory node bodies, user settings keys).
 
 ## Roots
 
@@ -36,6 +39,12 @@ Set `EXISTING=1` if **any** of these are present in `TARGET`:
 - `TARGET/.claude/aims-mode`
 - `TARGET/.claude/hooks/session-start.sh`
 - `TARGET/docs/memory/README.md`
+
+Also set `PRIOR_AIMS=1` if any aims-shipped remnant exists even when the
+markers above don't — e.g. `TARGET/docs/adr/0001-record-architecture-decisions.md`,
+an obsolete command under `TARGET/.claude/commands/`, or a stale `*.sh` in
+`TARGET/.claude/{hooks,memory}/`. A `PRIOR_AIMS` target is a **re-install**
+(report it as such, never as "fresh"), even if `EXISTING=0`.
 
 Sniff also (read-only):
 
@@ -65,21 +74,28 @@ Group the planned actions by class. For each class state the rule
 you'll apply and the affected paths. Then ask once:
 `Approve all? [yes | per-class | abort]`.
 
+The guiding seam: **the system layer is fully replaced and stale aims files
+are deleted; user-authored documentation is never touched. aims-shipped
+scaffolding docs are refreshed too — they are part of the system.**
+
 | Class                        | Rule                                                                 |
 |------------------------------|----------------------------------------------------------------------|
 | Hooks & memory scripts       | Overwrite from template; show unified diff first if content differs. |
-| Slash commands (the two)     | Overwrite `install-on.md`, `plan.md`. Delete obsolete commands.      |
-| Obsolete-command cleanup     | Delete `TARGET/.claude/commands/{done,adr,grunt,remember,memory-init,memory-augment}.md` if present. |
+| Stale system files           | Delete any `*.sh` in `TARGET/.claude/{hooks,memory}/` not in the current shipped set (Phase 4). Scope to `*.sh` so runtime state files survive. |
+| Slash commands (the two)     | Overwrite `install-on.md`, `plan.md`.                               |
+| Obsolete-command cleanup     | Delete every `TARGET/.claude/commands/*.md` other than `install-on.md` and `plan.md` (subsumes `done,adr,grunt,remember,memory-init,memory-augment`). |
+| aims-shipped ADR scaffolding | Refresh from template: overwrite `docs/adr/0001-record-architecture-decisions.md` and `docs/adr/_template.md`. On `0001`, preserve a user-changed `Status:` / `Superseded by:` pointer. |
+| `docs/adr/README.md`         | Refresh aims prose **above** `## Index`; **preserve every row of the `## Index` table verbatim**. Create whole from template only if missing. |
+| User-authored ADRs           | `docs/adr/NNNN-*.md` other than `0001` → never touch.               |
 | `CLAUDE.md`                  | Never overwrite. Diff per section vs template; ask per section.      |
-| `docs/adr/_template.md`, `docs/adr/README.md` | Create only if missing.                              |
-| Existing ADRs                | Never touch.                                                         |
 | `docs/plans/`                | Never touch.                                                         |
 | `docs/memory/` (tree body)   | Never overwrite existing nodes. Augment-only (see Phase 5).          |
 | `.claude/aims-mode`          | Create only if missing.                                              |
-| `.claude/settings.json`      | Merge `hooks` keys only; never touch other keys.                     |
+| `.claude/settings.json`      | Replace aims-owned hook entries with the current template; preserve all non-`hooks` keys and any user-added (non-aims) hook entries. |
 | `.gitignore`                 | Append `.claude-context.md` and `.claude/.planning-lock` if missing. |
 
-If user picks `per-class`, walk each class via `AskUserQuestion`.
+If user picks `per-class`, walk each class via `AskUserQuestion`. List every
+file slated for **deletion** explicitly in this gate before applying.
 
 ## Phase 4 — Apply (only after approval)
 
@@ -97,6 +113,32 @@ Copy from `AIMS_ROOT` into `TARGET`, substituting `{{VARS}}`.
 
 After copy: `chmod +x TARGET/.claude/hooks/*.sh TARGET/.claude/memory/*.sh`.
 
+### Clean stale system files (after copy)
+
+The current shipped set is the source of truth. Delete from `TARGET`:
+
+- Any `*.sh` in `TARGET/.claude/hooks/` whose name is not in
+  `templates/hooks/` (e.g. a renamed-away hook).
+- Any `*.sh` in `TARGET/.claude/memory/` whose name is not in
+  `templates/memory/` (e.g. a stale `new-leaf.sh`).
+- Any `TARGET/.claude/commands/*.md` other than `install-on.md`, `plan.md`.
+
+Only `*.sh` and the known command files are removed — never other files in
+those directories (runtime state, user notes).
+
+### ADR scaffolding refresh rules
+
+- `docs/adr/0001-record-architecture-decisions.md`, `docs/adr/_template.md` →
+  overwrite from template. **Exception:** on `0001`, if the existing file's
+  `Status:` or `Superseded by:` line was changed by the user (it was
+  superseded), keep those two lines and refresh only the body.
+- `docs/adr/README.md` → if missing, create whole from template. If present,
+  rewrite everything **above** the `## Index` heading from the template, and
+  splice the existing `## Index` heading + all its rows back verbatim. Never
+  drop or reorder index rows — they are the user's ADR log.
+- `docs/adr/NNNN-*.md` for `NNNN != 0001` → never read for overwrite; never
+  touched.
+
 ### CLAUDE.md merge rules
 
 - Missing → create from template.
@@ -109,8 +151,12 @@ After copy: `chmod +x TARGET/.claude/hooks/*.sh TARGET/.claude/memory/*.sh`.
 ### settings.json merge rules
 
 - Missing → write from template.
-- Exists → deep-merge `hooks` keys only. Conflicting hook command →
-  keep existing, print suggestion.
+- Exists → preserve every non-`hooks` key verbatim (`permissions`,
+  `deniedMcpServers`, env, etc.). For `hooks`: **replace the aims-owned
+  entries** (the six handlers in `templates/settings.json.tmpl`, identified
+  by their `bash .claude/hooks/<name>.sh` command) with the current template
+  definitions, so a stale aims hook can't survive a re-install. Keep any
+  user-added hook entry that isn't one of aims' own.
 
 ## Phase 5 — Memory bootstrap or augment (inline, always)
 
@@ -155,11 +201,17 @@ succeeds. Print the error and continue to Phase 6.
 
 ## Phase 6 — Doctor report
 
+Report `re-install` whenever `EXISTING` **or** `PRIOR_AIMS` is set; only a
+truly clean target is `fresh`.
+
 ```
 aims installed into <TARGET> (<fresh|re-install>):
   hooks: nudge | block | off
   commands: install-on, plan  (obsolete removed: <list or none>)
+  stale system files removed: <list or none>
   ADR root: docs/adr/ (<N> files)
+    scaffolding: refreshed (0001, _template, README prose) | created | unchanged
+    authored ADRs: <M> untouched
   CLAUDE.md: created | merged (+<N> sections) | unchanged
   memory tree: <fresh: T tags, N nodes> | <augmented: +M nodes> | <untouched>
   lint: clean | <K issues>
@@ -177,9 +229,18 @@ aims installed into <TARGET> (<fresh|re-install>):
 
 ## Hard rules
 
-- **Idempotent.** Re-runs never destroy hand-edited content.
-  Specifically: never overwrite `CLAUDE.md` sections, ADRs, plan
-  files, memory node bodies, or user-edited settings keys.
+- **Idempotent + self-refreshing.** Re-runs leave the **system** fully
+  current and remove stale aims files, but never destroy hand-edited
+  content. The seam:
+  - Refresh (overwrite from template): hooks, memory scripts, the two
+    commands, aims-owned `settings.json` hook entries, and the
+    aims-shipped ADR scaffolding (`0001-record-architecture-decisions.md`,
+    `_template.md`, and the README prose above `## Index`).
+  - Delete (stale): `*.sh` in `.claude/{hooks,memory}/` not in the shipped
+    set; commands other than `install-on`/`plan`.
+  - Never touch: user-authored ADRs (`NNNN-*.md`, `NNNN != 0001`), the ADR
+    README `## Index` rows, `CLAUDE.md` sections, plan files, memory node
+    bodies, and non-`hooks` settings keys.
 - Read-only on `TARGET/src/`, `TARGET/tests/`, `TARGET/lib/`,
   package manifests, `TARGET/README.md`, `TARGET/LICENSE`.
 - Read-only on `AIMS_ROOT` entirely.
