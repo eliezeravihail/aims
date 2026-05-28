@@ -210,7 +210,8 @@ TARGET/
     ├── hooks/                   # session-start, prompt-submit, pre-write,
     │                            # post-edit-marker, stop-consolidate, session-end
     ├── memory/                  # _lib, mark, new-node, find-dirty, lint,
-    │                            # check-refs, consolidate, classify-inbox (.sh)
+    │                            # check-refs, consolidate, classify-inbox,
+    │                            # doctor (.sh)
     ├── settings.json            # wires the hooks
     └── aims-mode                # nudge | block
 ```
