@@ -13,7 +13,7 @@ sessions: []
 parents: []
 children: []
 related:
-  - installer/init-workflow
+  - installer/install-on
 claude_md_refs:
   - "Plugin-specific notes (not from template)"
 external_refs:
@@ -27,7 +27,7 @@ last_consolidated: 2026-05-25T11:46:53Z
 
 ## Purpose
 
-The .tmpl files under templates/ that /init-workflow substitutes into a target project. Substitution variables: {{PROJECT_NAME}}, {{TEST_CMD}}, {{LINT_CMD}}, {{TYPECHECK_CMD}}, {{ADR_DIR}}, {{HOOK_MODE}}, {{DATE}}. CLAUDE.md.tmpl gained a `## Memory tree` section in the ADR-0007 implementation.
+The .tmpl files under templates/ that /install-on substitutes into a target project. Substitution variables: {{PROJECT_NAME}}, {{TEST_CMD}}, {{LINT_CMD}}, {{TYPECHECK_CMD}}, {{ADR_DIR}}, {{HOOK_MODE}}, {{DATE}}. CLAUDE.md.tmpl gained a `## Memory tree` section in the ADR-0007 implementation.
 
 ## Design rationale
 

@@ -25,4 +25,4 @@ surface is now **two commands**: `/plan` (with inline close-out) and
   are just ordinary inline work now.
 
 Related: `hooks/pre-write.md` enforces the planning-lock contract;
-`installer/init-workflow.md` documents `/install-on` (renamed).
+`installer/install-on.md` documents `/install-on` (renamed from `/init-workflow`).

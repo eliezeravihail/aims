@@ -25,7 +25,7 @@ last_consolidated: 2026-05-25T11:46:53Z
 
 ## Purpose
 
-Documents the /adr slash command and the ADR convention. ADRs are append-only — a superseded decision gets a new ADR with a `Superseded by:` pointer, not an in-place edit. The templates under `templates/adr-*.tmpl` are seeded into a target project by /init-workflow.
+Documents the /adr slash command and the ADR convention. ADRs are append-only — a superseded decision gets a new ADR with a `Superseded by:` pointer, not an in-place edit. The templates under `templates/adr-*.tmpl` are seeded into a target project by /install-on.
 
 ## Design rationale
 
