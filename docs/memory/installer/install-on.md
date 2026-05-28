@@ -2,6 +2,7 @@
 node: installer/install-on
 kind: module
 code:
+  - commands/install-on.md
   - templates/commands/install-on.md
   - .claude/commands/install-on.md
 # renamed from init-workflow per ADR-0010 (idempotent install + memory bootstrap)
@@ -20,8 +21,8 @@ external_refs:
 owners:
   - ema
 dirty: false
-last_touched: 2026-05-28T00:00:00Z
-last_consolidated: 2026-05-28T00:00:00Z
+last_touched: 2026-05-28T15:06:22Z
+last_consolidated: 2026-05-28T15:06:22Z
 ---
 
 ## Purpose
