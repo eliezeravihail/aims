@@ -159,7 +159,7 @@ for the hook if you know you're done.
    - Append `## Outcome` — short summary + links to any ADRs.
    - Append `## Closing checks` — verification command outputs, and the
      resolved `## Close-out checklist` (each line with its final verdict,
-     e.g. `ADR: NONE — config toggle`, `Nodes: UPDATE — <tag>/...`).
+     e.g. `ADR: NONE — config toggle`, `Nodes: UPDATE — <tag>/<node>`).
 5. **CLAUDE.md hygiene.** If this work established a new convention
    (build command, layout rule, naming convention), propose a diff
    and ask before merging.
