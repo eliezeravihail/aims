@@ -7,7 +7,7 @@ Completed: 2026-05-28
 The memory tree is inert in practice: `new-node.sh` hardcodes `code: []`, so
 cold-start (Phase 5A) creates nodes with no globs → `post-edit-marker` can
 never flag them dirty → consolidation never runs → bodies stay empty forever
-(exactly what metavi shows). Fix: (A) `new-node.sh` accepts code globs and
+(observed in a real install). Fix: (A) `new-node.sh` accepts code globs and
 Phase 5A *must* fill them for every module node; (B) Phase 5B backfills
 `code:` into existing `code: []` module nodes so a re-install heals an old
 tree; (C) `lint.sh`/`doctor.sh` flag inert module nodes. Plus a **freshness
