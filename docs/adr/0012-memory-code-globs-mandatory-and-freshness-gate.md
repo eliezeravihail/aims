@@ -15,9 +15,9 @@ But `new-node.sh` hardcoded `code: []`, and the `/install-on` cold-start
 (Phase 5A) created one node per module without ever filling `code:`. The
 result: every freshly-bootstrapped node was **inert** — no glob ever matched,
 so the marker never flagged it dirty, so consolidation never ran, so the body
-stayed the empty six-section scaffold forever. A real install (target) had a
-full 9-node tree where all bodies were still empty weeks later, and nobody
-knew because the failure is silent. Re-running `/install-on` did not help: the
+stayed the empty six-section scaffold forever. A real install had a full
+~9-node tree where all bodies were still empty weeks later, and nobody knew
+because the failure is silent. Re-running `/install-on` did not help: the
 augment path (Phase 5B) only *adds* nodes, it never backfilled the empty
 `code:` of existing ones.
 
