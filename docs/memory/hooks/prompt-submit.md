@@ -21,8 +21,8 @@ external_refs:
 owners:
   - ema
 dirty: false
-last_touched: 2026-05-31T19:28:09Z
-last_consolidated: 2026-05-31T19:28:09Z
+last_touched: 2026-05-31T21:37:22Z
+last_consolidated: 2026-05-31T21:37:22Z
 ---
 
 ## Purpose
@@ -46,7 +46,10 @@ when files are mentioned.
 - Engagement = creating `.claude/.planning-lock` (the same gate `/plan`
   Phase 1 sets) **plus** injecting a `[aims-router]` text that walks
   the model through Phases 1→5. The lock makes the next turn
-  read-only-by-policy, not just convention.
+  read-only-by-policy, not just convention. The Phase 2 text tells the
+  model to draft via the `Write` tool directly — ADR-0017 carves
+  `docs/plans/*.md` out of the lock's pre-write block, so the prior
+  Bash-heredoc workaround (fragile on apostrophes) is gone.
 - Hebrew / non-English prompts that don't match any English keyword
   regex fall through to the **ambiguous** bucket and auto-engage; the
   injected text documents the per-prompt opt-out in both languages.

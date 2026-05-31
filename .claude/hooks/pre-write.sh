@@ -36,11 +36,19 @@ extract_path() {
 target=$(extract_path)
 
 # (1) Planning lock — always blocks, regardless of mode.
+# Exception: writes to the plan draft itself under PLAN_DIR are the whole
+# point of the /plan auto-engage flow (ADR-0015) and must be allowed even
+# during the lock — otherwise the auto-engage cascade deadlocks (the model
+# is told to draft a plan but every Write hits this gate).
 if [ -f "$LOCK" ]; then
+  case "$target" in
+    "$PLAN_DIR"/*.md|docs/plans/*.md|"$PLAN_DIR"/*.md.tmp|docs/plans/*.md.tmp) exit 0 ;;
+  esac
   cat >&2 <<EOF
 [aims] Planning in progress (.claude/.planning-lock present).
        File edits are not allowed until you call ExitPlanMode and the user
        approves the plan. After approval, /plan will remove the lock.
+       (Writes under docs/plans/ are allowed — that's where the draft goes.)
        To abort planning manually:  rm .claude/.planning-lock
 EOF
   exit 2

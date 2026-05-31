@@ -213,9 +213,9 @@ are blocked until the user approves a draft. Run the /plan flow:
 
   Phase 1: read-only exploration (Read, Grep, Glob, Bash read-only).
   Phase 2: write the draft to docs/plans/<UTC-date>-<slug>.md with
-           Status: draft using a Bash heredoc (Write is blocked by the
-           lock). Print: "Draft saved to docs/plans/<file>.
-           Approve / edit / abort?".
+           Status: draft using the Write tool (the lock carves out writes
+           under docs/plans/ — ADR-0017). Print: "Draft saved to
+           docs/plans/<file>. Approve / edit / abort?".
   Phase 3: on approval → flip Status: draft → in-progress, then
            `rm -f .claude/.planning-lock`, then implement (Phase 4).
            On reject/iterate → rewrite the draft in place; re-ask.
