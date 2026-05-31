@@ -109,7 +109,7 @@ Copy from `AIMS_ROOT` into `TARGET`, substituting `{{VARS}}`.
 
 | Path in TARGET                                                                                 | Source under AIMS_ROOT                          |
 |------------------------------------------------------------------------------------------------|-------------------------------------------------|
-| `.claude/hooks/{session-start,prompt-submit,pre-write,post-edit-marker,stop-consolidate,session-end}.sh` | `templates/hooks/<same>`                 |
+| `.claude/hooks/{session-start,prompt-submit,pre-write,post-edit-marker,exit-plan-mode,stop-consolidate,session-end}.sh` | `templates/hooks/<same>` |
 | `.claude/memory/{_lib,mark,new-node,find-dirty,lint,check-refs,consolidate,classify-inbox,doctor}.sh`     | `templates/memory/<same>`                |
 | `.claude/commands/{install-on,plan}.md`                                                        | `templates/commands/<same>`                     |
 | `.claude/settings.json` (merge if exists)                                                      | `templates/settings.json.tmpl`                  |

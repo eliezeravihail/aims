@@ -151,9 +151,16 @@ now_iso() { date -u +'%Y-%m-%dT%H:%M:%SZ'; }
 # src/bar.py:10-30.
 path_matches() {
   local needle="$1" hay="$2"
+  local hay_path="${hay%%:*}"
   [ "$needle" = "$hay" ] && return 0
   case "$hay" in
     "$needle":*) return 0 ;;
+  esac
+  # ADR-0014: `code:` entries are fnmatch globs. Match needle against the
+  # path side of hay (stripping any `:line-range` suffix on hay first).
+  # shellcheck disable=SC2254
+  case "$needle" in
+    $hay_path) return 0 ;;
   esac
   # Defense in depth: if needle is absolute, retry after stripping the
   # repo root. Marker-side normalization should already have done this,
@@ -168,6 +175,10 @@ path_matches() {
           [ "$rel" = "$hay" ] && return 0
           case "$hay" in
             "$rel":*) return 0 ;;
+          esac
+          # shellcheck disable=SC2254
+          case "$rel" in
+            $hay_path) return 0 ;;
           esac
           ;;
       esac

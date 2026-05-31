@@ -146,4 +146,22 @@ printf '%s' '{"tool_input":{"file_path":"/etc/passwd"}}' | \
   fail "case 9: outside-repo path must NOT be added to the inbox"
 pass "marker bails out on absolute paths outside the repo"
 
+# Case 10 (ADR-0014): `code:` entry as a glob — src/loaders/*.py.
+bash "$ROOT/templates/memory/new-node.sh" interface/loaders module >/dev/null
+LEAF2="$AIMS_MEMORY_DIR/interface/loaders.md"
+python3 -c "
+p='$LEAF2'
+s=open(p).read()
+s=s.replace('code: []', 'code:\n  - src/loaders/*.py')
+open(p,'w').write(s)
+"
+rm -f "$AIMS_MEMORY_DIR/_inbox.md"
+printf '%s' '{"tool_input":{"file_path":"src/loaders/json_loader.py"}}' | \
+  bash "$ROOT/templates/hooks/post-edit-marker.sh"
+v=$(fm_get "$LEAF2" dirty)
+[ "$v" = "true" ] || fail "case 10: glob src/loaders/*.py should match src/loaders/json_loader.py, got '$v'"
+[ ! -f "$AIMS_MEMORY_DIR/_inbox.md" ] || \
+  fail "case 10: glob-matched path must NOT leak into inbox"
+pass "marker matches code: globs (ADR-0014)"
+
 printf '\nAll marker tests passed.\n'
