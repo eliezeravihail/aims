@@ -27,19 +27,55 @@ after the plan is approved — there is no separate `/done`.
 3. **Investigate** existing code, ADRs (`docs/adr/`), prior plans
    (`docs/plans/`). Cite `file:line`.
 
-4. **Draft the plan**. Required sections (target ≤80 lines):
-   - `## TL;DR` — **one paragraph** summarizing what + why + how.
-   - `## Goal` — measurable, one sentence.
-   - `## Decision` — chosen approach (key choices in bullets).
-   - `## Steps` — ordered, each independently verifiable.
-   - `## Verification` — exact commands or tests that prove success.
-   - `## Risks / unknowns` — what could go wrong.
-   - `## ADRs to record after implementation` — checklist; one line
-     per candidate.
+4. **Draft the plan.** Six required sections, fixed order, **no
+   global length cap** (per ADR-0011):
 
-   **Conditional**: include `## Options considered` only if more than
-   one real option was weighed. Otherwise fold a one-line "Why not X"
-   into the TL;DR.
+   1. **Executive summary** — one short block (3–5 bullets or one
+      paragraph) stating the problem and the chosen approach.
+      Heading and body in the configured language.
+      Read the language code from `.claude/aims-summary-lang`
+      (single line; default `en` if file missing). Substitute the
+      heading per this map; unknown codes fall back to `en`:
+      - `en` → `## Executive summary`
+      - `he` → `## תקציר מנהלים`
+
+   2. **Technical design** — **content-triggered shape**:
+      - *Mechanical change* (config flip, rename, file move,
+        dependency bump): one bullet, `before → after`, with
+        `file:line`.
+      - *Refactor without new logic*: before/after signatures or
+        a diff sketch.
+      - *New algorithm, new data structure, new geometric
+        computation, new state machine*: pseudo-code or actual
+        code, with arg/return types and a concrete worked example.
+        Edge-case enumeration goes inline OR under "Open design
+        questions". If in doubt about a step's category, expand.
+
+   3. **Open design questions** — every algorithmic step in
+      Technical design either resolves its edge cases inline or
+      lists them here. Distinct from Risks: this section is
+      "what we didn't fully specify yet"; Risks is "what could
+      go wrong even if our spec holds". Closing the plan with
+      open questions is OK; closing without realizing you have
+      any is the failure mode this section prevents.
+
+   4. **Tests to add** — assertion shape per test, no code.
+      Format: `- Given <input>: assert <expected output / invariant>.`
+
+   5. **Risks** — env assumptions, perf regressions, integration
+      surprises — failures that survive a correct spec.
+
+   6. **Documentation actions** — structured checklist consumed
+      by Phase 4:
+
+      ```
+      - ADRs to draft (proposed status):
+        - [ ] ADR-NNNN — <title>
+      - Plan status: completed | superseded | aborted; append ## Outcome.
+      - Memory nodes to flag dirty: <list of docs/memory/ paths>
+      - CLAUDE.md sections to update: <list, or "none">
+      - External (optional): changelog, release notes, Slack, etc.
+      ```
 
 5. **Present** the plan inline in your message and ask the user to
    approve / edit / abort. (Native ExitPlanMode is unavailable when
@@ -58,26 +94,31 @@ after the plan is approved — there is no separate `/done`.
 Status: in-progress
 Started: YYYY-MM-DD
 
-## TL;DR
-<one paragraph>
+## <Executive summary | תקציר מנהלים>   ← heading per .claude/aims-summary-lang
+- <problem in one bullet>
+- <approach in one bullet>
+- <main risk + expected outcome>
 
-## Goal
-…
+## Technical design
+<content-triggered: one bullet per mechanical step;
+ full pseudo-code for new algorithms / data structures / state machines>
 
-## Decision
-…
+## Open design questions
+- <edge case not yet resolved, or "none">
 
-## Steps
-1. …
+## Tests to add
+- Given <input>: assert <expected output / invariant>.
 
-## Verification
-- `<command>`
+## Risks
+- <what could go wrong even if the spec holds>
 
-## Risks / unknowns
-…
-
-## ADRs to record after implementation
-- [ ] …
+## Documentation actions
+- ADRs to draft (proposed status):
+  - [ ] ADR-NNNN — <title>
+- Plan status: completed | superseded | aborted; append `## Outcome`.
+- Memory nodes to flag dirty: <list of docs/memory/ paths>
+- CLAUDE.md sections to update: <list, or "none">
+- External (optional): changelog, release notes, Slack, etc.
 ```
 
 5. Remove the lock: `rm -f .claude/.planning-lock`.
@@ -107,8 +148,8 @@ for the hook if you know you're done.
    stop — do not close.
 2. **Run verification.** Execute every command in `## Verification`.
    Capture pass/fail. If any fail, stop — do not close.
-3. **Auto-decide ADRs.** For each item in
-   `## ADRs to record after implementation`:
+3. **Auto-decide ADRs.** Parse `## Documentation actions` →
+   `ADRs to draft` sub-list. For each unchecked item:
    - **Create the ADR** (status: proposed) when the change is a
      clear architectural commitment: new dependency, new module
      boundary, new invariant, supersedes a prior ADR, or the entry
