@@ -78,21 +78,21 @@ after the plan is approved — there is no separate `/done`.
    short as the prose allows. A 30-line plan that is all signal beats
    a 200-line plan padded with narration.
 
-5. **Present** the plan inline in your message and ask the user to
-   approve / edit / abort. (Native ExitPlanMode is unavailable when
-   this command is invoked via slash command alone — the planning
-   lock is what enforces read-only.)
+5. **Materialize the draft before asking approval** — the file on disk
+   IS the artifact to review. See Phase 2.
 
-## Phase 2 — Materialize (after approval)
+## Phase 2 — Materialize draft (lock still held)
 
 1. Compute slug: lowercase, hyphenated, ≤6 words from `$ARGUMENTS`.
-2. Filename: `docs/plans/$(date +%Y-%m-%d)-<slug>.md`.
+2. Filename: `docs/plans/$(date -u +%Y-%m-%d)-<slug>.md`.
 3. Create `docs/plans/` if missing.
-4. Write the approved plan using this template:
+4. Write the draft using a **Bash heredoc** (Write/Edit are blocked by
+   the planning lock — `cat <<'EOF' > <file>` is the only path), using
+   this template:
 
 ```markdown
 # Plan: <title>
-Status: in-progress
+Status: draft
 Started: YYYY-MM-DD
 
 ## TL;DR
@@ -128,16 +128,26 @@ Started: YYYY-MM-DD
 - <terse, real risks only>
 ```
 
-5. Remove the lock: `rm -f .claude/.planning-lock`.
-6. Print: `Plan saved to docs/plans/<filename>. Implementation can begin.`
+5. Print: `Draft saved to docs/plans/<filename>. Approve / edit / abort?`
+6. Do **not** remove the lock yet. Do **not** edit anything else.
 
-## Phase 3 — Implement
+## Phase 3 — Approval gate
+
+- **Approve** → flip the draft's `Status:` line from `draft` to
+  `in-progress` (using `sed -i` via Bash — the lock blocks Edit, not
+  Bash). Then `rm -f .claude/.planning-lock`. Then proceed to Phase 4.
+- **Edit / iterate** → rewrite the draft in place (same heredoc; same
+  filename). Re-ask. Lock stays.
+- **Abort** → `rm -f docs/plans/<filename> .claude/.planning-lock` and
+  print `Plan aborted.`.
+
+## Phase 4 — Implement
 
 You (or the next session) implement step by step, editing files
 normally. The `post-edit-marker` hook flags dirty memory nodes as you
 work. Nothing special required.
 
-## Phase 4 — Close-out (inline, when implementation is done)
+## Phase 5 — Close-out (inline, when implementation is done)
 
 Triggered automatically when:
 - An in-progress plan exists in `docs/plans/`, AND
@@ -213,14 +223,6 @@ for the hook if you know you're done.
    Tests:    <path> | EXISTING | N/A
    TODO:     NONE | <follow-ups>
    ```
-
-## If user rejects the draft
-
-Iterate. Do not remove the lock. Do not write any files.
-
-## If user aborts
-
-`rm -f .claude/.planning-lock` and print `Plan aborted.`
 
 ## Hard rules
 

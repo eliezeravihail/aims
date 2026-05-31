@@ -4,6 +4,8 @@ kind: module
 code:
   - tests/marker.sh
   - tests/consolidate.sh
+  - tests/exit-plan-mode.sh
+  - tests/router-auto-plan.sh
 commits: []
 sessions: []
 parents: []
@@ -16,35 +18,47 @@ claude_md_refs:
 external_refs: []
 owners: []
 dirty: false
-last_touched: 2026-05-27T20:58:59Z
-last_consolidated: 2026-05-27T20:58:59Z
+last_touched: 2026-05-31T14:26:12Z
+last_consolidated: 2026-05-31T14:26:12Z
 ---
 
 ## Purpose
 
-(One paragraph: what this code does.)
+Bash smoke tests for aims internals — no Anthropic API, no network.
+- `marker.sh` (10 cases) — `path_matches` / marker hook / inbox dedup,
+  including glob matching (ADR-0014 case 10).
+- `consolidate.sh` — `consolidate.sh` prompt builder + Stop hook.
+- `exit-plan-mode.sh` (4 cases) — the harness-bridge hook (ADR-0015).
+- `router-auto-plan.sh` (6 cases) — auto-engage intent router
+  (ADR-0015).
 
 ## Design rationale
 
-(2–4 bullets: why it is shaped this way. Each bullet may end with a
-repo-relative pointer — ADR-NNNN, commit SHA, plan slug.)
+- Each script is self-contained: `mktemp -d` sandbox, ROOT-anchored,
+  `trap rm -rf` cleanup. No global state survives a run.
+- Helpers print `[PASS]` / `[FAIL]` and the failing case exits non-zero,
+  so a CI runner can shell them sequentially without a framework.
+- `jq` is the only non-POSIX dep; tests `[SKIP]` cleanly when it's
+  missing.
 
 ## Invariants & gotchas
 
-(What must not break when editing. Concise.)
+- Run from any directory: `bash tests/<file>.sh` resolves `$ROOT` via
+  `BASH_SOURCE` so the helper paths stay correct under `cd`.
+- The router tests touch `.claude/.planning-lock` inside their sandbox;
+  never let the working `.claude/` directory leak into the test cwd
+  (the `cd $TMP` line is load-bearing).
 
 ## Known issues
 
-(- open:  one-line — pointer: commit SHA / repo-relative file:line / external URL)
-(- fixed: one-line: what broke and why — commit SHA)
+None open.
 
 ## Pointers
 
-(- ADRs:     ADR-NNNN)
-(- Plans:    docs/plans/<slug>.md (in-progress | done))
-(- Commits:  <SHA> — one-line  (anchor commits only))
-(- External: <URL> — one-line  (Slack threads, issues, third-party docs))
+- ADR-0014 — glob matching, covered by `marker.sh` case 10.
+- ADR-0015 — auto-plan flow, covered by both new tests.
+- `CLAUDE.md` "Build & test commands" — invocation contract.
 
 ## Open questions
 
-(Design questions not yet decided. Distinct from bugs.)
+None.

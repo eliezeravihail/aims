@@ -28,6 +28,12 @@
         "hooks": [
           { "type": "command", "command": "bash .claude/hooks/post-edit-marker.sh" }
         ]
+      },
+      {
+        "matcher": "ExitPlanMode",
+        "hooks": [
+          { "type": "command", "command": "bash .claude/hooks/exit-plan-mode.sh" }
+        ]
       }
     ],
     "Stop": [

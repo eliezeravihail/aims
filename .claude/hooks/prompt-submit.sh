@@ -5,11 +5,14 @@
 # Classifies intent into one of: bug, feature, refactor, decision,
 # mechanical, question, ambiguous, or none.
 #
-# When the intent is actionable, emits a JSON additionalContext block that
-# instructs the Claude session to call AskUserQuestion before proceeding —
-# turning Claude itself into the conversational router.
+# When the intent is actionable (anything except `question`), the router
+# **auto-engages** the /plan flow by:
+#   1. Creating .claude/.planning-lock (Edit/Write blocked until approved).
+#   2. Injecting a JSON additionalContext that instructs the session to
+#      draft a plan, write it to docs/plans/<UTC-date>-<slug>.md with
+#      Status: draft, then ask the user to approve / edit / abort.
 #
-# Suppression rules (return early, no router):
+# Suppression rules (return early, no auto-engage):
 #   - Prompt starts with `/`             — user already chose a command
 #   - A planning lock is active          — already mid-flow
 #   - An in-progress plan exists AND the prompt is short  — likely a follow-up
@@ -86,9 +89,9 @@ fi
 
 # Multilingual fallback: regex matchers above are English-only. If no
 # intent was inferred but the prompt is long enough to be actionable
-# (and isn't pasted code), assume an ambiguous task and let the model
-# disambiguate via AskUserQuestion. Keeps the router useful for
-# Hebrew/etc. prompts without per-language pattern maintenance.
+# (and isn't pasted code), assume an ambiguous task and let auto-engage
+# carry it into /plan mode (the model can still rm the lock if the user
+# actually meant a question).
 if [ -z "$intent" ]; then
   plen=${#prompt}
   # Skip code-paste-looking prompts.
@@ -99,41 +102,40 @@ if [ -z "$intent" ]; then
 fi
 
 [ -z "$intent" ] && exit 0
+# `question` is the only intent that does NOT require a plan.
+[ "$intent" = "question" ] && exit 0
+
+# ── Auto-engage /plan ─────────────────────────────────────────
+# Create the planning lock NOW so Edit/Write/MultiEdit are blocked for
+# the next turn. The model must Phase 1 (read-only) → Phase 2 (draft to
+# disk via Bash heredoc, since Write is blocked) → Phase 3 (approval gate
+# flips Status: draft → in-progress and removes the lock) → Phase 4
+# (implement) → Phase 5 (close-out).
+mkdir -p .claude
+touch .claude/.planning-lock
 
 # ── Build router context (JSON-safe via printf + escaping) ─────────────────
-# Single-quote the heredoc and substitute $intent at the end.
 read -r -d '' router_text <<'TEXT' || true
-[aims-router] The user's most recent prompt looks like a __INTENT__ task.
+[aims-router] Intent looks like a __INTENT__ task — auto-engaging /plan.
 
-Before doing the actual work, you MUST first call the AskUserQuestion tool to
-let the user pick the workflow. Use this menu, adapting only the wording:
+The planning lock (.claude/.planning-lock) is now in place; Edit/Write
+are blocked until the user approves a draft. Run the /plan flow:
 
-  bug         → (a) /plan a real fix  (b) quick patch inline
-                (c) diagnose only — explain root cause, no edits
-  feature     → (a) /plan it (recommended)  (b) sketch a quick prototype
-                (c) just discuss the design first
-  refactor    → (a) /plan it (almost always the right answer)
-                (b) quick rename/format inline if scope is obvious
-  decision    → (a) /plan to explore options first
-                (b) just write the decision to docs/adr/ if it's already clear
-  mechanical  → (a) edit inline (fast)
-                (b) /plan first if the scope is unclear
-  question    → (a) just answer  (b) answer then /plan if it leads to changes
-  ambiguous   → no English keyword matched; ask the user "Which workflow:
-                /plan or just answer/edit?" and proceed by their pick.
+  Phase 1: read-only exploration (Read, Grep, Glob, Bash read-only).
+  Phase 2: write the draft to docs/plans/<UTC-date>-<slug>.md with
+           Status: draft using a Bash heredoc (Write is blocked by the
+           lock). Print: "Draft saved to docs/plans/<file>.
+           Approve / edit / abort?".
+  Phase 3: on approval → flip Status: draft → in-progress, then
+           `rm -f .claude/.planning-lock`, then implement (Phase 4).
+           On reject/iterate → rewrite the draft in place; re-ask.
+           On abort → delete the draft + remove the lock.
+  Phase 5: inline close-out (Status: in-progress → completed,
+           auto-ADR, node consolidation) — same as before.
 
-After the user picks, follow that workflow's discipline AS IF they had typed
-the slash command:
-  - /plan choice  → create .claude/.planning-lock first, do read-only
-                    exploration, end with an in-line plan + approval, then
-                    write to docs/plans/ and remove the lock.
-  - inline edit   → make the change. ADRs are proposed automatically during
-                    plan close-out; for ad-hoc decisions outside a plan, write
-                    docs/adr/NNNN-slug.md status: proposed directly.
-  - diagnose / answer / discuss → no file changes.
-
-Skip this routing only if the user's prompt explicitly chose a path
-(e.g. "just patch it", "I already decided X, write the ADR").
+Skip auto-engagement only if the user's prompt explicitly opts out
+("just patch it", "don't plan, just do it", "אל תתכנן"). In that case
+run `rm -f .claude/.planning-lock` and proceed inline.
 TEXT
 
 router_text=${router_text//__INTENT__/$intent}
@@ -149,5 +151,5 @@ else
 fi
 
 # Also surface a one-line breadcrumb on stderr so the user sees what happened.
-printf '[aims-router] intent=%s — Claude will ask you which workflow.\n' "$intent" >&2
+printf '[aims-router] intent=%s — auto-engaging /plan.\n' "$intent" >&2
 exit 0

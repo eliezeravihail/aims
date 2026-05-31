@@ -27,11 +27,12 @@ external_refs:
   - { path: docs/adr/0007-tree-based-memory-with-auto-maintenance.md, kind: adr, why: the design these helpers implement }
   - { path: tests/marker.sh, kind: test, why: covers mark/find-dirty + the marker hook }
   - { path: tests/consolidate.sh, kind: test, why: covers consolidate.sh + the Stop hook against a mocked Anthropic endpoint }
+  - { path: docs/adr/0014-code-globs-are-fnmatch-globs.md, kind: adr, why: path_matches now treats every code: entry as an fnmatch glob }
 owners:
   - ema
 dirty: false
-last_touched: 2026-05-28T19:28:42Z
-last_consolidated: 2026-05-28T19:28:42Z
+last_touched: 2026-05-31T14:25:23Z
+last_consolidated: 2026-05-31T14:25:23Z
 ---
 
 ## Purpose
@@ -66,6 +67,12 @@ No external network call lives in any helper.
   needles — defense in depth against a future hook (or direct
   `mark.sh` caller) that forgets to normalize. The marker still
   normalizes first; this is the belt under the suspenders.
+- `path_matches` evaluates each `code:` entry as an **fnmatch glob**
+  via bash `case`-glob (ADR-0014). Exact strings still match (they're
+  trivial globs); `:line-range` suffixes still take the prefix branch.
+  Greedy `*` (no FNM_PATHNAME) is documented — `src/*.py` matches
+  `src/loaders/json_loader.py`; over-marking is acceptable, silent
+  staleness is not.
 
 ## Invariants & gotchas
 
@@ -104,6 +111,8 @@ No external network call lives in any helper.
   `classify-inbox.sh`.
 - ADR-0012 — `new-node.sh` glob args, mandatory `code:` for module
   nodes, `lint.sh`/`doctor.sh` inert reporting.
+- ADR-0014 — `code:` entries are fnmatch globs (the matcher change
+  in `path_matches`).
 - `templates/memory/_lib.sh` — shared primitives.
 
 ## Open questions
