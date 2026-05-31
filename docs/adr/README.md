@@ -39,3 +39,4 @@ add a row to the index below.
 | 0013 | Plan template — configurable summary language and explicit Open design questions | proposed | 2026-05-31 |
 | 0014 | `code:` entries are matched as fnmatch globs                | proposed | 2026-05-31 |
 | 0015 | `/plan` auto-engages on edit intents and writes a draft to disk before approval | proposed | 2026-05-31 |
+| 0016 | Per-prompt memory node auto-injection                       | proposed | 2026-05-31 |

@@ -1,18 +1,26 @@
 #!/usr/bin/env bash
-# aims UserPromptSubmit hook — intent router.
+# aims UserPromptSubmit hook — intent router + memory-node auto-injector.
 #
 # Reads the user's prompt from stdin (Claude Code passes a JSON payload).
-# Classifies intent into one of: bug, feature, refactor, decision,
-# mechanical, question, ambiguous, or none.
 #
-# When the intent is actionable (anything except `question`), the router
-# **auto-engages** the /plan flow by:
-#   1. Creating .claude/.planning-lock (Edit/Write blocked until approved).
-#   2. Injecting a JSON additionalContext that instructs the session to
-#      draft a plan, write it to docs/plans/<UTC-date>-<slug>.md with
-#      Status: draft, then ask the user to approve / edit / abort.
+# Two jobs in one emission:
 #
-# Suppression rules (return early, no auto-engage):
+#   1. ROUTER + AUTO-ENGAGE /plan (ADR-0004 + ADR-0015). Classifies intent
+#      into one of: bug, feature, refactor, decision, mechanical, question,
+#      ambiguous, or none. For any actionable intent (anything except
+#      `question`), creates `.claude/.planning-lock` and instructs the
+#      session to draft a plan to disk before any edits.
+#
+#   2. MEMORY INJECTOR (ADR-0016). For every memory node whose `code:`
+#      glob (fnmatch per ADR-0014) is plausibly referenced by the prompt,
+#      injects that node's body — purpose, invariants, pointers, known
+#      issues — so the model has node context without being asked.
+#      Per-session de-dup via `.claude/memory/.injected-<session_id>`.
+#      Total injection capped at SIZE_CAP bytes.
+#
+# Both jobs land in a single `additionalContext` emission.
+#
+# Suppression rules (return early, neither job runs):
 #   - Prompt starts with `/`             — user already chose a command
 #   - A planning lock is active          — already mid-flow
 #   - An in-progress plan exists AND the prompt is short  — likely a follow-up
@@ -50,6 +58,96 @@ fi
 prompt_len=${#prompt}
 if [ "$has_active_plan" -eq 1 ] && [ "$prompt_len" -lt 120 ]; then
   exit 0   # short follow-up during active plan — let Claude carry on
+fi
+
+# ── Memory-node auto-injection (ADR-0016) ────────────────────────────────
+MEMORY_DIR="${AIMS_MEMORY_DIR:-docs/memory}"
+SESSION_ID=$(printf '%s' "$payload" | jq -r '.session_id // empty' 2>/dev/null || true)
+INJECTED_STATE=".claude/memory/.injected-${SESSION_ID:-default}"
+SIZE_CAP=8192
+NAME_MIN_LEN=5
+LIT_MIN_LEN=4
+declare -a matched=()
+memory_text=""
+
+if [ -d "$MEMORY_DIR" ] && [ "${#prompt}" -ge 8 ]; then
+  MEM_HELPERS=""
+  if   [ -r ".claude/memory/_lib.sh" ];   then MEM_HELPERS=".claude/memory"
+  elif [ -r "templates/memory/_lib.sh" ]; then MEM_HELPERS="templates/memory"
+  fi
+
+  if [ -n "$MEM_HELPERS" ]; then
+    # shellcheck source=/dev/null
+    . "$MEM_HELPERS/_lib.sh"
+
+    declare -A INJECTED=()
+    if [ -r "$INJECTED_STATE" ]; then
+      while IFS= read -r p; do
+        [ -n "$p" ] && INJECTED["$p"]=1
+      done < "$INJECTED_STATE"
+    fi
+
+    accum=0
+    while IFS= read -r leaf; do
+      [ -z "$leaf" ] && continue
+      [ -n "${INJECTED[$leaf]+x}" ] && continue
+      hit=0
+      while IFS= read -r glob; do
+        [ -z "$glob" ] && continue
+        # Strip :line-range suffix.
+        base="${glob%%:*}"
+        # Literal prefix = everything before the first glob metachar.
+        lit="${base%%[\*\?\[]*}"
+        # Substring match on the literal prefix (if long enough).
+        if [ -n "$lit" ] && [ "${#lit}" -ge "$LIT_MIN_LEN" ]; then
+          case "$prompt" in *"$lit"*) hit=1; break ;; esac
+        fi
+        # Basename word match — only for literal entries (no glob chars).
+        if [ "$lit" = "$base" ]; then
+          name="${base##*/}"
+          if [ -n "$name" ] && [ "${#name}" -ge "$NAME_MIN_LEN" ]; then
+            if printf '%s' "$prompt" | grep -qwF "$name"; then
+              hit=1
+              break
+            fi
+          fi
+        fi
+      done < <(fm_list "$leaf" code)
+      [ "$hit" -eq 1 ] || continue
+
+      body=$(awk 'BEGIN{fm=0} /^---$/{fm++; next} fm>=2{print}' "$leaf")
+      bsize=${#body}
+      if [ "$((accum + bsize))" -le "$SIZE_CAP" ]; then
+        matched+=("$leaf")
+        accum=$((accum + bsize))
+        INJECTED["$leaf"]=1
+      fi
+      [ "$accum" -ge "$SIZE_CAP" ] && break
+    done < <(list_leaves)
+
+    if [ "${#matched[@]}" -gt 0 ]; then
+      mkdir -p "$(dirname "$INJECTED_STATE")"
+      : > "$INJECTED_STATE"
+      for p in "${!INJECTED[@]}"; do
+        printf '%s\n' "$p" >> "$INJECTED_STATE"
+      done
+      # Prune stale per-session state files (>7 days).
+      find "$(dirname "$INJECTED_STATE")" -maxdepth 1 -name '.injected-*' \
+        -type f -mtime +7 -delete 2>/dev/null || true
+
+      memory_text="[aims-memory] Your prompt references code tracked by memory node(s). The relevant node body is below — use it as a navigator (purpose, invariants, pointers, known issues) BEFORE re-searching the codebase. Cite it where helpful; don't restate it verbatim.
+
+"
+      for leaf in "${matched[@]}"; do
+        node_name=$(fm_get "$leaf" node)
+        body=$(awk 'BEGIN{fm=0} /^---$/{fm++; next} fm>=2{print}' "$leaf")
+        memory_text+="=== node: ${node_name} (${leaf}) ===
+${body}
+
+"
+      done
+    fi
+  fi
 fi
 
 # ── Classify intent (first match wins) ────────────────────────────────────
@@ -94,28 +192,20 @@ fi
 # actually meant a question).
 if [ -z "$intent" ]; then
   plen=${#prompt}
-  # Skip code-paste-looking prompts.
   if [ "$plen" -ge 40 ] && [ "$plen" -le 2048 ] \
      && ! printf '%s' "$prompt" | grep -q '```'; then
     intent="ambiguous"
   fi
 fi
 
-[ -z "$intent" ] && exit 0
-# `question` is the only intent that does NOT require a plan.
-[ "$intent" = "question" ] && exit 0
+# ── Build router/auto-engage text only for actionable intents ────────────
+router_text=""
+if [ -n "$intent" ] && [ "$intent" != "question" ]; then
+  # Create the planning lock NOW so Edit/Write/MultiEdit are blocked.
+  mkdir -p .claude
+  touch .claude/.planning-lock
 
-# ── Auto-engage /plan ─────────────────────────────────────────
-# Create the planning lock NOW so Edit/Write/MultiEdit are blocked for
-# the next turn. The model must Phase 1 (read-only) → Phase 2 (draft to
-# disk via Bash heredoc, since Write is blocked) → Phase 3 (approval gate
-# flips Status: draft → in-progress and removes the lock) → Phase 4
-# (implement) → Phase 5 (close-out).
-mkdir -p .claude
-touch .claude/.planning-lock
-
-# ── Build router context (JSON-safe via printf + escaping) ─────────────────
-read -r -d '' router_text <<'TEXT' || true
+  read -r -d '' router_text <<'TEXT' || true
 [aims-router] Intent looks like a __INTENT__ task — auto-engaging /plan.
 
 The planning lock (.claude/.planning-lock) is now in place; Edit/Write
@@ -137,19 +227,32 @@ Skip auto-engagement only if the user's prompt explicitly opts out
 ("just patch it", "don't plan, just do it", "אל תתכנן"). In that case
 run `rm -f .claude/.planning-lock` and proceed inline.
 TEXT
+  router_text=${router_text//__INTENT__/$intent}
+fi
 
-router_text=${router_text//__INTENT__/$intent}
+# ── Combine + emit one additionalContext ─────────────────────────────────
+combined=""
+if [ -n "$memory_text" ]; then
+  combined+="$memory_text"
+fi
+if [ -n "$router_text" ]; then
+  [ -n "$combined" ] && combined+=$'\n\n'
+  combined+="$router_text"
+fi
 
-# ── Emit JSON for Claude Code ────────────────────────────────────────────
+[ -z "$combined" ] && exit 0
+
 if command -v jq >/dev/null 2>&1; then
-  jq -nc --arg ctx "$router_text" \
+  jq -nc --arg ctx "$combined" \
     '{hookSpecificOutput: {hookEventName: "UserPromptSubmit", additionalContext: $ctx}}'
 else
-  # Minimal hand-escape: escape backslashes, double quotes, newlines.
-  esc=$(printf '%s' "$router_text" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' | awk 'BEGIN{ORS="\\n"} {print}')
+  esc=$(printf '%s' "$combined" \
+    | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' \
+    | awk 'BEGIN{ORS="\\n"} {print}')
   printf '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":"%s"}}\n' "$esc"
 fi
 
-# Also surface a one-line breadcrumb on stderr so the user sees what happened.
-printf '[aims-router] intent=%s — auto-engaging /plan.\n' "$intent" >&2
+# Breadcrumbs on stderr.
+[ -n "$router_text" ]  && printf '[aims-router] intent=%s — auto-engaging /plan.\n' "$intent" >&2
+[ "${#matched[@]}" -gt 0 ] && printf '[aims-memory] injected %d node(s)\n' "${#matched[@]}" >&2
 exit 0
