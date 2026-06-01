@@ -21,9 +21,8 @@ external_refs:
 owners:
   - ema
 dirty: false
-last_touched: 2026-06-01T04:45:58Z
-last_consolidated: 2026-06-01T04:45:58Z
-consolidating_by: 
+last_touched: 2026-06-01T06:52:29Z
+last_consolidated: 2026-06-01T06:52:29Z
 ---
 
 ## Purpose
@@ -43,10 +42,11 @@ never blocks and always exits 0.
 - `mark.sh` carries the inverse `consolidated` subcommand used by
   the in-band model to flip the same flag clean after a successful
   body rewrite — keeps both transitions in one helper.
-- Per ADR-0018, `mark.sh consolidated` ALSO clears the per-node
-  `consolidating_by` claim that the Stop hook set during multi-session
-  serialization. The marker (`post-edit-marker.sh`) never touches
-  `consolidating_by` — only the Stop hook owns claim acquisition.
+- Per ADR-0019, `mark.sh consolidated` ALSO removes the per-node
+  sidecar `<leaf>.lock` that the Stop hook created during multi-session
+  serialization. The marker (`post-edit-marker.sh`) never touches the
+  sidecar — only the Stop hook creates it and `mark.sh consolidated`
+  (or the Stop hook's EXIT trap) removes it.
 
 ## Invariants & gotchas
 
@@ -62,8 +62,8 @@ never blocks and always exits 0.
 
 - ADR-0007 — Phase A specification.
 - ADR-0009 — adds the `consolidated` mode to `mark.sh`.
-- ADR-0018 — `mark.sh consolidated` clears the `consolidating_by`
-  claim alongside the dirty flag.
+- ADR-0019 — `mark.sh consolidated` removes the `<leaf>.lock`
+  sidecar alongside the dirty/timestamp bumps; supersedes ADR-0018.
 - `templates/memory/mark.sh:34-46` — `consolidated` subcommand.
 
 ## Open questions

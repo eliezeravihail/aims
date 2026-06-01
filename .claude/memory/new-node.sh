@@ -76,7 +76,6 @@ owners: []
 dirty: false
 last_touched: $NOW
 last_consolidated: $NOW
-consolidating_by:
 ---
 
 ## Purpose

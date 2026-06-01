@@ -11,6 +11,9 @@ docs/memory/_inbox.md
 # Memory consolidation throttle state (written by stop-consolidate)
 .claude/memory/.last-consolidated
 
+# Memory-node sidecar lockfiles (ADR-0019, per-leaf multi-session mutex)
+docs/memory/**/*.lock
+
 # Editor / OS noise
 .DS_Store
 *.swp

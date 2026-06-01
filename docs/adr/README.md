@@ -41,4 +41,5 @@ add a row to the index below.
 | 0015 | `/plan` auto-engages on edit intents and writes a draft to disk before approval | proposed | 2026-05-31 |
 | 0016 | Per-prompt memory node auto-injection                       | proposed | 2026-05-31 |
 | 0017 | `pre-write` carves out plan drafts during the planning lock | proposed | 2026-05-31 |
-| 0018 | Multi-session-safe consolidation via in-frontmatter claims  | proposed | 2026-06-01 |
+| 0018 | Multi-session-safe consolidation via in-frontmatter claims  | superseded by 0019 | 2026-06-01 |
+| 0019 | Sidecar `.lock` files for memory nodes (supersedes 0018)    | proposed | 2026-06-01 |

@@ -112,53 +112,52 @@ fi
 
 [ "$should_run" -eq 0 ] && exit 0
 
-# ── Multi-session claim filter (ADR-0018) ────────────────────────────────
-# Skip dirty nodes that another session is already consolidating. A claim is
-# `consolidating_by: <session_id>@<unix-ts>` in the node frontmatter; an
-# entry older than CLAIM_TTL is treated as abandoned and may be reclaimed.
-# All writes inside the flock so two stop hooks can't double-claim. flock
-# absence (rare) degrades gracefully to a best-effort TOCTOU window.
-CLAIM_TTL="${AIMS_CLAIM_TTL_SEC:-600}"
-CLAIM_LOCK=".claude/memory/.claim-lock"
-mkdir -p "$(dirname "$CLAIM_LOCK")"
+# ── Sidecar lockfile filter (ADR-0019, supersedes ADR-0018) ─────────────
+# Drop dirty leaves another session is already consolidating. The mutex is a
+# sidecar `<leaf-without-md>.lock` next to the node, created with O_EXCL
+# (bash `set -C`). Body = our SESSION_ID; mtime drives stale-detection.
+# `mark.sh <node> consolidated` removes the file; a trap below releases on
+# any abnormal exit between claim and `mark.sh`.
+LOCK_TTL="${AIMS_LOCK_TTL_SEC:-600}"
 CLAIMED=()
+HELD_LOCKS=()
 
-claim_one() {
-  local leaf="$1" existing ex_sid ex_ts age
-  existing=$(fm_get "$leaf" consolidating_by 2>/dev/null)
-  if [ -n "$existing" ]; then
-    ex_sid="${existing%@*}"
-    ex_ts="${existing##*@}"
-    case "$ex_ts" in ''|*[!0-9]*) ex_ts=0 ;; esac
-    age=$((NOW - ex_ts))
-    # Fresh claim by a different session → defer to them.
-    if [ "$ex_sid" != "$SESSION_ID" ] && [ "$age" -lt "$CLAIM_TTL" ]; then
-      return 1
-    fi
+reap_stale_lock() {
+  local lock="$1"
+  [ -e "$lock" ] || return 0
+  if find "$lock" -mmin "+$((LOCK_TTL / 60))" -print 2>/dev/null | grep -q .; then
+    rm -f "$lock"
   fi
-  fm_set "$leaf" consolidating_by "${SESSION_ID}@${NOW}"
-  return 0
 }
 
-# shellcheck source=_lib.sh
-. "$MEM_HELPERS/_lib.sh"
-
-if command -v flock >/dev/null 2>&1; then
-  exec 9>>"$CLAIM_LOCK"
-  if flock -n 9; then
-    for leaf in "${DIRTY[@]}"; do
-      [ -z "$leaf" ] && continue
-      claim_one "$leaf" && CLAIMED+=("$leaf")
-    done
-    flock -u 9
+try_claim() {
+  local leaf="$1" lock="${leaf%.md}.lock"
+  reap_stale_lock "$lock"
+  # noclobber → O_CREAT|O_EXCL atomic create.
+  if (set -C; printf '%s\n' "$SESSION_ID" > "$lock") 2>/dev/null; then
+    HELD_LOCKS+=("$lock")
+    return 0
   fi
-  exec 9>&-
-else
-  for leaf in "${DIRTY[@]}"; do
-    [ -z "$leaf" ] && continue
-    claim_one "$leaf" && CLAIMED+=("$leaf")
+  return 1
+}
+
+for leaf in "${DIRTY[@]}"; do
+  [ -z "$leaf" ] && continue
+  try_claim "$leaf" && CLAIMED+=("$leaf")
+done
+
+# Release any lock we still hold if we die before the model marks the node
+# consolidated. mark.sh removes its own lock on success.
+release_held_locks() {
+  for l in "${HELD_LOCKS[@]}"; do
+    [ -e "$l" ] || continue
+    # Only remove if WE own it (defensive — a reclaim by another session
+    # after TTL expiry would have a different SESSION_ID inside).
+    owner=$(head -n1 "$l" 2>/dev/null || true)
+    [ "$owner" = "$SESSION_ID" ] && rm -f "$l"
   done
-fi
+}
+trap release_held_locks EXIT
 
 DIRTY=("${CLAIMED[@]}")
 N_DIRTY=${#DIRTY[@]}

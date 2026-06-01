@@ -42,7 +42,7 @@ if [ "${2:-}" = "consolidated" ]; then
   fm_set "$node" dirty false
   fm_set "$node" last_touched "$NOW"
   fm_set "$node" last_consolidated "$NOW"
-  fm_set "$node" consolidating_by ""   # release multi-session claim (ADR-0018)
+  rm -f "${node%.md}.lock"   # release sidecar lock (ADR-0019)
   exit 0
 fi
 

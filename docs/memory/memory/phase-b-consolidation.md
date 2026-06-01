@@ -26,9 +26,8 @@ external_refs:
 owners:
   - ema
 dirty: false
-last_touched: 2026-06-01T04:45:01Z
-last_consolidated: 2026-06-01T04:45:01Z
-consolidating_by: 
+last_touched: 2026-06-01T06:52:29Z
+last_consolidated: 2026-06-01T06:52:29Z
 ---
 
 ## Purpose
@@ -65,23 +64,24 @@ breadcrumbs (non-duplication invariant).
 - Transcript URLs are harvested in bash and offered to the model
   under "## Pointers > External" rather than synthesized inside the
   model — keeps the network surface in bash.
-- **Multi-session safety via per-node claims (ADR-0018):** after the
-  throttle trips, the hook filters its dirty list through a `flock`-
-  guarded claim check. Nodes already claimed by another session within
-  `AIMS_CLAIM_TTL_SEC` (default 600s) are deferred to that session; the
-  remainder are claimed (`consolidating_by: <sid>@<unix-ts>`) and
-  consolidated this turn. Two parallel sessions on the same project no
-  longer overwrite each other's body edits; passive sessions usefully
-  pick up dirty work editors leave behind.
+- **Multi-session safety via sidecar lockfiles (ADR-0019, supersedes
+  ADR-0018):** after the throttle trips, the hook attempts to create
+  `<leaf>.lock` next to each dirty node using `set -C` (`O_EXCL`) with
+  the SESSION_ID as the body. Nodes whose sidecar already exists and is
+  fresh (mtime within `AIMS_LOCK_TTL_SEC`, default 600s) are skipped —
+  another session owns them. A `trap ... EXIT` releases any locks we
+  hold if the hook dies before `mark.sh consolidated` removes them on
+  success. Mutex visibility is git-style: `ls docs/memory/<tag>/` shows
+  who is editing what. The frontmatter is no longer touched for mutex
+  purposes; the ADR-0018 `consolidating_by` field is gone.
 
 ## Invariants & gotchas
 
 - `stop-consolidate.sh` MUST NOT touch a node's
   `dirty/last_touched/last_consolidated` frontmatter; only `mark.sh
-  consolidated` does, after the Edit succeeds. **Exception
-  (ADR-0018):** the hook DOES write `consolidating_by` during the
-  claim phase — that field is the multi-session mutex and lives outside
-  the "ownership" of `mark.sh`.
+  consolidated` does, after the Edit succeeds. Per ADR-0019 the mutex
+  is a sidecar `<leaf>.lock` file, not a frontmatter field — so this
+  invariant holds without exception now.
 - The state file `.claude/memory/.last-consolidated` is bumped the
   moment the prompt is queued (not after the Edit lands), so a slow
   model doesn't cause a re-nudge on the very next turn.
@@ -105,7 +105,9 @@ breadcrumbs (non-duplication invariant).
 - ADR-0007 — two-phase design (partially superseded for this node).
 - ADR-0008 — node body schema the prompt enforces.
 - ADR-0009 — in-band consolidation mechanism.
-- ADR-0018 — multi-session claim filter + `consolidating_by` field.
+- ADR-0018 — superseded (in-frontmatter claim experiment).
+- ADR-0019 — sidecar `<leaf>.lock` mutex + EXIT trap; the design in
+  force.
 - `templates/hooks/stop-consolidate.sh:1-148` — orchestrator.
 - `templates/memory/consolidate.sh:1-100` — per-node prompt builder.
 

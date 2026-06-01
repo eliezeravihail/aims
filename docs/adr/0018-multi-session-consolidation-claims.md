@@ -1,8 +1,8 @@
 # ADR-0018: Multi-session-safe consolidation via in-frontmatter claims
-Status: proposed
+Status: superseded by 0019
 Date: 2026-06-01
 Supersedes: —
-Superseded by: —
+Superseded by: docs/adr/0019-sidecar-lockfiles-for-memory-nodes.md
 
 ## Context
 
