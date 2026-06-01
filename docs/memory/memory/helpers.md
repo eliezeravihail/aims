@@ -31,8 +31,9 @@ external_refs:
 owners:
   - ema
 dirty: false
-last_touched: 2026-05-31T14:25:23Z
-last_consolidated: 2026-05-31T14:25:23Z
+last_touched: 2026-06-01T04:45:01Z
+last_consolidated: 2026-06-01T04:45:01Z
+consolidating_by: 
 ---
 
 ## Purpose
@@ -83,9 +84,14 @@ No external network call lives in any helper.
   the absolute form as a fallback, but the marker is the canonical
   normalization point.
 - Only `mark.sh consolidated` may write
-  `dirty/last_touched/last_consolidated`. Other helpers (and the
-  in-band model executing consolidation prompts) MUST leave that
-  frontmatter alone.
+  `dirty/last_touched/last_consolidated/consolidating_by`. Other helpers
+  (and the in-band model executing consolidation prompts) MUST leave
+  that frontmatter alone.
+- **Multi-session claim (ADR-0018):** `consolidating_by:
+  <session_id>@<unix-ts>` is the mutex between concurrent Stop hooks.
+  `mark.sh consolidated` clears it; the Stop hook claims/releases under
+  `flock` on `.claude/memory/.claim-lock`. Stale claims (older than
+  `AIMS_CLAIM_TTL_SEC`, default 600s) are treated as abandoned.
 - A `module` node with `code: []` is **inert**: the marker can never
   flag it dirty, so it never consolidates (ADR-0012). If a node tracks
   no code it must be `kind: topic`/`decision`, not `module`. `lint.sh`
@@ -113,6 +119,8 @@ No external network call lives in any helper.
   nodes, `lint.sh`/`doctor.sh` inert reporting.
 - ADR-0014 — `code:` entries are fnmatch globs (the matcher change
   in `path_matches`).
+- ADR-0018 — `consolidating_by` claim field; Stop hook claim filter
+  under `flock`; `mark.sh consolidated` releases the claim.
 - `templates/memory/_lib.sh` — shared primitives.
 
 ## Open questions

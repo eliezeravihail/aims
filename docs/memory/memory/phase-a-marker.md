@@ -20,8 +20,8 @@ external_refs:
   - { path: tests/marker.sh, kind: test, why: six smoke cases for marker behaviour }
 owners:
   - ema
-dirty: false
-last_touched: 2026-05-27T18:40:53Z
+dirty: true
+last_touched: 2026-06-01T04:41:46Z
 last_consolidated: 2026-05-27T18:40:53Z
 ---
 

@@ -26,8 +26,9 @@ external_refs:
 owners:
   - ema
 dirty: false
-last_touched: 2026-05-28T13:16:09Z
-last_consolidated: 2026-05-28T13:16:09Z
+last_touched: 2026-06-01T04:45:01Z
+last_consolidated: 2026-06-01T04:45:01Z
+consolidating_by: 
 ---
 
 ## Purpose
@@ -64,12 +65,23 @@ breadcrumbs (non-duplication invariant).
 - Transcript URLs are harvested in bash and offered to the model
   under "## Pointers > External" rather than synthesized inside the
   model — keeps the network surface in bash.
+- **Multi-session safety via per-node claims (ADR-0018):** after the
+  throttle trips, the hook filters its dirty list through a `flock`-
+  guarded claim check. Nodes already claimed by another session within
+  `AIMS_CLAIM_TTL_SEC` (default 600s) are deferred to that session; the
+  remainder are claimed (`consolidating_by: <sid>@<unix-ts>`) and
+  consolidated this turn. Two parallel sessions on the same project no
+  longer overwrite each other's body edits; passive sessions usefully
+  pick up dirty work editors leave behind.
 
 ## Invariants & gotchas
 
 - `stop-consolidate.sh` MUST NOT touch a node's
   `dirty/last_touched/last_consolidated` frontmatter; only `mark.sh
-  consolidated` does, after the Edit succeeds.
+  consolidated` does, after the Edit succeeds. **Exception
+  (ADR-0018):** the hook DOES write `consolidating_by` during the
+  claim phase — that field is the multi-session mutex and lives outside
+  the "ownership" of `mark.sh`.
 - The state file `.claude/memory/.last-consolidated` is bumped the
   moment the prompt is queued (not after the Edit lands), so a slow
   model doesn't cause a re-nudge on the very next turn.
@@ -93,6 +105,7 @@ breadcrumbs (non-duplication invariant).
 - ADR-0007 — two-phase design (partially superseded for this node).
 - ADR-0008 — node body schema the prompt enforces.
 - ADR-0009 — in-band consolidation mechanism.
+- ADR-0018 — multi-session claim filter + `consolidating_by` field.
 - `templates/hooks/stop-consolidate.sh:1-148` — orchestrator.
 - `templates/memory/consolidate.sh:1-100` — per-node prompt builder.
 

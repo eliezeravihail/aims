@@ -44,11 +44,20 @@ case "${1:-}" in
   --force|-f) FORCE=1 ;;
 esac
 
+# ── Read payload once (used by URL harvest below + claim filter) ────────
+payload=""
+if [ ! -t 0 ]; then
+  payload=$(cat 2>/dev/null || true)
+fi
+SESSION_ID=""
+if [ -n "$payload" ] && command -v jq >/dev/null 2>&1; then
+  SESSION_ID=$(printf '%s' "$payload" | jq -r '.session_id // empty' 2>/dev/null || true)
+fi
+SESSION_ID="${SESSION_ID:-default}"
+
 # Harvest URLs from the session transcript (pure bash; no LLM).
 TRANSCRIPT_URLS=""
-if [ "$FORCE" -ne 1 ] && [ ! -t 0 ]; then
-  payload=$(cat 2>/dev/null || true)
-  if [ -n "$payload" ] && command -v jq >/dev/null 2>&1; then
+if [ "$FORCE" -ne 1 ] && [ -n "$payload" ] && command -v jq >/dev/null 2>&1; then
     transcript_path=$(printf '%s' "$payload" \
       | jq -r '.transcript_path // empty' 2>/dev/null || true)
     if [ -n "$transcript_path" ] && [ -r "$transcript_path" ]; then
@@ -58,7 +67,6 @@ if [ "$FORCE" -ne 1 ] && [ ! -t 0 ]; then
         | head -50 \
         || true)
     fi
-  fi
 fi
 
 mapfile -t DIRTY < <(bash "$MEM_HELPERS/find-dirty.sh" 2>/dev/null || true)
@@ -103,6 +111,63 @@ elif [ "$ELAPSED" -ge "$INTERVAL_SEC" ] && [ -n "$IN_PROGRESS_PLAN" ]; then
 fi
 
 [ "$should_run" -eq 0 ] && exit 0
+
+# ── Multi-session claim filter (ADR-0018) ────────────────────────────────
+# Skip dirty nodes that another session is already consolidating. A claim is
+# `consolidating_by: <session_id>@<unix-ts>` in the node frontmatter; an
+# entry older than CLAIM_TTL is treated as abandoned and may be reclaimed.
+# All writes inside the flock so two stop hooks can't double-claim. flock
+# absence (rare) degrades gracefully to a best-effort TOCTOU window.
+CLAIM_TTL="${AIMS_CLAIM_TTL_SEC:-600}"
+CLAIM_LOCK=".claude/memory/.claim-lock"
+mkdir -p "$(dirname "$CLAIM_LOCK")"
+CLAIMED=()
+
+claim_one() {
+  local leaf="$1" existing ex_sid ex_ts age
+  existing=$(fm_get "$leaf" consolidating_by 2>/dev/null)
+  if [ -n "$existing" ]; then
+    ex_sid="${existing%@*}"
+    ex_ts="${existing##*@}"
+    case "$ex_ts" in ''|*[!0-9]*) ex_ts=0 ;; esac
+    age=$((NOW - ex_ts))
+    # Fresh claim by a different session → defer to them.
+    if [ "$ex_sid" != "$SESSION_ID" ] && [ "$age" -lt "$CLAIM_TTL" ]; then
+      return 1
+    fi
+  fi
+  fm_set "$leaf" consolidating_by "${SESSION_ID}@${NOW}"
+  return 0
+}
+
+# shellcheck source=_lib.sh
+. "$MEM_HELPERS/_lib.sh"
+
+if command -v flock >/dev/null 2>&1; then
+  exec 9>>"$CLAIM_LOCK"
+  if flock -n 9; then
+    for leaf in "${DIRTY[@]}"; do
+      [ -z "$leaf" ] && continue
+      claim_one "$leaf" && CLAIMED+=("$leaf")
+    done
+    flock -u 9
+  fi
+  exec 9>&-
+else
+  for leaf in "${DIRTY[@]}"; do
+    [ -z "$leaf" ] && continue
+    claim_one "$leaf" && CLAIMED+=("$leaf")
+  done
+fi
+
+DIRTY=("${CLAIMED[@]}")
+N_DIRTY=${#DIRTY[@]}
+
+# If the throttle tripped only because of dirty nodes and another session
+# already took all of them, exit silently — no work for us this turn.
+if [ "$N_DIRTY" -eq 0 ] && [ "$INBOX_NONEMPTY" -eq 0 ] && [ -z "$IN_PROGRESS_PLAN" ]; then
+  exit 0
+fi
 
 # ── Build the per-node prompt sections in bash ────────────────
 EXTRA_CTX="${AIMS_EXTRA_CONTEXT:-}"
