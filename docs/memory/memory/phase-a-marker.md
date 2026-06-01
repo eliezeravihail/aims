@@ -20,9 +20,10 @@ external_refs:
   - { path: tests/marker.sh, kind: test, why: six smoke cases for marker behaviour }
 owners:
   - ema
-dirty: true
-last_touched: 2026-06-01T04:41:46Z
-last_consolidated: 2026-05-27T18:40:53Z
+dirty: false
+last_touched: 2026-06-01T04:45:58Z
+last_consolidated: 2026-06-01T04:45:58Z
+consolidating_by: 
 ---
 
 ## Purpose
@@ -42,6 +43,10 @@ never blocks and always exits 0.
 - `mark.sh` carries the inverse `consolidated` subcommand used by
   the in-band model to flip the same flag clean after a successful
   body rewrite — keeps both transitions in one helper.
+- Per ADR-0018, `mark.sh consolidated` ALSO clears the per-node
+  `consolidating_by` claim that the Stop hook set during multi-session
+  serialization. The marker (`post-edit-marker.sh`) never touches
+  `consolidating_by` — only the Stop hook owns claim acquisition.
 
 ## Invariants & gotchas
 
@@ -57,6 +62,8 @@ never blocks and always exits 0.
 
 - ADR-0007 — Phase A specification.
 - ADR-0009 — adds the `consolidated` mode to `mark.sh`.
+- ADR-0018 — `mark.sh consolidated` clears the `consolidating_by`
+  claim alongside the dirty flag.
 - `templates/memory/mark.sh:34-46` — `consolidated` subcommand.
 
 ## Open questions
