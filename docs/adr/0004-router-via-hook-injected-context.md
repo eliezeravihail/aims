@@ -1,8 +1,8 @@
 # ADR-0004: Router via hook-injected context, not orchestration
-Status: accepted
+Status: superseded by ADR-0015
 Date: 2026-05-06
 Supersedes: —
-Superseded by: —
+Superseded by: ADR-0015
 
 ## Context
 

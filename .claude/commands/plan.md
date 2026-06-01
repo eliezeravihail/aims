@@ -37,11 +37,26 @@ after the plan is approved — there is no separate `/done`.
    Required sections:
    - `## TL;DR` — executive summary: what + why + how, one short
      paragraph. Goal/approach fold in here (no separate prose sections).
+     Heading **and body** are in the language stored at
+     `.claude/aims-summary-lang` (one-line file, default `en` if missing).
+     Built-in heading translations: `en` → `## TL;DR`,
+     `he` → `## תקציר מנהלים`. Unknown codes fall back to `en`.
+     The rest of the plan stays in English (identifiers, code, paths
+     are language-neutral).
    - `## Changes` — **the heart of the plan**. One subsection per file
      touched. Each carries the **actual code/diff at full relevant
      detail** — the snippet IS the spec. Order them so each is
      independently verifiable; the list of changes doubles as the
      implementation steps. Show real code, not descriptions of code.
+   - `## Open design questions` — pre-implementation branches that
+     `## Changes` does NOT yet pin down: empty/edge inputs, racing
+     concurrent cases, undefined behavior on the boundary of a new
+     algorithm. Omit the section only if you actually verified there
+     are none — not "I didn't think of any." Distinct from `## Risks`
+     (env/ops surprises) and from `## Close-out checklist` (post-
+     implementation accounting). Closing a plan with open questions
+     is fine; closing one without realizing you have any is the
+     failure mode this section prevents.
    - `## Verification` — exact commands or tests that prove success.
    - `## Close-out checklist` — **mandatory, every line always present.**
      One line per concern with an **explicit verdict** so nothing is
@@ -63,24 +78,25 @@ after the plan is approved — there is no separate `/done`.
    short as the prose allows. A 30-line plan that is all signal beats
    a 200-line plan padded with narration.
 
-5. **Present** the plan inline in your message and ask the user to
-   approve / edit / abort. (Native ExitPlanMode is unavailable when
-   this command is invoked via slash command alone — the planning
-   lock is what enforces read-only.)
+5. **Materialize the draft before asking approval** — the file on disk
+   IS the artifact to review. See Phase 2.
 
-## Phase 2 — Materialize (after approval)
+## Phase 2 — Materialize draft (lock still held)
 
 1. Compute slug: lowercase, hyphenated, ≤6 words from `$ARGUMENTS`.
-2. Filename: `docs/plans/$(date +%Y-%m-%d)-<slug>.md`.
+2. Filename: `docs/plans/$(date -u +%Y-%m-%d)-<slug>.md`.
 3. Create `docs/plans/` if missing.
-4. Write the approved plan using this template:
+4. Write the draft using a **Bash heredoc** (Write/Edit are blocked by
+   the planning lock — `cat <<'EOF' > <file>` is the only path), using
+   this template:
 
 ```markdown
 # Plan: <title>
-Status: in-progress
+Status: draft
 Started: YYYY-MM-DD
 
 ## TL;DR
+<!-- heading per .claude/aims-summary-lang: ## TL;DR (en) | ## תקציר מנהלים (he); body in same language -->
 <executive summary: what + why + how, one short paragraph>
 
 ## Changes
@@ -93,6 +109,9 @@ Started: YYYY-MM-DD
 
 ### path/to/other.ext
 …
+
+## Open design questions   (omit only if there genuinely are none)
+- <pre-implementation branch not yet pinned down by ## Changes>
 
 ## Verification
 - `<command>`
@@ -109,16 +128,26 @@ Started: YYYY-MM-DD
 - <terse, real risks only>
 ```
 
-5. Remove the lock: `rm -f .claude/.planning-lock`.
-6. Print: `Plan saved to docs/plans/<filename>. Implementation can begin.`
+5. Print: `Draft saved to docs/plans/<filename>. Approve / edit / abort?`
+6. Do **not** remove the lock yet. Do **not** edit anything else.
 
-## Phase 3 — Implement
+## Phase 3 — Approval gate
+
+- **Approve** → flip the draft's `Status:` line from `draft` to
+  `in-progress` (using `sed -i` via Bash — the lock blocks Edit, not
+  Bash). Then `rm -f .claude/.planning-lock`. Then proceed to Phase 4.
+- **Edit / iterate** → rewrite the draft in place (same heredoc; same
+  filename). Re-ask. Lock stays.
+- **Abort** → `rm -f docs/plans/<filename> .claude/.planning-lock` and
+  print `Plan aborted.`.
+
+## Phase 4 — Implement
 
 You (or the next session) implement step by step, editing files
 normally. The `post-edit-marker` hook flags dirty memory nodes as you
 work. Nothing special required.
 
-## Phase 4 — Close-out (inline, when implementation is done)
+## Phase 5 — Close-out (inline, when implementation is done)
 
 Triggered automatically when:
 - An in-progress plan exists in `docs/plans/`, AND
@@ -157,6 +186,10 @@ for the hook if you know you're done.
 4. **Update the plan file.**
    - `Status: completed`.
    - Append `## Outcome` — short summary + links to any ADRs.
+   - Resolve `## Open design questions` (if present): each question is
+     either **answered inline** (rewrite the bullet with the answer) or
+     **carried forward** as a `TODO:` line in the Close-out checklist.
+     An open question may not survive a closed plan unaddressed.
    - Append `## Closing checks` — verification command outputs, and the
      resolved `## Close-out checklist` (each line with its final verdict,
      e.g. `ADR: NONE — config toggle`, `Nodes: UPDATE — <tag>/<node>`).
@@ -190,14 +223,6 @@ for the hook if you know you're done.
    Tests:    <path> | EXISTING | N/A
    TODO:     NONE | <follow-ups>
    ```
-
-## If user rejects the draft
-
-Iterate. Do not remove the lock. Do not write any files.
-
-## If user aborts
-
-`rm -f .claude/.planning-lock` and print `Plan aborted.`
 
 ## Hard rules
 

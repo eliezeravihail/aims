@@ -27,11 +27,12 @@ external_refs:
   - { path: docs/adr/0007-tree-based-memory-with-auto-maintenance.md, kind: adr, why: the design these helpers implement }
   - { path: tests/marker.sh, kind: test, why: covers mark/find-dirty + the marker hook }
   - { path: tests/consolidate.sh, kind: test, why: covers consolidate.sh + the Stop hook against a mocked Anthropic endpoint }
+  - { path: docs/adr/0014-code-globs-are-fnmatch-globs.md, kind: adr, why: path_matches now treats every code: entry as an fnmatch glob }
 owners:
   - ema
 dirty: false
-last_touched: 2026-05-28T19:28:42Z
-last_consolidated: 2026-05-28T19:28:42Z
+last_touched: 2026-06-01T06:52:29Z
+last_consolidated: 2026-06-01T06:52:29Z
 ---
 
 ## Purpose
@@ -66,6 +67,12 @@ No external network call lives in any helper.
   needles — defense in depth against a future hook (or direct
   `mark.sh` caller) that forgets to normalize. The marker still
   normalizes first; this is the belt under the suspenders.
+- `path_matches` evaluates each `code:` entry as an **fnmatch glob**
+  via bash `case`-glob (ADR-0014). Exact strings still match (they're
+  trivial globs); `:line-range` suffixes still take the prefix branch.
+  Greedy `*` (no FNM_PATHNAME) is documented — `src/*.py` matches
+  `src/loaders/json_loader.py`; over-marking is acceptable, silent
+  staleness is not.
 
 ## Invariants & gotchas
 
@@ -78,7 +85,16 @@ No external network call lives in any helper.
 - Only `mark.sh consolidated` may write
   `dirty/last_touched/last_consolidated`. Other helpers (and the
   in-band model executing consolidation prompts) MUST leave that
-  frontmatter alone.
+  frontmatter alone. `mark.sh consolidated` also `rm -f`s the
+  `<leaf>.lock` sidecar (ADR-0019).
+- **Multi-session mutex (ADR-0019, supersedes ADR-0018):** a sidecar
+  `<leaf>.lock` next to each node is the per-leaf mutex. The Stop hook
+  acquires via `set -C` (`O_EXCL`) writing the SESSION_ID inside; a
+  `trap` releases on any abnormal exit. The pre-write hook refuses
+  Edit/Write to any locked node held by a different fresh session.
+  Stale locks (mtime > `AIMS_LOCK_TTL_SEC`, default 600s) are
+  abandoned. The `consolidating_by:` frontmatter field from ADR-0018
+  is gone; the `consolidating_by` mention above is historical.
 - A `module` node with `code: []` is **inert**: the marker can never
   flag it dirty, so it never consolidates (ADR-0012). If a node tracks
   no code it must be `kind: topic`/`decision`, not `module`. `lint.sh`
@@ -104,6 +120,11 @@ No external network call lives in any helper.
   `classify-inbox.sh`.
 - ADR-0012 — `new-node.sh` glob args, mandatory `code:` for module
   nodes, `lint.sh`/`doctor.sh` inert reporting.
+- ADR-0014 — `code:` entries are fnmatch globs (the matcher change
+  in `path_matches`).
+- ADR-0018 — superseded; in-frontmatter `consolidating_by` claim.
+- ADR-0019 — sidecar `<leaf>.lock` files as the per-node mutex;
+  `mark.sh consolidated` removes the sidecar.
 - `templates/memory/_lib.sh` — shared primitives.
 
 ## Open questions

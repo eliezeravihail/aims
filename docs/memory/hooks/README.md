@@ -13,8 +13,10 @@ tool-use boundary (pre-write).
 - **session-start.md** — informational injection at session boot:
   in-progress plans, recent ADRs, the memory tree's top-level
   README.
-- **prompt-submit.md** — per-prompt context (in-progress plan
-  reminders, routing hints).
+- **prompt-submit.md** — per-prompt intent router. Auto-engages
+  `/plan` on actionable intents (ADR-0015).
+- **exit-plan-mode.md** — PostToolUse bridge that persists harness-
+  native `ExitPlanMode` plans to `docs/plans/` (ADR-0015).
 
 Memory-subsystem hooks (`post-edit-marker`, `stop-consolidate`,
 `session-end`) live under `memory/phase-a-marker.md` and

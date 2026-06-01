@@ -65,6 +65,12 @@ Use `AskUserQuestion`, one question per gap, with sniffed defaults:
 5. Hook aggressiveness — `nudge` (default) | `block` | `off`. Only
    ask on fresh install; on re-install, keep the value already in
    `TARGET/.claude/aims-mode`.
+6. Plan executive-summary language (default `en`). Accepts ISO 639-1
+   codes (`en`, `he`, `es`, `fr`, …) or a language name. Used by
+   `/plan` for the TL;DR heading and body. On re-install, keep the
+   value already in `TARGET/.claude/aims-summary-lang` and skip the
+   question. Built-in heading translations: `en` → `## TL;DR`,
+   `he` → `## תקציר מנהלים`; unknown codes fall back to `en`.
 
 **Memory tree is always installed.** Not optional.
 
@@ -103,11 +109,12 @@ Copy from `AIMS_ROOT` into `TARGET`, substituting `{{VARS}}`.
 
 | Path in TARGET                                                                                 | Source under AIMS_ROOT                          |
 |------------------------------------------------------------------------------------------------|-------------------------------------------------|
-| `.claude/hooks/{session-start,prompt-submit,pre-write,post-edit-marker,stop-consolidate,session-end}.sh` | `templates/hooks/<same>`                 |
+| `.claude/hooks/{session-start,prompt-submit,pre-write,post-edit-marker,exit-plan-mode,stop-consolidate,session-end}.sh` | `templates/hooks/<same>` |
 | `.claude/memory/{_lib,mark,new-node,find-dirty,lint,check-refs,consolidate,classify-inbox,doctor}.sh`     | `templates/memory/<same>`                |
 | `.claude/commands/{install-on,plan}.md`                                                        | `templates/commands/<same>`                     |
 | `.claude/settings.json` (merge if exists)                                                      | `templates/settings.json.tmpl`                  |
 | `.claude/aims-mode`                                                                            | one line: chosen mode                           |
+| `.claude/aims-summary-lang`                                                                    | one line: chosen language code (default `en`)   |
 | `docs/adr/README.md`, `docs/adr/_template.md`, `docs/adr/0001-record-architecture-decisions.md`| `templates/adr-*.tmpl`                          |
 | `CLAUDE.md`                                                                                    | `templates/CLAUDE.md.tmpl` (merge-only)         |
 
@@ -239,6 +246,7 @@ aims installed into <TARGET> (<fresh|re-install>):
   CLAUDE.md: created | merged (+<N> sections) | unchanged
   memory tree: <fresh-scan: T tags, N nodes> | <audited: +M nodes, B backfilled> | <fresh (updated <Nd ago>), skipped>
   inert nodes (code: []): <N>
+  plan summary language: <en|he|...>
   lint: clean | <K issues>
   next: cd <TARGET> && claude
         try `/plan <task>` for non-trivial work
@@ -250,6 +258,7 @@ aims installed into <TARGET> (<fresh|re-install>):
 - `{{TEST_CMD}}`, `{{LINT_CMD}}`, `{{TYPECHECK_CMD}}` — confirmed commands
 - `{{ADR_DIR}}` — usually `docs/adr`
 - `{{HOOK_MODE}}` — `nudge` | `block` | `off`
+- `{{SUMMARY_LANG}}` — chosen summary language code, default `en`
 - `{{DATE}}` — today's date `YYYY-MM-DD`
 
 ## Hard rules

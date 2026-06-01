@@ -44,11 +44,20 @@ case "${1:-}" in
   --force|-f) FORCE=1 ;;
 esac
 
+# ── Read payload once (used by URL harvest below + claim filter) ────────
+payload=""
+if [ ! -t 0 ]; then
+  payload=$(cat 2>/dev/null || true)
+fi
+SESSION_ID=""
+if [ -n "$payload" ] && command -v jq >/dev/null 2>&1; then
+  SESSION_ID=$(printf '%s' "$payload" | jq -r '.session_id // empty' 2>/dev/null || true)
+fi
+SESSION_ID="${SESSION_ID:-default}"
+
 # Harvest URLs from the session transcript (pure bash; no LLM).
 TRANSCRIPT_URLS=""
-if [ "$FORCE" -ne 1 ] && [ ! -t 0 ]; then
-  payload=$(cat 2>/dev/null || true)
-  if [ -n "$payload" ] && command -v jq >/dev/null 2>&1; then
+if [ "$FORCE" -ne 1 ] && [ -n "$payload" ] && command -v jq >/dev/null 2>&1; then
     transcript_path=$(printf '%s' "$payload" \
       | jq -r '.transcript_path // empty' 2>/dev/null || true)
     if [ -n "$transcript_path" ] && [ -r "$transcript_path" ]; then
@@ -58,7 +67,6 @@ if [ "$FORCE" -ne 1 ] && [ ! -t 0 ]; then
         | head -50 \
         || true)
     fi
-  fi
 fi
 
 mapfile -t DIRTY < <(bash "$MEM_HELPERS/find-dirty.sh" 2>/dev/null || true)
@@ -103,6 +111,62 @@ elif [ "$ELAPSED" -ge "$INTERVAL_SEC" ] && [ -n "$IN_PROGRESS_PLAN" ]; then
 fi
 
 [ "$should_run" -eq 0 ] && exit 0
+
+# ── Sidecar lockfile filter (ADR-0019, supersedes ADR-0018) ─────────────
+# Drop dirty leaves another session is already consolidating. The mutex is a
+# sidecar `<leaf-without-md>.lock` next to the node, created with O_EXCL
+# (bash `set -C`). Body = our SESSION_ID; mtime drives stale-detection.
+# `mark.sh <node> consolidated` removes the file; a trap below releases on
+# any abnormal exit between claim and `mark.sh`.
+LOCK_TTL="${AIMS_LOCK_TTL_SEC:-600}"
+CLAIMED=()
+HELD_LOCKS=()
+
+reap_stale_lock() {
+  local lock="$1"
+  [ -e "$lock" ] || return 0
+  if find "$lock" -mmin "+$((LOCK_TTL / 60))" -print 2>/dev/null | grep -q .; then
+    rm -f "$lock"
+  fi
+}
+
+try_claim() {
+  local leaf="$1" lock="${leaf%.md}.lock"
+  reap_stale_lock "$lock"
+  # noclobber → O_CREAT|O_EXCL atomic create.
+  if (set -C; printf '%s\n' "$SESSION_ID" > "$lock") 2>/dev/null; then
+    HELD_LOCKS+=("$lock")
+    return 0
+  fi
+  return 1
+}
+
+for leaf in "${DIRTY[@]}"; do
+  [ -z "$leaf" ] && continue
+  try_claim "$leaf" && CLAIMED+=("$leaf")
+done
+
+# Release any lock we still hold if we die before the model marks the node
+# consolidated. mark.sh removes its own lock on success.
+release_held_locks() {
+  for l in "${HELD_LOCKS[@]}"; do
+    [ -e "$l" ] || continue
+    # Only remove if WE own it (defensive — a reclaim by another session
+    # after TTL expiry would have a different SESSION_ID inside).
+    owner=$(head -n1 "$l" 2>/dev/null || true)
+    [ "$owner" = "$SESSION_ID" ] && rm -f "$l"
+  done
+}
+trap release_held_locks EXIT
+
+DIRTY=("${CLAIMED[@]}")
+N_DIRTY=${#DIRTY[@]}
+
+# If the throttle tripped only because of dirty nodes and another session
+# already took all of them, exit silently — no work for us this turn.
+if [ "$N_DIRTY" -eq 0 ] && [ "$INBOX_NONEMPTY" -eq 0 ] && [ -z "$IN_PROGRESS_PLAN" ]; then
+  exit 0
+fi
 
 # ── Build the per-node prompt sections in bash ────────────────
 EXTRA_CTX="${AIMS_EXTRA_CONTEXT:-}"

@@ -33,6 +33,20 @@ if [ -f "$LOCK" ]; then
   fi
 fi
 
+# Orphan-draft detection: lock missing but a Status: draft plan exists.
+# (Draft plans live in docs/plans/ between /plan Phase 2 and Phase 3
+# approval; without a lock they were left behind by an interrupted run.)
+if [ ! -f "$LOCK" ] && [ -d "$PLAN_DIR" ]; then
+  drafts=$(grep -lE '^Status:[[:space:]]*draft' "$PLAN_DIR"/*.md 2>/dev/null || true)
+  if [ -n "$drafts" ]; then
+    printf '[aims] WARNING: draft plan(s) with no active planning lock:\n'
+    while IFS= read -r d; do
+      printf '       %s\n' "$d"
+    done <<< "$drafts"
+    printf '       Recover: touch .claude/.planning-lock to resume, or rm the file.\n'
+  fi
+fi
+
 # In-progress plans.
 if [ -d "$PLAN_DIR" ]; then
   active=$(grep -lE '^Status:\s*in-progress' "$PLAN_DIR"/*.md 2>/dev/null || true)
