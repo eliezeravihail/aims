@@ -34,7 +34,17 @@ Phase B of the two-phase design: the LLM consolidation pass. Wired to `Stop` wit
 
 ## Logical rules & invariants
 
+- Never blocks. Always exits 0.
+- Throttle: run only when `N_DIRTY >= DIRTY_MAX` (default 5) OR `ELAPSED >= INTERVAL_SEC` (default 1800s). `--force` bypasses both.
+- If `ANTHROPIC_API_KEY` is absent, leaves stay dirty and the hook exits 0 silently.
+- The non-duplication invariant: consolidation updates leaf bodies only — it never writes to CLAUDE.md, ADRs, plans, or other external files.
+- `classify-inbox.sh` output is informational at Stop time; auto-applying confident classifications happens only inside `/done`.
+
 ## Editing considerations
+
+- The state file (`.claude/memory/.last-consolidated`) stores a plain Unix timestamp (seconds since epoch). The format must not change — both `stop-consolidate.sh` and `check-refs.sh` read it.
+- `--force` / `-f` is the `/done` code path. Do not add throttle checks inside the `FORCE=1` branch.
+- Overrides via `throttle.conf` (a sourced shell snippet) take effect on the two `AIMS_MEMORY_*` variables. Document any new tunables there.
 
 ## Deliberations & history
 

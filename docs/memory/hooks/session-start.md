@@ -28,7 +28,14 @@ SessionStart hook — informational only, never blocks. Surfaces in-progress pla
 
 ## Logical rules & invariants
 
+- Informational only — always exits 0. Never modifies any file.
+- Memory README injection is capped at 2048 bytes to keep context injection light.
+- Stale-lock warning fires only when the lock exists but no in-progress plan exists. If a plan is active, the lock is expected.
+
 ## Editing considerations
+
+- Keep each surface area (plans, ADRs, lock, memory README) as independent `if` blocks. A missing directory should not prevent the other sections from printing.
+- The `head -c 2048` cap on the memory README is intentional — do not raise it without profiling context-window impact.
 
 ## Deliberations & history
 

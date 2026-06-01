@@ -48,7 +48,9 @@ The repo carries a navigable memory layer under `docs/memory/` (see
 full design). It is a NAVIGATOR over `CLAUDE.md`, ADRs, plans, and
 external memory — never a copy of them.
 
-- `/memory-init` (one-time) — seed `docs/memory/` from a codebase scan.
+- `docs/memory/` is seeded during `/init-workflow` when you choose `full`
+  (the default). If you chose `install-only`, run `/memory-init` once to
+  seed it from a codebase scan.
 - `/remember <note>` — file a note into the right leaf.
 - The `PostToolUse` marker hook flips affected leaves to
   `dirty: true` after every Edit/Write. The `Stop` hook

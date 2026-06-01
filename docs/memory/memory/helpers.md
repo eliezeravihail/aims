@@ -36,7 +36,16 @@ The eight bash helpers that form the deterministic substrate for the memory tree
 
 ## Logical rules & invariants
 
+- `_lib.sh` must be sourced before calling `fm_get`, `fm_set`, `fm_list`, or `list_leaves`.
+- All helpers operate on paths relative to the current working directory (TARGET root). Never pass absolute paths.
+- Helpers degrade gracefully when `ANTHROPIC_API_KEY` is absent: `consolidate.sh` exits 0 and leaves the leaf dirty.
+- The `AIMS_MEMORY_DIR` env var overrides the default `docs/memory/` path — used in tests to point to a temp directory.
+
 ## Editing considerations
+
+- POSIX compatibility is required: mawk and BSD awk must work. Avoid GNU-specific awk extensions (no `gensub`, no `FPAT`).
+- `find-dirty.sh` is called inside `mapfile` in `stop-consolidate.sh` and must output exactly one leaf path per line with no trailing whitespace.
+- Any new helper that reads frontmatter must source `_lib.sh` first — do not reimplement frontmatter parsing inline.
 
 ## Deliberations & history
 

@@ -31,7 +31,15 @@ User-facing entry points to the memory tree. /memory-init (Sonnet, one-time) sca
 
 ## Logical rules & invariants
 
+- `/remember` must NOT write to CLAUDE.md — that path is reserved for Claude-native `/memory`. The non-duplication invariant.
+- `/remember` must NOT create a new leaf for a one-off note; file it under the nearest leaf's `## Open questions` instead.
+- `/memory-init` refuses if `docs/memory/` is already non-empty (idempotent guard).
+- `/memory-init` requires CLAUDE.md to exist before proposing a tree; `claude_md_refs:` must reference valid section headings.
+
 ## Editing considerations
+
+- `/remember` runs on Haiku — keep the task to a single structural file edit, not multi-step reasoning.
+- `/memory-init` produces a diff preview via `AskUserQuestion` before writing any file.
 
 ## Deliberations & history
 

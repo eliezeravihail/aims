@@ -24,11 +24,20 @@ last_consolidated: 2026-05-25T11:46:53Z
 
 ## Purpose
 
-Documents /init-workflow — the clone-and-bootstrap installer. Five phases: sniff (read-only on TARGET), interview (fill gaps via AskUserQuestion), show plan + ask approval, apply (copy from AIMS_ROOT to TARGET), doctor (final report). Question 7 (memory tree) and the corresponding file-table rows enable the ADR-0007 layer on install.
+Documents /init-workflow — the clone-and-bootstrap installer. Five phases: sniff (read-only on TARGET), interview (fill gaps via AskUserQuestion), show plan + ask approval, apply (copy from AIMS_ROOT to TARGET + optional memory-tree seeding), doctor (final report). Question 7 has three options: `full` (copy + seed docs/memory/ inline, default), `install-only` (copy only; user runs /memory-init later), or `skip`.
 
 ## Logical rules & invariants
 
+- If TARGET == AIMS_ROOT, refuse immediately. Never install aims into its own source repo.
+- Never write outside TARGET (except `chmod +x` on files just created inside TARGET).
+- Idempotent: detect prior install via `TARGET/.claude/aims-mode`. Re-running must merge, not overwrite.
+- Read-only on `TARGET/src/`, `TARGET/tests/`, `TARGET/lib/`, package manifests, `TARGET/README.md`, `TARGET/LICENSE`.
+
 ## Editing considerations
+
+- `commands/init-workflow.md` is NOT copied to TARGET. It is the installer; copying it would make a target appear self-bootstrappable.
+- The four discipline commands live under `AIMS_ROOT/templates/commands/`, not `AIMS_ROOT/commands/`. This is what keeps them out of the global plugin surface.
+- `commands/init-workflow.md` and `.claude/commands/init-workflow.md` must stay identical — when editing one, edit the other.
 
 ## Deliberations & history
 

@@ -28,7 +28,16 @@ Documents the /plan slash command — the entry point to non-trivial work in aim
 
 ## Logical rules & invariants
 
+- The planning lock (`.claude/.planning-lock`) MUST be created as the very first step — before any Read, Glob, or Bash call.
+- While the lock exists, `pre-write.sh` hard-blocks Edit/Write/MultiEdit/NotebookEdit regardless of `aims-mode`.
+- The lock MUST be removed after ExitPlanMode approval or on user abort. A dangling lock is always a bug.
+- The plan file is written to `docs/plans/YYYY-MM-DD-<slug>.md` only after ExitPlanMode approval, never before.
+
 ## Editing considerations
+
+- Do not modify `/plan` to skip or delay lock creation — the lock is the contract with `pre-write.sh`.
+- If the user rejects ExitPlanMode, do NOT remove the lock. Iterate on the plan inside the locked state.
+- The slug is the first ≤6 words of `$ARGUMENTS`, lowercased and hyphenated. Keep it stable once the file is written.
 
 ## Deliberations & history
 

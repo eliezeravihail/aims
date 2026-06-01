@@ -28,7 +28,15 @@ Documents the /done slash command — closes an active plan, verifies each step,
 
 ## Logical rules & invariants
 
+- Do NOT close a plan with failing verification. Surface the failures and stop; let the user fix them first.
+- Do NOT edit any past ADR body. Closing a plan can create new ADRs; it never edits old ones.
+- If `.claude/.planning-lock` still exists at close time, remove it as cleanup.
+- Step 7 (memory consolidation) must use `--force` to bypass the Stop hook's throttle.
+
 ## Editing considerations
+
+- The final report format must always include: plan path, verification result count (N pass / M fail), ADRs created, CLAUDE.md change status, and memory tree status.
+- The verification commands come from the plan's `## Verification` section — run them literally, do not improvise alternatives.
 
 ## Deliberations & history
 

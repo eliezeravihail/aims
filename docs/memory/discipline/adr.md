@@ -28,7 +28,15 @@ Documents the /adr slash command and the ADR convention. ADRs are append-only â€
 
 ## Logical rules & invariants
 
+- Never edit a past ADR's body. Only the status pointer (`Superseded by: ADR-NNNN`) may change in an existing ADR.
+- Status starts at `proposed`. Promotion to `accepted` happens externally (PR review, team decision); never auto-accept.
+- The ADR index (`docs/adr/README.md`) must be updated every time a new ADR is written. The `/adr` command does this; do not skip it.
+- Do not write an ADR for an undecided question â€” use `/plan` instead.
+
 ## Editing considerations
+
+- Next number = max(existing NNNN) + 1, zero-padded to 4 digits. Scan `docs/adr/[0-9]*.md`; skip `_template.md` and `README.md`.
+- When superseding, both the new ADR (`Supersedes: ADR-MMMM`) and the old ADR's status line (`Superseded by: ADR-NNNN`) must be updated. Two file edits.
 
 ## Deliberations & history
 

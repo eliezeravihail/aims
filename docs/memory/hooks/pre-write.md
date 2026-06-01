@@ -25,7 +25,15 @@ PreToolUse hook on Edit | Write | MultiEdit | NotebookEdit. Two responsibilities
 
 ## Logical rules & invariants
 
+- Exit 2 = block (stderr is surfaced to the model and the user). Exit 0 = allow.
+- The planning-lock check always runs regardless of `aims-mode`. The lock always blocks.
+- The source-path soft-block (only in `block` mode) applies to paths matching `src/*|lib/*|app/*|server/*|client/*|packages/*`.
+- Test files (`*_test.*|*.test.*|*.spec.*|*/tests/*|*/__tests__/*`) and docs (`*.md|*.txt`) are exempt from the source-path check.
+
 ## Editing considerations
+
+- When adding new source-path patterns, update BOTH the `is_source_path` case statement AND the exemption case in the same edit. They must stay in sync.
+- The hook reads tool_input JSON from stdin via `jq` (preferred) or a sed/grep fallback. Both branches must remain equivalent — test both when changing path extraction logic.
 
 ## Deliberations & history
 

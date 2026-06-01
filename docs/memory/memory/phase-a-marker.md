@@ -29,7 +29,16 @@ Phase A of the two-phase maintenance design: a PostToolUse hook that runs after 
 
 ## Logical rules & invariants
 
+- Never blocks. Always exits 0. Errors go to stderr only.
+- Paths under `docs/memory/` and `.claude/` are skipped — editing the tree itself must not flip leaves dirty.
+- If the edited path matches no leaf's `code:` list, append it to `_inbox.md` (de-duplicated: same path written only once).
+- Path matching strips `:line-range` suffixes from `code:` entries before comparing (e.g., `src/foo.py:10-30` matches `src/foo.py`).
+
 ## Editing considerations
+
+- The hook reads stdin exactly once (`payload=$(cat || true)`). Do not call `cat` again after the first read.
+- Normalise the incoming path (strip leading `./`) before matching against `code:` entries.
+- When changing the inbox append logic, ensure the de-dup check (`grep -qxF`) runs before writing.
 
 ## Deliberations & history
 

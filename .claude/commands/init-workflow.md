@@ -66,6 +66,16 @@ Use AskUserQuestion to confirm/fill (one question per gap, defaults pre-filled):
    - `off`: hooks not installed.
 6. **Snapshot** — offer a one-time codebase summary at `TARGET/.claude-context.md`
    (gitignored). Default: skip; user can run `/snapshot` later.
+7. **Memory tree (ADR-0007)** — install the navigable memory layer?
+   `full` (default) | `install-only` | `skip`.
+   - `full`: copies helpers, hooks, and commands, **then seeds
+     `TARGET/docs/memory/` inline** from the Phase 1 layout scan.
+     Same result as running `/memory-init` manually, but done before
+     you leave the bootstrap — the tree is ready immediately.
+   - `install-only`: copies the files only; the tree is not seeded.
+     Run `/memory-init` once inside TARGET when ready.
+   - `skip`: none of the above is copied; the rest of aims installs
+     normally.
 
 Skip any question whose answer is unambiguous from sniffing.
 
@@ -75,6 +85,11 @@ Present a **diff preview**: list every file you'd CREATE under `TARGET/` and
 every section you'd MERGE into existing files. State explicitly what you will
 NOT touch (`TARGET/src/`, `TARGET/tests/`, `TARGET/README.md`, package
 manifests, etc.).
+
+If memory_tree = `full`, also show the proposed `docs/memory/` structure:
+- List the proposed tag directories (e.g., `api/`, `models/`, `cli/`)
+- List the leaf files under each tag with one-line descriptions
+- Do NOT show full leaf content in this preview — just paths and purposes
 
 Then ask: `Approve?  [yes / show-full-diff / abort]`
 
@@ -93,6 +108,13 @@ Copy from `AIMS_ROOT` into `TARGET`. Substitute `{{VARS}}` while writing.
 | `TARGET/.claude/settings.json` (merge if exists)          | `AIMS_ROOT/templates/settings.json.tmpl`      |
 | `TARGET/.claude/aims-mode`                                 | one line: the chosen hook mode               |
 | `TARGET/.claude/commands/{adr,done,grunt,plan}.md`        | `AIMS_ROOT/templates/commands/{adr,done,grunt,plan}.md` |
+| **If memory tree ≠ skip:**                                 |                                                |
+| `TARGET/.claude/memory/{_lib,mark,new-leaf,find-dirty,lint,check-refs,consolidate,classify-inbox}.sh` | `AIMS_ROOT/templates/memory/<same>` |
+| `TARGET/.claude/hooks/post-edit-marker.sh`                 | `AIMS_ROOT/templates/hooks/post-edit-marker.sh`  |
+| `TARGET/.claude/hooks/stop-consolidate.sh`                 | `AIMS_ROOT/templates/hooks/stop-consolidate.sh`  |
+| `TARGET/.claude/hooks/session-end.sh`                      | `AIMS_ROOT/templates/hooks/session-end.sh`       |
+| `TARGET/.claude/commands/memory-init.md`                   | `AIMS_ROOT/templates/commands/memory-init.md`    |
+| `TARGET/.claude/commands/remember.md`                      | `AIMS_ROOT/templates/commands/remember.md`       |
 
 Notes:
 
@@ -104,6 +126,66 @@ Notes:
   not `AIMS_ROOT/commands/`. This keeps them out of the global plugin
   surface — `commands/init-workflow.md` is the only globally-visible file.
 - Hook scripts must be executable: `chmod +x TARGET/.claude/hooks/*.sh`.
+
+### Memory tree seeding (only when memory_tree = full)
+
+After copying the memory helpers, hooks, and commands, seed the tree inline.
+Use the layout already discovered in Phase 1 — do not re-read the target.
+
+1. **Classify into 5–10 tags.** Group the discovered source paths into domain
+   buckets. Default suggestions: `interface`, `implementation`, `configuration`,
+   `documentation`. Refine to project vocabulary (e.g., `api`, `models`, `cli`,
+   `hooks`, `tests`, `utils`) based on actual directory names.
+
+2. **Write `TARGET/docs/memory/README.md`** — tag list with one-line descriptions
+   and a navigation guide. Model it on `AIMS_ROOT/docs/memory/README.md`.
+
+3. **For each tag, write `TARGET/docs/memory/<tag>/README.md`** — one-paragraph
+   tag description; bulleted list of leaf names with one-line summaries.
+
+4. **For each prominent module, write a leaf stub:**
+   `TARGET/docs/memory/<tag>/<leaf>.md`
+
+   Frontmatter:
+   ```yaml
+   ---
+   node: <tag>/<leaf>
+   kind: module
+   code:
+     - <actual source paths relative to TARGET root>
+   commits: []
+   sessions: []
+   related: []
+   claude_md_refs:
+     - "<CLAUDE.md section heading this leaf relates to>"
+   external_refs: []
+   owners: []
+   dirty: false
+   last_touched: {{DATE}}T00:00:00Z
+   last_consolidated: {{DATE}}T00:00:00Z
+   ---
+   ```
+
+   Body: `## Purpose` with one sentence describing the module's role.
+   Leave all other sections (`## Logical rules & invariants`,
+   `## Editing considerations`, `## Deliberations & history`,
+   `## Open questions`) empty — the Stop/SessionEnd hooks and `/done`
+   will populate them via LLM consolidation over time.
+
+5. **Prominent module heuristic:**
+   - Files and directories under `src/`, `lib/`, `app/`, `server/`, `client/`,
+     `packages/` at depth ≤ 2.
+   - Top-level config files referenced by the confirmed test/lint commands.
+   - Exclude: `node_modules/`, `.git/`, `dist/`, `build/`, lock files, generated
+     files, and the `docs/` directory itself.
+   - Cap at **20 leaves**. If there are more candidates, prefer the shallowest
+     paths and warn: `"Large project — seeded top 20 leaves; extend with /memory-init."`
+
+6. **Write `TARGET/docs/memory/_inbox.md`** as an empty placeholder:
+   ```markdown
+   # Memory inbox
+   Paths edited this session that no leaf claims yet.
+   ```
 
 ### CLAUDE.md merge rules (section-aware, on TARGET)
 
@@ -140,6 +222,7 @@ aims installed into <TARGET>:
   ADR root: docs/adr/  (3 files)
   CLAUDE.md: created | merged (+N sections) | unchanged
   commands: 4 copied to .claude/commands/  (no global pollution)
+  memory tree: seeded (N tags, M leaves) | install-only (run /memory-init) | skipped
   next: cd <TARGET> && claude
         try `/plan <task>` for non-trivial work
 ```

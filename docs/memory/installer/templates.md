@@ -29,7 +29,14 @@ The .tmpl files under templates/ that /init-workflow substitutes into a target p
 
 ## Logical rules & invariants
 
+- All `{{VARS}}` must be substituted when writing a template file. An unsubstituted variable in the output is a bug.
+- CLAUDE.md merge is section-aware: never overwrite an existing `## Heading`; append missing sections wrapped in `<!-- added by aims -->`.
+- `settings.json.tmpl` merge touches only the `hooks` key. All other keys in an existing file are left untouched.
+
 ## Editing considerations
+
+- When adding a new substitution variable, update BOTH the "Variables to substitute" table in `init-workflow.md` AND every template file that uses it.
+- If `{{TYPECHECK_CMD}}` is unknown (project has no type checker), omit the typecheck line from CLAUDE.md rather than writing `{{TYPECHECK_CMD}}` literally.
 
 ## Deliberations & history
 

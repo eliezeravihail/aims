@@ -24,7 +24,13 @@ Documents the /grunt slash command — the cheap, fast lane for mechanical edits
 
 ## Logical rules & invariants
 
+- If any site doesn't match the simple pattern, list it and ask — never improvise.
+- If a judgment call emerges mid-task (choosing between alternatives, modifying business logic), stop immediately and tell the user to use `/plan`.
+
 ## Editing considerations
+
+- The confirmation prompt ("I will X in Y. Nothing else. Proceed?") may be skipped only when `$ARGUMENTS` unambiguously specifies scope.
+- After edits, run the project's test/lint command and report pass/fail. Do not fix unrelated failures — that would require judgment.
 
 ## Deliberations & history
 

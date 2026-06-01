@@ -30,3 +30,5 @@ it to the index below.
 | 0003 | Hooks default to nudge, lock always blocks     | accepted | 2026-05-06 |
 | 0004 | Router via hook-injected context, not orchestration | accepted | 2026-05-06 |
 | 0005 | Two install paths; only /init-workflow ever goes global | accepted | 2026-05-06 |
+| 0006 | Two-tier project memory — embedding-based recall        | superseded | 2026-05-25 |
+| 0007 | Tree-based memory with automatic build and maintenance  | accepted   | 2026-05-25 |
