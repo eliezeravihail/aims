@@ -179,11 +179,11 @@ mark.sh command at the end of its section. If there are more than 10
 dirty nodes, handle the first 10 and report that the rest will be
 caught on the next turn. Do NOT touch frontmatter dirty/last_touched/
 last_consolidated — mark.sh owns those.
-Reply-format convention: any report to the user about this consolidation
-pass (dirty counts, inbox, nodes touched) is prefixed with
-\`==== AIMS (internal) ====\` and kept terse — one line or a short phrase
+Reply-format: this consolidation pass is the ONLY thing reported under
+the \`==== AIMS (internal) ====\` prefix — one line or a short phrase
 (\"nodes updated\", \"queue drained\", \"4 dirty\"). No per-node prose
-unless the user asks.")
+unless the user asks. Regular conversational mentions of aims topics
+elsewhere in the reply are NOT prefixed.")
 
 if [ -n "$IN_PROGRESS_PLAN" ]; then
   prompt_parts+=("[aims-plan] In-progress plan detected: $IN_PROGRESS_PLAN

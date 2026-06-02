@@ -24,14 +24,17 @@ project where it is installed; CLAUDE.md is editable per-project.
 
 ## Decision
 
-We will adopt a project-wide convention: **when the assistant's
-user-facing reply touches aims-internal topics — memory nodes,
-consolidation queue, inbox, dirty markers, plan close-out, hook status —
-that part of the reply is prefixed with `==== AIMS (internal) ====`** so
-the user can distinguish plugin plumbing from substantive work. The
-prefixed section is kept **terse** — one line or a short phrase
-("nodes updated", "queue drained", "4 dirty"). No per-node prose unless
-the user asks for it.
+We will adopt a project-wide convention: **only the Stop /
+consolidation-update hook's result report is prefixed with
+`==== AIMS (internal) ====`** — one line or a short phrase
+("nodes updated", "queue drained", "4 dirty"). The prefix is NOT
+applied to regular conversational mentions of aims topics (questions,
+plans, status, dirty-node notes that arise mid-conversation); those
+flow naturally as part of the reply. The prefix exists to demarcate
+the one place where the hook actively reports back to the user — the
+end-of-turn consolidation pass — from the substantive work.
+
+No per-node prose under the prefix unless the user asks for it.
 
 The convention is propagated into every aims-injected context blob:
 - `session-start.sh` adds it as a fourth standing-conventions bullet.

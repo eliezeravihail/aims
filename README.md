@@ -90,11 +90,11 @@ imperative trips Claude's prompt-injection defense and is shown to the user
 instead of being treated as context. No hook ever blocks an edit — there is no
 `aims-mode` and no planning lock.
 
-When the assistant's user-facing reply touches aims-internal topics (memory
-nodes, consolidation queue, inbox, dirty markers, plan close-out, hook
-status), that part of the reply is prefixed with `==== AIMS (internal) ====`
-and kept terse — one line or a short phrase ("nodes updated", "queue
-drained", "4 dirty"). No per-node prose unless the user asks (ADR-0021).
+When the Stop / consolidation-update hook reports its result, that report
+is prefixed with `==== AIMS (internal) ====` and kept terse — one line or
+a short phrase ("nodes updated", "queue drained", "4 dirty"). The prefix
+applies ONLY to the update-hook result, not to regular conversational
+mentions of aims topics elsewhere in a reply (ADR-0021).
 
 ## A note on plugin sprawl
 
