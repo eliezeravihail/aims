@@ -122,8 +122,13 @@ fi
 # no hook blocks edits.
 cat <<'EOF'
 [aims] Project conventions (factual):
-       - Non-trivial changes are designed via /plan before implementation; the
-         design doc lands in docs/plans/ and is approved before code.
+       - For a non-trivial change, the assistant plans before implementing —
+         read-only discovery, then a Status: draft plan in docs/plans/, then
+         user approval, then implementation, then inline close-out. The full
+         flow is in .claude/commands/plan.md. The /plan slash command is an
+         OPTIONAL shortcut that dispatches Phase 1-2 to an Opus subagent —
+         use it when the current model is not Opus and planning quality
+         matters; otherwise plan inline.
        - After a non-trivial source change, the relevant docs/memory node is
          updated to reflect it (the post-edit hook names the node). When that
          hook reports a possible concurrent edit by another session, the user

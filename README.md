@@ -39,12 +39,18 @@ session after session.
 
 ## What you get
 
-Two slash commands — that's the whole user-facing surface (see ADR-0010):
+Planning is a project **behavior**, not a command to remember (ADR-0022).
+For a non-trivial change, the assistant runs read-only discovery → writes a
+`Status: draft` plan to `docs/plans/` → asks for approval → implements →
+inline close-out. The `prompt-submit` hook describes this convention
+factually for every actionable prompt.
 
-| Command              | Model | Purpose                                                                       |
-|----------------------|-------|-------------------------------------------------------------------------------|
-| `/plan <task>`       | Opus  | Read-only exploration → ExitPlanMode → durable plan file → inline close-out   |
-| `/install-on <path>` | Opus  | Bootstrap (or idempotently re-install) ADRs, hooks, memory tree, CLAUDE.md    |
+Two slash commands exist as optional shortcuts (see ADR-0010, ADR-0022):
+
+| Command              | What it does                                                                                          |
+|----------------------|--------------------------------------------------------------------------------------------------------|
+| `/plan <task>`       | Dispatches Phase 1-2 to an Opus subagent (read-only discovery + draft write); main session resumes for approval / implementation / close-out. Use when the session model is not Opus. |
+| `/install-on <path>` | Bootstrap (or idempotently re-install) ADRs, hooks, memory tree, CLAUDE.md.                            |
 
 Everything that used to be its own command now happens **inline**, with no
 command to remember:
@@ -60,8 +66,9 @@ command to remember:
   that is the automatic marker + consolidation loop (ADR-0007 / ADR-0009).
 - **Mechanical edits and notes** are just ordinary edits — do the work.
 
-The model is pinned per command — it switches automatically and returns to
-your session model after.
+`/plan` does NOT switch the main session model — only the Phase 1-2
+subagent runs on Opus (ADR-0022). Implementation and close-out run on
+whatever the main session is on.
 
 ## Hooks (per-project, installed by `/install-on`)
 

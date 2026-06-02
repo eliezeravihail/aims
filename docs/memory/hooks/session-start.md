@@ -21,18 +21,20 @@ external_refs:
   - { path: docs/adr/0007-tree-based-memory-with-auto-maintenance.md, kind: adr, why: surfaces docs/memory/README.md (the tree's tag list) up to 2KB }
 owners:
   - ema
-dirty: true
-last_touched: 2026-06-02T14:27:12Z
-last_consolidated: 2026-05-31T14:24:04Z
+dirty: false
+last_touched: 2026-06-02T15:13:24Z
+last_consolidated: 2026-06-02T15:13:24Z
 ---
 
 ## Purpose
 
 SessionStart hook — informational only, never blocks. Surfaces:
 in-progress plans; **orphan draft plans** without an active lock
-(ADR-0015); recently-touched ADRs; stale-planning-lock warnings; the
-memory tree's top-level README.md (ADR-0007); and a one-line memory
-pipeline health summary (ADR-0008).
+(ADR-0015); recently-touched ADRs; the memory tree's top-level
+README.md (ADR-0007); a one-line memory pipeline health summary
+(ADR-0008); and a **standing project-conventions block** that includes
+the planning-as-behavior convention (ADR-0022) and the
+`==== AIMS (internal) ====` reply-format convention (ADR-0021).
 
 ## Design rationale
 

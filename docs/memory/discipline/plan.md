@@ -22,20 +22,28 @@ external_refs:
 owners:
   - ema
 dirty: false
-last_touched: 2026-05-31T14:25:01Z
-last_consolidated: 2026-05-31T14:25:01Z
+last_touched: 2026-06-02T15:13:24Z
+last_consolidated: 2026-06-02T15:13:24Z
 ---
 
 ## Purpose
 
-Documents the /plan slash command — the entry point to non-trivial work
-in aims. /plan runs read-only discovery (by discipline, not a lock — see
-ADR-0020), **materializes a `Status: draft` plan to disk** (Phase 2, via
-the Write tool), then asks for approval. Approval flips the status to
-`in-progress`; abort deletes the draft. No `.planning-lock` is created.
+Documents the `/plan` slash command. Per ADR-0022, planning is a project
+**behavior** — the `prompt-submit` router injection describes the flow
+factually so the assistant runs it inline for any actionable prompt.
+`/plan` is now an **optional Opus shortcut**: it dispatches Phase 1-2
+(read-only discovery + draft write) to a `general-purpose` Agent
+subagent with `model: "opus"`; the main session resumes for Phase 3
+(approval), Phase 4 (implementation), Phase 5 (close-out). The
+command's frontmatter no longer carries `model: opus` — the main
+session model is unchanged.
 
 ## Design rationale
 
+- **Planning is a behavior, `/plan` is a shortcut** (ADR-0022): the
+  hook injection describes the convention factually so the assistant
+  plans inline; `/plan` is for users on non-Opus models who want a
+  one-shot Opus planning pass without switching the whole session.
 - **Draft-on-disk before approval** (ADR-0015): the file IS the artifact
   to review, and survives session interruption mid-flow. SessionStart
   surfaces a draft-without-lock as an orphan that needs `touch` (resume)
@@ -44,8 +52,8 @@ the Write tool), then asks for approval. Approval flips the status to
   file, real code IS the spec) + Open design questions + Close-out
   checklist. No phase-by-phase narration, no multi-option essays.
 - Phase 1 is read-only by discipline (no lock); Phase 2 writes the draft
-  with the Write tool; Phase 3 is the approval gate; Phase 4 = implement;
-  Phase 5 = close-out.
+  with the Write tool; Phase 3 = approval gate; Phase 4 = implement;
+  Phase 5 = inline close-out.
 
 ## Invariants & gotchas
 
@@ -65,5 +73,9 @@ the Write tool), then asks for approval. Approval flips the status to
 
 
 ## Pointers
+
+- ADR-0022 — planning-as-behavior; `/plan` dispatches Opus subagent.
+- ADR-0015 — draft-on-disk + auto-engage router (preceding design).
+- `templates/commands/plan.md` — single source of truth.
 
 ## Open questions

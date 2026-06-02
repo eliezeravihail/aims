@@ -215,7 +215,7 @@ fi
 router_text=""
 case "$intent" in
   bug|feature|refactor|decision|mechanical|ambiguous)
-    router_text="[aims] Project convention: in this repo, non-trivial changes are designed via /plan before implementation — the design doc lands in docs/plans/ and is approved before code. (Informational; nothing is blocked.)"
+    router_text="[aims] Project convention: for a non-trivial change, plan before implementing — read-only discovery, then a \`Status: draft\` plan written to \`docs/plans/\`, then user approval, then implementation, then inline close-out (verify, ADR-if-warranted, mark completed, refresh memory). The full flow is documented in \`.claude/commands/plan.md\`. Planning is the *behavior*; the \`/plan\` slash command is an OPTIONAL shortcut that dispatches the planning pass to an Opus subagent — use it when the current model is not Opus and the task warrants careful planning. If you (the assistant) are not running on Opus and this prompt looks like a non-trivial change, ask the user ONCE via AskUserQuestion whether to use \`/plan\` for an Opus planner; otherwise just plan inline. (Informational; nothing is blocked.)"
     ;;
 esac
 
