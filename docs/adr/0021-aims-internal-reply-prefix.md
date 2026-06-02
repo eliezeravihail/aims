@@ -28,7 +28,10 @@ We will adopt a project-wide convention: **when the assistant's
 user-facing reply touches aims-internal topics — memory nodes,
 consolidation queue, inbox, dirty markers, plan close-out, hook status —
 that part of the reply is prefixed with `==== AIMS (internal) ====`** so
-the user can distinguish plugin plumbing from substantive work.
+the user can distinguish plugin plumbing from substantive work. The
+prefixed section is kept **terse** — one line or a short phrase
+("nodes updated", "queue drained", "4 dirty"). No per-node prose unless
+the user asks for it.
 
 The convention is propagated into every aims-injected context blob:
 - `session-start.sh` adds it as a fourth standing-conventions bullet.

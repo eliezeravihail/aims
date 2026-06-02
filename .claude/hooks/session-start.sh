@@ -132,7 +132,9 @@ cat <<'EOF'
          topics (memory nodes, consolidation queue, inbox, dirty markers,
          plan close-out, hook status), that part of the reply is prefixed
          with `==== AIMS (internal) ====` so the user can distinguish
-         plugin plumbing from substantive work.
+         plugin plumbing from substantive work. Keep it terse — one line
+         or a short phrase ("nodes updated", "queue drained", "4 dirty").
+         No prose, no per-node detail unless the user asks.
        - These are conventions, not gates: no aims hook blocks an edit.
 EOF
 
