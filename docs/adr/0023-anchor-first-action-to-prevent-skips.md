@@ -109,3 +109,16 @@ approval semantics in CLAUDE.md.
   injected note should name the target file and the missing plan, and
   the assistant should transition to Phase 2 (write draft) rather than
   proceeding with edits.
+
+## Amendment 2026-06-02: trivial-skip must be declared
+
+In dogfooding ADR-0023 (a README update was about to land without a
+plan), the user asked whether the skip was a forgetful drift or a
+deliberate trivial-judgement. The skip was deliberate (doc-only edit,
+inline-eligible per CLAUDE.md), but the *judgement was silent* — and
+a silent skip is indistinguishable from the failure mode ADR-0023
+addresses. Added to CLAUDE.md "Workflow": when the assistant decides
+a request is inline-eligible, it states that judgement explicitly in
+one short sentence before editing (e.g. *"Trivial — no plan,
+proceeding inline."* / *"טריוויאלי, לא צריך תכנון, עובר לביצוע."*).
+Visible judgement is correctable; silent judgement is not.

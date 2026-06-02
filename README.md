@@ -3,10 +3,10 @@
 
 📄 **Site:** https://eliezeravihail.github.io/aims/
 
-Lean code-development discipline for Claude Code. Two slash commands, six
-project-local hooks, idempotent bootstrap. No multi-agent pipeline, no
-orchestration overhead — just the discipline that makes single-dispatch
-sessions reliable on Opus / Sonnet baselines.
+Lean code-development discipline for Claude Code. Two slash commands,
+project-local hooks that inform but never block, idempotent bootstrap.
+No multi-agent pipeline, no orchestration overhead — just the discipline
+that makes single-dispatch sessions reliable on Opus / Sonnet baselines.
 
 ## What this is for (and what it isn't)
 
@@ -80,9 +80,13 @@ whatever the main session is on.
   creates a lock. Suppresses on slash-prefixed prompts and short follow-ups.
   See ADR-0004 + ADR-0020.
 - **PreToolUse** (`pre-write`) — never blocks. On the first source edit of a
-  session with no in-progress plan, injects the planning convention once, as a
-  factual note. "Source" is defined by exclusion (anything outside `docs/`,
-  `tests/`, `*.md`, `.claude/`); no project path is hardcoded. See ADR-0020.
+  session with no `Status: draft`/`Status: in-progress` plan in `docs/plans/`,
+  injects a **state-aware** factual note that names the specific file being
+  edited, the missing plan, and the approval-semantics rule (brief
+  `yes`/`do it` approvals authorize Phase 2, not Phase 4). "Source" is
+  defined by exclusion (anything outside `docs/`, `tests/`, `*.md`,
+  `.claude/`); no project path is hardcoded. The note fires once per
+  session. See ADR-0020 + ADR-0023.
 - **PostToolUse** (`post-edit-marker`) — when an edit touches a file a memory
   node references, flags that node `dirty`, injects a factual note naming the
   node to update, and stamps an **advisory** marker (`<leaf>.lock`; NOT a

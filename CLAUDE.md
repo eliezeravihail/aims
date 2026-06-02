@@ -54,6 +54,15 @@ conversational reply is brief. This closes the conversational-drift
 gap that the PreToolUse hook's state-aware note exists to anchor
 (ADR-0023).
 
+**Trivial-skip must be declared.** When the assistant judges a request
+inline-eligible (doc-only edit, mechanical change, obvious-scope bug
+fix, ad-hoc question), it states that judgment explicitly in one
+short sentence before editing — e.g. *"Trivial — no plan, proceeding
+inline."* / *"טריוויאלי, לא צריך תכנון, עובר לביצוע."* — so the
+planning-vs-inline decision is visible and you can override it. A
+silent skip is indistinguishable from the conversational-drift failure
+mode ADR-0023 addresses; an announced skip is a recorded judgment.
+
 ## Models policy
 
 - Planning quality scales with model. If the main session is not on
