@@ -56,41 +56,53 @@ plan describes them as a sub-phase of Phase 4 for simplicity).
 
 ### 1. Optional secretary install offer
 
-After the normal aims install steps, detect whether secretary is
-installed for the current user:
+secretary is distributed as a **slash command only** (confirmed by
+inspecting `https://github.com/eliezeravihail/The_secretary`: the repo
+contains `README.md` + `.claude/commands/secretary.md`, no `skills/`).
+
+After the normal aims install steps, detect:
 
 ```bash
-[ -f "$HOME/.claude/commands/secretary.md" ] \
-  || [ -d "$HOME/.claude/skills/secretary" ]
+[ -f "$HOME/.claude/commands/secretary.md" ]
 ```
-
-(Two locations — slash-command form and skill form. Exact layout is an
-open question; see below.)
 
 - **Present** → skip the offer; proceed to registration.
 - **Absent** → AskUserQuestion: *"secretary is not installed. Install it
   now? [yes / no]"*.
   - `no` → skip silently.
-  - `yes` → `git clone <SECRETARY_REPO_URL>` into a temp dir, copy the
-    relevant files into `~/.claude/`, then proceed to registration.
-    Wrap in error handling; on failure emit one factual line and
-    continue. **Never fail the aims install because secretary install
-    failed** (best-effort).
+  - `yes` → `git clone --depth 1 https://github.com/eliezeravihail/The_secretary`
+    into a temp dir, then `cp <tmp>/.claude/commands/secretary.md
+    ~/.claude/commands/secretary.md` (mkdir -p the parent). Wrap in error
+    handling; on failure emit one factual line and continue. **Never
+    fail the aims install because secretary install failed**
+    (best-effort).
 
 ### 2. Register this project's cwd (idempotent, one-shot)
 
 Regardless of which branch above ran, if secretary is now present:
 
+Each line is `<absolute-cwd>\t<one-line-description>`: cwd followed by
+a TAB and a free-form one-sentence description of the project (what it
+is — secretary displays this next to the path on a match). install-on
+asks the user for the description once, defaulting to the project's
+directory basename if the user accepts the default.
+
 ```bash
 REG="$HOME/.claude/secretary/aims-projects.txt"
 mkdir -p "$(dirname "$REG")"
 CWD="$(cd "$TARGET" && pwd)"
+DESC="$(ask_user "One-line description of this project" "$(basename "$CWD")")"
 touch "$REG"
-grep -Fxq -- "$CWD" "$REG" || printf '%s\n' "$CWD" >> "$REG"
+# idempotent: match on the cwd column only (first field, tab-separated)
+awk -F'\t' -v p="$CWD" '$1==p{found=1} END{exit !found}' "$REG" \
+  || printf '%s\t%s\n' "$CWD" "$DESC" >> "$REG"
 ```
 
-One absolute path per line. Append only if not already present.
-Strict equality — no normalization beyond what `cd && pwd` produces.
+One row per project. Append only if the cwd column is not already
+present. Strict equality on cwd — no normalization beyond what
+`cd && pwd` produces. If a row already exists with a different
+description, the existing description is preserved (re-running
+install-on does not silently overwrite the user's earlier description).
 
 If secretary was absent and the user declined to install it, **do not
 create the registry file**. (Nothing would read it.)
@@ -174,15 +186,17 @@ secretary's side beyond "read the file, match the cwd."
 
 Single PR. No deprecation period — v3 was never implemented.
 
-## Open questions (please confirm before implementation)
+## Open questions
 
-1. **Secretary repo URL** for the auto-clone path? (e.g.
-   `https://github.com/eliezeravihail/The_secretary`?)
-2. **Secretary's distribution layout**: a slash command
-   (`~/.claude/commands/secretary.md`), a skill
-   (`~/.claude/skills/secretary/`), or both? Determines the detection
-   check and what `git clone` copies into `~/.claude/`.
-3. **Registry file path inside `~/.claude/`**: proposed
-   `~/.claude/secretary/aims-projects.txt`. Confirm or override.
-4. **Register a project nickname / display name** alongside the cwd, or
-   strictly the absolute cwd only? Default: cwd only (simplest).
+All four open questions from the earlier revision are resolved:
+
+1. ✓ Repo URL: `https://github.com/eliezeravihail/The_secretary`.
+2. ✓ Distribution: slash command only
+   (`~/.claude/commands/secretary.md`); no `skills/` form.
+3. ✓ Registry path: `~/.claude/secretary/aims-projects.txt`.
+4. ✓ Row format: `<absolute-cwd>\t<one-line-description>` (TAB-separated,
+   description is a free-form one-sentence explanation of the project,
+   defaulting to the directory basename if the user accepts the
+   default).
+
+No outstanding blockers; awaiting Phase 3 approval to implement.
