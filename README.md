@@ -90,6 +90,11 @@ imperative trips Claude's prompt-injection defense and is shown to the user
 instead of being treated as context. No hook ever blocks an edit — there is no
 `aims-mode` and no planning lock.
 
+When the assistant's user-facing reply touches aims-internal topics (memory
+nodes, consolidation queue, inbox, dirty markers, plan close-out, hook
+status), that part of the reply is prefixed with `==== AIMS (internal) ====`
+so plugin plumbing is distinguishable from substantive work (ADR-0021).
+
 ## A note on plugin sprawl
 
 Command and tool pollution in AI coding environments is a real and growing

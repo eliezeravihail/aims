@@ -128,6 +128,11 @@ cat <<'EOF'
          updated to reflect it (the post-edit hook names the node). When that
          hook reports a possible concurrent edit by another session, the user
          is asked before updating the node.
+       - Reply-format: when the user-facing reply touches aims-internal
+         topics (memory nodes, consolidation queue, inbox, dirty markers,
+         plan close-out, hook status), that part of the reply is prefixed
+         with `==== AIMS (internal) ====` so the user can distinguish
+         plugin plumbing from substantive work.
        - These are conventions, not gates: no aims hook blocks an edit.
 EOF
 

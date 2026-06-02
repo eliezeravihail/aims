@@ -109,7 +109,7 @@ done < <(list_leaves)
 
 [ -z "$notes" ] && exit 0
 
-NOTE="aims memory: ${notes} Per project convention, the relevant node body is updated to reflect such changes; when a concurrent edit by another session is reported, the user is asked before updating. (Factual context; nothing is blocked.)"
+NOTE="aims memory: ${notes} Per project convention, the relevant node body is updated to reflect such changes; when a concurrent edit by another session is reported, the user is asked before updating. Reply-format: if the user-facing reply mentions this node/dirty/consolidation, that part is prefixed with \`==== AIMS (internal) ====\`. (Factual context; nothing is blocked.)"
 
 if command -v jq >/dev/null 2>&1; then
   jq -nc --arg c "$NOTE" '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:$c}}'

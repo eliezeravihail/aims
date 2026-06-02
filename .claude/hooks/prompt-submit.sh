@@ -215,7 +215,8 @@ fi
 router_text=""
 case "$intent" in
   bug|feature|refactor|decision|mechanical|ambiguous)
-    router_text="[aims] Project convention: in this repo, non-trivial changes are designed via /plan before implementation — the design doc lands in docs/plans/ and is approved before code. (Informational; nothing is blocked.)"
+    router_text="[aims] Project convention: in this repo, non-trivial changes are designed via /plan before implementation — the design doc lands in docs/plans/ and is approved before code. (Informational; nothing is blocked.)
+Reply-format convention: when the user-facing reply touches aims-internal topics (memory nodes, consolidation queue, inbox, dirty markers, plan close-out, hook status), that part of the reply is prefixed with \`==== AIMS (internal) ====\` so the user can distinguish plugin plumbing from substantive work."
     ;;
 esac
 

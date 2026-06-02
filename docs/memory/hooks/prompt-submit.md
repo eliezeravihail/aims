@@ -20,8 +20,8 @@ external_refs:
   - { path: docs/adr/0016-prompt-memory-injection.md,           kind: adr, why: per-prompt memory node body auto-injection }
 owners:
   - ema
-dirty: false
-last_touched: 2026-05-31T21:37:22Z
+dirty: true
+last_touched: 2026-06-02T13:10:03Z
 last_consolidated: 2026-05-31T21:37:22Z
 ---
 

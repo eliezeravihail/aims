@@ -25,8 +25,8 @@ external_refs:
   - { path: tests/consolidate.sh, kind: test, why: end-to-end test against a Python mock Anthropic endpoint }
 owners:
   - ema
-dirty: false
-last_touched: 2026-06-01T06:52:29Z
+dirty: true
+last_touched: 2026-06-02T13:10:23Z
 last_consolidated: 2026-06-01T06:52:29Z
 ---
 

@@ -14,6 +14,9 @@ docs/memory/_inbox.md
 # Prompt-submit per-session injection state (ADR-0016 dedup ledger)
 .claude/memory/.injected-*
 
+# Pre-write per-session planning-note marker (ADR-0020 inject-once)
+.claude/.aims-plan-note-*
+
 # Memory-node sidecar lockfiles (ADR-0019, per-leaf multi-session mutex)
 docs/memory/**/*.lock
 
