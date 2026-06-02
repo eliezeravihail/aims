@@ -1,6 +1,7 @@
 # Plan: Anchor "first action = write draft" to prevent planning skips
-Status: draft
+Status: completed
 Started: 2026-06-02
+Completed: 2026-06-02
 
 ## TL;DR
 
@@ -117,3 +118,55 @@ Append ADR-0023 row.
 - The state-aware note is longer than the current one. Larger
   injections risk being skimmed; mitigated by being concrete (file
   name + missing-plan fact) rather than abstract.
+
+## Outcome
+
+Two mitigations landed:
+
+1. `templates/hooks/pre-write.sh:84` (+ `.claude/hooks/` mirror): NOTE
+   rewritten to name (a) the file about to be edited, (b) the missing
+   `Status: draft`/`Status: in-progress` plan in `docs/plans/`, and
+   (c) the approval-semantics rule ("yes"/"do it" → Phase 2, not 4).
+   Hook still never blocks; per-session inject-once preserved.
+2. `CLAUDE.md` "Workflow" section: new paragraph **"Approval is for
+   Phase 2, not Phase 4."** codifying the same rule in durable session
+   context.
+
+ADR-0023 records the diagnosis (conversational drift on brief
+approvals) and the decision. `docs/memory/hooks/pre-write.md` carries
+a stale-warning note + Pointers updated to ADR-0020/0023; full body
+rewrite carried as a follow-up (out of scope for this plan).
+
+## Closing checks
+
+- Plan: docs/plans/2026-06-02-anchor-first-action.md → completed
+- Verification:
+  - `bash -n templates/hooks/*.sh && bash -n .claude/hooks/*.sh` → OK.
+  - `bash tests/router-auto-plan.sh` → all PASS.
+  - `bash tests/inform-never-block.sh` → 26 passed, 1 failed
+    (English-bug planning-note test). Pre-existing failure — the
+    test sends a raw string but the hook expects JSON via jq.
+    Reproduced on the parent commit (1bdc1f3) before any change
+    here. Carried as TODO; not a regression.
+  - `grep -F "About to edit" templates/hooks/pre-write.sh
+    .claude/hooks/pre-write.sh` → both hits present.
+  - `grep -F "Approval is for Phase 2" CLAUDE.md` → present.
+  - `bash .claude/memory/lint.sh` → clean (15 nodes).
+  - `bash .claude/memory/find-dirty.sh` → empty.
+- ADR:      WROTE — docs/adr/0023-anchor-first-action-to-prevent-skips.md
+- Nodes:    UPDATE — hooks/pre-write (Pointers + stale-warning;
+            full body rewrite deferred).
+- CLAUDE.md: UPDATE — Workflow ("Approval is for Phase 2" paragraph)
+- Tests:    EXISTING — inform-never-block + router-auto-plan cover
+            the never-block + once-per-session invariants. The
+            English-bug test failure is pre-existing.
+- TODO:
+  - Fix `tests/inform-never-block.sh` line 53 to pass a JSON
+    payload (`{"prompt":"…","session_id":"…"}`) — the hook switched
+    to JSON-only parsing some commits ago.
+  - Full body rewrite of `docs/memory/hooks/pre-write.md` (currently
+    annotated stale; describes pre-ADR-0020 blocking behavior).
+  - Per-prompt vs per-session retrigger of the pre-write note (see
+    Open design questions).
+  - Draft-coverage detection (file mentioned in `## Changes`) — out
+    of scope; revisit if the anchor proves insufficient.

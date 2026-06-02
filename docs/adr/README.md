@@ -46,3 +46,4 @@ add a row to the index below.
 | 0020 | Hooks inform, they never block (no planning lock; factual injection; advisory node marker) | proposed | 2026-06-02 |
 | 0021 | Demarcate aims-internal narration in user-facing replies with `===[aims: <msg>]===` | proposed | 2026-06-02 |
 | 0022 | Planning is a behavior; `/plan` dispatches an Opus subagent | proposed | 2026-06-02 |
+| 0023 | Anchor "first action = write draft" via state-aware pre-write note + CLAUDE.md approval-semantics rule | proposed | 2026-06-02 |

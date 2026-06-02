@@ -45,6 +45,15 @@ Two slash commands exist:
 Bug-fix patches, refactors with obvious scope, mechanical edits, ad-hoc
 questions: just do the work inline. The hooks layer keeps you honest.
 
+**Approval is for Phase 2, not Phase 4.** When the user says
+`כן` / `yes` / `do it` to a *proposal* (a sketch the assistant offered
+in conversation), that approves moving to Phase 2 — writing the
+`Status: draft` plan to `docs/plans/` — NOT Phase 4 (implementing).
+The plan-on-disk + a re-confirm gate stays in force even when the
+conversational reply is brief. This closes the conversational-drift
+gap that the PreToolUse hook's state-aware note exists to anchor
+(ADR-0023).
+
 ## Models policy
 
 - Planning quality scales with model. If the main session is not on

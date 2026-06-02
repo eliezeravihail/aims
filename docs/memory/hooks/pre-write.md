@@ -19,8 +19,8 @@ external_refs:
 owners:
   - ema
 dirty: false
-last_touched: 2026-06-01T06:52:29Z
-last_consolidated: 2026-06-01T06:52:29Z
+last_touched: 2026-06-02T15:53:38Z
+last_consolidated: 2026-06-02T15:53:38Z
 ---
 
 ## Purpose
@@ -71,6 +71,10 @@ Exit 2 surfaces stderr to the model and the user.
 - `target` extraction handles both `tool_input.file_path` and
   `tool_input.path` — the latter is how `NotebookEdit` reports.
 
+(Body above is stale — describes ADR-0017/0019-era blocking behavior
+that ADR-0020 removed. Current hook is inform-only; the NOTE is
+state-aware per ADR-0023. Re-consolidate on next non-trivial edit.)
+
 ## Known issues
 
 - fixed (ADR-0019): the carve-out matched `target` against
@@ -80,6 +84,14 @@ Exit 2 surfaces stderr to the model and the user.
 
 ## Pointers
 
-- ADR-0019 — sidecar lock check + path normalization.
+- ADR-0019 — sidecar lock check + path normalization (historical).
+- ADR-0020 — hooks inform, never block; removed all gating from this
+  hook. The Three-responsibility model in ## Purpose above is obsolete.
+- ADR-0023 — state-aware NOTE: names the file being edited and the
+  missing plan; anchors the planning convention to the moment of
+  first source edit, fixing the conversational-drift skip mode.
+- `templates/hooks/pre-write.sh:84` — the NOTE string.
+- `tests/inform-never-block.sh` — never-block + once-per-session
+  inject invariant tests.
 
 ## Open questions
