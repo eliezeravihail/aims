@@ -46,13 +46,24 @@ hooks layer keeps you honest.
 
 ## Hooks
 
-Mode: `nudge` (configured at `.claude/aims-mode`). Change with:
-```
-echo nudge > .claude/aims-mode    # warn only
-echo block > .claude/aims-mode    # block source edits without active plan
-```
-The planning lock (`.claude/.planning-lock`) always blocks edits regardless
-of mode — this is what makes `/plan` actually read-only.
+**aims hooks inform; they never block.** There is no planning lock and no
+`block` mode — a hook's only effect is to inject **factual** context
+(`additionalContext`), never to stop an edit (ADR-0020). Discipline is
+achieved by awareness:
+
+- `UserPromptSubmit` injects the relevant memory node and, for an actionable
+  prompt, a factual planning-convention note.
+- `PreToolUse` (`pre-write`) never blocks; on the first source edit of a
+  session with no in-progress plan it injects the planning convention once.
+- `PostToolUse` (`post-edit-marker`) marks the affected memory leaf `dirty`,
+  injects a factual note naming the node to update, and stamps an advisory
+  marker (`<leaf>.lock` = session-id + mtime; NOT a block). Concurrency: same
+  session refreshes silently; another session's marker older than
+  `AIMS_NODE_LOCK_STALE_SEC` (default 3600s) is taken over; a fresher one is
+  reported as a possible concurrent edit (ask the user before updating).
+
+Injected text MUST be factual, never imperative ("CRITICAL: do X"). Behavior
+guard: `tests/inform-never-block.sh` (jq-free) + `tests/router-auto-plan.sh`.
 
 ## Plugin-specific notes (not from template)
 

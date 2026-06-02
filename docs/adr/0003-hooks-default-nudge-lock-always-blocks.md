@@ -1,8 +1,8 @@
 # ADR-0003: Hooks default to nudge, planning lock always blocks
-Status: accepted
+Status: superseded
 Date: 2026-05-06
 Supersedes: —
-Superseded by: —
+Superseded by: docs/adr/0020-hooks-inform-never-block.md
 
 ## Context
 

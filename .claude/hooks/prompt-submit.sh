@@ -5,11 +5,11 @@
 #
 # Two jobs in one emission:
 #
-#   1. ROUTER + AUTO-ENGAGE /plan (ADR-0004 + ADR-0015). Classifies intent
-#      into one of: bug, feature, refactor, decision, mechanical, question,
-#      ambiguous, or none. For any actionable intent (anything except
-#      `question`), creates `.claude/.planning-lock` and instructs the
-#      session to draft a plan to disk before any edits.
+#   1. ROUTER (factual awareness — never a lock). Classifies intent into one
+#      of: bug, feature, refactor, decision, mechanical, question, ambiguous,
+#      or none. For any actionable intent, injects a FACTUAL planning-convention
+#      note. NEVER creates a lock and NEVER blocks (overhaul plan
+#      docs/plans/2026-06-01-aims-overhaul.md).
 #
 #   2. MEMORY INJECTOR (ADR-0016). For every memory node whose `code:`
 #      glob (fnmatch per ADR-0014) is plausibly referenced by the prompt,
@@ -22,7 +22,6 @@
 #
 # Suppression rules (return early, neither job runs):
 #   - Prompt starts with `/`             — user already chose a command
-#   - A planning lock is active          — already mid-flow
 #   - An in-progress plan exists AND the prompt is short  — likely a follow-up
 #   - Prompt empty                       — nothing to route
 #
@@ -44,8 +43,6 @@ fi
 case "$prompt" in
   /*) exit 0 ;;
 esac
-
-[ -f .claude/.planning-lock ] && exit 0
 
 PLAN_DIR="${AIMS_PLAN_DIR:-docs/plans}"
 has_active_plan=0
@@ -185,11 +182,22 @@ elif match '^(how |what |why |when |where |can |could |should |does |is |are |do
   intent="question"
 fi
 
+# Hebrew interrogatives — the Latin-script matchers above never fire on
+# Hebrew text, so without this branch every Hebrew question falls through to
+# the ambiguous fallback. Questions ending in "?" are already caught above
+# regardless of language; this handles the ones that don't.
+if [ -z "$intent" ]; then
+  case "$prompt" in
+    *"מה "*|*איך*|*כיצד*|*למה*|*מדוע*|*האם*|*מתי*|*איפה*|*היכן*|*כמה*|*"מי "*|*איזה*|*איזו*|*אילו*|*מהו*|*מהי*)
+      intent="question" ;;
+  esac
+fi
+
 # Multilingual fallback: regex matchers above are English-only. If no
 # intent was inferred but the prompt is long enough to be actionable
-# (and isn't pasted code), assume an ambiguous task and let auto-engage
-# carry it into /plan mode (the model can still rm the lock if the user
-# actually meant a question).
+# (and isn't pasted code), mark it ambiguous. Ambiguous no longer creates a
+# planning lock (see the router section below) — it only suggests /plan — so
+# a misread non-English prompt can never deadlock edits.
 if [ -z "$intent" ]; then
   plen=${#prompt}
   if [ "$plen" -ge 40 ] && [ "$plen" -le 2048 ] \
@@ -198,37 +206,18 @@ if [ -z "$intent" ]; then
   fi
 fi
 
-# ── Build router/auto-engage text only for actionable intents ────────────
+# ── Build router text — factual awareness, never a lock ───────────────────
+# AIMS informs, never blocks/locks (docs/plans/2026-06-01-aims-overhaul.md). For an
+# actionable-looking prompt, inject the planning convention as a FACTUAL note (an
+# imperative "you must plan" would trip Claude's prompt-injection defense and be shown
+# to the user instead of treated as context). NO .planning-lock is ever created.
+# Questions and trivial prompts get nothing.
 router_text=""
-if [ -n "$intent" ] && [ "$intent" != "question" ]; then
-  # Create the planning lock NOW so Edit/Write/MultiEdit are blocked.
-  mkdir -p .claude
-  touch .claude/.planning-lock
-
-  read -r -d '' router_text <<'TEXT' || true
-[aims-router] Intent looks like a __INTENT__ task — auto-engaging /plan.
-
-The planning lock (.claude/.planning-lock) is now in place; Edit/Write
-are blocked until the user approves a draft. Run the /plan flow:
-
-  Phase 1: read-only exploration (Read, Grep, Glob, Bash read-only).
-  Phase 2: write the draft to docs/plans/<UTC-date>-<slug>.md with
-           Status: draft using the Write tool (the lock carves out writes
-           under docs/plans/ — ADR-0017). Print: "Draft saved to
-           docs/plans/<file>. Approve / edit / abort?".
-  Phase 3: on approval → flip Status: draft → in-progress, then
-           `rm -f .claude/.planning-lock`, then implement (Phase 4).
-           On reject/iterate → rewrite the draft in place; re-ask.
-           On abort → delete the draft + remove the lock.
-  Phase 5: inline close-out (Status: in-progress → completed,
-           auto-ADR, node consolidation) — same as before.
-
-Skip auto-engagement only if the user's prompt explicitly opts out
-("just patch it", "don't plan, just do it", "אל תתכנן"). In that case
-run `rm -f .claude/.planning-lock` and proceed inline.
-TEXT
-  router_text=${router_text//__INTENT__/$intent}
-fi
+case "$intent" in
+  bug|feature|refactor|decision|mechanical|ambiguous)
+    router_text="[aims] Project convention: in this repo, non-trivial changes are designed via /plan before implementation — the design doc lands in docs/plans/ and is approved before code. (Informational; nothing is blocked.)"
+    ;;
+esac
 
 # ── Combine + emit one additionalContext ─────────────────────────────────
 combined=""
@@ -253,6 +242,6 @@ else
 fi
 
 # Breadcrumbs on stderr.
-[ -n "$router_text" ]  && printf '[aims-router] intent=%s — auto-engaging /plan.\n' "$intent" >&2
+[ -n "$router_text" ] && printf '[aims-router] intent=%s — factual planning note injected (no lock).\n' "$intent" >&2
 [ "${#matched[@]}" -gt 0 ] && printf '[aims-memory] injected %d node(s)\n' "${#matched[@]}" >&2
 exit 0
