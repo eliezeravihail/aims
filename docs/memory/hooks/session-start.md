@@ -22,8 +22,8 @@ external_refs:
 owners:
   - ema
 dirty: false
-last_touched: 2026-06-02T15:13:24Z
-last_consolidated: 2026-06-02T15:13:24Z
+last_touched: 2026-06-02T15:43:20Z
+last_consolidated: 2026-06-02T15:43:20Z
 ---
 
 ## Purpose
@@ -65,6 +65,10 @@ the planning-as-behavior convention (ADR-0022) and the
 - `templates/hooks/session-start.sh` — single source of truth.
 - `templates/hooks/exit-plan-mode.sh` — the bridge that creates the
   drafts whose orphans this hook warns about.
+- ADR-0021 — the standing "Project conventions" block surfaces the
+  reply-format marker `===[aims: <msg>]===` for consolidation reports.
+- ADR-0022 — the conventions block describes planning-as-behavior and
+  the optional `/plan` Opus-subagent shortcut.
 
 ## Open questions
 

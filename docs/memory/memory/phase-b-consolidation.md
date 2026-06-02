@@ -26,8 +26,8 @@ external_refs:
 owners:
   - ema
 dirty: false
-last_touched: 2026-06-02T15:13:24Z
-last_consolidated: 2026-06-02T15:13:24Z
+last_touched: 2026-06-02T15:43:39Z
+last_consolidated: 2026-06-02T15:43:39Z
 ---
 
 ## Purpose
@@ -108,6 +108,9 @@ breadcrumbs (non-duplication invariant).
 - ADR-0018 — superseded (in-frontmatter claim experiment).
 - ADR-0019 — sidecar `<leaf>.lock` mutex + EXIT trap; the design in
   force.
+- ADR-0021 — the consolidation prompt carries the reply-format note:
+  hook results are reported to the user as a single line
+  `===[aims: <message>]===`.
 - `templates/hooks/stop-consolidate.sh:1-148` — orchestrator.
 - `templates/memory/consolidate.sh:1-100` — per-node prompt builder.
 

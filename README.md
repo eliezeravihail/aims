@@ -98,10 +98,11 @@ instead of being treated as context. No hook ever blocks an edit — there is no
 `aims-mode` and no planning lock.
 
 When the Stop / consolidation-update hook reports its result, that report
-is prefixed with `==== AIMS (internal) ====` and kept terse — one line or
-a short phrase ("nodes updated", "queue drained", "4 dirty"). The prefix
-applies ONLY to the update-hook result, not to regular conversational
-mentions of aims topics elsewhere in a reply (ADR-0021).
+is emitted as a single short line `===[aims: <message>]===` — examples:
+`===[aims: nodes updated]===`, `===[aims: queue drained]===`,
+`===[aims: 4 dirty]===`. The marker applies ONLY to the update-hook
+result, not to regular conversational mentions of aims topics elsewhere
+in a reply (ADR-0021).
 
 ## A note on plugin sprawl
 

@@ -133,12 +133,13 @@ cat <<'EOF'
          updated to reflect it (the post-edit hook names the node). When that
          hook reports a possible concurrent edit by another session, the user
          is asked before updating the node.
-       - Reply-format: the `==== AIMS (internal) ====` prefix is used
-         ONLY to report the result of a consolidation/update-hook run
-         (the Stop hook draining the dirty queue or inbox). One line or
-         a short phrase ("nodes updated", "queue drained", "4 dirty").
-         Regular conversational mentions of aims topics (questions, plans,
-         status) are NOT prefixed — only the hook-result report is.
+       - Reply-format: report a consolidation/update-hook run as a
+         single line `===[aims: <message>]===` (e.g.
+         `===[aims: nodes updated]===`, `===[aims: queue drained]===`,
+         `===[aims: 4 dirty]===`). One line only; no opening/closing
+         wrapper. Regular conversational mentions of aims topics
+         (questions, plans, status) are NOT marked — only the
+         hook-result report is.
        - These are conventions, not gates: no aims hook blocks an edit.
 EOF
 

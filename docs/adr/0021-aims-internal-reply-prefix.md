@@ -78,8 +78,20 @@ that is entirely aims-internal carries the prefix once at the top.
 
 Grep for the convention across all hook injection points:
 
-    grep -l '==== AIMS (internal) ====' templates/hooks/
+    grep -l '===\[aims:' templates/hooks/
 
-Should list at least: `session-start.sh`, `prompt-submit.sh`,
-`post-edit-marker.sh`, `stop-consolidate.sh`. The same files in
-`.claude/hooks/` (dogfooded copies) must match.
+Should list at least `session-start.sh` and `stop-consolidate.sh`
+(the only two surfaces that still carry the convention text after
+the 2026-06-02 narrowing). The same files in `.claude/hooks/`
+(dogfooded copies) must match.
+
+## Amendment 2026-06-02: marker form shortened
+
+The original marker was a two-line wrapper
+(`==== AIMS (internal) ====` / `==== /AIMS ====`). User feedback:
+too prominent for what is meant to be a terse plumbing report.
+Adopted form is now a single line
+`===[aims: <message>]===` (examples: `===[aims: nodes updated]===`,
+`===[aims: queue drained]===`, `===[aims: 4 dirty]===`). Convention
+scope and Decision above are unchanged — only the literal marker
+form changed.
