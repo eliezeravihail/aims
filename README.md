@@ -67,25 +67,28 @@ your session model after.
 
 - **SessionStart** — surfaces in-progress plans, recent ADRs, and the
   memory-tree overview.
-- **UserPromptSubmit** — **router**. Detects intent (bug, feature, refactor,
-  decision, mechanical, question) and injects context that tells Claude to
-  ask via `AskUserQuestion` which workflow to follow before doing any work.
-  Hook is a deterministic shell classifier; Claude is the conversational
-  router. Suppresses on slash-prefixed prompts, during planning lock, and
-  for short follow-ups. See ADR-0004 for the design rationale.
-- **PreToolUse** — hard-blocks Edit/Write while a `.claude/.planning-lock`
-  file exists (the lock is set by `/plan`'s read-only phase). In `block` mode
-  also requires an in-progress plan when editing under `src/`, `lib/`,
-  `app/`, etc. In `nudge` mode this check warns instead of blocking.
+- **UserPromptSubmit** — **router** (informs, never locks). Detects intent
+  (bug, feature, refactor, decision, mechanical, question) and, for an
+  actionable prompt, injects a FACTUAL planning-convention note. It never
+  creates a lock. Suppresses on slash-prefixed prompts and short follow-ups.
+  See ADR-0004 + ADR-0020.
+- **PreToolUse** (`pre-write`) — never blocks. On the first source edit of a
+  session with no in-progress plan, injects the planning convention once, as a
+  factual note. "Source" is defined by exclusion (anything outside `docs/`,
+  `tests/`, `*.md`, `.claude/`); no project path is hardcoded. See ADR-0020.
 - **PostToolUse** (`post-edit-marker`) — when an edit touches a file a memory
-  node references, flags that node `dirty` so it gets re-consolidated
-  (ADR-0007).
+  node references, flags that node `dirty`, injects a factual note naming the
+  node to update, and stamps an **advisory** marker (`<leaf>.lock`; NOT a
+  block) for cross-session coordination (ADR-0007, ADR-0019/0020).
 - **Stop** (`stop-consolidate`) — throttled. Injects the in-band memory
   consolidation prompt for any `dirty` nodes (ADR-0009), and emits the plan
   close-out nudge when an `in-progress` plan exists (ADR-0010).
 - **SessionEnd** — flushes any pending memory state at session shutdown.
 
-Mode switch: `echo nudge > .claude/aims-mode` / `echo block > .claude/aims-mode`.
+All injected text is factual, never an imperative command (ADR-0020): an
+imperative trips Claude's prompt-injection defense and is shown to the user
+instead of being treated as context. No hook ever blocks an edit — there is no
+`aims-mode` and no planning lock.
 
 ## A note on plugin sprawl
 
@@ -305,8 +308,9 @@ templates/                   ← never globally registered; copied per target
 2. **Discipline through artifacts, not exhortation.** A plan that lives only
    in conversation context evaporates at compaction. A plan on disk survives,
    gets reviewed, and grounds the implementation session.
-3. **Hooks as guardrails, not handcuffs.** The lock on `/plan` is enforced.
-   Everything else is a nudge by default — the user decides when to upgrade
-   to `block` after they've felt the pain themselves.
+3. **Hooks inform, they never block (ADR-0020).** No hook can stop an edit;
+   each only injects factual context. Discipline comes from awareness — the
+   planning convention and node-update reminders are surfaced at the moment
+   they matter, and the human stays in control.
 4. **Idempotent and merge-aware.** Running `/install-on` on an existing
    project must not damage existing CLAUDE.md, settings, or layout.

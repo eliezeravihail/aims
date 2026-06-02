@@ -1,8 +1,8 @@
 # ADR-0017: `pre-write` carves out plan drafts during the planning lock
-Status: proposed
+Status: superseded
 Date: 2026-05-31
 Supersedes: —
-Superseded by: —
+Superseded by: docs/adr/0020-hooks-inform-never-block.md
 
 ## Context
 
