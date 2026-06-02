@@ -17,19 +17,27 @@ print_section() {
   printf '  %s\n' "$title"
 }
 
-# Stale lock detection.
+# Stale lock detection + auto-recovery.
+# A lock is only legitimate when it guards an actual /plan flow: either an
+# in-progress plan, or a draft awaiting approval (Phase 2 -> Phase 3). With
+# neither, the lock is orphaned (interrupted run, or the prompt-submit
+# auto-engage fired on something that turned out not to be a task) and would
+# otherwise silently block every Edit/Write in this fresh session. Clear it.
 if [ -f "$LOCK" ]; then
   has_active_plan=0
+  has_draft=0
   if [ -d "$PLAN_DIR" ]; then
-    if grep -lE '^Status:\s*in-progress' "$PLAN_DIR"/*.md 2>/dev/null | grep -q .; then
-      has_active_plan=1
-    fi
+    grep -lE '^Status:[[:space:]]*in-progress' "$PLAN_DIR"/*.md 2>/dev/null | grep -q . && has_active_plan=1
+    grep -lE '^Status:[[:space:]]*draft' "$PLAN_DIR"/*.md 2>/dev/null | grep -q . && has_draft=1
   fi
-  if [ "$has_active_plan" -eq 0 ]; then
-    printf '[aims] WARNING: .claude/.planning-lock exists but no in-progress plan.\n'
-    printf '       If you abandoned a /plan, run: rm .claude/.planning-lock\n'
-  else
+  if [ "$has_active_plan" -eq 1 ]; then
     printf '[aims] Planning lock active — Edit/Write blocked until ExitPlanMode.\n'
+  elif [ "$has_draft" -eq 1 ]; then
+    printf '[aims] Planning lock held for a draft awaiting approval (no in-progress plan yet).\n'
+    printf '       Approve/iterate the draft, or run: rm .claude/.planning-lock\n'
+  else
+    rm -f "$LOCK"
+    printf '[aims] Cleared an orphaned .claude/.planning-lock (no in-progress or draft plan).\n'
   fi
 fi
 
@@ -108,5 +116,19 @@ if [ -n "$MEMORY_HELPERS" ]; then
   brief=$(bash "$MEMORY_HELPERS/doctor.sh" --brief 2>/dev/null || true)
   [ -n "$brief" ] && printf '%s\n' "$brief"
 fi
+
+# Standing project conventions (factual). The session applies these to the
+# moment-of-change facts the PostToolUse hook injects. Inform, never coerce —
+# no hook blocks edits.
+cat <<'EOF'
+[aims] Project conventions (factual):
+       - Non-trivial changes are designed via /plan before implementation; the
+         design doc lands in docs/plans/ and is approved before code.
+       - After a non-trivial source change, the relevant docs/memory node is
+         updated to reflect it (the post-edit hook names the node). When that
+         hook reports a possible concurrent edit by another session, the user
+         is asked before updating the node.
+       - These are conventions, not gates: no aims hook blocks an edit.
+EOF
 
 exit 0

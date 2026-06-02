@@ -29,10 +29,10 @@ last_consolidated: 2026-05-31T14:25:01Z
 ## Purpose
 
 Documents the /plan slash command — the entry point to non-trivial work
-in aims. /plan creates `.claude/.planning-lock`, runs read-only
-discovery, **materializes a `Status: draft` plan to disk** (Phase 2,
-lock still held), then asks for approval. Approval flips the status to
-`in-progress` and removes the lock; abort deletes both. Per ADR-0015.
+in aims. /plan runs read-only discovery (by discipline, not a lock — see
+ADR-0020), **materializes a `Status: draft` plan to disk** (Phase 2, via
+the Write tool), then asks for approval. Approval flips the status to
+`in-progress`; abort deletes the draft. No `.planning-lock` is created.
 
 ## Design rationale
 
@@ -43,8 +43,9 @@ lock still held), then asks for approval. Approval flips the status to
 - Plan format is **signal-only**: TL;DR + Changes (one subsection per
   file, real code IS the spec) + Open design questions + Close-out
   checklist. No phase-by-phase narration, no multi-option essays.
-- Phases 1-2 run under the lock (read-only + heredoc-only writes);
-  Phase 3 is the approval gate; Phase 4 = implement; Phase 5 = close-out.
+- Phase 1 is read-only by discipline (no lock); Phase 2 writes the draft
+  with the Write tool; Phase 3 is the approval gate; Phase 4 = implement;
+  Phase 5 = close-out.
 
 ## Invariants & gotchas
 
@@ -55,10 +56,10 @@ lock still held), then asks for approval. Approval flips the status to
   (ADR / Nodes / CLAUDE.md / Tests / TODO), each with an explicit verdict —
   `NONE — reason` is written, never omitted. Phase 5 resolves each line
   and the final report echoes them.
-- During Phase 2 the planning lock blocks Edit/Write — drafts must be
-  written via Bash heredoc, not Write. This is the same lock that the
-  router (prompt-submit) sets when it auto-engages, so the contract is
-  uniform.
+- Phase 2 writes the draft with the **Write tool** (docs/plans is always
+  allowed; no hook blocks it). The router (prompt-submit) injects a factual
+  planning-convention note for actionable prompts but never locks — the
+  contract is uniform: hooks inform, never block (ADR-0020).
 
 ## Known issues
 

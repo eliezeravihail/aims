@@ -14,11 +14,10 @@ after the plan is approved — there is no separate `/done`.
 
 ## Phase 1 — Plan (read-only)
 
-1. **Create the planning lock** as your very first step:
-   ```bash
-   mkdir -p .claude && touch .claude/.planning-lock
-   ```
-   The `pre-write` hook blocks Edit/Write while it exists. Do not skip.
+1. **Planning is read-only by discipline, not by a lock.** AIMS no longer
+   creates a `.planning-lock`, and no hook blocks edits — hooks only inject
+   factual reminders. Conduct Phase 1 read-only because that is the right
+   order, not because anything stops you.
 
 2. **Read-only exploration only.** Allowed: Read, Grep, Glob, Bash
    (read-only), WebFetch, WebSearch. **Forbidden**: Edit, Write,
@@ -81,14 +80,13 @@ after the plan is approved — there is no separate `/done`.
 5. **Materialize the draft before asking approval** — the file on disk
    IS the artifact to review. See Phase 2.
 
-## Phase 2 — Materialize draft (lock still held)
+## Phase 2 — Materialize draft
 
 1. Compute slug: lowercase, hyphenated, ≤6 words from `$ARGUMENTS`.
 2. Filename: `docs/plans/$(date -u +%Y-%m-%d)-<slug>.md`.
 3. Create `docs/plans/` if missing.
-4. Write the draft using a **Bash heredoc** (Write/Edit are blocked by
-   the planning lock — `cat <<'EOF' > <file>` is the only path), using
-   this template:
+4. Write the draft using the **Write tool** (docs/plans is always allowed;
+   no lock exists), using this template:
 
 ```markdown
 # Plan: <title>
@@ -129,17 +127,15 @@ Started: YYYY-MM-DD
 ```
 
 5. Print: `Draft saved to docs/plans/<filename>. Approve / edit / abort?`
-6. Do **not** remove the lock yet. Do **not** edit anything else.
+6. Do **not** edit source while awaiting approval — read-only by discipline.
 
 ## Phase 3 — Approval gate
 
 - **Approve** → flip the draft's `Status:` line from `draft` to
-  `in-progress` (using `sed -i` via Bash — the lock blocks Edit, not
-  Bash). Then `rm -f .claude/.planning-lock`. Then proceed to Phase 4.
-- **Edit / iterate** → rewrite the draft in place (same heredoc; same
-  filename). Re-ask. Lock stays.
-- **Abort** → `rm -f docs/plans/<filename> .claude/.planning-lock` and
-  print `Plan aborted.`.
+  `in-progress` (Edit tool). Then proceed to Phase 4. (No lock to remove.)
+- **Edit / iterate** → rewrite the draft in place (Write/Edit; same
+  filename). Re-ask.
+- **Abort** → `rm -f docs/plans/<filename>` and print `Plan aborted.`.
 
 ## Phase 4 — Implement
 
@@ -228,7 +224,7 @@ for the hook if you know you're done.
 
 - Do **not** close a plan with failing verification.
 - Do **not** retroactively edit any past ADR body — status pointer only.
-- If the planning lock still exists at close-out time, remove it.
+- AIMS never creates a planning lock; planning is read-only by discipline.
 - This command runs on Opus regardless of session model.
 - The plan file is the contract for implementation. Context
   compaction won't erase it — next session can pick it up from disk.

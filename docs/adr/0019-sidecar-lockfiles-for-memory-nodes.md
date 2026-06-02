@@ -2,7 +2,7 @@
 Status: proposed
 Date: 2026-06-01
 Supersedes: docs/adr/0018-multi-session-consolidation-claims.md
-Superseded by: —
+Superseded by: docs/adr/0020-hooks-inform-never-block.md (repurposed: sidecar `.lock` is now advisory, not a hard mutex)
 
 ## Context
 
