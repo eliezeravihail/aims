@@ -233,8 +233,7 @@ TARGET/
     ├── memory/                  # _lib, mark, new-node, find-dirty, lint,
     │                            # check-refs, consolidate, classify-inbox,
     │                            # doctor (.sh)
-    ├── settings.json            # wires the hooks
-    └── aims-mode                # nudge | block
+    └── settings.json            # wires the hooks
 ```
 
 `/install-on` is **idempotent** and doubles as the upgrade path: re-running
@@ -246,42 +245,48 @@ if you took path B), then re-run `/install-on` against your targets.
 
 ## How it feels in practice
 
-The router-as-secretary case (no slash command needed):
+The natural-planning case (no slash command needed):
 
 ```
 you: TypeError: cannot unpack non-iterable NoneType at parser.py:42
 
-  [router fires, intent=bug]
-  Claude (via AskUserQuestion):
-    Which workflow?
-      (a) /plan a real fix       (b) quick patch inline
-      (c) diagnose only — root cause, no edits
-  you: a
-  Claude: <enters /plan discipline: lock, read-only exploration,
-           ExitPlanMode, plan written to docs/plans/>
+  [prompt-submit injects the planning convention as factual context]
+  Claude: <reads, judges non-trivial, writes
+           docs/plans/2026-…-fix-parser-none.md with Status: draft>
+  Claude: Draft saved to docs/plans/…. Approve / edit / abort?
+  you: approve
+  Claude: <flips Status to in-progress, implements, runs verification,
+           writes ADR if architectural, marks completed, refreshes
+           the memory tree — all inline, no /done command>
 ```
 
-The explicit-command case (you already know what you want):
+The Opus-subagent case (main session is on Sonnet/Haiku and you want
+Opus-quality planning):
 
 ```
-/plan add OAuth2 callback handler
-   ↳ Opus, plan-mode discipline, ExitPlanMode → plan file written
-/model sonnet
-   ↳ implement against the plan
-   ↳ httpx-over-requests is a clear architectural call → ADR written
-     inline (status: proposed), no command needed
-   ↳ at the end, the Stop hook nudges close-out: verify steps, run
-     `## Verification`, mark the plan completed, consolidate memory
+you: add an OAuth2 callback handler
+  Claude: This is non-trivial and the session is on Sonnet — use
+          /plan for an Opus planner subagent, or plan inline here?
+  you: /plan add OAuth2 callback handler
+  Claude: <dispatches Phase 1-2 to an Opus subagent; main session
+           stays on Sonnet, receives the draft path, resumes for
+           Phase 3 → 5 — approval, implementation, inline close-out>
 ```
 
-Mechanical or note-taking work needs no command — just describe it and
-the edit happens inline:
+Trivial / mechanical work skips planning, but the judgement is
+declared (CLAUDE.md "Trivial-skip must be declared"):
 
 ```
 you: rename CamelCase to snake_case in scripts/
-   ↳ ordinary inline edit; the router stays out of the way for
-     obviously-scoped mechanical work
+  Claude: Trivial — no plan, proceeding inline.
+          <ordinary edit; the pre-write note still fires once per
+           session as a factual reminder, never blocks>
 ```
+
+On every edit, the `post-edit-marker` hook flags affected memory nodes
+`dirty`; the throttled `Stop` hook later injects the in-band
+consolidation prompt, and the consolidation result is reported back
+in a single `===[aims: <message>]===` line (ADR-0021).
 
 ## Layout
 
@@ -314,7 +319,6 @@ templates/                   ← never globally registered; copied per target
   hooks/                     ← live hooks for working on aims itself
   memory/                    ← live memory scripts for the dogfooded tree
   settings.json
-  aims-mode
 ```
 
 ## Design principles
