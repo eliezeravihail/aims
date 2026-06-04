@@ -1,7 +1,7 @@
 ---
 description: Install (or re-install) the aims workflow into a target project. Idempotent.
 argument-hint: "<target-project-path> [--mode=nudge|block|off]"
-model: opus
+model: claude-opus-4-8
 ---
 
 # /install-on
