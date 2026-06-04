@@ -21,8 +21,8 @@ external_refs:
 owners:
   - ema
 dirty: false
-last_touched: 2026-05-31T21:37:22Z
-last_consolidated: 2026-05-31T21:37:22Z
+last_touched: 2026-06-04T14:07:11Z
+last_consolidated: 2026-06-04T14:07:11Z
 ---
 
 ## Purpose
@@ -73,6 +73,14 @@ when files are mentioned.
   with ADR-0014's fnmatch semantics in the marker pipeline.
 - Per-session de-dup state lives at `.claude/memory/.injected-<session_id>`
   and is pruned after 7 days. Total injection capped at `SIZE_CAP=8192`.
+- **Length is measured in characters, not bytes.** The script forces a
+  UTF-8 `LC_ALL` (first `*.utf-8` from `locale -a`) at the top when the
+  inherited locale isn't already UTF-8, because bash `${#str}` counts
+  bytes under POSIX/C. Without it a short non-ASCII prompt overcounts
+  (Hebrew/CJK = 2-3 bytes/char) and trips the `plen >= 40` "actionable"
+  ambiguous fallback — a 22-char Hebrew comment measured 42 bytes and got
+  a spurious planning note. Falls back silently to POSIX if no UTF-8
+  locale exists (heuristics may overcount, but never block).
 
 ## Known issues
 
