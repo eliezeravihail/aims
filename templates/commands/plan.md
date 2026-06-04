@@ -1,7 +1,7 @@
 ---
 description: Plan non-trivial work; read-only; ends with persisted plan + inline close-out after implementation
 argument-hint: "<task description>"
-model: opus
+model: claude-opus-4-8
 ---
 
 # /plan
