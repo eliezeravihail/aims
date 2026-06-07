@@ -26,8 +26,8 @@ external_refs:
 owners:
   - ema
 dirty: false
-last_touched: 2026-06-01T06:52:29Z
-last_consolidated: 2026-06-01T06:52:29Z
+last_touched: 2026-06-07T21:36:49Z
+last_consolidated: 2026-06-07T21:36:49Z
 ---
 
 ## Purpose
@@ -89,6 +89,17 @@ breadcrumbs (non-duplication invariant).
   inject the prompt); otherwise it exits 0 with no output. A stuck
   model leaves dirty markers visible in `doctor.sh` for self-healing
   on the next `Stop`.
+- **Terse no-op close-out.** The injected prompt opens with a lead
+  contract: do only the applicable work, then reply with a ONE-LINE
+  status. When there is nothing to do (no dirty nodes, empty inbox, and
+  any in-progress plan was not worked on this session — e.g. a read-only
+  Q&A session), the entire reply must be the single line
+  `aims: nothing to update.` This matters because SessionEnd runs with
+  `--force` and the in-progress-plan branch keeps the hook alive even at
+  zero dirty nodes; without the contract the model emitted a multi-line
+  explanation. Relatedly, the "Consolidation queue is ready / N dirty
+  node(s)" header is now only added when `N_DIRTY > 0` (no more bogus
+  "There are 0 dirty node(s)" text).
 
 ## Known issues
 
