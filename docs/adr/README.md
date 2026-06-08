@@ -44,3 +44,4 @@ add a row to the index below.
 | 0018 | Multi-session-safe consolidation via in-frontmatter claims  | superseded by 0019 | 2026-06-01 |
 | 0019 | Sidecar `.lock` files for memory nodes (supersedes 0018)    | proposed (repurposed by 0020) | 2026-06-01 |
 | 0020 | Hooks inform, they never block (no planning lock; factual injection; advisory node marker) | proposed | 2026-06-02 |
+| 0021 | Per-node requirements are user-sourced and surfaced at edit time | proposed | 2026-06-08 |

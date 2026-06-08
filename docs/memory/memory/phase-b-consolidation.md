@@ -22,12 +22,12 @@ claude_md_refs:
   - "Hooks"
 external_refs:
   - { path: docs/adr/0007-tree-based-memory-with-auto-maintenance.md, kind: adr, why: Phase B specification — the throttled LLM consolidation pass }
-  - { path: tests/consolidate.sh, kind: test, why: end-to-end test against a Python mock Anthropic endpoint }
+  - { path: tests/consolidate.sh, kind: test, why: in-band Stop-hook consolidation contract (no network; ADR-0009) }
 owners:
   - ema
 dirty: false
-last_touched: 2026-06-01T06:52:29Z
-last_consolidated: 2026-06-01T06:52:29Z
+last_touched: 2026-06-08T10:56:04Z
+last_consolidated: 2026-06-08T10:56:04Z
 ---
 
 ## Purpose
@@ -64,24 +64,25 @@ breadcrumbs (non-duplication invariant).
 - Transcript URLs are harvested in bash and offered to the model
   under "## Pointers > External" rather than synthesized inside the
   model — keeps the network surface in bash.
-- **Multi-session safety via sidecar lockfiles (ADR-0019, supersedes
-  ADR-0018):** after the throttle trips, the hook attempts to create
-  `<leaf>.lock` next to each dirty node using `set -C` (`O_EXCL`) with
-  the SESSION_ID as the body. Nodes whose sidecar already exists and is
-  fresh (mtime within `AIMS_LOCK_TTL_SEC`, default 600s) are skipped —
-  another session owns them. A `trap ... EXIT` releases any locks we
-  hold if the hook dies before `mark.sh consolidated` removes them on
-  success. Mutex visibility is git-style: `ls docs/memory/<tag>/` shows
-  who is editing what. The frontmatter is no longer touched for mutex
-  purposes; the ADR-0018 `consolidating_by` field is gone.
+- In-progress-plan detection honors `AIMS_PLAN_DIR` (default
+  `docs/plans`), matching `pre-write.sh`/`prompt-submit.sh` — needed so
+  tests can point the close-out nudge at an empty sandbox plan dir.
+- **Multi-session safety via sidecar lockfiles (ADR-0019):** after the
+  throttle trips, the hook creates `<leaf>.lock` next to each dirty node
+  via `set -C` (`O_EXCL`) with the SESSION_ID as body. A node whose
+  sidecar exists and is fresh (mtime within `AIMS_LOCK_TTL_SEC`, default
+  600s) is skipped — another session owns it. A `trap ... EXIT` releases
+  any lock we hold if the hook dies before `mark.sh consolidated` removes
+  it. Visibility is git-style: `ls docs/memory/<tag>/` shows who edits what.
 
-## Invariants & gotchas
+## Requirements & invariants
+
+- Requirements: none recorded beyond CLAUDE.md. Before editing, re-verify
+  against CLAUDE.md and ask the user.
 
 - `stop-consolidate.sh` MUST NOT touch a node's
   `dirty/last_touched/last_consolidated` frontmatter; only `mark.sh
-  consolidated` does, after the Edit succeeds. Per ADR-0019 the mutex
-  is a sidecar `<leaf>.lock` file, not a frontmatter field — so this
-  invariant holds without exception now.
+  consolidated` does, after the Edit succeeds.
 - The state file `.claude/memory/.last-consolidated` is bumped the
   moment the prompt is queued (not after the Edit lands), so a slow
   model doesn't cause a re-nudge on the very next turn.
@@ -89,6 +90,23 @@ breadcrumbs (non-duplication invariant).
   inject the prompt); otherwise it exits 0 with no output. A stuck
   model leaves dirty markers visible in `doctor.sh` for self-healing
   on the next `Stop`.
+- **Terse no-op close-out.** The injected prompt opens with a lead
+  contract: do only the applicable work, then reply with a ONE-LINE
+  status. When there is nothing to do (no dirty nodes, empty inbox, and
+  any in-progress plan was not worked on this session — e.g. a read-only
+  Q&A session), the entire reply must be the single line
+  `aims: nothing to update.` This matters because SessionEnd runs with
+  `--force` and the in-progress-plan branch keeps the hook alive even at
+  zero dirty nodes; without the contract the model emitted a multi-line
+  explanation. Relatedly, the "Consolidation queue is ready / N dirty
+  node(s)" header is now only added when `N_DIRTY > 0` (no more bogus
+  "There are 0 dirty node(s)" text).
+- **Requirements are never fabricated (ADR-0021).** `consolidate.sh`'s
+  schema hint for section #3 (`## Requirements & invariants`, renamed
+  from `## Invariants & gotchas`) forbids inventing a requirement from a
+  diff — new requirements come only from the user or CLAUDE.md — while
+  invariants/gotchas (code facts) may still be updated. The EXTRA
+  CONTEXT mining hint is scoped to invariants/gotchas, not requirements.
 
 ## Known issues
 
@@ -104,8 +122,8 @@ breadcrumbs (non-duplication invariant).
 
 - ADR-0007 — two-phase design (partially superseded for this node).
 - ADR-0008 — node body schema the prompt enforces.
+- ADR-0021 — section #3 renamed; consolidation must not fabricate requirements.
 - ADR-0009 — in-band consolidation mechanism.
-- ADR-0018 — superseded (in-frontmatter claim experiment).
 - ADR-0019 — sidecar `<leaf>.lock` mutex + EXIT trap; the design in
   force.
 - `templates/hooks/stop-consolidate.sh:1-148` — orchestrator.

@@ -44,7 +44,10 @@ path stays reserved for Claude-native `/memory`).
   which DOES rewrite bodies, runs in-band via the Stop hook per
   ADR-0009; `/remember` is the lightweight cousin.)
 
-## Invariants & gotchas
+## Requirements & invariants
+
+- Requirements: none recorded beyond CLAUDE.md. Before editing, re-verify
+  against CLAUDE.md and ask the user.
 
 - `/remember` MUST NOT write to CLAUDE.md.
 - `/remember` MUST NOT create a new node for a one-off note — file

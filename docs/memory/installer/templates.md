@@ -31,7 +31,10 @@ The .tmpl files under templates/ that /install-on substitutes into a target proj
 
 ## Design rationale
 
-## Invariants & gotchas
+## Requirements & invariants
+
+- Requirements: none recorded beyond CLAUDE.md. Before editing, re-verify
+  against CLAUDE.md and ask the user.
 
 ## Known issues
 

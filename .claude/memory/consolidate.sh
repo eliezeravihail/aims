@@ -83,7 +83,12 @@ ACTION FOR THIS NODE:
    ## Design rationale   — 2–4 bullets: why it is shaped this way; each
                            may end with a repo-relative pointer
                            (ADR-NNNN, commit SHA, plan slug).
-   ## Invariants & gotchas — what must not break when editing.
+   ## Requirements & invariants — KEEP any user-recorded requirement
+                           bullets verbatim; NEVER invent a requirement from a
+                           diff (a diff shows observed behavior, not user
+                           intent). New requirements come only from the user
+                           (ask) or CLAUDE.md. You MAY update the invariants/
+                           gotchas (code facts) below the requirements.
    ## Known issues       — open: one-line — pointer
                            fixed: one-line: what broke and why — SHA
    ## Pointers           — ADRs / Plans / Commits (anchors) / External.
@@ -94,8 +99,14 @@ ACTION FOR THIS NODE:
      Do NOT touch dirty/last_touched/last_consolidated — the
      mark.sh helper handles those.
    - Keep the six headings verbatim and in order.
-   - Target ~1–2 KB; if it would exceed ~4 KB, add an Open question
-     bullet ("Should this node split into …?") instead of packing in.
+   - A node reflects the CURRENT design ONLY — its live requirements,
+     present-tense rationale, and in-force invariants. It is NOT a
+     historical archive for archaeologists. On each pass DELETE
+     superseded detail (removed mechanisms, "X is now gone", one-off fix
+     narration, rationale that merely restates an ADR); ADRs and git hold
+     history. Replace deleted history with a one-line ADR pointer only
+     when a reader needs the trail. Prune to ~1–2 KB. Do NOT split the
+     node — a node is atomic — and do NOT just pack more in.
    - All in-project pointers are repo-relative. Forbidden:
        * absolute filesystem paths (leading "/" or "~/")
        * URLs back into this repo (github.com/<org>/<repo>/blob/…)

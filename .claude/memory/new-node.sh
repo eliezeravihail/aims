@@ -87,9 +87,12 @@ last_consolidated: $NOW
 (2–4 bullets: why it is shaped this way. Each bullet may end with a
 repo-relative pointer — ADR-NNNN, commit SHA, plan slug.)
 
-## Invariants & gotchas
+## Requirements & invariants
 
-(What must not break when editing. Concise.)
+- Requirements: none recorded beyond CLAUDE.md. Before editing, re-verify
+  against CLAUDE.md and ask the user.
+
+(Invariants/gotchas — what must not break when editing. Concise.)
 
 ## Known issues
 

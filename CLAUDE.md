@@ -56,14 +56,37 @@ achieved by awareness:
 - `PreToolUse` (`pre-write`) never blocks; on the first source edit of a
   session with no in-progress plan it injects the planning convention once.
 - `PostToolUse` (`post-edit-marker`) marks the affected memory leaf `dirty`,
-  injects a factual note naming the node to update, and stamps an advisory
-  marker (`<leaf>.lock` = session-id + mtime; NOT a block). Concurrency: same
-  session refreshes silently; another session's marker older than
-  `AIMS_NODE_LOCK_STALE_SEC` (default 3600s) is taken over; a fresher one is
-  reported as a possible concurrent edit (ask the user before updating).
+  injects a factual note naming the node to update, **surfaces that node's
+  recorded requirements** (so they are visible at edit time), and stamps an
+  advisory marker (`<leaf>.lock` = session-id + mtime; NOT a block).
+  Concurrency: same session refreshes silently; another session's marker
+  older than `AIMS_NODE_LOCK_STALE_SEC` (default 3600s) is taken over; a
+  fresher one is reported as a possible concurrent edit (ask the user before
+  updating).
 
 Injected text MUST be factual, never imperative ("CRITICAL: do X"). Behavior
 guard: `tests/inform-never-block.sh` (jq-free) + `tests/router-auto-plan.sh`.
+
+## Requirements capture
+
+Requirements are **user intent**, recorded only from the user — never
+fabricated from code (reading code yields observed *behavior*, not a
+requirement). They live per node in the `## Requirements & invariants`
+section (ADR-0021). A node seeded "no requirements beyond CLAUDE.md" means
+exactly that: nothing has been stated yet.
+
+- **Capture on statement.** When the user expresses a constraint during a
+  session ("don't break the interface", "this file is independent of X"), or
+  when a file is about to be edited and a relevant constraint was raised,
+  ask whether to record it as a requirement on the relevant node, and record
+  it verbatim only after the user confirms. Drop the "none recorded" seed
+  line once a node has its first real requirement.
+- **Verify before editing.** Before changing a file, re-verify its node's
+  requirements against CLAUDE.md (and ask the user when unsure). The
+  `post-edit-marker` hook surfaces the recorded requirements at edit time.
+- **Conflict → ask.** If a change would conflict with a recorded requirement,
+  or two requirements conflict, stop and ask the user rather than silently
+  choosing. This is the anti-regression guard for long sessions.
 
 ## Plugin-specific notes (not from template)
 

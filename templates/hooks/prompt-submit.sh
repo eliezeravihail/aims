@@ -48,6 +48,12 @@ fi
 payload=$(cat || true)
 if command -v jq >/dev/null 2>&1; then
   prompt=$(printf '%s' "$payload" | jq -r '.prompt // empty' 2>/dev/null || true)
+  # If the payload is not valid JSON at all, treat the whole thing as the
+  # prompt (lets jq-free callers / tests pass raw text; production always
+  # sends JSON, so this only fires on non-JSON input).
+  if [ -z "$prompt" ] && ! printf '%s' "$payload" | jq -e . >/dev/null 2>&1; then
+    prompt="$payload"
+  fi
 else
   prompt=$(printf '%s' "$payload")
 fi

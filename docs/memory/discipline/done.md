@@ -44,7 +44,10 @@ report includes memory-tree status from `doctor.sh`.
   prompt; the closing model applies confident matches via Edit and
   asks via `AskUserQuestion` for the ambiguous ones.
 
-## Invariants & gotchas
+## Requirements & invariants
+
+- Requirements: none recorded beyond CLAUDE.md. Before editing, re-verify
+  against CLAUDE.md and ask the user.
 
 - `/done` MUST NOT close a plan with failing verification or
   unimplemented steps — it reports what's missing and stops.

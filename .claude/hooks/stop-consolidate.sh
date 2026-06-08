@@ -76,11 +76,13 @@ INBOX_NONEMPTY=0
 INBOX_PATH="${AIMS_MEMORY_DIR:-docs/memory}/_inbox.md"
 [ -s "$INBOX_PATH" ] && INBOX_NONEMPTY=1
 
-# In-progress plan detection (for close-out nudge).
+# In-progress plan detection (for close-out nudge). Honors AIMS_PLAN_DIR
+# like pre-write.sh / prompt-submit.sh (consistency + hermetic tests).
 IN_PROGRESS_PLAN=""
-if [ -d "docs/plans" ]; then
+PLAN_DIR="${AIMS_PLAN_DIR:-docs/plans}"
+if [ -d "$PLAN_DIR" ]; then
   IN_PROGRESS_PLAN=$(grep -lE '^Status:[[:space:]]*in-progress' \
-    docs/plans/*.md 2>/dev/null | head -1 || true)
+    "$PLAN_DIR"/*.md 2>/dev/null | head -1 || true)
 fi
 
 if [ "$N_DIRTY" -eq 0 ] && [ "$INBOX_NONEMPTY" -eq 0 ] && [ -z "$IN_PROGRESS_PLAN" ]; then
@@ -172,13 +174,28 @@ fi
 EXTRA_CTX="${AIMS_EXTRA_CONTEXT:-}"
 
 prompt_parts=()
-prompt_parts+=("[aims-memory] Consolidation queue is ready (per ADR-0009).
+
+# Lead contract: keep the close-out terse. After doing ONLY the applicable
+# work below, the reply to the user is a ONE-LINE status. When there is
+# genuinely nothing to do — no dirty nodes, empty inbox, and any in-progress
+# plan was NOT worked on this session (e.g. a read-only Q&A session) — the
+# ENTIRE reply must be a single line, with no preamble or explanation.
+prompt_parts+=("[aims-memory] Session close-out. Do ONLY the applicable work
+below, silently, then give the user a ONE-LINE status. If there is nothing to
+do (no dirty nodes, empty inbox, and any in-progress plan was not worked on
+this session — e.g. a read-only Q&A session), your ENTIRE reply must be exactly
+one line, with no preamble or explanation:
+\`aims: nothing to update.\` (in the conversation's language).")
+
+if [ "$N_DIRTY" -gt 0 ]; then
+  prompt_parts+=("[aims-memory] Consolidation queue is ready (per ADR-0009).
 There are $N_DIRTY dirty node(s) below. Before responding to the user,
 process each one in order: apply the Edit per the rules, then run the
 mark.sh command at the end of its section. If there are more than 10
 dirty nodes, handle the first 10 and report that the rest will be
 caught on the next turn. Do NOT touch frontmatter dirty/last_touched/
 last_consolidated — mark.sh owns those.")
+fi
 
 if [ -n "$IN_PROGRESS_PLAN" ]; then
   prompt_parts+=("[aims-plan] In-progress plan detected: $IN_PROGRESS_PLAN
@@ -193,7 +210,7 @@ fi
 
 if [ -n "$EXTRA_CTX" ]; then
   prompt_parts+=("=== ADDITIONAL CONTEXT (from caller) ===
-Mine for invariants (→ ## Invariants & gotchas), design rationale
+Mine for invariants/gotchas (→ ## Requirements & invariants, the non-requirement part), design rationale
 (→ ## Design rationale), fixed bugs (→ ## Known issues > fixed, ONLY
 if a real commit SHA is cited), and open design questions
 (→ ## Open questions). Do NOT add content where the connection to
