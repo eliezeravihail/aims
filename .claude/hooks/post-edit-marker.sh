@@ -89,7 +89,7 @@ while IFS= read -r leaf; do
 
   node=$(fm_get "$leaf" node); node="${node:-$leaf}"
   reqs=$(fm_section "$leaf" "Requirements & invariants" \
-         | sed '/^[[:space:]]*$/d' | head -c 1200)
+         | sed '/^[[:space:]]*$/d' | head -c 2500)
   [ -n "$reqs" ] && reqblock="${reqblock}"$'\n'"• ${rel} (node ${node}):"$'\n'"${reqs}"$'\n'
   lock="${leaf%.md}.lock"
   detail=""

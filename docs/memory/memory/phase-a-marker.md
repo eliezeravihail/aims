@@ -21,8 +21,8 @@ external_refs:
 owners:
   - ema
 dirty: false
-last_touched: 2026-06-08T06:13:10Z
-last_consolidated: 2026-06-08T06:13:10Z
+last_touched: 2026-06-08T11:09:39Z
+last_consolidated: 2026-06-08T11:09:39Z
 ---
 
 ## Purpose
@@ -53,7 +53,8 @@ at the moment the code is edited. The hook never blocks and always exits 0.
   (ADR-0020): the note lists the recorded requirements and asks the
   model to verify the change against them, escalate a conflict to the
   user, and ask before recording any newly-stated constraint. Capped at
-  1200 bytes per matched node via `fm_section`.
+  2500 bytes per matched node via `fm_section` (enough to surface a
+  complex module's full current invariant set without truncation).
 
 ## Requirements & invariants
 
