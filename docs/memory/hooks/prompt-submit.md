@@ -21,8 +21,8 @@ external_refs:
 owners:
   - ema
 dirty: false
-last_touched: 2026-06-04T14:07:11Z
-last_consolidated: 2026-06-04T14:07:11Z
+last_touched: 2026-06-08T10:41:36Z
+last_consolidated: 2026-06-08T10:41:36Z
 ---
 
 ## Purpose
@@ -84,6 +84,11 @@ when files are mentioned.
   ambiguous fallback — a 22-char Hebrew comment measured 42 bytes and got
   a spurious planning note. Falls back silently to POSIX if no UTF-8
   locale exists (heuristics may overcount, but never block).
+- Payload parsing tolerates non-JSON: with `jq` present it reads
+  `.prompt`, but if the payload is not valid JSON it falls back to
+  treating raw stdin as the prompt. Production always sends JSON; this
+  only helps jq-free callers and the `tests/inform-never-block.sh`
+  raw-text cases.
 
 ## Known issues
 

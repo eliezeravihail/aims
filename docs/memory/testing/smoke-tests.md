@@ -19,8 +19,8 @@ claude_md_refs:
 external_refs: []
 owners: []
 dirty: false
-last_touched: 2026-06-04T14:08:59Z
-last_consolidated: 2026-06-04T14:08:59Z
+last_touched: 2026-06-08T10:41:36Z
+last_consolidated: 2026-06-08T10:41:36Z
 ---
 
 ## Purpose
@@ -28,7 +28,10 @@ last_consolidated: 2026-06-04T14:08:59Z
 Bash smoke tests for aims internals — no Anthropic API, no network.
 - `marker.sh` (10 cases) — `path_matches` / marker hook / inbox dedup,
   including glob matching (ADR-0014 case 10).
-- `consolidate.sh` — `consolidate.sh` prompt builder + Stop hook.
+- `consolidate.sh` (5 cases) — the in-band Stop-hook contract (ADR-0009):
+  `--force` emits `{"decision":"block","reason":…}` naming each dirty
+  node + `mark.sh`, bumps the throttle state, never edits nodes itself;
+  `mark.sh consolidated` does the clean-flip. No network/mock (jq only).
 - `exit-plan-mode.sh` (4 cases) — the harness-bridge hook (ADR-0015).
 - `router-auto-plan.sh` (6 cases) — auto-engage intent router
   (ADR-0015). Case 6 guards char-vs-byte length: a short Hebrew prompt

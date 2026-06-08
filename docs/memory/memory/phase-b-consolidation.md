@@ -22,12 +22,12 @@ claude_md_refs:
   - "Hooks"
 external_refs:
   - { path: docs/adr/0007-tree-based-memory-with-auto-maintenance.md, kind: adr, why: Phase B specification — the throttled LLM consolidation pass }
-  - { path: tests/consolidate.sh, kind: test, why: end-to-end test against a Python mock Anthropic endpoint }
+  - { path: tests/consolidate.sh, kind: test, why: in-band Stop-hook consolidation contract (no network; ADR-0009) }
 owners:
   - ema
 dirty: false
-last_touched: 2026-06-08T06:13:10Z
-last_consolidated: 2026-06-08T06:13:10Z
+last_touched: 2026-06-08T10:41:36Z
+last_consolidated: 2026-06-08T10:41:36Z
 ---
 
 ## Purpose
@@ -64,6 +64,9 @@ breadcrumbs (non-duplication invariant).
 - Transcript URLs are harvested in bash and offered to the model
   under "## Pointers > External" rather than synthesized inside the
   model — keeps the network surface in bash.
+- In-progress-plan detection honors `AIMS_PLAN_DIR` (default
+  `docs/plans`), matching `pre-write.sh`/`prompt-submit.sh` — needed so
+  tests can point the close-out nudge at an empty sandbox plan dir.
 - **Multi-session safety via sidecar lockfiles (ADR-0019, supersedes
   ADR-0018):** after the throttle trips, the hook attempts to create
   `<leaf>.lock` next to each dirty node using `set -C` (`O_EXCL`) with

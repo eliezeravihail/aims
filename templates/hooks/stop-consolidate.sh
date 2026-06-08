@@ -76,11 +76,13 @@ INBOX_NONEMPTY=0
 INBOX_PATH="${AIMS_MEMORY_DIR:-docs/memory}/_inbox.md"
 [ -s "$INBOX_PATH" ] && INBOX_NONEMPTY=1
 
-# In-progress plan detection (for close-out nudge).
+# In-progress plan detection (for close-out nudge). Honors AIMS_PLAN_DIR
+# like pre-write.sh / prompt-submit.sh (consistency + hermetic tests).
 IN_PROGRESS_PLAN=""
-if [ -d "docs/plans" ]; then
+PLAN_DIR="${AIMS_PLAN_DIR:-docs/plans}"
+if [ -d "$PLAN_DIR" ]; then
   IN_PROGRESS_PLAN=$(grep -lE '^Status:[[:space:]]*in-progress' \
-    docs/plans/*.md 2>/dev/null | head -1 || true)
+    "$PLAN_DIR"/*.md 2>/dev/null | head -1 || true)
 fi
 
 if [ "$N_DIRTY" -eq 0 ] && [ "$INBOX_NONEMPTY" -eq 0 ] && [ -z "$IN_PROGRESS_PLAN" ]; then
