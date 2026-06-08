@@ -11,6 +11,13 @@ via Edit (no external API key required).
 This tree is a **navigator** over other memory sources. It references
 `CLAUDE.md` sections, ADRs, plans, and tests — it never copies them.
 
+A node reflects the **current** design: its live requirements, the
+design rationale that still applies, and the invariants in force. It is
+**not** a historical archive for archaeologists — ADRs and git hold the
+history. With every substantial change, delete the parts that no longer
+describe how things are now; keep at most a one-line ADR pointer where a
+reader genuinely needs the trail.
+
 ## Tags
 
 - **discipline/** — the slash commands that define the aims workflow.

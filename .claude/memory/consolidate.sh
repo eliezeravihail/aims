@@ -99,8 +99,14 @@ ACTION FOR THIS NODE:
      Do NOT touch dirty/last_touched/last_consolidated — the
      mark.sh helper handles those.
    - Keep the six headings verbatim and in order.
-   - Target ~1–2 KB; if it would exceed ~4 KB, add an Open question
-     bullet ("Should this node split into …?") instead of packing in.
+   - A node reflects the CURRENT design ONLY — its live requirements,
+     present-tense rationale, and in-force invariants. It is NOT a
+     historical archive for archaeologists. On each pass DELETE
+     superseded detail (removed mechanisms, "X is now gone", one-off fix
+     narration, rationale that merely restates an ADR); ADRs and git hold
+     history. Replace deleted history with a one-line ADR pointer only
+     when a reader needs the trail. Prune to ~1–2 KB. Do NOT split the
+     node — a node is atomic — and do NOT just pack more in.
    - All in-project pointers are repo-relative. Forbidden:
        * absolute filesystem paths (leading "/" or "~/")
        * URLs back into this repo (github.com/<org>/<repo>/blob/…)

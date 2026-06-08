@@ -28,9 +28,9 @@ last_consolidated: 2026-06-08T10:41:36Z
 ## Purpose
 
 UserPromptSubmit hook — runs three jobs in **one** `additionalContext`
-emission: (1) intent classification + auto-engage `/plan` on actionable
-intents (bug, feature, refactor, decision, mechanical, ambiguous) per
-ADR-0015 (supersedes ADR-0004's menu); (2) **memory injector** (ADR-0016) —
+emission: (1) intent classification → a FACTUAL `/plan`-convention note on
+actionable intents (bug, feature, refactor, decision, mechanical, ambiguous);
+no lock, no auto-engage (ADR-0020); (2) **memory injector** (ADR-0016) —
 for every memory node whose `code:` glob is plausibly referenced by the
 prompt, inject that node's body (purpose, invariants, pointers, known
 issues) so the model has node context without being asked; (3) the
@@ -40,36 +40,28 @@ when files are mentioned.
 
 ## Design rationale
 
-- The pre-ADR-0015 menu had zero options to choose between once
-  ADR-0010 collapsed the surface to `/plan` + `/install-on`. Auto-engage
-  is the natural collapse.
-- Engagement = creating `.claude/.planning-lock` (the same gate `/plan`
-  Phase 1 sets) **plus** injecting a `[aims-router]` text that walks
-  the model through Phases 1→5. The lock makes the next turn
-  read-only-by-policy, not just convention. The Phase 2 text tells the
-  model to draft via the `Write` tool directly — ADR-0017 carves
-  `docs/plans/*.md` out of the lock's pre-write block, so the prior
-  Bash-heredoc workaround (fragile on apostrophes) is gone.
-- Hebrew / non-English prompts that don't match any English keyword
-  regex fall through to the **ambiguous** bucket and auto-engage; the
-  injected text documents the per-prompt opt-out in both languages.
+- Actionable intents get a single FACTUAL planning-convention note;
+  questions get none. No lock, no imperative text — aims informs, never
+  blocks (ADR-0020).
+- Non-English prompts that match no English keyword fall through to the
+  **ambiguous** bucket, so they still get the note instead of being
+  missed; the note is bilingual.
 
 ## Requirements & invariants
 
 - Requirements: none recorded beyond CLAUDE.md. Before editing, re-verify
   against CLAUDE.md and ask the user.
 
-- **Suppression rules in order**: slash-prefix → lock already exists →
-  short prompt during an in-progress plan → empty prompt. Any one
-  short-circuits to `exit 0`.
+- **Suppression rules in order**: slash-prefix → short prompt during an
+  in-progress plan → empty prompt. Any one short-circuits to `exit 0`.
 - A code-paste-looking prompt (contains a triple-backtick fence) is
   treated as not-actionable to avoid auto-engaging on review/discussion
   pastes.
 - The hook must always `exit 0` — UserPromptSubmit hooks cannot
   meaningfully block a prompt and the contract is "advisory only".
-- **Lock + memory are independent** (ADR-0016). A pure-question prompt that
-  references a tracked file gets memory injection only — no planning lock,
-  no auto-engage text. An actionable prompt gets both, in the same emission.
+- **Router note + memory injection are independent** (ADR-0016): a question
+  that references a tracked file gets memory injection only; an actionable
+  prompt gets both, in one emission.
 - Memory matching derives a **literal prefix** from each `code:` glob (cut
   at the first `*`/`?`/`[`) and substring-tests the prompt; for non-glob
   entries it also word-matches the bare basename (≥5 chars). Compatible

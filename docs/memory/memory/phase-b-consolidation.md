@@ -26,8 +26,8 @@ external_refs:
 owners:
   - ema
 dirty: false
-last_touched: 2026-06-08T10:41:36Z
-last_consolidated: 2026-06-08T10:41:36Z
+last_touched: 2026-06-08T10:56:04Z
+last_consolidated: 2026-06-08T10:56:04Z
 ---
 
 ## Purpose
@@ -67,16 +67,13 @@ breadcrumbs (non-duplication invariant).
 - In-progress-plan detection honors `AIMS_PLAN_DIR` (default
   `docs/plans`), matching `pre-write.sh`/`prompt-submit.sh` — needed so
   tests can point the close-out nudge at an empty sandbox plan dir.
-- **Multi-session safety via sidecar lockfiles (ADR-0019, supersedes
-  ADR-0018):** after the throttle trips, the hook attempts to create
-  `<leaf>.lock` next to each dirty node using `set -C` (`O_EXCL`) with
-  the SESSION_ID as the body. Nodes whose sidecar already exists and is
-  fresh (mtime within `AIMS_LOCK_TTL_SEC`, default 600s) are skipped —
-  another session owns them. A `trap ... EXIT` releases any locks we
-  hold if the hook dies before `mark.sh consolidated` removes them on
-  success. Mutex visibility is git-style: `ls docs/memory/<tag>/` shows
-  who is editing what. The frontmatter is no longer touched for mutex
-  purposes; the ADR-0018 `consolidating_by` field is gone.
+- **Multi-session safety via sidecar lockfiles (ADR-0019):** after the
+  throttle trips, the hook creates `<leaf>.lock` next to each dirty node
+  via `set -C` (`O_EXCL`) with the SESSION_ID as body. A node whose
+  sidecar exists and is fresh (mtime within `AIMS_LOCK_TTL_SEC`, default
+  600s) is skipped — another session owns it. A `trap ... EXIT` releases
+  any lock we hold if the hook dies before `mark.sh consolidated` removes
+  it. Visibility is git-style: `ls docs/memory/<tag>/` shows who edits what.
 
 ## Requirements & invariants
 
@@ -85,9 +82,7 @@ breadcrumbs (non-duplication invariant).
 
 - `stop-consolidate.sh` MUST NOT touch a node's
   `dirty/last_touched/last_consolidated` frontmatter; only `mark.sh
-  consolidated` does, after the Edit succeeds. Per ADR-0019 the mutex
-  is a sidecar `<leaf>.lock` file, not a frontmatter field — so this
-  invariant holds without exception now.
+  consolidated` does, after the Edit succeeds.
 - The state file `.claude/memory/.last-consolidated` is bumped the
   moment the prompt is queued (not after the Edit lands), so a slow
   model doesn't cause a re-nudge on the very next turn.
@@ -129,7 +124,6 @@ breadcrumbs (non-duplication invariant).
 - ADR-0008 — node body schema the prompt enforces.
 - ADR-0021 — section #3 renamed; consolidation must not fabricate requirements.
 - ADR-0009 — in-band consolidation mechanism.
-- ADR-0018 — superseded (in-frontmatter claim experiment).
 - ADR-0019 — sidecar `<leaf>.lock` mutex + EXIT trap; the design in
   force.
 - `templates/hooks/stop-consolidate.sh:1-148` — orchestrator.

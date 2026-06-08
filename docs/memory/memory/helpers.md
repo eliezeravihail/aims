@@ -26,13 +26,13 @@ claude_md_refs:
 external_refs:
   - { path: docs/adr/0007-tree-based-memory-with-auto-maintenance.md, kind: adr, why: the design these helpers implement }
   - { path: tests/marker.sh, kind: test, why: covers mark/find-dirty + the marker hook }
-  - { path: tests/consolidate.sh, kind: test, why: covers consolidate.sh + the Stop hook against a mocked Anthropic endpoint }
+  - { path: tests/consolidate.sh, kind: test, why: covers consolidate.sh + the in-band Stop-hook contract (no network) }
   - { path: docs/adr/0014-code-globs-are-fnmatch-globs.md, kind: adr, why: path_matches now treats every code: entry as an fnmatch glob }
 owners:
   - ema
 dirty: false
-last_touched: 2026-06-08T06:13:10Z
-last_consolidated: 2026-06-08T06:13:10Z
+last_touched: 2026-06-08T10:56:04Z
+last_consolidated: 2026-06-08T10:56:04Z
 ---
 
 ## Purpose
@@ -63,16 +63,12 @@ No external network call lives in any helper.
   block list; module nodes must get ≥1 so the marker can track them
   (ADR-0012). `lint.sh` flags any `module` node left at `code: []` as
   an inert node.
-- `path_matches` in `_lib.sh` accepts both relative and absolute
-  needles — defense in depth against a future hook (or direct
-  `mark.sh` caller) that forgets to normalize. The marker still
-  normalizes first; this is the belt under the suspenders.
 - `path_matches` evaluates each `code:` entry as an **fnmatch glob**
-  via bash `case`-glob (ADR-0014). Exact strings still match (they're
-  trivial globs); `:line-range` suffixes still take the prefix branch.
-  Greedy `*` (no FNM_PATHNAME) is documented — `src/*.py` matches
-  `src/loaders/json_loader.py`; over-marking is acceptable, silent
-  staleness is not.
+  (bash `case`-glob, ADR-0014): exact strings and `:line-range` prefixes
+  still match; greedy `*` over-marks (`src/*.py` matches
+  `src/loaders/json_loader.py`) — over-marking is acceptable, silent
+  staleness is not. It accepts relative or absolute needles as
+  defense-in-depth (the marker normalizes first).
 
 ## Requirements & invariants
 
@@ -90,14 +86,10 @@ No external network call lives in any helper.
   in-band model executing consolidation prompts) MUST leave that
   frontmatter alone. `mark.sh consolidated` also `rm -f`s the
   `<leaf>.lock` sidecar (ADR-0019).
-- **Multi-session mutex (ADR-0019, supersedes ADR-0018):** a sidecar
-  `<leaf>.lock` next to each node is the per-leaf mutex. The Stop hook
-  acquires via `set -C` (`O_EXCL`) writing the SESSION_ID inside; a
-  `trap` releases on any abnormal exit. The pre-write hook refuses
-  Edit/Write to any locked node held by a different fresh session.
-  Stale locks (mtime > `AIMS_LOCK_TTL_SEC`, default 600s) are
-  abandoned. The `consolidating_by:` frontmatter field from ADR-0018
-  is gone; the `consolidating_by` mention above is historical.
+- **Multi-session mutex (ADR-0019):** the per-leaf mutex is a sidecar
+  `<leaf>.lock` (SESSION_ID inside); stale locks (mtime >
+  `AIMS_LOCK_TTL_SEC`, default 600s) are abandoned. Full mechanics live
+  in memory/phase-b-consolidation.
 - A `module` node with `code: []` is **inert**: the marker can never
   flag it dirty, so it never consolidates (ADR-0012). If a node tracks
   no code it must be `kind: topic`/`decision`, not `module`. `lint.sh`
@@ -132,7 +124,6 @@ No external network call lives in any helper.
   nodes, `lint.sh`/`doctor.sh` inert reporting.
 - ADR-0014 — `code:` entries are fnmatch globs (the matcher change
   in `path_matches`).
-- ADR-0018 — superseded; in-frontmatter `consolidating_by` claim.
 - ADR-0019 — sidecar `<leaf>.lock` files as the per-node mutex;
   `mark.sh consolidated` removes the sidecar.
 - ADR-0021 — `## Requirements & invariants` rename + `fm_section`;
