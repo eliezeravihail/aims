@@ -43,7 +43,10 @@ it the same way they would after a `/plan` flow.
   preserves the `/plan` invariant that the draft on disk is the
   authoritative artifact even if the model calls `ExitPlanMode` after.
 
-## Invariants & gotchas
+## Requirements & invariants
+
+- Requirements: none recorded beyond CLAUDE.md. Before editing, re-verify
+  against CLAUDE.md and ask the user.
 
 - Exits 0 always — PostToolUse hooks must not block.
 - Empty body → no file written (defense against an empty harness

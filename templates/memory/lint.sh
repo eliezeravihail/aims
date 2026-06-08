@@ -110,8 +110,10 @@ while IFS= read -r leaf; do
     done < <(fm_list "$leaf" "$field")
   done
 
-  # ADR-0008 section checks: exactly six body sections in order.
-  EXPECTED='## Purpose|## Design rationale|## Invariants & gotchas|## Known issues|## Pointers|## Open questions|'
+  # ADR-0008/0021 section checks: exactly six body sections in order.
+  # Section 3 holds user-sourced requirements + invariants; content is NOT
+  # enforced (an empty/seeded requirements section is a valid state).
+  EXPECTED='## Purpose|## Design rationale|## Requirements & invariants|## Known issues|## Pointers|## Open questions|'
   actual=$(grep -E '^## ' "$leaf" | tr '\n' '|')
   if [ "$actual" != "$EXPECTED" ]; then
     printf '%s: section headings/order wrong (got: %s)\n' "$leaf" "$actual"

@@ -83,7 +83,12 @@ ACTION FOR THIS NODE:
    ## Design rationale   — 2–4 bullets: why it is shaped this way; each
                            may end with a repo-relative pointer
                            (ADR-NNNN, commit SHA, plan slug).
-   ## Invariants & gotchas — what must not break when editing.
+   ## Requirements & invariants — KEEP any user-recorded requirement
+                           bullets verbatim; NEVER invent a requirement from a
+                           diff (a diff shows observed behavior, not user
+                           intent). New requirements come only from the user
+                           (ask) or CLAUDE.md. You MAY update the invariants/
+                           gotchas (code facts) below the requirements.
    ## Known issues       — open: one-line — pointer
                            fixed: one-line: what broke and why — SHA
    ## Pointers           — ADRs / Plans / Commits (anchors) / External.

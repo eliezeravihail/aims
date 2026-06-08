@@ -21,8 +21,8 @@ external_refs:
 owners:
   - ema
 dirty: false
-last_touched: 2026-06-01T06:52:29Z
-last_consolidated: 2026-06-01T06:52:29Z
+last_touched: 2026-06-08T06:13:10Z
+last_consolidated: 2026-06-08T06:13:10Z
 ---
 
 ## Purpose
@@ -31,8 +31,10 @@ Phase A of the two-phase maintenance design: a PostToolUse hook that
 runs after every Edit/Write/MultiEdit/NotebookEdit and flips
 `dirty: true` on every node whose `code:` list references the edited
 file. Pure bash + sed; ~27 ms per call on a tiny tree. Unknown paths
-go to `docs/memory/_inbox.md` for later classification. The hook
-never blocks and always exits 0.
+go to `docs/memory/_inbox.md` for later classification. It also
+**surfaces each matched node's `## Requirements & invariants` section**
+as factual `additionalContext` (ADR-0021) so the constraints are visible
+at the moment the code is edited. The hook never blocks and always exits 0.
 
 ## Design rationale
 
@@ -47,8 +49,16 @@ never blocks and always exits 0.
   serialization. The marker (`post-edit-marker.sh`) never touches the
   sidecar — only the Stop hook creates it and `mark.sh consolidated`
   (or the Stop hook's EXIT trap) removes it.
+- Requirements surfacing (ADR-0021) is factual, not imperative
+  (ADR-0020): the note lists the recorded requirements and asks the
+  model to verify the change against them, escalate a conflict to the
+  user, and ask before recording any newly-stated constraint. Capped at
+  1200 bytes per matched node via `fm_section`.
 
-## Invariants & gotchas
+## Requirements & invariants
+
+- Requirements: none recorded beyond CLAUDE.md. Before editing, re-verify
+  against CLAUDE.md and ask the user.
 
 - Never blocks. Never exits non-zero. A broken marker must not
   block the user's edit.
@@ -64,6 +74,8 @@ never blocks and always exits 0.
 - ADR-0009 — adds the `consolidated` mode to `mark.sh`.
 - ADR-0019 — `mark.sh consolidated` removes the `<leaf>.lock`
   sidecar alongside the dirty/timestamp bumps; supersedes ADR-0018.
+- ADR-0021 — marker surfaces node requirements at edit time (the
+  `reqblock` path + `fm_section`).
 - `templates/memory/mark.sh:34-46` — `consolidated` subcommand.
 
 ## Open questions

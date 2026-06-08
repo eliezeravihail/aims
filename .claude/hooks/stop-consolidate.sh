@@ -208,7 +208,7 @@ fi
 
 if [ -n "$EXTRA_CTX" ]; then
   prompt_parts+=("=== ADDITIONAL CONTEXT (from caller) ===
-Mine for invariants (→ ## Invariants & gotchas), design rationale
+Mine for invariants/gotchas (→ ## Requirements & invariants, the non-requirement part), design rationale
 (→ ## Design rationale), fixed bugs (→ ## Known issues > fixed, ONLY
 if a real commit SHA is cited), and open design questions
 (→ ## Open questions). Do NOT add content where the connection to

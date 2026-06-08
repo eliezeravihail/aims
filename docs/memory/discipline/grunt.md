@@ -25,7 +25,10 @@ Documents the /grunt slash command — the cheap, fast lane for mechanical edits
 
 ## Design rationale
 
-## Invariants & gotchas
+## Requirements & invariants
+
+- Requirements: none recorded beyond CLAUDE.md. Before editing, re-verify
+  against CLAUDE.md and ask the user.
 
 ## Known issues
 

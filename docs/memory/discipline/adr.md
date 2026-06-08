@@ -29,7 +29,10 @@ Documents the /adr slash command and the ADR convention. ADRs are append-only â€
 
 ## Design rationale
 
-## Invariants & gotchas
+## Requirements & invariants
+
+- Requirements: none recorded beyond CLAUDE.md. Before editing, re-verify
+  against CLAUDE.md and ask the user.
 
 ## Known issues
 

@@ -45,7 +45,10 @@ pipeline health summary (ADR-0008).
 - Memory tree README is capped at 2 KB to keep prompt injection light;
   the trail-off message tells the model how to read more.
 
-## Invariants & gotchas
+## Requirements & invariants
+
+- Requirements: none recorded beyond CLAUDE.md. Before editing, re-verify
+  against CLAUDE.md and ask the user.
 
 - Must `exit 0` even on internal failure — SessionStart hooks should
   not gate the session.

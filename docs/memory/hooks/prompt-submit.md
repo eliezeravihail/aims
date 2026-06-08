@@ -54,7 +54,10 @@ when files are mentioned.
   regex fall through to the **ambiguous** bucket and auto-engage; the
   injected text documents the per-prompt opt-out in both languages.
 
-## Invariants & gotchas
+## Requirements & invariants
+
+- Requirements: none recorded beyond CLAUDE.md. Before editing, re-verify
+  against CLAUDE.md and ask the user.
 
 - **Suppression rules in order**: slash-prefix → lock already exists →
   short prompt during an in-progress plan → empty prompt. Any one

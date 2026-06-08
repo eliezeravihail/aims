@@ -31,8 +31,8 @@ external_refs:
 owners:
   - ema
 dirty: false
-last_touched: 2026-06-01T06:52:29Z
-last_consolidated: 2026-06-01T06:52:29Z
+last_touched: 2026-06-08T06:13:10Z
+last_consolidated: 2026-06-08T06:13:10Z
 ---
 
 ## Purpose
@@ -40,7 +40,7 @@ last_consolidated: 2026-06-01T06:52:29Z
 The bash helpers that form the deterministic substrate for the memory
 tree. `_lib.sh` owns the frontmatter parsing/edit primitives
 (`fm_get`, `fm_set`, `fm_list`, `list_leaves`, `path_matches`,
-`now_iso`). Eight thin commands sit on top: `mark`, `new-node`,
+`now_iso`, `fm_section`). Eight thin commands sit on top: `mark`, `new-node`,
 `find-dirty`, `lint`, `check-refs`, `doctor`, `consolidate`,
 `classify-inbox`. All are POSIX-friendly (mawk/BSD-awk compatible).
 No external network call lives in any helper.
@@ -74,7 +74,10 @@ No external network call lives in any helper.
   `src/loaders/json_loader.py`; over-marking is acceptable, silent
   staleness is not.
 
-## Invariants & gotchas
+## Requirements & invariants
+
+- Requirements: none recorded beyond CLAUDE.md. Before editing, re-verify
+  against CLAUDE.md and ask the user.
 
 - The marker MUST normalize absolute `tool_input.file_path` against
   `git rev-parse --show-toplevel` before passing to `mark.sh`;
@@ -102,6 +105,13 @@ No external network call lives in any helper.
   `last_consolidated` (never file mtime — a clone resets mtimes).
 - `consolidate.sh` caps each per-source diff at 8 KB so the assembled
   Stop-hook prompt stays bounded even with many dirty nodes.
+- Node body section #3 is `## Requirements & invariants` (ADR-0021,
+  renamed from `## Invariants & gotchas`). `lint.sh`'s `EXPECTED`,
+  `new-node.sh`'s scaffold, and `consolidate.sh`'s schema hint all use
+  the new heading; `lint.sh` enforces heading/order but NOT content (a
+  seeded/empty requirements set is valid). `fm_section <file> <heading>`
+  extracts a named section body and is what `post-edit-marker` uses to
+  surface a node's requirements at edit time.
 - All helpers exit 0 on a missing `docs/memory/` so the plugin is
   safe to install in projects that haven't run `/memory-init` yet.
 
@@ -125,6 +135,8 @@ No external network call lives in any helper.
 - ADR-0018 — superseded; in-frontmatter `consolidating_by` claim.
 - ADR-0019 — sidecar `<leaf>.lock` files as the per-node mutex;
   `mark.sh consolidated` removes the sidecar.
+- ADR-0021 — `## Requirements & invariants` rename + `fm_section`;
+  lint enforces heading/order, not content.
 - `templates/memory/_lib.sh` — shared primitives.
 
 ## Open questions

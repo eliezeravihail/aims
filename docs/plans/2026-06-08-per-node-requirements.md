@@ -1,5 +1,5 @@
 # Plan: Per-node requirements — user-sourced, captured in-session
-Status: draft
+Status: completed
 Started: 2026-06-08
 
 ## תקציר מנהלים
@@ -173,3 +173,38 @@ behavioral, not unit-testable):
   prints, never breaks).
 - `templates/` and `.claude/` copies of the 4 mechanism files must stay
   byte-identical.
+
+## Outcome
+Implemented. Section #3 of the node schema is now `## Requirements &
+invariants` across `lint.sh` (`EXPECTED`), `consolidate.sh`, `new-node.sh`,
+`stop-consolidate.sh`, and all 15 nodes (each seeded "none recorded beyond
+CLAUDE.md"). `_lib.sh` gained `fm_section`; `post-edit-marker.sh` surfaces a
+node's requirements at edit time (factual, ADR-0020) and names the
+verify/conflict/ask rules. The capture model lives in CLAUDE.md
+("Requirements capture"): user-sourced only, recorded on confirmation, seed
+dropped on first real requirement, conflict → ask. `consolidate.sh` is
+forbidden from fabricating requirements; `lint.sh` enforces heading/order
+but not content. ADR: docs/adr/0021-per-node-requirements.md (proposed,
+refines ADR-0008). Open design questions resolved: requirement detection and
+conflict detection are accepted as model judgment, mitigated by edit-time
+surfacing; the seed line is dropped when the first real requirement is
+recorded (CLAUDE.md convention).
+
+## Closing checks
+Verification (run from repo root):
+- `bash -n` on all hooks/helpers/tests → OK.
+- `templates/` vs `.claude/` parity for the 6 changed mechanism files → identical.
+- `bash .claude/memory/lint.sh` → clean (15 nodes).
+- `bash .claude/memory/doctor.sh` → 0 dirty, 0 inert, lint clean; 3 nodes
+  >4 KB (ADR-0008 soft norm, informational — not addressed here).
+- `tests/requirements.sh` (4 cases), `router-auto-plan.sh`, `marker.sh`,
+  `exit-plan-mode.sh` → PASS.
+- `tests/consolidate.sh`, `tests/inform-never-block.sh` → only their
+  pre-existing, unrelated failures remain (unchanged by this plan).
+
+Resolved checklist:
+- ADR: WROTE — docs/adr/0021-per-node-requirements.md (proposed; refines ADR-0008) + README index row.
+- Nodes: UPDATE — memory/helpers, memory/phase-a-marker, memory/phase-b-consolidation, testing/smoke-tests (consolidated); all 15 nodes renamed+seeded.
+- CLAUDE.md: UPDATE — new "Requirements capture" section + PostToolUse Hooks bullet.
+- Tests: tests/requirements.sh added.
+- TODO: NONE (3 nodes >4 KB is a pre-existing soft-norm note, out of scope).

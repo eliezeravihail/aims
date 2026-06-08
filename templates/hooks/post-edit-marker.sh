@@ -77,6 +77,7 @@ bash "$MEM_HELPERS/mark.sh" "$rel" >/dev/null 2>&1 || true
 # (2)+(3) Resolve matching node(s); stamp advisory markers; build a factual note.
 now=$(date -u +%s 2>/dev/null || echo 0)
 notes=""
+reqblock=""
 while IFS= read -r leaf; do
   [ -z "$leaf" ] && continue
   hit=0
@@ -87,6 +88,9 @@ while IFS= read -r leaf; do
   [ "$hit" -eq 1 ] || continue
 
   node=$(fm_get "$leaf" node); node="${node:-$leaf}"
+  reqs=$(fm_section "$leaf" "Requirements & invariants" \
+         | sed '/^[[:space:]]*$/d' | head -c 1200)
+  [ -n "$reqs" ] && reqblock="${reqblock}"$'\n'"• ${rel} (node ${node}):"$'\n'"${reqs}"$'\n'
   lock="${leaf%.md}.lock"
   detail=""
   clobber=1
@@ -110,6 +114,10 @@ done < <(list_leaves)
 [ -z "$notes" ] && exit 0
 
 NOTE="aims memory: ${notes} Per project convention, the relevant node body is updated to reflect such changes; when a concurrent edit by another session is reported, the user is asked before updating. (Factual context; nothing is blocked.)"
+
+if [ -n "$reqblock" ]; then
+  NOTE="${NOTE}"$'\n\n'"Recorded requirements for the edited file (verify the change against them; if it conflicts with one, ask the user; if you stated a new constraint, ask whether to record it):${reqblock}"
+fi
 
 if command -v jq >/dev/null 2>&1; then
   jq -nc --arg c "$NOTE" '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:$c}}'

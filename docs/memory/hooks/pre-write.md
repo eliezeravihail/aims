@@ -61,7 +61,10 @@ Exit 2 surfaces stderr to the model and the user.
   staleness uses mtime + `AIMS_LOCK_TTL_SEC` (default 600s). Stale or
   same-session locks pass through silently.
 
-## Invariants & gotchas
+## Requirements & invariants
+
+- Requirements: none recorded beyond CLAUDE.md. Before editing, re-verify
+  against CLAUDE.md and ask the user.
 
 - The hook MUST exit 2 (not 1) to surface the stderr block message to
   Claude Code — anything else and the gate becomes invisible.

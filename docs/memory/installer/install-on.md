@@ -43,7 +43,10 @@ stays sacred. This split exists because aims ships some docs (the ADR
 bootstrap `0001`, `_template.md`, the ADR README prose) that must track the
 plugin, not freeze at first install.
 
-## Invariants & gotchas
+## Requirements & invariants
+
+- Requirements: none recorded beyond CLAUDE.md. Before editing, re-verify
+  against CLAUDE.md and ask the user.
 
 - **The idempotency seam (ADR-0011).** Refresh: hooks, memory scripts, the two
   commands, aims-owned `settings.json` hook entries, and aims-shipped ADR

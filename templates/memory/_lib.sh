@@ -194,3 +194,15 @@ list_leaves() {
   find "$MEMORY_DIR" -type f -name '*.md' \
     ! -name 'README.md' ! -name '_inbox.md' 2>/dev/null | sort
 }
+
+# Body of a "## <heading>" section: lines between it and the next "## "/EOF.
+# Usage: fm_section <file> <heading-text-without-##>
+fm_section() {
+  local f="$1" heading="$2"
+  [ -r "$f" ] || return
+  awk -v h="## $heading" '
+    $0 == h        { in_s=1; next }
+    in_s && /^## / { in_s=0 }
+    in_s           { print }
+  ' "$f"
+}

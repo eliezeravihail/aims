@@ -47,7 +47,10 @@ the Write tool), then asks for approval. Approval flips the status to
   with the Write tool; Phase 3 is the approval gate; Phase 4 = implement;
   Phase 5 = close-out.
 
-## Invariants & gotchas
+## Requirements & invariants
+
+- Requirements: none recorded beyond CLAUDE.md. Before editing, re-verify
+  against CLAUDE.md and ask the user.
 
 - `## Changes` carries actual code, not descriptions of code; its ordered
   subsections double as the implementation steps and as the close-out

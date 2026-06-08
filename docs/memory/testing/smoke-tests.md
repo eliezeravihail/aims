@@ -6,6 +6,7 @@ code:
   - tests/consolidate.sh
   - tests/exit-plan-mode.sh
   - tests/router-auto-plan.sh
+  - tests/requirements.sh
 commits: []
 sessions: []
 parents: []
@@ -32,6 +33,9 @@ Bash smoke tests for aims internals — no Anthropic API, no network.
 - `router-auto-plan.sh` (6 cases) — auto-engage intent router
   (ADR-0015). Case 6 guards char-vs-byte length: a short Hebrew prompt
   (~22 chars / 42 bytes) must NOT trip the actionable fallback.
+- `requirements.sh` (4 cases) — ADR-0021 per-node requirements: renamed
+  section + seed line, `fm_section` extraction, and `post-edit-marker`
+  surfacing requirements at edit time.
 
 ## Design rationale
 
@@ -42,7 +46,10 @@ Bash smoke tests for aims internals — no Anthropic API, no network.
 - `jq` is the only non-POSIX dep; tests `[SKIP]` cleanly when it's
   missing.
 
-## Invariants & gotchas
+## Requirements & invariants
+
+- Requirements: none recorded beyond CLAUDE.md. Before editing, re-verify
+  against CLAUDE.md and ask the user.
 
 - Run from any directory: `bash tests/<file>.sh` resolves `$ROOT` via
   `BASH_SOURCE` so the helper paths stay correct under `cd`.

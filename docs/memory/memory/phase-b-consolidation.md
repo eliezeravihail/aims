@@ -26,8 +26,8 @@ external_refs:
 owners:
   - ema
 dirty: false
-last_touched: 2026-06-07T21:36:49Z
-last_consolidated: 2026-06-07T21:36:49Z
+last_touched: 2026-06-08T06:13:10Z
+last_consolidated: 2026-06-08T06:13:10Z
 ---
 
 ## Purpose
@@ -75,7 +75,10 @@ breadcrumbs (non-duplication invariant).
   who is editing what. The frontmatter is no longer touched for mutex
   purposes; the ADR-0018 `consolidating_by` field is gone.
 
-## Invariants & gotchas
+## Requirements & invariants
+
+- Requirements: none recorded beyond CLAUDE.md. Before editing, re-verify
+  against CLAUDE.md and ask the user.
 
 - `stop-consolidate.sh` MUST NOT touch a node's
   `dirty/last_touched/last_consolidated` frontmatter; only `mark.sh
@@ -100,6 +103,12 @@ breadcrumbs (non-duplication invariant).
   explanation. Relatedly, the "Consolidation queue is ready / N dirty
   node(s)" header is now only added when `N_DIRTY > 0` (no more bogus
   "There are 0 dirty node(s)" text).
+- **Requirements are never fabricated (ADR-0021).** `consolidate.sh`'s
+  schema hint for section #3 (`## Requirements & invariants`, renamed
+  from `## Invariants & gotchas`) forbids inventing a requirement from a
+  diff — new requirements come only from the user or CLAUDE.md — while
+  invariants/gotchas (code facts) may still be updated. The EXTRA
+  CONTEXT mining hint is scoped to invariants/gotchas, not requirements.
 
 ## Known issues
 
@@ -115,6 +124,7 @@ breadcrumbs (non-duplication invariant).
 
 - ADR-0007 — two-phase design (partially superseded for this node).
 - ADR-0008 — node body schema the prompt enforces.
+- ADR-0021 — section #3 renamed; consolidation must not fabricate requirements.
 - ADR-0009 — in-band consolidation mechanism.
 - ADR-0018 — superseded (in-frontmatter claim experiment).
 - ADR-0019 — sidecar `<leaf>.lock` mutex + EXIT trap; the design in
