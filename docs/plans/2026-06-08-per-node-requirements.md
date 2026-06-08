@@ -1,28 +1,63 @@
-# Plan: Per-node requirements — explicit, edit-time-surfaced contract
+# Plan: Per-node requirements — user-sourced, captured in-session
 Status: draft
 Started: 2026-06-08
 
 ## תקציר מנהלים
-כל צומת זיכרון יישא **דרישות מפורשות** — צ'קליסט של "MUST" שהקוד שהצומת מתעד
-חייב להמשיך לקיים — כדי שבסשנים ארוכים תיקון של דבר אחד לא ישבור דרישה אחרת
-בשקט. במקום סקציה שביעית, ממזגים את הכוונה לסקציה הקיימת ומשנים את שמה
-`## Invariants & gotchas` → `## Requirements & invariants`, שמובילה כעת ברשימת
-דרישות בדיקות (כל דרישה רשאית לצטט את הטסט/ADR שאוכף אותה) ואז מלכודות מימוש.
-ה‑hook `post-edit-marker` יזריק את הדרישות **ברגע שעורכים את הקובץ** (factual,
-לא מצווה — ADR-0020), ה‑`lint` יוודא שהסקציה אינה ריקה, ו‑`consolidate`/
-`new-node` יעדכנו את הסכמה. המנגנון נוגע ב‑4 קבצי helper/hook (×2 עותקים) +
-שכתוב קל של הסקציה ב‑15 הצמתים. בחרנו מיזוג על פני סקציה שביעית כדי לשמור על
-שש סקציות וה‑lint התקין, ובחרנו אכיפה קלה (הצגה + בדיקת קיום) על פני הרצת
-טסטים אוטומטית.
+דרישה היא **כוונת משתמש**, לא עובדת קוד — לכן היא נאספת ממך תוך כדי סשן ולא
+מומצאת מקריאת הקוד. כל צומת מקבל אתחול אחיד בסקציה (הממוזגת)
+`## Requirements & invariants`: *"לא ידועות דרישות מעבר ל‑CLAUDE.md; לפני עריכה
+לאמת שוב מולו"*. הלכידה היא **קונבנציה התנהגותית** המעוגנת ב‑CLAUDE.md: כשאתה
+מנסח אילוץ במהלך הדיון (למשל "אל תפר את הממשק", "הקובץ הזה בלתי תלוי בשני") או
+כשעורכים קובץ, Claude **שואל אם לרשום זאת כדרישה** לצומת הרלוונטי — ורושם רק
+אחרי אישורך. ה‑hook `post-edit-marker` מציג את הדרישות הרשומות **ברגע העריכה**
+(factual, ADR-0020); הכלל המרכזי נגד רגרסיות: **אם שינוי מתנגש בדרישה רשומה —
+לעצור ולשאול את המשתמש**. שינויי קוד: שם הסקציה מוחלף, `consolidate` מקבל
+איסור מפורש להמציא דרישות, ו‑`lint` רק שומר על שם/סדר הכותרות (בלי אכיפת תוכן —
+ריק הוא מצב תקין).
 
 ## Changes
 
+### CLAUDE.md  — new convention (the heart of the feature)
+Add a short "Requirements capture" subsection (and one Hooks bullet). This is
+what makes Claude actually perform capture/verify/conflict-ask:
+```markdown
+## Requirements capture
+
+Requirements are **user intent**, recorded only from the user — never
+fabricated from code (that is mere observed behavior). They live per node in
+`## Requirements & invariants`.
+
+- **Capture on statement.** When you express a constraint during a session
+  ("don't break the interface", "this file is independent of X"), or when a
+  file is about to be edited, Claude asks whether to record it as a requirement
+  on the relevant node, and records it verbatim only after you confirm.
+- **Verify before editing.** A node seeded "no requirements beyond CLAUDE.md"
+  means: re-verify against CLAUDE.md (and ask) before changing its code.
+- **Conflict → ask.** If a change would conflict with a recorded requirement,
+  or two requirements conflict, Claude stops and asks the user rather than
+  silently choosing. This is the anti-regression guard for long sessions.
+```
+
+### docs/memory/**/*.md  — all 15 nodes (seed, no fabrication)
+1. Rename `## Invariants & gotchas` → `## Requirements & invariants`
+   (`sed -i 's/^## Invariants & gotchas$/## Requirements \& invariants/'`).
+2. Prepend a uniform requirements seed line; keep existing bullets below as
+   invariants/gotchas (those are legitimate observed facts, not fabricated
+   requirements):
+```markdown
+## Requirements & invariants
+
+- Requirements: none recorded beyond CLAUDE.md. Before editing, re-verify
+  against CLAUDE.md and ask the user.
+
+<existing invariant/gotcha bullets stay here, unchanged>
+```
+
 ### templates/memory/_lib.sh  +  .claude/memory/_lib.sh
-Add a section-body extractor (used by the marker to surface requirements, and
-reusable by lint). Append after `list_leaves`:
+Section-body extractor used by the marker. Append after `list_leaves`:
 ```bash
-# Extract the body of a "## <heading>" section: lines between that heading and
-# the next "## " (or EOF). Usage: fm_section <file> <heading-text-without-##>
+# Body of a "## <heading>" section: lines between it and the next "## "/EOF.
+# Usage: fm_section <file> <heading-text-without-##>
 fm_section() {
   local f="$1" heading="$2"
   [ -r "$f" ] || return
@@ -34,162 +69,107 @@ fm_section() {
 }
 ```
 
-### templates/memory/lint.sh  +  .claude/memory/lint.sh
-(1) Rename the enforced heading in `EXPECTED` (line 114). (2) Add a
-content-presence check so the contract is never an empty heading.
-```bash
-  # ADR-0008/0021 section checks: exactly six body sections in order.
-  EXPECTED='## Purpose|## Design rationale|## Requirements & invariants|## Known issues|## Pointers|## Open questions|'
-  actual=$(grep -E '^## ' "$leaf" | tr '\n' '|')
-  if [ "$actual" != "$EXPECTED" ]; then
-    printf '%s: section headings/order wrong (got: %s)\n' "$leaf" "$actual"
-    issues=$((issues + 1))
-  fi
-
-  # ADR-0021: the Requirements & invariants section must carry real content
-  # (>=1 non-blank, non-placeholder line). An empty contract is exactly what
-  # regressions slip through during long sessions.
-  reqs=$(awk '
-    $0=="## Requirements & invariants" { s=1; next }
-    s && /^## /                        { s=0 }
-    s && NF && $0 !~ /^[[:space:]]*\(.*\)[[:space:]]*$/ { print }
-  ' "$leaf")
-  if [ -z "$reqs" ]; then
-    printf '%s: Requirements & invariants section is empty (no requirements stated)\n' "$leaf"
-    issues=$((issues + 1))
-  fi
-```
-
-### templates/memory/consolidate.sh  +  .claude/memory/consolidate.sh
-Rewrite the schema hint for the renamed section (line 86) so consolidation
-produces a checklist, not prose:
-```
-   ## Requirements & invariants — explicit checklist FIRST: one
-                           "- MUST <specific, testable statement>" bullet per
-                           requirement the code must keep satisfying; each may
-                           cite the enforcing test/ADR (e.g. "— tests/foo.sh"
-                           or "— ADR-NNNN"). Then any gotchas/traps. This is
-                           the contract a future edit is checked against; be
-                           specific, not vague.
-```
-
-### templates/memory/new-node.sh  +  .claude/memory/new-node.sh
-Rename the scaffolded heading + checklist placeholder (line 90 region):
-```
-## Requirements & invariants
-
-(Checklist FIRST: one "- MUST ..." bullet per requirement this code must
-satisfy; cite the enforcing test/ADR where one exists. Then any gotchas.
-This is the contract future edits are checked against.)
-```
-
 ### templates/hooks/post-edit-marker.sh  +  .claude/hooks/post-edit-marker.sh
-Surface each matched node's requirements right when its source is edited.
-Declare an accumulator before the match loop, fill it inside, append to NOTE.
+Surface each matched node's requirements at edit time. Add `reqblock=""` before
+the match loop; inside, after `node=$(...)`:
 ```bash
-# before the `while IFS= read -r leaf` loop (near `notes=""`):
-reqblock=""
-
-# inside the loop, after `node=$(fm_get "$leaf" node); node="${node:-$leaf}"`:
   reqs=$(fm_section "$leaf" "Requirements & invariants" \
          | sed '/^[[:space:]]*$/d' | head -c 1200)
   [ -n "$reqs" ] && reqblock="${reqblock}"$'\n'"• ${rel} (node ${node}):"$'\n'"${reqs}"$'\n'
-
-# after building NOTE (line ~112), before the JSON emit:
+```
+After NOTE is built, append (factual — names the conflict rule):
+```bash
 if [ -n "$reqblock" ]; then
-  NOTE="${NOTE}"$'\n\n'"Requirements the edited file is expected to keep satisfying (factual — verify the change against them):${reqblock}"
+  NOTE="${NOTE}"$'\n\n'"Recorded requirements for the edited file (verify the change against them; if it conflicts with one, ask the user; if you stated a new constraint, ask whether to record it):${reqblock}"
 fi
 ```
 
+### templates/memory/lint.sh  +  .claude/memory/lint.sh
+Only rename the enforced heading (line 114). **No content-presence check** —
+an empty/seeded requirements section is a valid state (requirements are
+user-sourced and may be unknown):
+```bash
+  EXPECTED='## Purpose|## Design rationale|## Requirements & invariants|## Known issues|## Pointers|## Open questions|'
+```
+
+### templates/memory/consolidate.sh  +  .claude/memory/consolidate.sh
+Rename heading (line 86) and forbid fabricating requirements:
+```
+   ## Requirements & invariants — KEEP user-recorded requirement bullets
+                           verbatim; NEVER invent a requirement from a diff
+                           (that is observed behavior, not user intent). You
+                           may update invariants/gotchas (code facts) below the
+                           requirements. New requirements come only from the
+                           user (ask) or CLAUDE.md.
+```
+
 ### templates/hooks/stop-consolidate.sh  +  .claude/hooks/stop-consolidate.sh
-One-line rename in the EXTRA CONTEXT mining hint (line 211):
+Rename the mining hint (line 211) and scope it to invariants only:
 ```
-Mine for requirements/invariants (→ ## Requirements & invariants), design rationale
+Mine for invariants/gotchas (→ ## Requirements & invariants, the non-requirement part), design rationale
 ```
 
-### docs/memory/**/*.md  — all 15 nodes (the bulk content work)
-Mechanical+editorial transform applied to every leaf:
-1. Rename `## Invariants & gotchas` → `## Requirements & invariants`
-   (scripted: `sed -i 's/^## Invariants & gotchas$/## Requirements \& invariants/'`).
-2. Reshape the body to **lead with `- MUST ...` requirement bullets**, then
-   keep gotchas. Most existing bullets are already requirement-like; phrase
-   them as explicit MUST and append the enforcing test/ADR pointer where one
-   exists. Derive missing requirements from the node's `code:`, its ADRs, and
-   CLAUDE.md.
-
-Representative example — `docs/memory/hooks/prompt-submit.md`:
-```markdown
+### templates/memory/new-node.sh  +  .claude/memory/new-node.sh
+Rename heading (line 90) + seed scaffold:
+```
 ## Requirements & invariants
 
-- MUST always `exit 0` — UserPromptSubmit hooks are advisory only and cannot
-  block a prompt. — tests/inform-never-block.sh
-- MUST never create a `.planning-lock` and never emit an imperative note;
-  injected text is factual context only. — ADR-0020, tests/router-auto-plan.sh
-- MUST measure prompt length in characters, not bytes (force a UTF-8 LC_ALL
-  when the inherited locale isn't UTF-8), so a short non-ASCII prompt does not
-  trip the actionable fallback. — tests/router-auto-plan.sh (case 6)
-- MUST keep lock/auto-engage and memory injection independent: a pure-question
-  prompt that references a tracked file gets memory injection only. — ADR-0016
-- Suppression order (any one short-circuits to exit 0): slash-prefix → active
-  plan + short prompt → empty prompt.
-- Gotcha: memory match derives a literal prefix from each `code:` glob (cut at
-  the first `*`/`?`/`[`) and substring-tests the prompt; per-session de-dup at
-  `.claude/memory/.injected-<session_id>`, total injection capped at 8 KB.
+- Requirements: none recorded beyond CLAUDE.md. Before editing, re-verify
+  against CLAUDE.md and ask the user.
+
+(Invariants/gotchas — what must not break when editing. Concise.)
 ```
-The other 14 nodes follow the same shape (lead with MUST bullets carrying
-test/ADR pointers, then gotchas).
 
 ### docs/adr/0021-per-node-requirements.md  (new; created in close-out)
-Refines ADR-0008: section #3 is renamed and redefined as an explicit
-requirements checklist; `post-edit-marker` surfaces it at edit time (factual,
-per ADR-0020); `lint` enforces non-empty content. Append an index row to
-`docs/adr/README.md`. ADR-0008 stays accepted (refined, not superseded).
+Refines ADR-0008: section #3 renamed to `## Requirements & invariants`;
+requirements are user-sourced (captured on statement, confirmed, never
+fabricated), seeded uniformly, surfaced at edit time (factual, ADR-0020), and
+conflicts are escalated to the user. Append a row to `docs/adr/README.md`.
 
 ### tests/requirements.sh  (new)
-jq-free smoke test:
-- `fm_section` extracts the named section body (and only it).
-- `lint.sh` flags a node whose `## Requirements & invariants` body is empty /
-  placeholder-only, and is silent once a `- MUST ...` bullet is present.
-- `post-edit-marker.sh`, given a payload editing a file tracked by a node with
-  requirements, emits `additionalContext` containing the requirement text.
-
-### CLAUDE.md  (Hooks section)
-Extend the `PostToolUse` bullet: in addition to marking the leaf dirty, the
-marker injects the node's requirements so they are visible at edit time.
+jq-free smoke test for the mechanical parts (the NL-capture convention is
+behavioral, not unit-testable):
+- `fm_section` extracts only the named section body.
+- `post-edit-marker.sh`, given a payload editing a tracked file, emits
+  `additionalContext` containing the node's requirement text.
+- `lint.sh` stays clean on a seeded node (renamed heading, seed line present).
 
 ## Open design questions
-- Freshly scaffolded nodes (placeholder-only requirements) will be reported by
-  the new lint check until filled. Proposed: accept it — lint is informational
-  (exit 0) and the report is a useful "state the contract" nudge, not a block.
-- `post-edit-marker` requirements injection is capped at 1200 bytes per matched
-  node. If several nodes match one edit the note can still grow; proposed cap is
-  per-node only (matches are rare and requirement sections are short). Revisit
-  only if observed to bloat.
-- Citing an enforcing test per requirement is **optional** (not all
-  requirements have one); lint checks presence of content, not citations.
+- Detecting a "stated constraint" in free chat is the model's judgment;
+  something said in passing may be missed. Mitigation: also prompt at
+  edit-time (post-edit-marker surfaces requirements + the ask-to-record note).
+  Accept residual reliance on model judgment — there is no reliable bash parse
+  of natural-language requirements.
+- Conflict detection (change vs. recorded requirement) is also model judgment;
+  the rule is "if you notice a conflict, ask." Not automatable.
+- Once a node has ≥1 real recorded requirement, the uniform seed line should be
+  dropped (it only states "none known"). Proposed: remove the seed line at the
+  moment the first real requirement is recorded.
 
 ## Verification
 - `bash -n templates/hooks/*.sh templates/memory/*.sh .claude/hooks/*.sh .claude/memory/*.sh`
-- `diff -q` each changed pair under `templates/` vs `.claude/` → identical.
-- `bash .claude/memory/lint.sh` → clean (all 15 nodes migrated, none empty).
+- `diff -q` each changed `templates/` vs `.claude/` pair → identical.
+- `bash .claude/memory/lint.sh` → clean (all 15 nodes: renamed heading + seed).
 - `bash tests/requirements.sh` → passes.
 - `bash tests/router-auto-plan.sh && bash tests/marker.sh && bash tests/exit-plan-mode.sh` → pass.
-  (`tests/consolidate.sh` + `tests/inform-never-block.sh` carry pre-existing,
-  unrelated failures — confirm they are unchanged, not newly broken.)
-- Manual: run `post-edit-marker.sh` with a payload editing a tracked source file
-  and confirm the emitted `additionalContext` includes the requirements.
+  (`tests/consolidate.sh`, `tests/inform-never-block.sh`: confirm only the
+  pre-existing, unrelated failures remain — nothing newly broken.)
+- Manual: run `post-edit-marker.sh` with a payload editing a tracked source
+  file; confirm the emitted `additionalContext` includes the seeded requirement.
 
 ## Close-out checklist
-- ADR: WRITE — 0021-per-node-requirements: per-node requirements checklist, surfaced at edit time
+- ADR: WRITE — 0021-per-node-requirements: user-sourced requirements captured in-session, seeded + surfaced at edit time, conflict→ask
 - Nodes: UPDATE — docs/memory/memory/helpers.md, docs/memory/memory/phase-a-marker.md, docs/memory/memory/phase-b-consolidation.md, docs/memory/testing/smoke-tests.md (their `code:` sources changed)
-- CLAUDE.md: UPDATE — Hooks (post-edit-marker now surfaces requirements)
+- CLAUDE.md: UPDATE — new "Requirements capture" section + Hooks bullet (post-edit-marker surfaces requirements)
 - Tests: tests/requirements.sh added
 - TODO: NONE
 
 ## Risks / unknowns
+- The capture/verify/conflict behavior depends on Claude reading the CLAUDE.md
+  convention (it is always in context) — there is no hard enforcement; aims
+  informs, never blocks (ADR-0020).
 - Migration atomicity: the `EXPECTED` rename in lint and the 15 node renames
-  must land together, or lint transiently reports 15 ordering issues (no runtime
-  break — lint is informational).
-- `templates/` and `.claude/` copies must stay byte-identical for the 4
-  mechanism files; a drift would mean the installed hook differs from the
-  distributed one.
+  must land together (lint is informational, so a transient mismatch only
+  prints, never breaks).
+- `templates/` and `.claude/` copies of the 4 mechanism files must stay
+  byte-identical.
