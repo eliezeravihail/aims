@@ -1,5 +1,6 @@
 ---
-Status: in-progress
+Status: completed
+Completed: 2026-06-11
 Started: 2026-06-11
 ---
 
@@ -877,3 +878,79 @@ Per-track spot checks:
    node whose `last_verified` is older than its cited ADR's mtime gets flagged.
 4. `docs/constitution.md` (spec-kit pattern): the small set of invariants the project considers non-negotiable.
 5. `docs/plans/README.md` decay index (beads pattern): an auto-maintained roll-up of plan status with age.
+
+## Outcome (2026-06-11)
+
+All six tracks shipped as independent commits on
+`claude/stoic-goodall-ScbPt`:
+
+| Track | Commit  | What landed                                                   |
+|-------|---------|---------------------------------------------------------------|
+| 1     | 124e74a | concurrency core (H1 trap scope; H2 .marker/.lock split; H3+M1 tests rewritten); ADR-0024 added; ADR-0019 → superseded |
+| 2     | 48e3988 | data-framing fences on three injection sites (M5); bounded install-on deletion (M7); bedrock compaction invariants absorbed; ADR-0025 added |
+| 3     | 9973146 | centralized `json_escape` in `_lib.sh` (M2); SessionEnd no-op breadcrumb (M3); new PreCompact hook (absorbed from bedrock plan) wired into both settings files |
+| 4     | f777995 | `commands/install-on.md` re-synced to template (M6 summary-language feature restored); L7 deep-tree freshness probe; `tests/copies-identical.sh` added and wired into CLAUDE.md test command |
+| 5     | 91fe2bd | L1 (lint subshell), L2 (fm_set mode), L3 (stale text), L4 (bash≥4 guard on three scripts), L5 (`--`), L6 (jq-less prompt extract); leaf size cap absorbed from bedrock (warn ~150 / critical ~200) |
+| 6     | e409d6e | ADR-0026 added (amends 0020 with Stop-hook carve-out); D2 — docs/adr/ is now a tracked surface for `code:` globs; ADR lifecycle sweep (10 ADRs flipped to `accepted`); bedrock plan marked superseded with per-item disposition |
+
+### ADRs written
+
+- **ADR-0024** — Mutex protocol split (`.lock` strict, `.marker` advisory).
+  Supersedes ADR-0019. Closes H1+H2.
+- **ADR-0025** — Repo content injected as additionalContext is framed as
+  data. New architectural invariant. Closes M5.
+- **ADR-0026** — Stop-hook `decision:block` is the
+  consolidation-continuation gate. Amends ADR-0020. Closes D1.
+
+### Credit (web-inspired ideas absorbed)
+
+- **project-bedrock** (https://github.com/robotaitai/project-bedrock) —
+  leaf size cap (Track 5c), compaction invariants (Track 2), PreCompact
+  hook (Track 3 / bedrock plan absorbed). Credit comments live in
+  `templates/memory/lint.sh`, `templates/memory/consolidate.sh`, and
+  `templates/hooks/pre-compact.sh`.
+- **claude-code-context-handoff**
+  (https://github.com/who96/claude-code-context-handoff) — secondary
+  inspiration for the PreCompact hook (handoff-across-compaction
+  pattern). Credit in `templates/hooks/pre-compact.sh`.
+
+### Closing checks
+
+- `bash -n templates/hooks/*.sh && bash -n .claude/hooks/*.sh && bash -n templates/memory/*.sh && bash -n .claude/memory/*.sh` — PASS
+- `bash tests/copies-identical.sh` — PASS (all four distribution pairs)
+- `bash tests/inform-never-block.sh` — 27/27 PASS
+- `bash tests/consolidate.sh` — PASS (covers H1+H2 contracts)
+- `bash tests/router-auto-plan.sh` — 6/6 PASS
+- `bash tests/exit-plan-mode.sh` — 4/4 PASS
+- `bash tests/marker.sh` — 10/10 PASS
+- `bash .claude/memory/lint.sh` — clean (15 nodes)
+
+### Resolved Close-out checklist
+
+- ADR: WROTE ADR-0024, ADR-0025, ADR-0026.
+- Nodes: many leaves auto-marked dirty during implementation (every
+  node whose `code:` covered a touched file). They surface in the Stop
+  hook's consolidation queue on subsequent turns; the in-band
+  protocol will reconsolidate them under the freshly-fixed mutex
+  (ADR-0024).
+- CLAUDE.md: UPDATED — Build & test command now includes the four test
+  scripts and `tests/copies-identical.sh`.
+- Tests: `tests/copies-identical.sh` added; `tests/consolidate.sh` and
+  `tests/inform-never-block.sh` rewritten.
+- TODO: the five web-inspired follow-up ideas listed in `## Follow-up
+  tracks` remain deferred (progressive-disclosure injection,
+  SessionEnd(clear) handoff, `last_verified:` staleness flag,
+  `docs/constitution.md`, `docs/plans/README.md` decay index).
+
+### Open design questions — resolved
+
+1. H2 protocol pick → **(b) suffix split** (`.marker` / `.lock`).
+   Atomicity preserved, independent evolution. Implemented as planned.
+2. D2 mechanism → **extend `code:` globs to admit `docs/adr/*.md`**.
+   Reuses `path_matches`; the dirty signal is the same as for code.
+3. L4 portability → **(a) soft guard + documented bash≥4 requirement**.
+   Stock macOS bash 3.2 hits the guard, prints one factual breadcrumb,
+   exits 0. Brew bash recommended.
+4. Shipping order → **strict serial 1 → 2 → 3 → 4 → 5 → 6** (single
+   session). The plan's parallel-PR option was not used since one
+   driver was shipping all tracks.
