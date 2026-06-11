@@ -6,6 +6,8 @@ code:
   - tests/consolidate.sh
   - tests/exit-plan-mode.sh
   - tests/router-auto-plan.sh
+  - tests/inform-never-block.sh
+  - tests/copies-identical.sh
 commits: []
 sessions: []
 parents: []

@@ -4,8 +4,10 @@ kind: module
 code:
   - templates/hooks/stop-consolidate.sh
   - templates/hooks/session-end.sh
+  - templates/hooks/pre-compact.sh
   - .claude/hooks/stop-consolidate.sh
   - .claude/hooks/session-end.sh
+  - .claude/hooks/pre-compact.sh
   - templates/memory/consolidate.sh
   - templates/memory/classify-inbox.sh
   - templates/memory/check-refs.sh
