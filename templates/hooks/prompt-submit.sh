@@ -238,9 +238,16 @@ if command -v jq >/dev/null 2>&1; then
   jq -nc --arg ctx "$combined" \
     '{hookSpecificOutput: {hookEventName: "UserPromptSubmit", additionalContext: $ctx}}'
 else
-  esc=$(printf '%s' "$combined" \
-    | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' \
-    | awk 'BEGIN{ORS="\\n"} {print}')
+  # M2: prefer shared json_escape if _lib.sh was sourced earlier (line ~78);
+  # the helper handles tabs / CR / all C0 control chars. Inline fallback
+  # mirrors the prior behavior for the truly bare-environment case.
+  if command -v json_escape >/dev/null 2>&1; then
+    esc=$(json_escape "$combined")
+  else
+    esc=$(printf '%s' "$combined" \
+      | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' \
+      | awk 'BEGIN{ORS="\\n"} {print}')
+  fi
   printf '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":"%s"}}\n' "$esc"
 fi
 

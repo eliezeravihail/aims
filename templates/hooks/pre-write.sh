@@ -87,7 +87,17 @@ if command -v jq >/dev/null 2>&1; then
   jq -nc --arg c "$NOTE" \
     '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"allow",additionalContext:$c}}'
 else
-  esc=$(printf '%s' "$NOTE" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g')
+  # M2: use the shared json_escape helper (handles tabs / CR / all C0 control
+  # chars). The prior ad-hoc sed only handled `\` and `"`, producing invalid
+  # JSON whenever NOTE contained a tab or CR.
+  if [ -r ".claude/memory/_lib.sh" ];   then . ".claude/memory/_lib.sh"
+  elif [ -r "templates/memory/_lib.sh" ]; then . "templates/memory/_lib.sh"
+  fi
+  if command -v json_escape >/dev/null 2>&1; then
+    esc=$(json_escape "$NOTE")
+  else
+    esc=$(printf '%s' "$NOTE" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g')
+  fi
   printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","additionalContext":"%s"}}\n' "$esc"
 fi
 exit 0

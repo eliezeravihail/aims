@@ -18,8 +18,8 @@ external_refs:
   - { path: docs/adr/0019-sidecar-lockfiles-for-memory-nodes.md,      kind: adr, why: pre-write refuses memory-node edits while another session holds the sidecar .lock; same patch normalizes absolute paths against the repo root so the docs/plans carve-out actually fires }
 owners:
   - ema
-dirty: false
-last_touched: 2026-06-02T15:53:38Z
+dirty: true
+last_touched: 2026-06-11T07:24:13Z
 last_consolidated: 2026-06-02T15:53:38Z
 ---
 

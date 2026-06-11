@@ -30,6 +30,11 @@ else
   exit 0
 fi
 
+# Source shared helpers (json_escape, etc.). Best-effort — the hook still
+# works without _lib.sh, just with the older inline escaper.
+# shellcheck disable=SC1091
+[ -r "$MEM_HELPERS/_lib.sh" ] && . "$MEM_HELPERS/_lib.sh"
+
 if [ -r ".claude/memory/throttle.conf" ]; then
   # shellcheck disable=SC1091
   . ".claude/memory/throttle.conf"
@@ -254,9 +259,16 @@ if command -v jq >/dev/null 2>&1; then
   jq -nc --arg r "$full_prompt" \
     '{decision: "block", reason: $r}'
 else
-  esc=$(printf '%s' "$full_prompt" \
-    | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' \
-    | awk 'BEGIN{ORS="\\n"} {print}')
+  # M2: shared json_escape — handles tabs / CR / all C0 control chars. The
+  # reason field embeds `git log -p` diffs which are full of tabs; the prior
+  # sed-only escaper produced JSON that jq-less consumers couldn't parse.
+  if command -v json_escape >/dev/null 2>&1; then
+    esc=$(json_escape "$full_prompt")
+  else
+    esc=$(printf '%s' "$full_prompt" \
+      | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' \
+      | awk 'BEGIN{ORS="\\n"} {print}')
+  fi
   printf '{"decision":"block","reason":"%s"}\n' "$esc"
 fi
 

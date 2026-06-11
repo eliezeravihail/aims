@@ -123,7 +123,8 @@ NOTE="aims memory: ${notes} Per project convention, the relevant node body is up
 if command -v jq >/dev/null 2>&1; then
   jq -nc --arg c "$NOTE" '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:$c}}'
 else
-  esc=$(printf '%s' "$NOTE" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g')
+  # M2: shared json_escape — handles tabs / CR / all C0 control chars.
+  esc=$(json_escape "$NOTE")
   printf '{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"%s"}}\n' "$esc"
 fi
 exit 0
