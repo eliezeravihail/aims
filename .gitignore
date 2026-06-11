@@ -11,6 +11,11 @@ docs/memory/_inbox.md
 # Memory consolidation throttle state (written by stop-consolidate)
 .claude/memory/.last-consolidated
 
+# Consolidation-report snapshot for repeat-offender detection (ADR-0027).
+# Written by stop-consolidate on emit; read on the next fire to detect a
+# previous turn's drain-claim that didn't actually change state.
+docs/memory/.last-report-snapshot
+
 # Prompt-submit per-session injection state (ADR-0016 dedup ledger)
 .claude/memory/.injected-*
 

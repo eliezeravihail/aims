@@ -187,10 +187,47 @@ if [ "$N_DIRTY" -eq 0 ] && [ "$INBOX_NONEMPTY" -eq 0 ] && [ -z "$IN_PROGRESS_PLA
   exit 0
 fi
 
+# ── Repeat-offender detection (ADR-0027) ──────────────────────
+# The previous Stop fire wrote a snapshot of the work it asked the model
+# to do. If we now see the SAME state (same inbox bytes, same dirty leaf
+# set), the prior `===[aims: <msg>]===` report drained nothing — it was
+# a false report. We don't block; we name the discrepancy factually so
+# the next attempt cannot proceed without seeing it.
+SNAPSHOT_FILE="${AIMS_MEMORY_DIR:-docs/memory}/.last-report-snapshot"
+N_INBOX_LINES=0
+[ -f "$INBOX_PATH" ] && N_INBOX_LINES=$(grep -c '^- ' "$INBOX_PATH" 2>/dev/null || echo 0)
+# State fingerprint: inbox content + sorted dirty leaf paths.
+state_now=$( {
+  [ -f "$INBOX_PATH" ] && cat "$INBOX_PATH"
+  printf -- '--dirty--\n'
+  printf '%s\n' "${DIRTY[@]}" | sort
+} | { command -v sha1sum >/dev/null 2>&1 && sha1sum | cut -d' ' -f1; } )
+
+PREV_LIED=0
+PREV_N_DIRTY=0
+PREV_N_INBOX=0
+if [ -r "$SNAPSHOT_FILE" ]; then
+  # Snapshot format: one line each — N_DIRTY, N_INBOX, state_hash, emit_ts.
+  PREV_N_DIRTY=$(sed -n '1p' "$SNAPSHOT_FILE" 2>/dev/null || echo 0)
+  PREV_N_INBOX=$(sed -n '2p' "$SNAPSHOT_FILE" 2>/dev/null || echo 0)
+  PREV_HASH=$(sed -n '3p' "$SNAPSHOT_FILE" 2>/dev/null || true)
+  case "$PREV_N_DIRTY" in ''|*[!0-9]*) PREV_N_DIRTY=0 ;; esac
+  case "$PREV_N_INBOX" in ''|*[!0-9]*) PREV_N_INBOX=0 ;; esac
+  # The prior emit asked the model to drain SOMETHING (dirty or inbox);
+  # if state hash is byte-identical to what was sent, the model didn't.
+  if [ -n "$PREV_HASH" ] && [ "$PREV_HASH" = "$state_now" ] \
+     && [ $((PREV_N_DIRTY + PREV_N_INBOX)) -gt 0 ]; then
+    PREV_LIED=1
+  fi
+fi
+
 # ── Build the per-node prompt sections in bash ────────────────
 EXTRA_CTX="${AIMS_EXTRA_CONTEXT:-}"
 
 prompt_parts=()
+if [ "$PREV_LIED" -eq 1 ]; then
+  prompt_parts+=("[aims-memory] DISCREPANCY DETECTED (ADR-0027). The previous Stop hook fired with $PREV_N_DIRTY dirty node(s) and $PREV_N_INBOX inbox bullet(s); a \`===[aims: <msg>]===\` report was emitted. State has NOT changed since: the same dirty set and the same inbox bytes are still present. The previous report did not match measured state. Do the work this turn before any reply: apply the Edits below, run the mark.sh commands, drain the inbox bullets per the classification rules. Do not emit \`queue drained\` (or any drain-claim) unless the inbox file is actually empty and zero leaves are dirty.")
+fi
 prompt_parts+=("[aims-memory] Consolidation queue is ready (per ADR-0009).
 There are $N_DIRTY dirty node(s) below. Before responding to the user,
 process each one in order: apply the Edit per the rules, then run the
@@ -203,7 +240,11 @@ short line in the form \`===[aims: <message>]===\` — examples:
 \`===[aims: nodes updated]===\`, \`===[aims: queue drained]===\`,
 \`===[aims: 4 dirty]===\`. One line only, no per-node prose unless the
 user asks, no opening/closing wrapper. Regular conversational mentions
-of aims topics elsewhere in the reply are NOT prefixed.")
+of aims topics elsewhere in the reply are NOT prefixed.
+The drain-claim words (\`queue drained\`, \`nodes updated\`, \`inbox cleared\`)
+are reserved — emit them ONLY when the corresponding measured state has
+actually changed (inbox empty, dirty count zero). Otherwise pick a
+state-accurate message (e.g. \`N dirty, M inbox\`).")
 
 if [ -n "$IN_PROGRESS_PLAN" ]; then
   prompt_parts+=("[aims-plan] In-progress plan detected: $IN_PROGRESS_PLAN
@@ -259,6 +300,18 @@ full_prompt=$(printf '%s\n\n' "${prompt_parts[@]}")
 # turn while the model is still working on this batch.
 mkdir -p "$(dirname "$STATE_FILE")"
 printf '%s\n' "$NOW" > "$STATE_FILE"
+
+# ADR-0027: write the report snapshot AFTER we've decided to emit. Next
+# Stop fire will compare against it; if state is unchanged but the model
+# emitted a drain-claim reply between the two fires, the discrepancy
+# breadcrumb prepends to the next prompt.
+mkdir -p "$(dirname "$SNAPSHOT_FILE")"
+{
+  printf '%s\n' "$N_DIRTY"
+  printf '%s\n' "$N_INBOX_LINES"
+  printf '%s\n' "$state_now"
+  printf '%s\n' "$NOW"
+} > "$SNAPSHOT_FILE"
 
 # Emit JSON for Claude Code's Stop hook contract. A Stop hook injects an
 # instruction by blocking the stop: `decision: block` keeps the turn going

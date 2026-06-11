@@ -50,3 +50,4 @@ add a row to the index below.
 | 0024 | Mutex protocol split — `.lock` strict, `.marker` advisory (supersedes 0019) | accepted | 2026-06-11 |
 | 0025 | Repo content injected as additionalContext is framed as data | accepted | 2026-06-11 |
 | 0026 | Stop-hook `decision: block` is the consolidation-continuation gate (amends 0020) | accepted | 2026-06-11 |
+| 0027 | Stop hook detects consolidation-report discrepancy across fires | accepted | 2026-06-11 |

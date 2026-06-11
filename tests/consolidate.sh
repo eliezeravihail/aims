@@ -74,5 +74,43 @@ out=$(AIMS_MEMORY_DIRTY_MAX=5 AIMS_MEMORY_INTERVAL_SEC=99999 run_stop S3 || true
 [ -z "$out" ] || fail "throttle should silence the hook (got '$out')"
 pass "throttle blocks when below threshold"
 
+echo "### ADR-0027: discrepancy detection across Stop fires ###"
+# Reset state: clear prior snapshots from earlier test cases, drop lock,
+# move throttle state file backwards.
+rm -f "$AIMS_MEMORY_DIR/x/foo.lock" "$AIMS_MEMORY_DIR/.last-report-snapshot"
+echo 0 > "$AIMS_MEMORY_STATE_FILE"
+# First emit: writes the snapshot AND should NOT prepend a discrepancy
+# breadcrumb (no prior snapshot).
+out1=$(run_stop S4 --force)
+echo "$out1" | grep -q 'DISCREPANCY DETECTED' \
+  && fail "first emit should not see a discrepancy"
+[ -f "$AIMS_MEMORY_DIR/.last-report-snapshot" ] \
+  || fail "first emit should have written the snapshot"
+pass "first emit writes snapshot; no discrepancy breadcrumb"
+
+# Simulate the model claiming `===[aims: queue drained]===` but doing
+# nothing: state stays identical. Clear the lock so try_claim succeeds
+# again on the next fire (the lock would normally survive — but a fresh
+# claim by the same session uses the held-locks path; we keep this
+# simple by removing it).
+rm -f "$AIMS_MEMORY_DIR/x/foo.lock"
+out2=$(run_stop S4 --force)
+echo "$out2" | grep -q 'DISCREPANCY DETECTED' \
+  || fail "second emit on unchanged state must prepend discrepancy"
+echo "$out2" | grep -q 'previous report did not match measured state' \
+  || fail "discrepancy must name the inconsistency factually"
+pass "second emit on unchanged state surfaces the discrepancy"
+
+# Sanity: when state DOES change (leaf cleaned), no discrepancy on the
+# next emit even if the snapshot lingers. Simulate by clearing dirty=true.
+sed -i.bak 's/^dirty: true/dirty: false/' "$LEAF"; rm -f "$LEAF.bak"
+# Add an inbox bullet to keep the hook firing on something.
+printf -- '- $TMP/src/foo.py\n' > "$AIMS_MEMORY_DIR/_inbox.md"
+rm -f "$AIMS_MEMORY_DIR/x/foo.lock"
+out3=$(run_stop S5 --force)
+echo "$out3" | grep -q 'DISCREPANCY DETECTED' \
+  && fail "state change must NOT trigger a discrepancy on the next emit"
+pass "state change clears discrepancy on next emit"
+
 echo
 echo "RESULT: all consolidate tests passed."
