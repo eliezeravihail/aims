@@ -48,3 +48,4 @@ add a row to the index below.
 | 0022 | Planning is a behavior; `/plan` dispatches an Opus subagent | proposed | 2026-06-02 |
 | 0023 | Anchor "first action = write draft" via state-aware pre-write note + CLAUDE.md approval-semantics rule | proposed | 2026-06-02 |
 | 0024 | Mutex protocol split — `.lock` strict, `.marker` advisory (supersedes 0019) | accepted | 2026-06-11 |
+| 0025 | Repo content injected as additionalContext is framed as data | accepted | 2026-06-11 |

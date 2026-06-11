@@ -21,8 +21,8 @@ external_refs:
   - { path: docs/adr/0007-tree-based-memory-with-auto-maintenance.md, kind: adr, why: surfaces docs/memory/README.md (the tree's tag list) up to 2KB }
 owners:
   - ema
-dirty: false
-last_touched: 2026-06-02T15:43:20Z
+dirty: true
+last_touched: 2026-06-11T07:19:17Z
 last_consolidated: 2026-06-02T15:43:20Z
 ---
 

@@ -83,7 +83,7 @@ scaffolding docs are refreshed too — they are part of the system.**
 | Hooks & memory scripts       | Overwrite from template; show unified diff first if content differs. |
 | Stale system files           | Delete any `*.sh` in `TARGET/.claude/{hooks,memory}/` not in the current shipped set (Phase 4). Scope to `*.sh` so runtime state files survive. |
 | Slash commands (the two)     | Overwrite `install-on.md`, `plan.md`.                               |
-| Obsolete-command cleanup     | Delete every `TARGET/.claude/commands/*.md` other than `install-on.md` and `plan.md` (subsumes `done,adr,grunt,remember,memory-init,memory-augment`). |
+| Obsolete-command cleanup     | Delete ONLY the **named** aims-historical commands if present: `done.md`, `adr.md`, `grunt.md`, `remember.md`, `memory-init.md`, `memory-augment.md`. Any other `.md` (user-authored slash commands) is left alone. (M7 — the prior open-ended sweep violated ADR-0011 "never destroys hand-edited content".) |
 | aims-shipped ADR scaffolding | Refresh from template: overwrite `docs/adr/0001-record-architecture-decisions.md` and `docs/adr/_template.md`. On `0001`, preserve a user-changed `Status:` / `Superseded by:` pointer. |
 | `docs/adr/README.md`         | Refresh aims prose **above** `## Index`; **preserve every row of the `## Index` table verbatim**. Create whole from template only if missing. |
 | User-authored ADRs           | `docs/adr/NNNN-*.md` other than `0001` → never touch.               |
@@ -121,7 +121,7 @@ The current shipped set is the source of truth. Delete from `TARGET`:
   `templates/hooks/` (e.g. a renamed-away hook).
 - Any `*.sh` in `TARGET/.claude/memory/` whose name is not in
   `templates/memory/` (e.g. a stale `new-leaf.sh`).
-- Any `TARGET/.claude/commands/*.md` other than `install-on.md`, `plan.md`.
+- The **named** obsolete commands (`done.md`, `adr.md`, `grunt.md`, `remember.md`, `memory-init.md`, `memory-augment.md`), if present. **No other `.md` is touched** — user-authored slash commands stay put.
 
 Only `*.sh` and the known command files are removed — never other files in
 those directories (runtime state, user notes).
