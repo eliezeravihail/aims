@@ -17,8 +17,8 @@ claude_md_refs:
   - "Build & test commands"
 external_refs: []
 owners: []
-dirty: false
-last_touched: 2026-05-31T14:26:12Z
+dirty: true
+last_touched: 2026-06-11T07:16:02Z
 last_consolidated: 2026-05-31T14:26:12Z
 ---
 

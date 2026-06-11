@@ -157,7 +157,11 @@ release_held_locks() {
     [ "$owner" = "$SESSION_ID" ] && rm -f "$l"
   done
 }
-trap release_held_locks EXIT
+# Release held mutexes ONLY on abnormal exit. On the normal success path we
+# hand the locks to the model — `mark.sh <node> consolidated` removes them
+# once each node is rewritten. A prior `trap … EXIT` deleted the mutex on
+# every normal exit, defeating the protocol entirely (ADR-0024).
+trap release_held_locks INT TERM HUP
 
 DIRTY=("${CLAIMED[@]}")
 N_DIRTY=${#DIRTY[@]}

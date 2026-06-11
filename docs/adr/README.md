@@ -42,8 +42,9 @@ add a row to the index below.
 | 0016 | Per-prompt memory node auto-injection                       | proposed | 2026-05-31 |
 | 0017 | `pre-write` carves out plan drafts during the planning lock | superseded by 0020 | 2026-05-31 |
 | 0018 | Multi-session-safe consolidation via in-frontmatter claims  | superseded by 0019 | 2026-06-01 |
-| 0019 | Sidecar `.lock` files for memory nodes (supersedes 0018)    | proposed (repurposed by 0020) | 2026-06-01 |
+| 0019 | Sidecar `.lock` files for memory nodes (supersedes 0018)    | superseded by 0024 | 2026-06-01 |
 | 0020 | Hooks inform, they never block (no planning lock; factual injection; advisory node marker) | proposed | 2026-06-02 |
 | 0021 | Demarcate aims-internal narration in user-facing replies with `===[aims: <msg>]===` | proposed | 2026-06-02 |
 | 0022 | Planning is a behavior; `/plan` dispatches an Opus subagent | proposed | 2026-06-02 |
 | 0023 | Anchor "first action = write draft" via state-aware pre-write note + CLAUDE.md approval-semantics rule | proposed | 2026-06-02 |
+| 0024 | Mutex protocol split — `.lock` strict, `.marker` advisory (supersedes 0019) | accepted | 2026-06-11 |

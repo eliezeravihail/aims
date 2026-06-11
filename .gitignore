@@ -17,8 +17,11 @@ docs/memory/_inbox.md
 # Pre-write per-session planning-note marker (ADR-0020 inject-once)
 .claude/.aims-plan-note-*
 
-# Memory-node sidecar lockfiles (ADR-0019, per-leaf multi-session mutex)
+# Memory-node sidecars (ADR-0024): `.lock` strict consolidation mutex
+# (stop-consolidate.sh); `.marker` advisory edit-marker (post-edit-marker.sh).
+# Two protocols, one leaf, distinct suffixes.
 docs/memory/**/*.lock
+docs/memory/**/*.marker
 
 # Editor / OS noise
 .DS_Store
