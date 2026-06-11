@@ -106,9 +106,9 @@ while IFS= read -r leaf; do
       detail=" A stale advisory marker from another session (sid=${lsid:-?}, ${age}s old) was taken over."
     fi
   fi
-  # M4: refuse to follow a symlink (malicious repo could plant one at the
-  # marker path to clobber an arbitrary user-writable file). Use O_EXCL via
-  # `set -C` after rm so the write is atomic on the truncate path too.
+  # M4 (ADR-0024): refuse to follow a symlink (malicious repo could plant one
+  # at the marker path to clobber an arbitrary user-writable file). Use O_EXCL
+  # via `set -C` after rm so the write is atomic on the truncate path too.
   if [ "$clobber" -eq 1 ] && [ ! -L "$marker" ]; then
     rm -f "$marker" 2>/dev/null || true
     (set -C; printf '%s\n%s\n' "$sid" "$rel" > "$marker") 2>/dev/null || true

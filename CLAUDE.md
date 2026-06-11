@@ -11,7 +11,7 @@ so its hooks and conventions apply to its own development. Dogfooding.
 This plugin has no language toolchain — it is markdown + bash. The closest
 thing to a test is a syntax check on the hook scripts:
 
-- Test: `bash -n templates/hooks/*.sh && bash -n .claude/hooks/*.sh`
+- Test: `bash -n templates/hooks/*.sh && bash -n .claude/hooks/*.sh && bash tests/copies-identical.sh && bash tests/inform-never-block.sh && bash tests/consolidate.sh && bash tests/router-auto-plan.sh`
 - Lint / Typecheck: n/a
 
 (Run before declaring work complete.)
