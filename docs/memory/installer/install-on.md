@@ -20,8 +20,8 @@ external_refs:
   - { path: docs/adr/0005-clone-and-bootstrap-install.md, kind: adr, why: the install model this command implements }
 owners:
   - ema
-dirty: false
-last_touched: 2026-05-31T14:26:12Z
+dirty: true
+last_touched: 2026-06-11T07:35:09Z
 last_consolidated: 2026-05-31T14:26:12Z
 ---
 

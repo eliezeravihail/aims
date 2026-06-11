@@ -11,7 +11,7 @@ so its hooks and conventions apply to its own development. Dogfooding.
 This plugin has no language toolchain — it is markdown + bash. The closest
 thing to a test is a syntax check on the hook scripts:
 
-- Test: `bash -n templates/hooks/*.sh && bash -n .claude/hooks/*.sh`
+- Test: `bash -n templates/hooks/*.sh && bash -n .claude/hooks/*.sh && bash tests/copies-identical.sh && bash tests/inform-never-block.sh && bash tests/consolidate.sh && bash tests/router-auto-plan.sh`
 - Lint / Typecheck: n/a
 
 (Run before declaring work complete.)
@@ -27,22 +27,50 @@ a new ADR that supersedes it.
 
 ## Workflow
 
-Two slash commands only:
+Planning is a **behavior**, not a command. For a non-trivial change the
+assistant plans before implementing — read-only discovery, then a
+`Status: draft` plan in `docs/plans/`, then user approval, then
+implementation, then inline close-out (verify, auto-ADR, mark completed,
+memory consolidation). The full flow is in `.claude/commands/plan.md`.
 
-- `/plan <task>` — non-trivial change. Read-only planning, durable
-  artifact in `docs/plans/`, then implementation, then **inline
-  close-out** (verify, auto-ADR, mark completed, memory consolidation).
+Two slash commands exist:
+
+- `/plan <task>` — **optional** shortcut: dispatches Phase 1-2 to an
+  Opus subagent (without switching the main session model). Use it when
+  the current model is not Opus and the task warrants careful planning.
+  Otherwise the assistant just runs the same flow inline (ADR-0022).
 - `/install-on <path>` — install or re-install aims into a target
   project. Idempotent; never destroys hand-edited content.
 
-Everything else (bug-fix patches, refactors with obvious scope,
-mechanical edits, ad-hoc questions): just do the work inline. The
-hooks layer keeps you honest.
+Bug-fix patches, refactors with obvious scope, mechanical edits, ad-hoc
+questions: just do the work inline. The hooks layer keeps you honest.
+
+**Approval is for Phase 2, not Phase 4.** When the user says
+`כן` / `yes` / `do it` to a *proposal* (a sketch the assistant offered
+in conversation), that approves moving to Phase 2 — writing the
+`Status: draft` plan to `docs/plans/` — NOT Phase 4 (implementing).
+The plan-on-disk + a re-confirm gate stays in force even when the
+conversational reply is brief. This closes the conversational-drift
+gap that the PreToolUse hook's state-aware note exists to anchor
+(ADR-0023).
+
+**Trivial-skip must be declared.** When the assistant judges a request
+inline-eligible (doc-only edit, mechanical change, obvious-scope bug
+fix, ad-hoc question), it states that judgment explicitly in one
+short sentence before editing — e.g. *"Trivial — no plan, proceeding
+inline."* / *"טריוויאלי, לא צריך תכנון, עובר לביצוע."* — so the
+planning-vs-inline decision is visible and you can override it. A
+silent skip is indistinguishable from the conversational-drift failure
+mode ADR-0023 addresses; an announced skip is a recorded judgment.
 
 ## Models policy
 
-- Planning + plan close-out → **Opus** (auto via slash command frontmatter).
-- Implementation → any model — switch with `/model <name>` per preference.
+- Planning quality scales with model. If the main session is not on
+  Opus and a prompt looks like a non-trivial change, the assistant asks
+  once whether to use `/plan` (Opus subagent) or to plan inline on the
+  current model.
+- Implementation, close-out, ADR writing → any model in the main session;
+  `/plan` does NOT switch the session, only the Phase 1-2 subagent.
 
 ## Hooks
 

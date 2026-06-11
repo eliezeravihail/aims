@@ -49,6 +49,13 @@
           { "type": "command", "command": "bash .claude/hooks/session-end.sh" }
         ]
       }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          { "type": "command", "command": "bash .claude/hooks/pre-compact.sh" }
+        ]
+      }
     ]
   }
 }

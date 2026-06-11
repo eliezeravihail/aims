@@ -20,53 +20,51 @@ external_refs:
   - { path: docs/adr/0016-prompt-memory-injection.md,           kind: adr, why: per-prompt memory node body auto-injection }
 owners:
   - ema
-dirty: false
-last_touched: 2026-06-04T14:07:11Z
+dirty: true
+last_touched: 2026-06-11T11:49:04Z
 last_consolidated: 2026-06-04T14:07:11Z
 ---
 
 ## Purpose
 
 UserPromptSubmit hook — runs three jobs in **one** `additionalContext`
-emission: (1) intent classification + auto-engage `/plan` on actionable
-intents (bug, feature, refactor, decision, mechanical, ambiguous) per
-ADR-0015 (supersedes ADR-0004's menu); (2) **memory injector** (ADR-0016) —
-for every memory node whose `code:` glob is plausibly referenced by the
-prompt, inject that node's body (purpose, invariants, pointers, known
-issues) so the model has node context without being asked; (3) the
-suppression gate (slash / lock / short follow-up / empty). `question` is
-the only intent that bypasses /plan but still triggers memory injection
-when files are mentioned.
+emission: (1) intent classification + factual planning-convention note
+on actionable intents (bug, feature, refactor, decision, mechanical,
+ambiguous) per ADR-0020/0022 (no lock, no imperative — descriptive
+convention only); (2) **memory injector** (ADR-0016) — for every memory
+node whose `code:` glob is plausibly referenced by the prompt, inject
+that node's body (purpose, invariants, pointers, known issues) so the
+model has node context without being asked; (3) the suppression gate
+(slash / short follow-up / empty). `question` is the only intent that
+gets no planning note but still triggers memory injection when files
+are mentioned.
 
 ## Design rationale
 
-- The pre-ADR-0015 menu had zero options to choose between once
-  ADR-0010 collapsed the surface to `/plan` + `/install-on`. Auto-engage
-  is the natural collapse.
-- Engagement = creating `.claude/.planning-lock` (the same gate `/plan`
-  Phase 1 sets) **plus** injecting a `[aims-router]` text that walks
-  the model through Phases 1→5. The lock makes the next turn
-  read-only-by-policy, not just convention. The Phase 2 text tells the
-  model to draft via the `Write` tool directly — ADR-0017 carves
-  `docs/plans/*.md` out of the lock's pre-write block, so the prior
-  Bash-heredoc workaround (fragile on apostrophes) is gone.
+- Per ADR-0020/0022 the router NEVER locks. For an actionable intent
+  it injects a single factual `router_text` describing the full
+  planning behavior — read-only discovery → draft to `docs/plans/` →
+  approval → implementation → inline close-out — and notes that the
+  `/plan` slash command is an OPTIONAL Opus-subagent shortcut. The
+  convention is descriptive, not imperative (an imperative trips
+  Claude's prompt-injection defense).
 - Hebrew / non-English prompts that don't match any English keyword
-  regex fall through to the **ambiguous** bucket and auto-engage; the
-  injected text documents the per-prompt opt-out in both languages.
+  regex fall through to the **ambiguous** bucket and still receive the
+  factual convention note.
 
 ## Invariants & gotchas
 
-- **Suppression rules in order**: slash-prefix → lock already exists →
-  short prompt during an in-progress plan → empty prompt. Any one
-  short-circuits to `exit 0`.
+- **Suppression rules in order**: slash-prefix → short prompt during an
+  in-progress plan → empty prompt. Any one short-circuits to `exit 0`.
+  (No planning lock since ADR-0020.)
 - A code-paste-looking prompt (contains a triple-backtick fence) is
-  treated as not-actionable to avoid auto-engaging on review/discussion
+  treated as not-actionable to avoid injecting on review/discussion
   pastes.
 - The hook must always `exit 0` — UserPromptSubmit hooks cannot
   meaningfully block a prompt and the contract is "advisory only".
-- **Lock + memory are independent** (ADR-0016). A pure-question prompt that
-  references a tracked file gets memory injection only — no planning lock,
-  no auto-engage text. An actionable prompt gets both, in the same emission.
+- **Convention + memory are independent.** A pure-question prompt that
+  references a tracked file gets memory injection only — no convention
+  note. An actionable prompt gets both, in the same emission.
 - Memory matching derives a **literal prefix** from each `code:` glob (cut
   at the first `*`/`?`/`[`) and substring-tests the prompt; for non-glob
   entries it also word-matches the bare basename (≥5 chars). Compatible

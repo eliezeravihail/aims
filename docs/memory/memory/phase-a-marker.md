@@ -20,9 +20,9 @@ external_refs:
   - { path: tests/marker.sh, kind: test, why: six smoke cases for marker behaviour }
 owners:
   - ema
-dirty: false
-last_touched: 2026-06-01T06:52:29Z
-last_consolidated: 2026-06-01T06:52:29Z
+dirty: true
+last_touched: 2026-06-11T07:45:18Z
+last_consolidated: 2026-06-02T15:13:24Z
 ---
 
 ## Purpose
@@ -42,11 +42,19 @@ never blocks and always exits 0.
 - `mark.sh` carries the inverse `consolidated` subcommand used by
   the in-band model to flip the same flag clean after a successful
   body rewrite — keeps both transitions in one helper.
-- Per ADR-0019, `mark.sh consolidated` ALSO removes the per-node
-  sidecar `<leaf>.lock` that the Stop hook created during multi-session
-  serialization. The marker (`post-edit-marker.sh`) never touches the
-  sidecar — only the Stop hook creates it and `mark.sh consolidated`
-  (or the Stop hook's EXIT trap) removes it.
+- Per ADR-0024 the mutex protocol is **split** into two files. The
+  marker hook writes an **advisory `<leaf>.marker`** stamping
+  `session_id + mtime`; it never blocks and same-session refreshes are
+  silent. A separately-owned **strict `<leaf>.lock`** (acquired via
+  `set -C` by `stop-consolidate.sh`) is the consolidation mutex.
+  `mark.sh consolidated` removes the marker; only the Stop hook
+  creates/removes the strict lock. Names no longer collide.
+- The marker file write is **symlink-guarded** (M4 / ADR-0024) — if
+  the path exists and is a symlink, the marker refuses to follow it,
+  closing a write-through-symlink hazard.
+- Hook output uses the centralized `json_escape` helper from `_lib.sh`
+  (M2) so control chars and quotes in paths can't corrupt the
+  `additionalContext` JSON.
 
 ## Invariants & gotchas
 

@@ -30,8 +30,8 @@ external_refs:
   - { path: docs/adr/0014-code-globs-are-fnmatch-globs.md, kind: adr, why: path_matches now treats every code: entry as an fnmatch glob }
 owners:
   - ema
-dirty: false
-last_touched: 2026-06-01T06:52:29Z
+dirty: true
+last_touched: 2026-06-11T07:44:03Z
 last_consolidated: 2026-06-01T06:52:29Z
 ---
 

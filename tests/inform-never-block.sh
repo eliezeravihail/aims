@@ -47,7 +47,21 @@ rm -f .claude/.aims-plan-note-* 2>/dev/null; rm -rf "$PD"
 
 echo "### B. prompt-submit.sh — never locks; factual note for actionable ###"
 PD=$(mktemp -d)
-ps(){ rm -f "$LOCK"; printf '%s' "$1" | AIMS_PLAN_DIR="$PD" bash "$H/prompt-submit.sh" 2>/dev/null; }
+# M1 fix: wrap raw prose as a UserPromptSubmit JSON payload so jq parses it.
+# A prior version piped bare text, which silently broke section B when jq was
+# installed (jq -r '.prompt' would error → empty prompt → hook short-circuited).
+ps(){
+  rm -f "$LOCK"
+  local payload
+  if command -v python3 >/dev/null 2>&1; then
+    payload=$(printf '%s' "$1" \
+      | python3 -c 'import json,sys; print(json.dumps({"prompt": sys.stdin.read(), "session_id":"t"}))')
+  else
+    local esc; esc=$(printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g')
+    payload=$(printf '{"prompt":"%s","session_id":"t"}' "$esc")
+  fi
+  printf '%s' "$payload" | AIMS_PLAN_DIR="$PD" bash "$H/prompt-submit.sh" 2>/dev/null
+}
 lockstate(){ [ -f "$LOCK" ] && echo y || echo n; }
 o=$(ps 'please fix the crash that throws an exception'); ok "$(lockstate)" "n" "English bug: NO lock"
 has "$o" "Project convention" "English bug: factual note injected"
@@ -74,21 +88,21 @@ pem(){ printf '%s' "$1" | AIMS_MEMORY_DIR="$MD" bash "$H/post-edit-marker.sh" 2>
 P="$PWD/foo/bar.py"
 o=$(pem "{\"session_id\":\"A\",\"tool_input\":{\"file_path\":\"$P\"}}"); ok "$?" "0" "edit returns 0 (never blocks)"
 has "$o" "test/tnode" "injects the matching node name"
-ok "$(head -n1 "$MD/tnode.lock" 2>/dev/null)" "A" "advisory marker stamped with session id"
+ok "$(head -n1 "$MD/tnode.marker" 2>/dev/null)" "A" "advisory marker stamped with session id"
 o=$(pem "{\"session_id\":\"A\",\"tool_input\":{\"file_path\":\"$P\"}}")
 no "$o" "is possible" "same session: no concurrent warning (silent refresh)"
 # fresh OTHER-session marker -> concurrent, not clobbered ("is possible" is unique
 # to the concurrent detail; the word "concurrent" also appears in the convention
 # boilerplate of every note, so it is not a distinctive marker).
-printf 'B\nfoo/bar.py\n' > "$MD/tnode.lock"
+printf 'B\nfoo/bar.py\n' > "$MD/tnode.marker"
 o=$(pem "{\"session_id\":\"A\",\"tool_input\":{\"file_path\":\"$P\"}}")
 has "$o" "is possible" "fresh other-session marker -> concurrent warning"
-ok "$(head -n1 "$MD/tnode.lock")" "B" "fresh peer marker NOT clobbered"
+ok "$(head -n1 "$MD/tnode.marker")" "B" "fresh peer marker NOT clobbered"
 # stale OTHER-session marker -> taken over
-printf 'B\nfoo/bar.py\n' > "$MD/tnode.lock"
+printf 'B\nfoo/bar.py\n' > "$MD/tnode.marker"
 o=$(AIMS_NODE_LOCK_STALE_SEC=0 pem "{\"session_id\":\"A\",\"tool_input\":{\"file_path\":\"$P\"}}")
 has "$o" "taken over" "stale other-session marker -> taken over"
-ok "$(head -n1 "$MD/tnode.lock")" "A" "stale marker overwritten by us"
+ok "$(head -n1 "$MD/tnode.marker")" "A" "stale marker overwritten by us"
 # unrelated path -> no node note
 o=$(pem "{\"session_id\":\"A\",\"tool_input\":{\"file_path\":\"$PWD/zzz/nope.py\"}}"); ok "$?" "0" "unrelated path returns 0"
 no "$o" "test/tnode" "unrelated path: no node note"

@@ -1,5 +1,5 @@
 # ADR-0015: `/plan` auto-engages on edit intents and writes a draft to disk before approval
-Status: proposed
+Status: accepted
 Date: 2026-05-31
 Supersedes: ADR-0004
 Superseded by: —

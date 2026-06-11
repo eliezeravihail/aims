@@ -67,6 +67,8 @@ case "$nlc" in
 esac
 
 # Skip non-source surfaces (the memory tree itself, tooling, vendored dirs).
+# D2: docs/adr/ IS a tracked surface — nodes may cite ADRs in their `code:`
+# list so a doctrine change marks them dirty for re-consolidation.
 case "$rel" in
   .claude/*|.git/*|*/node_modules/*|*/dist/*|*/build/*|docs/memory/*) exit 0 ;;
 esac
@@ -87,12 +89,15 @@ while IFS= read -r leaf; do
   [ "$hit" -eq 1 ] || continue
 
   node=$(fm_get "$leaf" node); node="${node:-$leaf}"
-  lock="${leaf%.md}.lock"
+  # ADR-0024: the advisory marker uses `.marker`; the strict consolidation
+  # mutex (managed by stop-consolidate.sh / mark.sh) uses `.lock`. The two
+  # protocols share a leaf but never a path.
+  marker="${leaf%.md}.marker"
   detail=""
   clobber=1
-  if [ -f "$lock" ]; then
-    lsid=$(head -n1 "$lock" 2>/dev/null || true)
-    lmt=$(stat -c %Y "$lock" 2>/dev/null || stat -f %m "$lock" 2>/dev/null || echo 0)
+  if [ -f "$marker" ]; then
+    lsid=$(head -n1 "$marker" 2>/dev/null || true)
+    lmt=$(stat -c %Y "$marker" 2>/dev/null || stat -f %m "$marker" 2>/dev/null || echo 0)
     age=$(( now - lmt ))
     if [ "$lsid" = "$sid" ]; then
       :                                   # same session — refresh silently
@@ -103,7 +108,13 @@ while IFS= read -r leaf; do
       detail=" A stale advisory marker from another session (sid=${lsid:-?}, ${age}s old) was taken over."
     fi
   fi
-  [ "$clobber" -eq 1 ] && printf '%s\n%s\n' "$sid" "$rel" > "$lock" 2>/dev/null || true
+  # M4 (ADR-0024): refuse to follow a symlink (malicious repo could plant one
+  # at the marker path to clobber an arbitrary user-writable file). Use O_EXCL
+  # via `set -C` after rm so the write is atomic on the truncate path too.
+  if [ "$clobber" -eq 1 ] && [ ! -L "$marker" ]; then
+    rm -f "$marker" 2>/dev/null || true
+    (set -C; printf '%s\n%s\n' "$sid" "$rel" > "$marker") 2>/dev/null || true
+  fi
   notes="${notes}${notes:+ }Memory node ${node} (${leaf}) documents ${rel} (just edited); its body may now be stale.${detail}"
 done < <(list_leaves)
 
@@ -114,7 +125,8 @@ NOTE="aims memory: ${notes} Per project convention, the relevant node body is up
 if command -v jq >/dev/null 2>&1; then
   jq -nc --arg c "$NOTE" '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:$c}}'
 else
-  esc=$(printf '%s' "$NOTE" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g')
+  # M2: shared json_escape — handles tabs / CR / all C0 control chars.
+  esc=$(json_escape "$NOTE")
   printf '{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"%s"}}\n' "$esc"
 fi
 exit 0

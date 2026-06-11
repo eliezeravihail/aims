@@ -65,6 +65,12 @@ fm_set() {
   end=$(fm_end_line "$f")
   [ "$end" -le 1 ] && return 1
   tmp=$(mktemp)
+  # L2: mktemp creates 0600 and a bare `mv` would silently downgrade node
+  # files from their original (typically 0644) mode. Copy the source mode
+  # onto the tempfile before the rename so it survives.
+  chmod --reference="$f" "$tmp" 2>/dev/null \
+    || { mode=$(stat -f '%Lp' "$f" 2>/dev/null); [ -n "$mode" ] && chmod "$mode" "$tmp" 2>/dev/null; } \
+    || true
   awk -v k="$key" -v v="$val" -v end="$end" '
     BEGIN { set=0 }
     {
@@ -185,6 +191,37 @@ path_matches() {
       ;;
   esac
   return 1
+}
+
+# Escape a string for embedding inside a JSON string literal (ADR-0025 /
+# audit M2). Handles: backslash, double-quote, every C0 control char (\b
+# \f \n \r \t are short-form; others become \u00XX).
+#
+# The prior ad-hoc sed/awk escapers handled only `\` `"` (and sometimes
+# `\n`), producing invalid JSON whenever the source string contained
+# tabs/CR — which `git log -p` diffs and YAML bodies routinely do.
+#
+# Usage:  esc=$(json_escape "$str")
+json_escape() {
+  printf '%s' "$1" | awk '
+    BEGIN { for (i=0; i<256; i++) ord[sprintf("%c", i)] = i; first = 1 }
+    {
+      if (!first) printf "\\n"
+      first = 0
+      for (i = 1; i <= length($0); i++) {
+        c = substr($0, i, 1); n = ord[c]
+        if      (c == "\\") printf "\\\\"
+        else if (c == "\"") printf "\\\""
+        else if (n == 8)    printf "\\b"
+        else if (n == 9)    printf "\\t"
+        else if (n == 10)   printf "\\n"
+        else if (n == 12)   printf "\\f"
+        else if (n == 13)   printf "\\r"
+        else if (n < 32)    printf "\\u%04x", n
+        else                printf "%s", c
+      }
+    }
+  '
 }
 
 # Iterate all leaf files (regular .md under MEMORY_DIR,

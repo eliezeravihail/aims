@@ -1,5 +1,5 @@
 # ADR-0016: Per-prompt memory node auto-injection
-Status: proposed
+Status: accepted
 Date: 2026-05-31
 Supersedes: —
 Superseded by: —

@@ -11,11 +11,22 @@ docs/memory/_inbox.md
 # Memory consolidation throttle state (written by stop-consolidate)
 .claude/memory/.last-consolidated
 
+# Consolidation-report snapshot for repeat-offender detection (ADR-0027).
+# Written by stop-consolidate on emit; read on the next fire to detect a
+# previous turn's drain-claim that didn't actually change state.
+docs/memory/.last-report-snapshot
+
 # Prompt-submit per-session injection state (ADR-0016 dedup ledger)
 .claude/memory/.injected-*
 
-# Memory-node sidecar lockfiles (ADR-0019, per-leaf multi-session mutex)
+# Pre-write per-session planning-note marker (ADR-0020 inject-once)
+.claude/.aims-plan-note-*
+
+# Memory-node sidecars (ADR-0024): `.lock` strict consolidation mutex
+# (stop-consolidate.sh); `.marker` advisory edit-marker (post-edit-marker.sh).
+# Two protocols, one leaf, distinct suffixes.
 docs/memory/**/*.lock
+docs/memory/**/*.marker
 
 # Editor / OS noise
 .DS_Store

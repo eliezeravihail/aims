@@ -81,13 +81,23 @@ MARK=".claude/.aims-plan-note-${sid:-default}"
 mkdir -p .claude 2>/dev/null && : > "$MARK" 2>/dev/null || true
 find .claude -maxdepth 1 -name '.aims-plan-note-*' -mtime +1 -delete 2>/dev/null || true
 
-NOTE="Project convention: in this repo, non-trivial changes are designed via /plan before implementation — the design doc lands in docs/plans/ and is approved before code. No in-progress plan is currently present. (Informational only; nothing is blocked.)"
+NOTE="About to edit '${target_rel}'. No \`Status: draft\` or \`Status: in-progress\` plan in \`${PLAN_DIR}\` covers this prompt. Project convention: a non-trivial change is materialized as a draft plan in \`${PLAN_DIR}/<YYYY-MM-DD>-<slug>.md\` BEFORE the first source edit — the plan file is the contract; the edit comes after the draft lands on disk and the user confirms. A brief user approval (\"yes\"/\"do it\") of a conversational proposal is approval to enter Phase 2 (write the draft), not to skip to Phase 4 (implement). (Informational only; nothing is blocked. This note fires once per session — subsequent edits are silent.)"
 
 if command -v jq >/dev/null 2>&1; then
   jq -nc --arg c "$NOTE" \
     '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"allow",additionalContext:$c}}'
 else
-  esc=$(printf '%s' "$NOTE" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g')
+  # M2: use the shared json_escape helper (handles tabs / CR / all C0 control
+  # chars). The prior ad-hoc sed only handled `\` and `"`, producing invalid
+  # JSON whenever NOTE contained a tab or CR.
+  if [ -r ".claude/memory/_lib.sh" ];   then . ".claude/memory/_lib.sh"
+  elif [ -r "templates/memory/_lib.sh" ]; then . "templates/memory/_lib.sh"
+  fi
+  if command -v json_escape >/dev/null 2>&1; then
+    esc=$(json_escape "$NOTE")
+  else
+    esc=$(printf '%s' "$NOTE" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g')
+  fi
   printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","additionalContext":"%s"}}\n' "$esc"
 fi
 exit 0

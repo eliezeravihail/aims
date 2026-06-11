@@ -6,6 +6,8 @@ code:
   - tests/consolidate.sh
   - tests/exit-plan-mode.sh
   - tests/router-auto-plan.sh
+  - tests/inform-never-block.sh
+  - tests/copies-identical.sh
 commits: []
 sessions: []
 parents: []
@@ -17,8 +19,8 @@ claude_md_refs:
   - "Build & test commands"
 external_refs: []
 owners: []
-dirty: false
-last_touched: 2026-06-04T14:08:59Z
+dirty: true
+last_touched: 2026-06-11T08:06:42Z
 last_consolidated: 2026-06-04T14:08:59Z
 ---
 

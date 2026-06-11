@@ -65,6 +65,12 @@ Use `AskUserQuestion`, one question per gap, with sniffed defaults:
 5. Hook aggressiveness — `nudge` (default) | `block` | `off`. Only
    ask on fresh install; on re-install, keep the value already in
    `TARGET/.claude/aims-mode`.
+6. Plan executive-summary language (default `en`). Accepts ISO 639-1
+   codes (`en`, `he`, `es`, `fr`, …) or a language name. Used by
+   `/plan` for the TL;DR heading and body. On re-install, keep the
+   value already in `TARGET/.claude/aims-summary-lang` and skip the
+   question. Built-in heading translations: `en` → `## TL;DR`,
+   `he` → `## תקציר מנהלים`; unknown codes fall back to `en`.
 
 **Memory tree is always installed.** Not optional.
 
@@ -83,7 +89,7 @@ scaffolding docs are refreshed too — they are part of the system.**
 | Hooks & memory scripts       | Overwrite from template; show unified diff first if content differs. |
 | Stale system files           | Delete any `*.sh` in `TARGET/.claude/{hooks,memory}/` not in the current shipped set (Phase 4). Scope to `*.sh` so runtime state files survive. |
 | Slash commands (the two)     | Overwrite `install-on.md`, `plan.md`.                               |
-| Obsolete-command cleanup     | Delete every `TARGET/.claude/commands/*.md` other than `install-on.md` and `plan.md` (subsumes `done,adr,grunt,remember,memory-init,memory-augment`). |
+| Obsolete-command cleanup     | Delete ONLY the **named** aims-historical commands if present: `done.md`, `adr.md`, `grunt.md`, `remember.md`, `memory-init.md`, `memory-augment.md`. Any other `.md` (user-authored slash commands) is left alone. (M7 — the prior open-ended sweep violated ADR-0011 "never destroys hand-edited content".) |
 | aims-shipped ADR scaffolding | Refresh from template: overwrite `docs/adr/0001-record-architecture-decisions.md` and `docs/adr/_template.md`. On `0001`, preserve a user-changed `Status:` / `Superseded by:` pointer. |
 | `docs/adr/README.md`         | Refresh aims prose **above** `## Index`; **preserve every row of the `## Index` table verbatim**. Create whole from template only if missing. |
 | User-authored ADRs           | `docs/adr/NNNN-*.md` other than `0001` → never touch.               |
@@ -103,11 +109,12 @@ Copy from `AIMS_ROOT` into `TARGET`, substituting `{{VARS}}`.
 
 | Path in TARGET                                                                                 | Source under AIMS_ROOT                          |
 |------------------------------------------------------------------------------------------------|-------------------------------------------------|
-| `.claude/hooks/{session-start,prompt-submit,pre-write,post-edit-marker,exit-plan-mode,stop-consolidate,session-end}.sh` | `templates/hooks/<same>` |
+| `.claude/hooks/{session-start,prompt-submit,pre-write,post-edit-marker,exit-plan-mode,stop-consolidate,session-end,pre-compact}.sh` | `templates/hooks/<same>` |
 | `.claude/memory/{_lib,mark,new-node,find-dirty,lint,check-refs,consolidate,classify-inbox,doctor}.sh`     | `templates/memory/<same>`                |
 | `.claude/commands/{install-on,plan}.md`                                                        | `templates/commands/<same>`                     |
 | `.claude/settings.json` (merge if exists)                                                      | `templates/settings.json.tmpl`                  |
 | `.claude/aims-mode`                                                                            | one line: chosen mode                           |
+| `.claude/aims-summary-lang`                                                                    | one line: chosen language code (default `en`)   |
 | `docs/adr/README.md`, `docs/adr/_template.md`, `docs/adr/0001-record-architecture-decisions.md`| `templates/adr-*.tmpl`                          |
 | `CLAUDE.md`                                                                                    | `templates/CLAUDE.md.tmpl` (merge-only)         |
 
@@ -121,7 +128,7 @@ The current shipped set is the source of truth. Delete from `TARGET`:
   `templates/hooks/` (e.g. a renamed-away hook).
 - Any `*.sh` in `TARGET/.claude/memory/` whose name is not in
   `templates/memory/` (e.g. a stale `new-leaf.sh`).
-- Any `TARGET/.claude/commands/*.md` other than `install-on.md`, `plan.md`.
+- The **named** obsolete commands (`done.md`, `adr.md`, `grunt.md`, `remember.md`, `memory-init.md`, `memory-augment.md`), if present. **No other `.md` is touched** — user-authored slash commands stay put.
 
 Only `*.sh` and the known command files are removed — never other files in
 those directories (runtime state, user notes).
@@ -165,8 +172,10 @@ Decide the mode from `TARGET/docs/memory/`:
 - **Missing → A) cold-start** (always initialize).
 - **Exists → freshness probe.** Read the newest node `last_consolidated`:
   ```bash
-  newest=$(grep -h '^last_consolidated:' \
-    "$TARGET"/docs/memory/*/*.md "$TARGET"/docs/memory/*.md 2>/dev/null \
+  # L7: walk the whole tree (the prior `*/*.md` glob missed deep nodes).
+  newest=$(find "$TARGET/docs/memory" -type f -name '*.md' \
+    ! -name 'README.md' ! -name '_inbox.md' -print0 2>/dev/null \
+    | xargs -0 grep -h '^last_consolidated:' 2>/dev/null \
     | sed 's/^last_consolidated:[[:space:]]*//' | sort | tail -1)
   cutoff=$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null \
     || date -u -v-7d +%Y-%m-%dT%H:%M:%SZ)   # GNU | BSD
@@ -239,6 +248,7 @@ aims installed into <TARGET> (<fresh|re-install>):
   CLAUDE.md: created | merged (+<N> sections) | unchanged
   memory tree: <fresh-scan: T tags, N nodes> | <audited: +M nodes, B backfilled> | <fresh (updated <Nd ago>), skipped>
   inert nodes (code: []): <N>
+  plan summary language: <en|he|...>
   lint: clean | <K issues>
   next: cd <TARGET> && claude
         try `/plan <task>` for non-trivial work
@@ -250,6 +260,7 @@ aims installed into <TARGET> (<fresh|re-install>):
 - `{{TEST_CMD}}`, `{{LINT_CMD}}`, `{{TYPECHECK_CMD}}` — confirmed commands
 - `{{ADR_DIR}}` — usually `docs/adr`
 - `{{HOOK_MODE}}` — `nudge` | `block` | `off`
+- `{{SUMMARY_LANG}}` — chosen summary language code, default `en`
 - `{{DATE}}` — today's date `YYYY-MM-DD`
 
 ## Hard rules

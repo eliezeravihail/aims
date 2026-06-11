@@ -20,8 +20,8 @@ external_refs:
   - { path: docs/adr/0005-clone-and-bootstrap-install.md, kind: adr, why: defines the substitution-on-write template model }
 owners:
   - ema
-dirty: false
-last_touched: 2026-05-31T14:26:12Z
+dirty: true
+last_touched: 2026-06-11T07:33:27Z
 last_consolidated: 2026-05-31T14:26:12Z
 ---
 

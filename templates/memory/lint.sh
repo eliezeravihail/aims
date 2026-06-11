@@ -10,6 +10,13 @@
 
 set -u
 
+# L4: lint.sh uses mapfile and declare -A. bash 3.2 lacks both.
+if (( BASH_VERSINFO[0] < 4 )); then
+  printf '[aims] lint.sh: bash >= 4 required; current is %s. Skipping.\n' \
+    "$BASH_VERSION" >&2
+  exit 0
+fi
+
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 # shellcheck source=_lib.sh
 . "$SCRIPT_DIR/_lib.sh"
@@ -154,21 +161,21 @@ while IFS= read -r leaf; do
      && git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     # Gather node's code paths once (strip :line ranges).
     mapfile -t NODE_CODE < <(fm_list "$leaf" code | sed 's/:.*//')
-    # Extract SHAs from "fixed:" lines under ## Known issues.
-    awk '
-      /^## Known issues/ { in_section=1; next }
-      /^## /             { in_section=0 }
-      in_section && /^- *fixed:/ { print }
-    ' "$leaf" | grep -oE '[0-9a-f]{7,40}' | sort -u | while IFS= read -r sha; do
+    # L1: process substitution instead of a pipeline so `issues` updates
+    # land in the parent shell. Also: the missing-commit branch now
+    # actually increments issues (previously fell through silently).
+    while IFS= read -r sha; do
+      [ -z "$sha" ] && continue
       if ! git cat-file -e "$sha" 2>/dev/null; then
         printf '%s: fixed-bug commit not in git: %s (shallow clone?)\n' "$leaf" "$sha"
+        issues=$((issues + 1))
         continue
       fi
       touched=$(git show --name-only --format= "$sha" 2>/dev/null)
       hit=0
       for c in "${NODE_CODE[@]}"; do
         [ -z "$c" ] && continue
-        if printf '%s\n' "$touched" | grep -qxF "$c"; then
+        if printf '%s\n' "$touched" | grep -qxF -- "$c"; then
           hit=1; break
         fi
       done
@@ -176,7 +183,24 @@ while IFS= read -r leaf; do
         printf '%s: fixed-bug commit %s does not touch any code: path\n' "$leaf" "$sha"
         issues=$((issues + 1))
       fi
-    done
+    done < <(awk '
+      /^## Known issues/ { in_section=1; next }
+      /^## /             { in_section=0 }
+      in_section && /^- *fixed:/ { print }
+    ' "$leaf" | grep -oE '[0-9a-f]{7,40}' | sort -u)
+  fi
+
+  # Size cap (inspired by project-bedrock's memory-compaction skill —
+  # https://github.com/robotaitai/project-bedrock). Bedrock warns at ~150
+  # body lines (excluding frontmatter) and treats >200 as CRITICAL. Both
+  # are informational; the model decides whether to split or extract.
+  end=$(fm_end_line "$leaf")
+  body_lines=$(awk -v e="$end" 'NR>e' "$leaf" | wc -l | tr -d ' ')
+  if [ "$body_lines" -gt 200 ]; then
+    printf '%s: CRITICAL: body is %d lines (>200) — split or extract subtopics\n' "$leaf" "$body_lines"
+    issues=$((issues + 1))
+  elif [ "$body_lines" -gt 150 ]; then
+    printf '%s: warning: body is %d lines (>150) — consider splitting at next consolidation\n' "$leaf" "$body_lines"
   fi
 done < <(list_leaves)
 

@@ -1,126 +1,116 @@
 #!/usr/bin/env bash
-# Smoke test for the Stop-hook consolidation path, using a tiny
-# Python http.server as a mock Anthropic endpoint.
+# Test stop-consolidate.sh under the ADR-0009 in-band protocol.
 #
-# Exits 0 on success, non-zero on first failure.
+# Covers:
+#   1. --force on a dirty leaf emits Stop block-JSON with the node section.
+#   2. H1 (ADR-0024): after a normal --force exit the mutex SURVIVES so the
+#      model can later mark the node consolidated. The prior `trap EXIT`
+#      released it on the success path, defeating the protocol.
+#   3. H2 (ADR-0024): the advisory `.marker` (written by post-edit-marker)
+#      does NOT gate the strict `.lock` mutex — separate suffix, separate
+#      protocol.
+#   4. Throttle quietly silences the hook when N_DIRTY<max and the interval
+#      has not elapsed.
+#
+# jq is OPTIONAL — the JSON shape is asserted with plain grep so the test
+# runs on stock machines too.
 
-set -eu
-
+set -u
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-TMP=$(mktemp -d)
-trap 'rm -rf "$TMP"; [ -n "${MOCK_PID:-}" ] && kill "$MOCK_PID" 2>/dev/null || true' EXIT
-
-pass() { printf '[PASS] %s\n' "$1"; }
-fail() { printf '[FAIL] %s\n' "$1" >&2; exit 1; }
+TMP=$(mktemp -d); trap 'rm -rf "$TMP"' EXIT
+pass(){ printf '  PASS: %s\n' "$1"; }
+fail(){ printf '  FAIL: %s\n' "$1" >&2; exit 1; }
 
 export AIMS_MEMORY_DIR="$TMP/memory"
 export AIMS_MEMORY_STATE_FILE="$TMP/.last-consolidated"
-export ANTHROPIC_API_KEY="dummy-test-key"
+mkdir -p "$AIMS_MEMORY_DIR/x"
+LEAF="$AIMS_MEMORY_DIR/x/foo.md"
+cat > "$LEAF" <<EOF
+---
+node: x/foo
+kind: module
+code:
+  - $TMP/src/foo.py
+dirty: true
+last_touched: 2026-01-01T00:00:00Z
+last_consolidated: 2026-01-01T00:00:00Z
+---
+body
+EOF
+mkdir -p "$TMP/src"; : > "$TMP/src/foo.py"
 
-if ! command -v python3 >/dev/null 2>&1; then
-  printf '[SKIP] python3 not available; skipping consolidate smoke test\n'
-  exit 0
-fi
-if ! command -v jq >/dev/null 2>&1; then
-  printf '[SKIP] jq not available; skipping consolidate smoke test\n'
-  exit 0
-fi
+# Helper: run stop-consolidate.sh from the templates/ copy (single source of
+# truth). The `.claude/` mirror is byte-identical (enforced by
+# tests/copies-identical.sh from Track 4).
+run_stop(){
+  local sid="${1:-S1}"; shift || true
+  printf '{"session_id":"%s"}' "$sid" \
+    | bash "$ROOT/templates/hooks/stop-consolidate.sh" "$@"
+}
 
-# Start a mock Anthropic endpoint. It accepts a POST, reads the prompt,
-# and echoes back a leaf whose `## Purpose` section reads "UPDATED BY
-# MOCK". The mock just returns the original leaf body with that
-# replacement so the frontmatter stays valid.
-MOCK_LOG="$TMP/mock.log"
-PORT=$((10000 + RANDOM % 50000))
-python3 - "$PORT" "$MOCK_LOG" <<'PY' &
-import sys, json, http.server, socketserver, re
-PORT = int(sys.argv[1]); LOG = sys.argv[2]
-class H(http.server.BaseHTTPRequestHandler):
-    def log_message(self, fmt, *args):
-        with open(LOG, 'a') as f: f.write((fmt % args) + '\n')
-    def do_POST(self):
-        n = int(self.headers.get('content-length', 0))
-        body = self.rfile.read(n).decode('utf-8', 'replace')
-        try:
-            req = json.loads(body)
-            prompt = req['messages'][0]['content']
-        except Exception:
-            prompt = ''
-        # Find the leaf body inside the prompt (between "CURRENT LEAF:" and
-        # "DIFFS").  Fall back to a minimal valid leaf if not found.
-        m = re.search(r'CURRENT LEAF:\n(.*?)\n\nDIFFS', prompt, re.S)
-        leaf = m.group(1) if m else "---\nnode: x\nkind: module\n---\n## Purpose\n"
-        # Mark the leaf body to prove the mock was used.
-        leaf = leaf.replace("(One paragraph: what this leaf documents and why it deserves a home.)",
-                            "UPDATED BY MOCK")
-        out = {"content":[{"type":"text","text": leaf}]}
-        data = json.dumps(out).encode()
-        self.send_response(200)
-        self.send_header('content-type','application/json')
-        self.send_header('content-length', str(len(data)))
-        self.end_headers()
-        self.wfile.write(data)
-with socketserver.TCPServer(('127.0.0.1', PORT), H) as srv:
-    srv.serve_forever()
-PY
-MOCK_PID=$!
-# Wait for the mock to be ready.
-for _ in 1 2 3 4 5 6 7 8 9 10; do
-  if curl -s "http://127.0.0.1:$PORT" -o /dev/null; then break; fi
-  sleep 0.1
-done
+echo "### consolidate: --force emits Stop block-JSON with node section ###"
+out=$(run_stop S1 --force)
+echo "$out" | grep -q '"decision":"block"' || fail "expected decision:block on --force"
+echo "$out" | grep -q '"reason"'           || fail "expected reason field"
+echo "$out" | grep -q 'x/foo'              || fail "reason should mention dirty node x/foo"
+pass "force run emits Stop block-JSON with node section"
 
-export AIMS_ANTHROPIC_URL="http://127.0.0.1:$PORT/v1/messages"
+echo "### H1 (ADR-0024): .lock SURVIVES normal exit (kept for the model) ###"
+[ -f "$AIMS_MEMORY_DIR/x/foo.lock" ] || fail "H1: lock removed prematurely by EXIT trap"
+pass "H1: strict mutex survives normal exit"
 
-# Seed a dirty leaf.
-bash "$ROOT/templates/memory/new-node.sh" interface/foo module >/dev/null
-LEAF="$AIMS_MEMORY_DIR/interface/foo.md"
-python3 -c "
-p='$LEAF'
-s=open(p).read()
-s=s.replace('code: []', 'code:\n  - src/foo.py')
-s=s.replace('dirty: false', 'dirty: true', 1)
-open(p,'w').write(s)
-"
+echo "### H2 (ADR-0024): .marker is independent of .lock ###"
+# A peer post-edit-marker would stamp .marker; that must not gate try_claim.
+printf 'OTHER\n' > "$AIMS_MEMORY_DIR/x/foo.marker"
+rm -f "$AIMS_MEMORY_DIR/x/foo.lock"
+out=$(run_stop S2 --force)
+echo "$out" | grep -q 'x/foo' || fail "H2: .marker must not gate the mutex"
+pass "H2: advisory .marker and strict .lock are independent"
 
-# Run the Stop hook with --force so the throttle is bypassed.
-bash "$ROOT/templates/hooks/stop-consolidate.sh" --force 2>"$TMP/stop.err"
+echo "### throttle: silent when N_DIRTY<max and interval not elapsed ###"
+date -u +%s > "$AIMS_MEMORY_STATE_FILE"
+rm -f "$AIMS_MEMORY_DIR/x/foo.lock"
+out=$(AIMS_MEMORY_DIRTY_MAX=5 AIMS_MEMORY_INTERVAL_SEC=99999 run_stop S3 || true)
+[ -z "$out" ] || fail "throttle should silence the hook (got '$out')"
+pass "throttle blocks when below threshold"
 
-. "$ROOT/templates/memory/_lib.sh"
-v=$(fm_get "$LEAF" dirty)
-[ "$v" = "false" ] || { cat "$TMP/stop.err"; fail "expected dirty=false after consolidate, got '$v'"; }
-grep -q "UPDATED BY MOCK" "$LEAF" || { cat "$LEAF"; fail "leaf body was not updated by the mock"; }
-pass "stop-consolidate.sh --force: dirty leaf consolidated via mock"
+echo "### ADR-0027: discrepancy detection across Stop fires ###"
+# Reset state: clear prior snapshots from earlier test cases, drop lock,
+# move throttle state file backwards.
+rm -f "$AIMS_MEMORY_DIR/x/foo.lock" "$AIMS_MEMORY_DIR/.last-report-snapshot"
+echo 0 > "$AIMS_MEMORY_STATE_FILE"
+# First emit: writes the snapshot AND should NOT prepend a discrepancy
+# breadcrumb (no prior snapshot).
+out1=$(run_stop S4 --force)
+echo "$out1" | grep -q 'DISCREPANCY DETECTED' \
+  && fail "first emit should not see a discrepancy"
+[ -f "$AIMS_MEMORY_DIR/.last-report-snapshot" ] \
+  || fail "first emit should have written the snapshot"
+pass "first emit writes snapshot; no discrepancy breadcrumb"
 
-# Verify state file was written.
-[ -r "$AIMS_MEMORY_STATE_FILE" ] || fail "state file not written"
-pass "state file (.last-consolidated) updated"
+# Simulate the model claiming `===[aims: queue drained]===` but doing
+# nothing: state stays identical. Clear the lock so try_claim succeeds
+# again on the next fire (the lock would normally survive — but a fresh
+# claim by the same session uses the held-locks path; we keep this
+# simple by removing it).
+rm -f "$AIMS_MEMORY_DIR/x/foo.lock"
+out2=$(run_stop S4 --force)
+echo "$out2" | grep -q 'DISCREPANCY DETECTED' \
+  || fail "second emit on unchanged state must prepend discrepancy"
+echo "$out2" | grep -q 'previous report did not match measured state' \
+  || fail "discrepancy must name the inconsistency factually"
+pass "second emit on unchanged state surfaces the discrepancy"
 
-# Run again with no dirty leaves — should exit fast, no API call.
-mock_calls_before=$(wc -l < "$MOCK_LOG" 2>/dev/null || echo 0)
-bash "$ROOT/templates/hooks/stop-consolidate.sh" --force
-mock_calls_after=$(wc -l < "$MOCK_LOG" 2>/dev/null || echo 0)
-[ "$mock_calls_before" = "$mock_calls_after" ] || \
-  fail "stop hook called the API even though there were no dirty leaves"
-pass "stop-consolidate.sh: no-op when N_DIRTY=0 (no API call)"
+# Sanity: when state DOES change (leaf cleaned), no discrepancy on the
+# next emit even if the snapshot lingers. Simulate by clearing dirty=true.
+sed -i.bak 's/^dirty: true/dirty: false/' "$LEAF"; rm -f "$LEAF.bak"
+# Add an inbox bullet to keep the hook firing on something.
+printf -- '- $TMP/src/foo.py\n' > "$AIMS_MEMORY_DIR/_inbox.md"
+rm -f "$AIMS_MEMORY_DIR/x/foo.lock"
+out3=$(run_stop S5 --force)
+echo "$out3" | grep -q 'DISCREPANCY DETECTED' \
+  && fail "state change must NOT trigger a discrepancy on the next emit"
+pass "state change clears discrepancy on next emit"
 
-# Verify the throttle: 1 dirty leaf, default DIRTY_MAX=5, recent state
-# file → should NOT consolidate.
-python3 -c "
-p='$LEAF'
-s=open(p).read()
-s=s.replace('dirty: false', 'dirty: true', 1)
-open(p,'w').write(s)
-"
-mock_calls_before=$(wc -l < "$MOCK_LOG" 2>/dev/null || echo 0)
-# state file mtime is fresh from the previous --force run.
-AIMS_MEMORY_DIRTY_MAX=5 AIMS_MEMORY_INTERVAL_SEC=99999 \
-  bash "$ROOT/templates/hooks/stop-consolidate.sh"
-mock_calls_after=$(wc -l < "$MOCK_LOG" 2>/dev/null || echo 0)
-[ "$mock_calls_before" = "$mock_calls_after" ] || \
-  fail "stop hook called API despite throttle (1 dirty < 5, interval not elapsed)"
-v=$(fm_get "$LEAF" dirty)
-[ "$v" = "true" ] || fail "leaf should still be dirty after throttled run, got '$v'"
-pass "throttle blocks consolidation when N_DIRTY < threshold and interval recent"
-
-printf '\nAll consolidate tests passed.\n'
+echo
+echo "RESULT: all consolidate tests passed."

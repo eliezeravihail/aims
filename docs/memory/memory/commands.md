@@ -23,8 +23,8 @@ external_refs:
   - { path: docs/adr/0007-tree-based-memory-with-auto-maintenance.md, kind: adr, why: defines the cold-start (/memory-init) and note-filing (/remember) UX }
 owners:
   - ema
-dirty: false
-last_touched: 2026-05-31T14:26:12Z
+dirty: true
+last_touched: 2026-06-11T07:35:06Z
 last_consolidated: 2026-05-31T14:26:12Z
 ---
 

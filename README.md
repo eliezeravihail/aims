@@ -3,10 +3,10 @@
 
 📄 **Site:** https://eliezeravihail.github.io/aims/
 
-Lean code-development discipline for Claude Code. Two slash commands, six
-project-local hooks, idempotent bootstrap. No multi-agent pipeline, no
-orchestration overhead — just the discipline that makes single-dispatch
-sessions reliable on Opus / Sonnet baselines.
+Lean code-development discipline for Claude Code. Two slash commands,
+project-local hooks that inform but never block, idempotent bootstrap.
+No multi-agent pipeline, no orchestration overhead — just the discipline
+that makes single-dispatch sessions reliable on Opus / Sonnet baselines.
 
 ## What this is for (and what it isn't)
 
@@ -39,12 +39,18 @@ session after session.
 
 ## What you get
 
-Two slash commands — that's the whole user-facing surface (see ADR-0010):
+Planning is a project **behavior**, not a command to remember (ADR-0022).
+For a non-trivial change, the assistant runs read-only discovery → writes a
+`Status: draft` plan to `docs/plans/` → asks for approval → implements →
+inline close-out. The `prompt-submit` hook describes this convention
+factually for every actionable prompt.
 
-| Command              | Model | Purpose                                                                       |
-|----------------------|-------|-------------------------------------------------------------------------------|
-| `/plan <task>`       | Opus  | Read-only exploration → ExitPlanMode → durable plan file → inline close-out   |
-| `/install-on <path>` | Opus  | Bootstrap (or idempotently re-install) ADRs, hooks, memory tree, CLAUDE.md    |
+Two slash commands exist as optional shortcuts (see ADR-0010, ADR-0022):
+
+| Command              | What it does                                                                                          |
+|----------------------|--------------------------------------------------------------------------------------------------------|
+| `/plan <task>`       | Dispatches Phase 1-2 to an Opus subagent (read-only discovery + draft write); main session resumes for approval / implementation / close-out. Use when the session model is not Opus. |
+| `/install-on <path>` | Bootstrap (or idempotently re-install) ADRs, hooks, memory tree, CLAUDE.md.                            |
 
 Everything that used to be its own command now happens **inline**, with no
 command to remember:
@@ -60,8 +66,9 @@ command to remember:
   that is the automatic marker + consolidation loop (ADR-0007 / ADR-0009).
 - **Mechanical edits and notes** are just ordinary edits — do the work.
 
-The model is pinned per command — it switches automatically and returns to
-your session model after.
+`/plan` does NOT switch the main session model — only the Phase 1-2
+subagent runs on Opus (ADR-0022). Implementation and close-out run on
+whatever the main session is on.
 
 ## Hooks (per-project, installed by `/install-on`)
 
@@ -73,9 +80,13 @@ your session model after.
   creates a lock. Suppresses on slash-prefixed prompts and short follow-ups.
   See ADR-0004 + ADR-0020.
 - **PreToolUse** (`pre-write`) — never blocks. On the first source edit of a
-  session with no in-progress plan, injects the planning convention once, as a
-  factual note. "Source" is defined by exclusion (anything outside `docs/`,
-  `tests/`, `*.md`, `.claude/`); no project path is hardcoded. See ADR-0020.
+  session with no `Status: draft`/`Status: in-progress` plan in `docs/plans/`,
+  injects a **state-aware** factual note that names the specific file being
+  edited, the missing plan, and the approval-semantics rule (brief
+  `yes`/`do it` approvals authorize Phase 2, not Phase 4). "Source" is
+  defined by exclusion (anything outside `docs/`, `tests/`, `*.md`,
+  `.claude/`); no project path is hardcoded. The note fires once per
+  session. See ADR-0020 + ADR-0023.
 - **PostToolUse** (`post-edit-marker`) — when an edit touches a file a memory
   node references, flags that node `dirty`, injects a factual note naming the
   node to update, and stamps an **advisory** marker (`<leaf>.lock`; NOT a
@@ -89,6 +100,13 @@ All injected text is factual, never an imperative command (ADR-0020): an
 imperative trips Claude's prompt-injection defense and is shown to the user
 instead of being treated as context. No hook ever blocks an edit — there is no
 `aims-mode` and no planning lock.
+
+When the Stop / consolidation-update hook reports its result, that report
+is emitted as a single short line `===[aims: <message>]===` — examples:
+`===[aims: nodes updated]===`, `===[aims: queue drained]===`,
+`===[aims: 4 dirty]===`. The marker applies ONLY to the update-hook
+result, not to regular conversational mentions of aims topics elsewhere
+in a reply (ADR-0021).
 
 ## A note on plugin sprawl
 
@@ -215,8 +233,7 @@ TARGET/
     ├── memory/                  # _lib, mark, new-node, find-dirty, lint,
     │                            # check-refs, consolidate, classify-inbox,
     │                            # doctor (.sh)
-    ├── settings.json            # wires the hooks
-    └── aims-mode                # nudge | block
+    └── settings.json            # wires the hooks
 ```
 
 `/install-on` is **idempotent** and doubles as the upgrade path: re-running
@@ -228,42 +245,48 @@ if you took path B), then re-run `/install-on` against your targets.
 
 ## How it feels in practice
 
-The router-as-secretary case (no slash command needed):
+The natural-planning case (no slash command needed):
 
 ```
 you: TypeError: cannot unpack non-iterable NoneType at parser.py:42
 
-  [router fires, intent=bug]
-  Claude (via AskUserQuestion):
-    Which workflow?
-      (a) /plan a real fix       (b) quick patch inline
-      (c) diagnose only — root cause, no edits
-  you: a
-  Claude: <enters /plan discipline: lock, read-only exploration,
-           ExitPlanMode, plan written to docs/plans/>
+  [prompt-submit injects the planning convention as factual context]
+  Claude: <reads, judges non-trivial, writes
+           docs/plans/2026-…-fix-parser-none.md with Status: draft>
+  Claude: Draft saved to docs/plans/…. Approve / edit / abort?
+  you: approve
+  Claude: <flips Status to in-progress, implements, runs verification,
+           writes ADR if architectural, marks completed, refreshes
+           the memory tree — all inline, no /done command>
 ```
 
-The explicit-command case (you already know what you want):
+The Opus-subagent case (main session is on Sonnet/Haiku and you want
+Opus-quality planning):
 
 ```
-/plan add OAuth2 callback handler
-   ↳ Opus, plan-mode discipline, ExitPlanMode → plan file written
-/model sonnet
-   ↳ implement against the plan
-   ↳ httpx-over-requests is a clear architectural call → ADR written
-     inline (status: proposed), no command needed
-   ↳ at the end, the Stop hook nudges close-out: verify steps, run
-     `## Verification`, mark the plan completed, consolidate memory
+you: add an OAuth2 callback handler
+  Claude: This is non-trivial and the session is on Sonnet — use
+          /plan for an Opus planner subagent, or plan inline here?
+  you: /plan add OAuth2 callback handler
+  Claude: <dispatches Phase 1-2 to an Opus subagent; main session
+           stays on Sonnet, receives the draft path, resumes for
+           Phase 3 → 5 — approval, implementation, inline close-out>
 ```
 
-Mechanical or note-taking work needs no command — just describe it and
-the edit happens inline:
+Trivial / mechanical work skips planning, but the judgement is
+declared (CLAUDE.md "Trivial-skip must be declared"):
 
 ```
 you: rename CamelCase to snake_case in scripts/
-   ↳ ordinary inline edit; the router stays out of the way for
-     obviously-scoped mechanical work
+  Claude: Trivial — no plan, proceeding inline.
+          <ordinary edit; the pre-write note still fires once per
+           session as a factual reminder, never blocks>
 ```
+
+On every edit, the `post-edit-marker` hook flags affected memory nodes
+`dirty`; the throttled `Stop` hook later injects the in-band
+consolidation prompt, and the consolidation result is reported back
+in a single `===[aims: <message>]===` line (ADR-0021).
 
 ## Layout
 
@@ -296,7 +319,6 @@ templates/                   ← never globally registered; copied per target
   hooks/                     ← live hooks for working on aims itself
   memory/                    ← live memory scripts for the dogfooded tree
   settings.json
-  aims-mode
 ```
 
 ## Design principles

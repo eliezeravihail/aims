@@ -1,22 +1,26 @@
 #!/usr/bin/env bash
-# aims SessionEnd hook — un-throttled consolidation safety net.
+# aims SessionEnd hook — advisory breadcrumb only.
 #
-# Most active users rarely fire SessionEnd; the Stop hook does the
-# real work with a throttle. But IF the user does close the CLI,
-# we want any dirty leaves consolidated before the session is gone.
-# Cheap when nothing is dirty.
+# Audit finding M3 (docs/plans/2026-06-11-aims-audit-fixes-master.md):
+# the prior implementation execed `stop-consolidate.sh --force`. But
+# Stop-hook block-JSON (`{"decision":"block","reason":...}`) has no
+# meaning at SessionEnd — no following model turn consumes it. Meanwhile
+# stop-consolidate unconditionally bumps `.last-consolidated`, which then
+# silently delays the NEXT session's interval throttle by 30 min while
+# no consolidation work actually happened.
+#
+# This hook now only reports state on stderr. It never touches the
+# throttle file. Per ADR-0020 it informs and does not block; per
+# ADR-0024 it must not race the consolidation mutex.
 
 set -u
 
-if [ -d ".claude/memory" ]; then
-  HOOKS_DIR=".claude/hooks"
-elif [ -d "templates/hooks" ]; then
-  HOOKS_DIR="templates/hooks"
-else
-  exit 0
-fi
+if   [ -d ".claude/memory" ];   then MEM_HELPERS=".claude/memory"
+elif [ -d "templates/memory" ]; then MEM_HELPERS="templates/memory"
+else exit 0; fi
 
-# Delegate to stop-consolidate.sh with --force, so the threshold
-# logic is bypassed. Identical behaviour otherwise (silent if no
-# dirty leaves, graceful if no API key, never blocks).
-exec bash "$HOOKS_DIR/stop-consolidate.sh" --force
+n=$(bash "$MEM_HELPERS/find-dirty.sh" 2>/dev/null | grep -c . || echo 0)
+if [ "$n" -gt 0 ]; then
+  printf '[aims] SessionEnd: %d dirty memory node(s) left for next session.\n' "$n" >&2
+fi
+exit 0

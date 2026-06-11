@@ -1,6 +1,6 @@
 # ADR-0020: Hooks inform, they never block
 
-Status: proposed
+Status: accepted (amended by 0026)
 Date: 2026-06-02
 Supersedes: ADR-0017 (in full), ADR-0019 (repurposed — see below)
 Superseded by: —
