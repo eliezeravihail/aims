@@ -53,4 +53,14 @@ out=$(printf '%s' '{"prompt":"```python\nprint(1)\n```"}' | bash "$HOOK" 2>/dev/
 if note_has "$out" 'Project convention'; then fail "case 5: code-paste should get no planning note"; fi
 pass "router skips code-paste prompts"
 
+# Case 6: short non-ASCII prompt → no note (byte-vs-char length must not
+# trip the "actionable" fallback). "How much does this add?" in Hebrew is
+# ~22 chars but 42 bytes; under a POSIX locale a byte count would falsely
+# classify it as ambiguous/actionable.
+rm -rf .claude
+out=$(printf '%s' '{"prompt":"כמו עלות זה מוסיף לשיחה"}' | bash "$HOOK" 2>/dev/null)
+[ ! -f .claude/.planning-lock ] || fail "case 6: short non-ASCII prompt must not lock"
+if note_has "$out" 'Project convention'; then fail "case 6: short non-ASCII prompt should get no planning note"; fi
+pass "short non-ASCII prompt → no note (char-counted, not byte-counted)"
+
 printf '\nAll router (inform-never-lock) tests passed.\n'

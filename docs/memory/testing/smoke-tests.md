@@ -21,7 +21,7 @@ external_refs: []
 owners: []
 dirty: true
 last_touched: 2026-06-11T08:06:42Z
-last_consolidated: 2026-05-31T14:26:12Z
+last_consolidated: 2026-06-04T14:08:59Z
 ---
 
 ## Purpose
@@ -32,7 +32,8 @@ Bash smoke tests for aims internals — no Anthropic API, no network.
 - `consolidate.sh` — `consolidate.sh` prompt builder + Stop hook.
 - `exit-plan-mode.sh` (4 cases) — the harness-bridge hook (ADR-0015).
 - `router-auto-plan.sh` (6 cases) — auto-engage intent router
-  (ADR-0015).
+  (ADR-0015). Case 6 guards char-vs-byte length: a short Hebrew prompt
+  (~22 chars / 42 bytes) must NOT trip the actionable fallback.
 
 ## Design rationale
 

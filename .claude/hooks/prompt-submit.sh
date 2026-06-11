@@ -37,6 +37,20 @@ if (( BASH_VERSINFO[0] < 4 )); then
   exit 0
 fi
 
+# ── Locale: count characters, not bytes ──────────────────────
+# Length heuristics below (the short-follow-up suppression and the
+# "long enough to be actionable" ambiguous fallback) measure the prompt
+# with bash ${#str}. Under a POSIX/C locale that counts BYTES, so a short
+# non-ASCII prompt is overcounted (Hebrew/CJK are 2-3 bytes/char): e.g. a
+# 22-char Hebrew comment measures 42 bytes and falsely trips the 40-byte
+# "actionable" threshold, injecting a spurious planning note. Switch to a
+# UTF-8 locale when one exists so ${#str} counts characters; otherwise fall
+# back silently to the current locale (heuristics may overcount, never lock).
+if ! printf '%s' "${LC_ALL:-}${LC_CTYPE:-}${LANG:-}" | grep -qiE 'utf-?8'; then
+  _utf8_loc=$(locale -a 2>/dev/null | grep -iE '\.utf-?8$' | head -n1)
+  [ -n "${_utf8_loc:-}" ] && export LC_ALL="$_utf8_loc"
+fi
+
 # ── Read payload ────────────────────────────────────────────
 payload=$(cat || true)
 if command -v jq >/dev/null 2>&1; then
