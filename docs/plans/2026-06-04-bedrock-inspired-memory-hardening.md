@@ -1,6 +1,41 @@
 # Plan: Bedrock-inspired memory hardening
-Status: draft
+Status: superseded-by docs/plans/2026-06-11-aims-audit-fixes-master.md
 Started: 2026-06-04
+Superseded: 2026-06-11
+
+## Supersession note (2026-06-11)
+
+All three items from this plan were absorbed into the master audit-fixes
+plan and shipped there:
+
+- **Size cap (lint.sh)** → Track 5 of the master plan. Shipped in
+  commit `91fe2bd` ("track 5: low-pri correctness + bash≥4 guard +
+  leaf size cap"). Credit to project-bedrock
+  (https://github.com/robotaitai/project-bedrock) preserved in
+  `templates/memory/lint.sh`.
+
+- **Compaction invariants (consolidate.sh)** → Track 2 of the master
+  plan, alongside the ADR-0025 data-not-instructions framing. Shipped
+  in commit `48e3988` ("track 2: security — data framing + bounded
+  install-on deletion"). Credit to project-bedrock preserved in
+  `templates/memory/consolidate.sh` ACTION section.
+
+- **PreCompact hook (`templates/hooks/pre-compact.sh`)** → Track 3
+  of the master plan. Shipped in commit `9973146` ("track 3:
+  Stop/SessionEnd correctness + JSON escaping + PreCompact"). The
+  implementation incorporates the SessionEnd lesson (M3 — never
+  bump throttle without work) that this plan did not anticipate.
+  Credit to both project-bedrock and claude-code-context-handoff
+  (https://github.com/who96/claude-code-context-handoff) preserved
+  in `templates/hooks/pre-compact.sh`.
+
+The `Work/NOW.md` open question listed below remains intentionally
+deferred — not folded into the master plan, available as a future
+follow-up if needed.
+
+---
+
+## Original draft (preserved for reference; do not implement)
 
 ## תקציר מנהלים
 מאמצים שלושה דפוסים מ-project-bedrock אל aims, כדי להפוך משמעת-זיכרון מ"שיקול דעת" ל"בדיקות חוזרות": (1) מגבלת גודל לעלי-זיכרון ב-`lint.sh` (אזהרה ~150 שורות, קריטי ~200) כדי לאלץ פיצול בזמן; (2) ניסוח מפורש של אינווריאנטות דחיסה ב-`consolidate.sh` ("כל עובדה בת-קיימא חייבת לשרוד דחיסה — להזיז או למזג, לעולם לא למחוק", ו"קבצי evidence/raw imports אינם נוגעים בדחיסה") כדי לקבע את הכוונה ברמת הפרומפט; (3) hook חדש `pre-compact.sh` שמפעיל את צינור הדחיסה הקיים לפני ש-Claude Code מסכם את ההקשר, תחת ADR-0020 — מודיע, לעולם לא חוסם. שלוש המשימות עצמאיות ונשלחות בנפרד בסדר: lint → invariant → PreCompact.

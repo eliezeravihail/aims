@@ -1,5 +1,5 @@
 # ADR-0010: Two-command surface; idempotent install; auto plan close-out
-Status: proposed
+Status: accepted
 Date: 2026-05-27
 Supersedes: parts of ADR-0002, ADR-0007 (the user-facing command lists)
 Superseded by: parts of ADR-0011 (the per-class idempotency rules)

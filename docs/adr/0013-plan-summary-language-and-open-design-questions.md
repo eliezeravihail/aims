@@ -1,5 +1,5 @@
 # ADR-0013: Plan template — configurable summary language and explicit Open design questions
-Status: proposed
+Status: accepted
 Date: 2026-05-31
 Supersedes: —
 Superseded by: —

@@ -67,6 +67,8 @@ case "$nlc" in
 esac
 
 # Skip non-source surfaces (the memory tree itself, tooling, vendored dirs).
+# D2: docs/adr/ IS a tracked surface — nodes may cite ADRs in their `code:`
+# list so a doctrine change marks them dirty for re-consolidation.
 case "$rel" in
   .claude/*|.git/*|*/node_modules/*|*/dist/*|*/build/*|docs/memory/*) exit 0 ;;
 esac

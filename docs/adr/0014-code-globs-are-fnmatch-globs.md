@@ -1,5 +1,5 @@
 # ADR-0014: `code:` entries are matched as fnmatch globs
-Status: proposed
+Status: accepted
 Date: 2026-05-31
 Supersedes: —
 Superseded by: —

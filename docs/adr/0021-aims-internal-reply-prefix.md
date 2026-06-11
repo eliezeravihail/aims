@@ -1,5 +1,5 @@
 # ADR-0021: Demarcate aims-internal narration in user-facing replies
-Status: proposed
+Status: accepted
 Date: 2026-06-02
 Supersedes: —
 Superseded by: —

@@ -1,5 +1,5 @@
 # ADR-0022: Planning is a behavior; `/plan` dispatches an Opus subagent
-Status: proposed
+Status: accepted
 Date: 2026-06-02
 Supersedes: —
 Superseded by: —

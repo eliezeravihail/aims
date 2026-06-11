@@ -1,5 +1,5 @@
 # ADR-0023: Anchor "first action = write draft" to prevent planning skips
-Status: proposed
+Status: accepted
 Date: 2026-06-02
 Supersedes: —
 Superseded by: —

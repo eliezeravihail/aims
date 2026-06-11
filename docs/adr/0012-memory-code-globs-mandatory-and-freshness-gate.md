@@ -1,5 +1,5 @@
 # ADR-0012: Module nodes must carry code globs; install gates tree work on freshness
-Status: proposed
+Status: accepted
 Date: 2026-05-28
 Supersedes: —
 Superseded by: —
