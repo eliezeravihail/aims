@@ -65,6 +65,12 @@ fm_set() {
   end=$(fm_end_line "$f")
   [ "$end" -le 1 ] && return 1
   tmp=$(mktemp)
+  # L2: mktemp creates 0600 and a bare `mv` would silently downgrade node
+  # files from their original (typically 0644) mode. Copy the source mode
+  # onto the tempfile before the rename so it survives.
+  chmod --reference="$f" "$tmp" 2>/dev/null \
+    || { mode=$(stat -f '%Lp' "$f" 2>/dev/null); [ -n "$mode" ] && chmod "$mode" "$tmp" 2>/dev/null; } \
+    || true
   awk -v k="$key" -v v="$val" -v end="$end" '
     BEGIN { set=0 }
     {

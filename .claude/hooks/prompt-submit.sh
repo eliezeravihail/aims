@@ -30,12 +30,26 @@
 
 set -u
 
+# L4: declare -A used for the per-session injection dedup. bash 3.2 lacks it.
+if (( BASH_VERSINFO[0] < 4 )); then
+  printf '[aims] prompt-submit.sh: bash >= 4 required; current is %s. Skipping.\n' \
+    "$BASH_VERSION" >&2
+  exit 0
+fi
+
 # ── Read payload ────────────────────────────────────────────
 payload=$(cat || true)
 if command -v jq >/dev/null 2>&1; then
   prompt=$(printf '%s' "$payload" | jq -r '.prompt // empty' 2>/dev/null || true)
 else
-  prompt=$(printf '%s' "$payload")
+  # L6: same quick-regex pattern used elsewhere for `file_path`. Best-effort —
+  # if the payload was already a bare string (or the regex misses), fall back
+  # to the whole payload so the rest of the hook still runs.
+  prompt=$(printf '%s' "$payload" \
+    | grep -oE '"prompt"[[:space:]]*:[[:space:]]*"[^"]*"' \
+    | head -1 \
+    | sed -E 's/.*"prompt"[[:space:]]*:[[:space:]]*"([^"]*)".*/\1/')
+  [ -z "$prompt" ] && prompt=$(printf '%s' "$payload")
 fi
 [ -z "$prompt" ] && exit 0
 
@@ -103,7 +117,7 @@ if [ -d "$MEMORY_DIR" ] && [ "${#prompt}" -ge 8 ]; then
         if [ "$lit" = "$base" ]; then
           name="${base##*/}"
           if [ -n "$name" ] && [ "${#name}" -ge "$NAME_MIN_LEN" ]; then
-            if printf '%s' "$prompt" | grep -qwF "$name"; then
+            if printf '%s' "$prompt" | grep -qwF -- "$name"; then
               hit=1
               break
             fi

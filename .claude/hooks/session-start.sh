@@ -31,7 +31,7 @@ if [ -f "$LOCK" ]; then
     grep -lE '^Status:[[:space:]]*draft' "$PLAN_DIR"/*.md 2>/dev/null | grep -q . && has_draft=1
   fi
   if [ "$has_active_plan" -eq 1 ]; then
-    printf '[aims] Planning lock active — Edit/Write blocked until ExitPlanMode.\n'
+    printf '[aims] Planning lock present (advisory only — hooks inform, never block per ADR-0020).\n'
   elif [ "$has_draft" -eq 1 ]; then
     printf '[aims] Planning lock held for a draft awaiting approval (no in-progress plan yet).\n'
     printf '       Approve/iterate the draft, or run: rm .claude/.planning-lock\n'

@@ -22,6 +22,16 @@
 
 set -u
 
+# L4: this hook uses mapfile (bash 4) and `declare -A`-style features
+# downstream. macOS ships bash 3.2 by default; rather than polyfill, emit a
+# factual breadcrumb and exit 0 (informational, per ADR-0020). To upgrade:
+#     brew install bash
+if (( BASH_VERSINFO[0] < 4 )); then
+  printf '[aims] stop-consolidate.sh: bash >= 4 required; current is %s. Skipping.\n' \
+    "$BASH_VERSION" >&2
+  exit 0
+fi
+
 if [ -d ".claude/memory" ]; then
   MEM_HELPERS=".claude/memory"
 elif [ -d "templates/memory" ]; then
