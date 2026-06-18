@@ -21,9 +21,9 @@ external_refs:
   - { path: docs/adr/0007-tree-based-memory-with-auto-maintenance.md, kind: adr, why: surfaces docs/memory/README.md (the tree's tag list) up to 2KB }
 owners:
   - ema
-dirty: true
-last_touched: 2026-06-11T07:40:11Z
-last_consolidated: 2026-06-02T15:43:20Z
+dirty: false
+last_touched: 2026-06-18T09:31:44Z
+last_consolidated: 2026-06-18T09:31:44Z
 ---
 
 ## Purpose
@@ -46,6 +46,11 @@ the planning-as-behavior convention (ADR-0022) and the
   lock to resume or `rm` the draft to abandon.
 - Memory tree README is capped at 2 KB to keep prompt injection light;
   the trail-off message tells the model how to read more.
+- The planning-lock line is **factually advisory** (L3, commit
+  91fe2bd): a present lock prints "advisory only — hooks inform, never
+  block per ADR-0020", not the old "Edit/Write blocked until
+  ExitPlanMode". A lock held for an unapproved draft prints a distinct
+  recovery hint.
 
 ## Invariants & gotchas
 
@@ -69,6 +74,9 @@ the planning-as-behavior convention (ADR-0022) and the
   reply-format marker `===[aims: <msg>]===` for consolidation reports.
 - ADR-0022 — the conventions block describes planning-as-behavior and
   the optional `/plan` Opus-subagent shortcut.
+- External: docs/adr/0004-router-via-hook-injected-context.md updated since last consolidation — review for impact
+- External: docs/adr/0007-tree-based-memory-with-auto-maintenance.md updated since last consolidation — review for impact
+- External: CLAUDE.md "Hooks" / "Plugin-specific notes (not from template)" updated since last consolidation — review for impact
 
 ## Open questions
 

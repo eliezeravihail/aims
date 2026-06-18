@@ -20,9 +20,9 @@ external_refs:
   - { path: docs/adr/0016-prompt-memory-injection.md,           kind: adr, why: per-prompt memory node body auto-injection }
 owners:
   - ema
-dirty: true
-last_touched: 2026-06-11T11:49:04Z
-last_consolidated: 2026-06-04T14:07:11Z
+dirty: false
+last_touched: 2026-06-18T09:31:44Z
+last_consolidated: 2026-06-18T09:31:44Z
 ---
 
 ## Purpose
@@ -92,6 +92,10 @@ are mentioned.
 - `templates/commands/plan.md` — the flow this hook engages.
 - `tests/router-auto-plan.sh` — six smoke cases.
 - ADR-0016 — per-prompt memory node body auto-injection.
+- External: docs/adr/0004-router-via-hook-injected-context.md updated since last consolidation — review for impact
+- External: docs/adr/0015-auto-plan-and-draft-on-disk.md updated since last consolidation — review for impact
+- External: docs/adr/0016-prompt-memory-injection.md updated since last consolidation — review for impact
+- External: CLAUDE.md "Hooks" updated since last consolidation — review for impact
 
 ## Open questions
 

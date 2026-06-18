@@ -20,9 +20,9 @@ external_refs:
   - { path: tests/marker.sh, kind: test, why: six smoke cases for marker behaviour }
 owners:
   - ema
-dirty: true
-last_touched: 2026-06-11T07:45:18Z
-last_consolidated: 2026-06-02T15:13:24Z
+dirty: false
+last_touched: 2026-06-18T09:31:44Z
+last_consolidated: 2026-06-18T09:31:44Z
 ---
 
 ## Purpose
@@ -55,6 +55,11 @@ never blocks and always exits 0.
 - Hook output uses the centralized `json_escape` helper from `_lib.sh`
   (M2) so control chars and quotes in paths can't corrupt the
   `additionalContext` JSON.
+- `docs/adr/` is a **tracked surface** — it is intentionally NOT in the
+  skip-list, so a node citing an ADR in its `code:` list dirty-marks
+  automatically when that ADR changes (D2, commit e409d6e). Chosen over
+  an `adr_refs:` frontmatter array because it reuses the existing
+  `path_matches` machinery.
 
 ## Invariants & gotchas
 
@@ -73,5 +78,10 @@ never blocks and always exits 0.
 - ADR-0019 — `mark.sh consolidated` removes the `<leaf>.lock`
   sidecar alongside the dirty/timestamp bumps; supersedes ADR-0018.
 - `templates/memory/mark.sh:34-46` — `consolidated` subcommand.
+- ADR-0024 — split mutex: advisory `<leaf>.marker` (this hook) vs
+  strict `<leaf>.lock` (Stop hook); symlink-guarded marker write.
+- External: docs/adr/0007-tree-based-memory-with-auto-maintenance.md updated since last consolidation — review for impact
+- External: tests/marker.sh updated since last consolidation — review for impact
+- External: CLAUDE.md "Hooks" updated since last consolidation — review for impact
 
 ## Open questions

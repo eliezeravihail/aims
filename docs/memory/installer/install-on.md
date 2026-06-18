@@ -20,9 +20,9 @@ external_refs:
   - { path: docs/adr/0005-clone-and-bootstrap-install.md, kind: adr, why: the install model this command implements }
 owners:
   - ema
-dirty: true
-last_touched: 2026-06-11T07:35:09Z
-last_consolidated: 2026-05-31T14:26:12Z
+dirty: false
+last_touched: 2026-06-18T09:31:44Z
+last_consolidated: 2026-06-18T09:31:44Z
 ---
 
 ## Purpose
@@ -33,7 +33,11 @@ clone-and-bootstrap installer. Six phases: (1) detect install state +
 changes per class + approval gate, (4) apply (copy from AIMS_ROOT, clean
 stale files, merge settings/CLAUDE.md), (5) memory tree — cold-start, or for
 an existing tree a freshness-gated audit/augment (ADR-0007/0009/0012),
-(6) doctor report. Memory tree is always installed.
+(6) doctor report. Memory tree is always installed. Interview question 6
+captures the plan executive-summary language (default `en`), written to
+`.claude/aims-summary-lang` and substituted as `{{SUMMARY_LANG}}`; used
+by `/plan` for the TL;DR heading (`en` → `## TL;DR`, `he` →
+`## תקציר מנהלים`; unknown codes fall back to `en`).
 
 ## Design rationale
 
@@ -64,10 +68,36 @@ plugin, not freeze at first install.
 - **Cold-start must fill `code:` globs** for every `module` node, and the
   augment path backfills inert (`code: []`) module nodes — otherwise the
   tree never consolidates (ADR-0012).
+- **Hooks list must stay complete.** The copy table installs
+  `session-start, prompt-submit, pre-write, post-edit-marker,
+  exit-plan-mode, stop-consolidate, session-end, pre-compact` — a hook
+  omitted here is silently absent on installed projects (commit f777955
+  added `pre-compact.sh`).
+- **Freshness probe walks the whole tree** via `find ... -name '*.md'`
+  (excluding `README.md`/`_inbox.md`), not a one-level `*/*.md` glob,
+  so nodes nested deeper than one tag are seen by the 7-day gate (L7,
+  commit f777955). Applies to all three install-on copies.
 
 ## Known issues
 
+- fixed: `commands/install-on.md` (the marketplace copy) was missing
+  the entire summary-language feature — question 6, the
+  `.claude/aims-summary-lang` write-out row, the `{{SUMMARY_LANG}}`
+  variable, and the doctor line — so marketplace users got a stale
+  install command. Re-synced from `templates/commands/install-on.md`,
+  the single source of truth (commit f777955).
+- fixed: the freshness probe globbed only one tag-level deep and missed
+  deeply-nested nodes; replaced with a `find`-based walk (commit
+  f777955).
 
 ## Pointers
+
+- ADR-0005 — clone-and-bootstrap install model this command implements.
+- ADR-0010 / ADR-0011 — rename + self-refreshing idempotency seam.
+- ADR-0012 — Phase 5 freshness gate + mandatory `code:` globs.
+- `tests/copies-identical.sh` — guards the three-way byte-identity of
+  the command copies (commit f777955).
+- External: docs/adr/0005-clone-and-bootstrap-install.md updated since last consolidation — review for impact
+- External: CLAUDE.md "Build & test commands" / "Workflow" updated since last consolidation — review for impact
 
 ## Open questions

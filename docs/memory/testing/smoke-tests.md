@@ -19,9 +19,9 @@ claude_md_refs:
   - "Build & test commands"
 external_refs: []
 owners: []
-dirty: true
-last_touched: 2026-06-11T08:06:42Z
-last_consolidated: 2026-06-04T14:08:59Z
+dirty: false
+last_touched: 2026-06-18T09:31:44Z
+last_consolidated: 2026-06-18T09:31:44Z
 ---
 
 ## Purpose
@@ -29,7 +29,11 @@ last_consolidated: 2026-06-04T14:08:59Z
 Bash smoke tests for aims internals — no Anthropic API, no network.
 - `marker.sh` (10 cases) — `path_matches` / marker hook / inbox dedup,
   including glob matching (ADR-0014 case 10).
-- `consolidate.sh` — `consolidate.sh` prompt builder + Stop hook.
+- `consolidate.sh` (7 cases) — `consolidate.sh` prompt builder + Stop
+  hook, including the three ADR-0027 discrepancy cases: first-emit
+  writes the snapshot with no breadcrumb; a second emit on byte-identical
+  state surfaces the discrepancy; a real state change clears it
+  (commit ba9d38d).
 - `exit-plan-mode.sh` (4 cases) — the harness-bridge hook (ADR-0015).
 - `router-auto-plan.sh` (6 cases) — auto-engage intent router
   (ADR-0015). Case 6 guards char-vs-byte length: a short Hebrew prompt
@@ -60,7 +64,10 @@ None open.
 
 - ADR-0014 — glob matching, covered by `marker.sh` case 10.
 - ADR-0015 — auto-plan flow, covered by both new tests.
+- ADR-0027 — Stop-hook consolidation-report discrepancy detection,
+  covered by `consolidate.sh` (commit ba9d38d).
 - `CLAUDE.md` "Build & test commands" — invocation contract.
+- External: CLAUDE.md "Build & test commands" updated since last consolidation — review for impact
 
 ## Open questions
 

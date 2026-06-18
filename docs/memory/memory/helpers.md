@@ -30,9 +30,9 @@ external_refs:
   - { path: docs/adr/0014-code-globs-are-fnmatch-globs.md, kind: adr, why: path_matches now treats every code: entry as an fnmatch glob }
 owners:
   - ema
-dirty: true
-last_touched: 2026-06-11T07:44:03Z
-last_consolidated: 2026-06-01T06:52:29Z
+dirty: false
+last_touched: 2026-06-18T09:31:44Z
+last_consolidated: 2026-06-18T09:31:44Z
 ---
 
 ## Purpose
@@ -104,12 +104,27 @@ No external network call lives in any helper.
   Stop-hook prompt stays bounded even with many dirty nodes.
 - All helpers exit 0 on a missing `docs/memory/` so the plugin is
   safe to install in projects that haven't run `/memory-init` yet.
+- **`fm_set` preserves file mode** across the tempfile rename:
+  `mktemp` creates 0600 and a bare `mv` would silently downgrade every
+  node file on the first dirty-mark. It copies the source mode
+  (`chmod --reference`, BSD `stat -f '%Lp'` fallback) onto the temp
+  before renaming (L2, commit 91fe2bd).
+- **bash ≥ 4 required** for the three helpers using `mapfile` /
+  `declare -A` (`stop-consolidate.sh`, `prompt-submit.sh`, `lint.sh`).
+  Stock macOS bash 3.2 hits the guard, prints one stderr breadcrumb,
+  and exits 0 rather than erroring mid-run (L4, commit 91fe2bd).
+- `lint.sh` also flags oversized leaves: warning at >150 body lines,
+  CRITICAL at >200 (commit 91fe2bd).
 
 ## Known issues
 
 - fixed: helpers used to gate work on `ANTHROPIC_API_KEY` and call
   `api.anthropic.com` via `curl`; removed in favor of prompt
   builders consumed in-band (commit 0c0852f).
+- fixed: `lint.sh`'s fixed-bug-SHA check ran inside a pipeline subshell,
+  so `issues` increments were lost and the missing-commit branch fell
+  through silently; moved to a process-substitution loop in the parent
+  shell and the missing-commit branch now increments (L1, commit 91fe2bd).
 
 ## Pointers
 
@@ -126,5 +141,10 @@ No external network call lives in any helper.
 - ADR-0019 — sidecar `<leaf>.lock` files as the per-node mutex;
   `mark.sh consolidated` removes the sidecar.
 - `templates/memory/_lib.sh` — shared primitives.
+- External: docs/adr/0007-tree-based-memory-with-auto-maintenance.md updated since last consolidation — review for impact
+- External: docs/adr/0014-code-globs-are-fnmatch-globs.md updated since last consolidation — review for impact
+- External: tests/marker.sh updated since last consolidation — review for impact
+- External: tests/consolidate.sh updated since last consolidation — review for impact
+- External: CLAUDE.md "Plugin-specific notes (not from template)" updated since last consolidation — review for impact
 
 ## Open questions

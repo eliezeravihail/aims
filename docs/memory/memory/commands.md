@@ -23,9 +23,9 @@ external_refs:
   - { path: docs/adr/0007-tree-based-memory-with-auto-maintenance.md, kind: adr, why: defines the cold-start (/memory-init) and note-filing (/remember) UX }
 owners:
   - ema
-dirty: true
-last_touched: 2026-06-11T07:35:06Z
-last_consolidated: 2026-05-31T14:26:12Z
+dirty: false
+last_touched: 2026-06-18T09:31:44Z
+last_consolidated: 2026-06-18T09:31:44Z
 ---
 
 ## Purpose
@@ -68,6 +68,10 @@ path stays reserved for Claude-native `/memory`).
 - ADR-0007 — defines the cold-start (`/memory-init`) and note-filing
   (`/remember`) UX.
 - ADR-0009 — clarifies that no aims command opens the Anthropic API.
-- `templates/commands/remember.md` — the command itself.
+- ADR-0010 — removed `/memory-init`, `/memory-augment`, `/remember`;
+  `templates/commands/remember.md` no longer exists (cold-start +
+  augment moved into `/install-on` Phase 5; note-filing is ordinary Edit).
+- External: docs/adr/0007-tree-based-memory-with-auto-maintenance.md updated since last consolidation — review for impact
+- External: CLAUDE.md "Workflow" / "Models policy" updated since last consolidation — review for impact
 
 ## Open questions
