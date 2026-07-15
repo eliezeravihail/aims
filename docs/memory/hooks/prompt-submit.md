@@ -4,6 +4,7 @@ kind: module
 code:
   - templates/hooks/prompt-submit.sh
   - .claude/hooks/prompt-submit.sh
+  - docs/adr/0029-shape-gated-convention-note.md
 commits: []
 sessions: []
 parents: []

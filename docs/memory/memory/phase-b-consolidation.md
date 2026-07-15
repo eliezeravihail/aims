@@ -11,6 +11,8 @@ code:
   - templates/memory/consolidate.sh
   - templates/memory/classify-inbox.sh
   - templates/memory/check-refs.sh
+  - docs/adr/0028-delta-consolidation-and-four-section-schema.md
+  - docs/adr/0030-retire-strict-consolidation-lock.md
 commits: []
 sessions:
   - docs/plans/memory-tree-system.md

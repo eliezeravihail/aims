@@ -5,6 +5,7 @@ code:
   - templates/adr-template.md.tmpl
   - templates/adr-readme.md.tmpl
   - templates/adr-0001.md.tmpl
+  - docs/adr/README.md
 # (was: templates/commands/adr.md, .claude/commands/adr.md — both removed per ADR-0010)
 commits: []
 sessions: []
