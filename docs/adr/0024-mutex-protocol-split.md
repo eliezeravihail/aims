@@ -1,5 +1,5 @@
 # ADR-0024: Mutex protocol split — `.lock` strict, `.marker` advisory
-Status: accepted
+Status: accepted (strict-lock half superseded by 0030)
 Date: 2026-06-11
 Supersedes: docs/adr/0019-sidecar-lockfiles-for-memory-nodes.md
 Superseded by: —

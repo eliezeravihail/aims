@@ -152,6 +152,27 @@ fm_list() {
 # Now in ISO-8601 UTC.
 now_iso() { date -u +'%Y-%m-%dT%H:%M:%SZ'; }
 
+# Plan state lives in the file HEADER (first 5 lines). Body content — e.g.
+# a code block quoting "Status: in-progress" — must never affect plan-state
+# detection (real case: a completed plan carrying four Status: lines
+# confused `grep -l '^Status:'` callers). Track D of
+# docs/plans/2026-07-15-memory-subsystem-diet.md.
+plan_status() {
+  head -n 5 "$1" 2>/dev/null \
+    | awk -F': *' '/^Status:/{print tolower($2); exit}' | tr -d '\r '
+}
+
+# All plans in <dir> whose header Status equals <status>, one per line.
+# Usage: plans_with_status <dir> <status>
+plans_with_status() {
+  local d="$1" want="$2" f
+  for f in "$d"/*.md; do
+    [ -e "$f" ] || continue
+    [ "$(plan_status "$f")" = "$want" ] && printf '%s\n' "$f"
+  done
+  return 0
+}
+
 # True if the haystack matches the needle (exact, or needle is a prefix
 # before a `:lineRange`). Lets src/bar.py match a `code:` entry of
 # src/bar.py:10-30.

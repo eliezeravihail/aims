@@ -66,8 +66,11 @@ lockstate(){ [ -f "$LOCK" ] && echo y || echo n; }
 o=$(ps 'please fix the crash that throws an exception'); ok "$(lockstate)" "n" "English bug: NO lock"
 has "$o" "Project convention" "English bug: factual note injected"
 o=$(ps 'תבצע אופטימיזציה כללית על כל המערכת שלנו בבקשה רבה'); ok "$(lockstate)" "n" "Hebrew prose: NO lock"
-o=$(ps 'מה אתה מציע לגבי הבאג הזה ואיך לתקן אותו בבקשה'); ok "$(lockstate)" "n" "Hebrew question: NO lock"
-no "$o" "Project convention" "Hebrew question: no planning note"
+# ADR-0029: questions are detected by trailing `?` only (language-neutral);
+# a question phrased WITHOUT `?` over-fires the note by design — the note is
+# self-conditional and cheap. So the suppression assertion uses `?`.
+o=$(ps 'מה אתה מציע לגבי הבאג הזה ואיך לתקן אותו בבקשה?'); ok "$(lockstate)" "n" "Hebrew question: NO lock"
+no "$o" "Project convention" "Hebrew ?-question: no planning note"
 rm -f "$LOCK"; rm -rf "$PD"
 
 echo "### C. post-edit-marker.sh — node note + advisory marker; never blocks ###"

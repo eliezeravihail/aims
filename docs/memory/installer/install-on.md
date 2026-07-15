@@ -20,54 +20,56 @@ external_refs:
   - { path: docs/adr/0005-clone-and-bootstrap-install.md, kind: adr, why: the install model this command implements }
 owners:
   - ema
-dirty: true
-last_touched: 2026-06-11T07:35:09Z
-last_consolidated: 2026-05-31T14:26:12Z
+dirty: false
+last_touched: 2026-07-15T09:17:02Z
+last_consolidated: 2026-07-15T09:17:02Z
 ---
 
 ## Purpose
 
-Documents `/install-on` (renamed from `/init-workflow` per ADR-0010) — the
-clone-and-bootstrap installer. Six phases: (1) detect install state +
-`PRIOR_AIMS` flag, (2) interview gaps via AskUserQuestion, (3) show planned
-changes per class + approval gate, (4) apply (copy from AIMS_ROOT, clean
-stale files, merge settings/CLAUDE.md), (5) memory tree — cold-start, or for
-an existing tree a freshness-gated audit/augment (ADR-0007/0009/0012),
-(6) doctor report. Memory tree is always installed.
-
-## Design rationale
-
-ADR-0011 made re-install **self-refreshing**: the system layer is fully
-replaced and stale aims files are deleted, while user-authored documentation
-stays sacred. This split exists because aims ships some docs (the ADR
-bootstrap `0001`, `_template.md`, the ADR README prose) that must track the
-plugin, not freeze at first install.
+`/install-on` — the clone-and-bootstrap installer (renamed from
+`/init-workflow` per ADR-0010). Six phases: (1) detect install state,
+(2) interview gaps via AskUserQuestion (incl. question 6: plan
+summary language → `.claude/aims-summary-lang` / `{{SUMMARY_LANG}}`),
+(3) planned-changes preview + approval, (4) apply, (5) memory tree —
+cold-start or freshness-gated augment, (6) doctor report. Memory tree
+is always installed.
 
 ## Invariants & gotchas
 
-- **The idempotency seam (ADR-0011).** Refresh: hooks, memory scripts, the two
-  commands, aims-owned `settings.json` hook entries, and aims-shipped ADR
-  scaffolding. Delete: `*.sh` in `.claude/{hooks,memory}/` not in the shipped
-  set; commands other than `install-on`/`plan`. Never touch: authored ADRs
-  (`NNNN != 0001`), the ADR README `## Index` rows, CLAUDE.md sections, plans,
-  memory node bodies, non-`hooks` settings keys.
-- **`docs/adr/README.md` is index-aware** — refresh the prose above
-  `## Index`, splice the existing index rows back verbatim. Never overwrite it
-  wholesale (that destroys the user's ADR log).
-- All three command copies (`commands/`, `templates/commands/`,
-  `.claude/commands/`) must stay byte-identical — verify with `md5sum`.
-- **Phase 5 freshness gate (ADR-0012).** A missing tree is always
-  cold-started; an existing tree is audited/augmented only if its newest
-  node `last_consolidated` is older than 7 days — within a week, tree work
-  is skipped and only system files refresh. Probe reads frontmatter, never
-  file mtime (a clone resets mtimes).
-- **Cold-start must fill `code:` globs** for every `module` node, and the
-  augment path backfills inert (`code: []`) module nodes — otherwise the
-  tree never consolidates (ADR-0012).
-
-## Known issues
-
+- **Idempotency seam (ADR-0011).** Refresh: hooks, memory scripts, the
+  two commands, aims-owned settings hooks, aims-shipped ADR
+  scaffolding. Delete: unshipped `*.sh` in `.claude/{hooks,memory}/`;
+  commands other than `install-on`/`plan`. Never touch: authored ADRs,
+  ADR README `## Index` rows, CLAUDE.md sections, plans, memory node
+  bodies, non-`hooks` settings keys.
+- `docs/adr/README.md` is index-aware: refresh prose above `## Index`,
+  splice existing rows back verbatim.
+- All three command copies must stay byte-identical
+  (`tests/copies-identical.sh`).
+- **Hooks/scripts lists must stay complete** — an entry omitted from
+  the copy table is silently absent on installed projects. Current
+  memory-scripts set includes `readme-sync.sh`; hooks include
+  `pre-compact.sh`.
+- **Phase 5 freshness gate (ADR-0012)** reads newest
+  `last_consolidated` from frontmatter via a `find`-based whole-tree
+  walk (never file mtime — clones reset mtimes); tree work only if
+  older than 7 days.
+- Cold-start must fill `code:` globs for every module node; augment
+  backfills inert ones (ADR-0012).
 
 ## Pointers
 
-## Open questions
+- ADR-0005 — clone-and-bootstrap model.
+- ADR-0010 / ADR-0011 — two-command surface + self-refreshing seam.
+- ADR-0012 — freshness gate + mandatory code globs.
+- tests/copies-identical.sh — three-way byte-identity guard.
+
+## Deltas
+
+- 2026-06-11: marketplace copy re-synced (summary-language feature was
+  missing); freshness probe became a find-based walk (L7);
+  `pre-compact.sh` added to the hooks list; copies-identical CI guard
+  added — docs/plans/2026-06-11-aims-audit-fixes-master.md (Track 4).
+- 2026-07-15: `readme-sync.sh` added to the memory-scripts copy row
+  (all three copies) — docs/plans/2026-07-15-memory-subsystem-diet.md.

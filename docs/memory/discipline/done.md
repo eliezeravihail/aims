@@ -19,53 +19,36 @@ external_refs:
 owners:
   - ema
 dirty: false
-last_touched: 2026-05-27T18:40:53Z
-last_consolidated: 2026-05-27T18:40:53Z
+last_touched: 2026-07-15T09:17:00Z
+last_consolidated: 2026-07-15T09:17:00Z
 ---
 
 ## Purpose
 
-Documents the `/done` slash command — closes an active plan, verifies
-each step, runs verification commands, prompts for ADRs, runs memory
-consolidation in-band on nodes overlapping the plan's touched files,
-and offers to link new CLAUDE.md sections from the memory tree. Final
-report includes memory-tree status from `doctor.sh`.
-
-## Design rationale
-
-- Step 7 runs the consolidation in-band per ADR-0009: instead of
-  exporting `AIMS_EXTRA_CONTEXT` and shelling out to a `--force`
-  Stop hook that called Sonnet via curl, the closing model itself
-  reads the prompt from `bash .claude/memory/consolidate.sh <node>`,
-  layers in the plan/ADR text as bridge context, performs the Edit,
-  and finishes with `mark.sh <node> consolidated`. One fewer hop,
-  no API key.
-- Inbox classification is symmetric: `classify-inbox.sh` emits the
-  prompt; the closing model applies confident matches via Edit and
-  asks via `AskUserQuestion` for the ambiguous ones.
+Historical breadcrumb for the removed `/done` slash command (plan
+close-out: verify steps, run verification, decide ADRs, consolidate
+memory, mark completed). Its behavior lives on as `/plan` Phase 5,
+run inline at the end of the implementation session.
 
 ## Invariants & gotchas
 
-- `/done` MUST NOT close a plan with failing verification or
-  unimplemented steps — it reports what's missing and stops.
-- `/done` MUST NOT edit past ADRs; it can only create new ones.
-- The plan file gains an `## Outcome` and `## Closing checks`
-  section on close; `Status` flips to `completed`.
-
-## Known issues
-
-- superseded by ADR-0010: `/done` is removed. Close-out (verify
-  steps, run `## Verification`, auto-decide ADRs, mark completed,
-  consolidate memory) is now embedded in `/plan` Phase 4 and runs
-  inline at the end of the implementation session.
-- fixed: step 7 used to skip silently when `ANTHROPIC_API_KEY` was
-  absent, leaving the memory tree un-propagated; replaced with the
-  in-band path (commit 0c0852f).
+- The close-out invariants `/done` enforced still hold in Phase 5:
+  never close a plan with failing verification or unimplemented steps;
+  never edit past ADRs; the plan gains `## Outcome` + `## Closing
+  checks` and `Status:` flips to `completed`.
+- Consolidation at close-out is in-band (ADR-0009): the closing model
+  reads `consolidate.sh <node>` output, Edits, then
+  `mark.sh <node> consolidated`. No API key involved.
 
 ## Pointers
 
-- ADR-0007 — memory tree the step propagates into.
-- ADR-0009 — in-band mechanism step 7 now uses.
-- `templates/commands/done.md` — the command itself.
+- ADR-0010 — removed `/done`; close-out embedded in `/plan`.
+- ADR-0009 — the in-band mechanism close-out uses.
+- ADR-0007 — the memory tree close-out propagates into.
 
-## Open questions
+## Deltas
+
+- 2026-05-27: `/done` removed; close-out embedded in `/plan` Phase 5 —
+  ADR-0010.
+- 2026-05-27: step 7's `ANTHROPIC_API_KEY` curl path replaced with
+  in-band consolidation — ADR-0009.

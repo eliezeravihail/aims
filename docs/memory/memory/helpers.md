@@ -11,6 +11,7 @@ code:
   - templates/memory/consolidate.sh
   - templates/memory/classify-inbox.sh
   - templates/memory/doctor.sh
+  - templates/memory/readme-sync.sh
   - .claude/memory/_lib.sh
   - .claude/memory/doctor.sh
 commits: []
@@ -30,101 +31,73 @@ external_refs:
   - { path: docs/adr/0014-code-globs-are-fnmatch-globs.md, kind: adr, why: path_matches now treats every code: entry as an fnmatch glob }
 owners:
   - ema
-dirty: true
-last_touched: 2026-06-11T07:44:03Z
-last_consolidated: 2026-06-01T06:52:29Z
+dirty: false
+last_touched: 2026-07-15T09:17:02Z
+last_consolidated: 2026-07-15T09:17:02Z
 ---
 
 ## Purpose
 
-The bash helpers that form the deterministic substrate for the memory
-tree. `_lib.sh` owns the frontmatter parsing/edit primitives
-(`fm_get`, `fm_set`, `fm_list`, `list_leaves`, `path_matches`,
-`now_iso`). Eight thin commands sit on top: `mark`, `new-node`,
-`find-dirty`, `lint`, `check-refs`, `doctor`, `consolidate`,
-`classify-inbox`. All are POSIX-friendly (mawk/BSD-awk compatible).
-No external network call lives in any helper.
-
-## Design rationale
-
-- `consolidate.sh` and `classify-inbox.sh` emit prompt text only
-  (ADR-0009); the active Claude Code session executes the work.
-  Keeps every helper pure-bash and credential-free.
-- `mark.sh` carries two modes — `mark.sh <path>` flips dirty for
-  every node that references `<path>`; `mark.sh <node> consolidated`
-  flips clean. Both modes route through the same `fm_set` primitives
-  for consistency.
-- `doctor.sh` reports node count, dirty count, last-consolidated age,
-  lint summary, >4 KB node count, and **inert count** (module nodes
-  with `code: []`) — every signal a maintainer needs without any
-  "missing key" caveat.
-- `new-node.sh` takes optional trailing `code:` globs
-  (`new-node.sh <path> <kind> [glob ...]`) and renders them as a YAML
-  block list; module nodes must get ≥1 so the marker can track them
-  (ADR-0012). `lint.sh` flags any `module` node left at `code: []` as
-  an inert node.
-- `path_matches` in `_lib.sh` accepts both relative and absolute
-  needles — defense in depth against a future hook (or direct
-  `mark.sh` caller) that forgets to normalize. The marker still
-  normalizes first; this is the belt under the suspenders.
-- `path_matches` evaluates each `code:` entry as an **fnmatch glob**
-  via bash `case`-glob (ADR-0014). Exact strings still match (they're
-  trivial globs); `:line-range` suffixes still take the prefix branch.
-  Greedy `*` (no FNM_PATHNAME) is documented — `src/*.py` matches
-  `src/loaders/json_loader.py`; over-marking is acceptable, silent
-  staleness is not.
+The bash helpers forming the deterministic substrate for the memory
+tree. `_lib.sh` owns frontmatter primitives (`fm_get`, `fm_set`,
+`fm_list`, `list_leaves`, `path_matches`, `now_iso`, `json_escape`)
+plus the header-scoped plan-state readers (`plan_status`,
+`plans_with_status`). Nine thin commands sit on top: `mark`,
+`new-node`, `find-dirty`, `lint`, `check-refs`, `doctor`,
+`consolidate`, `classify-inbox`, `readme-sync`. POSIX-friendly awk; no
+network calls anywhere (ADR-0009).
 
 ## Invariants & gotchas
 
-- The marker MUST normalize absolute `tool_input.file_path` against
-  `git rev-parse --show-toplevel` before passing to `mark.sh`;
-  otherwise the skip-list (`.claude/*`, `docs/memory/*`) misses and
-  every edit leaks into `_inbox.md`. `path_matches` will also catch
-  the absolute form as a fallback, but the marker is the canonical
-  normalization point.
 - Only `mark.sh consolidated` may write
-  `dirty/last_touched/last_consolidated`. Other helpers (and the
-  in-band model executing consolidation prompts) MUST leave that
-  frontmatter alone. `mark.sh consolidated` also `rm -f`s the
-  `<leaf>.lock` sidecar (ADR-0019).
-- **Multi-session mutex (ADR-0019, supersedes ADR-0018):** a sidecar
-  `<leaf>.lock` next to each node is the per-leaf mutex. The Stop hook
-  acquires via `set -C` (`O_EXCL`) writing the SESSION_ID inside; a
-  `trap` releases on any abnormal exit. The pre-write hook refuses
-  Edit/Write to any locked node held by a different fresh session.
-  Stale locks (mtime > `AIMS_LOCK_TTL_SEC`, default 600s) are
-  abandoned. The `consolidating_by:` frontmatter field from ADR-0018
-  is gone; the `consolidating_by` mention above is historical.
-- A `module` node with `code: []` is **inert**: the marker can never
-  flag it dirty, so it never consolidates (ADR-0012). If a node tracks
-  no code it must be `kind: topic`/`decision`, not `module`. `lint.sh`
-  enforces this; the freshness probe in `/install-on` Phase 5 reads
-  `last_consolidated` (never file mtime — a clone resets mtimes).
-- `consolidate.sh` caps each per-source diff at 8 KB so the assembled
-  Stop-hook prompt stays bounded even with many dirty nodes.
-- All helpers exit 0 on a missing `docs/memory/` so the plugin is
-  safe to install in projects that haven't run `/memory-init` yet.
-
-## Known issues
-
-- fixed: helpers used to gate work on `ANTHROPIC_API_KEY` and call
-  `api.anthropic.com` via `curl`; removed in favor of prompt
-  builders consumed in-band (commit 0c0852f).
+  `dirty/last_touched/last_consolidated`; it also triggers
+  `readme-sync.sh` so the top README index tracks Purpose lines.
+- The marker must normalize absolute paths before calling `mark.sh`;
+  `path_matches` accepts absolute needles as defense-in-depth and
+  treats every `code:` entry as an fnmatch glob (ADR-0014; greedy `*`,
+  over-marking accepted, silent staleness not).
+- `plan_status`/`plans_with_status` read ONLY the first 5 lines — plan
+  state lives in the header; body content quoting a Status line must
+  never count. Hooks carry a header-blind grep fallback for lib-less
+  installs.
+- A `module` node with `code: []` is inert — the marker can never flag
+  it (ADR-0012); `lint.sh` reports it. The `/install-on` freshness
+  probe reads `last_consolidated` frontmatter, never mtime.
+- `fm_set` preserves the source file's mode across the tempfile rename
+  (`chmod --reference` / BSD fallback) — `mktemp` is 0600.
+- bash ≥ 4 guards in `lint.sh` (and the two hooks using `mapfile` /
+  `declare -A`): stock macOS bash 3.2 exits 0 with one breadcrumb.
+- `lint.sh` enforces the ADR-0028 4-section schema, validates SHAs in
+  `## Deltas` against `code:` paths, warns at ≥ `AIMS_MEMORY_DELTA_MAX`
+  deltas (compaction due) and >150/200 body lines, and checks the
+  README index for drift.
+- `consolidate.sh` caps evidence at 2 KB/source (commit summaries +
+  uncommitted stat/patch), selects delta vs compact mode, and never
+  touches files itself.
+- All helpers exit 0 on a missing `docs/memory/`.
 
 ## Pointers
 
-- ADR-0007 — design these helpers implement.
-- ADR-0008 — node body schema enforced by `lint.sh` and produced by
-  the `consolidate.sh` prompt.
-- ADR-0009 — removed the LLM/curl path from `consolidate.sh` and
-  `classify-inbox.sh`.
-- ADR-0012 — `new-node.sh` glob args, mandatory `code:` for module
-  nodes, `lint.sh`/`doctor.sh` inert reporting.
-- ADR-0014 — `code:` entries are fnmatch globs (the matcher change
-  in `path_matches`).
-- ADR-0018 — superseded; in-frontmatter `consolidating_by` claim.
-- ADR-0019 — sidecar `<leaf>.lock` files as the per-node mutex;
-  `mark.sh consolidated` removes the sidecar.
-- `templates/memory/_lib.sh` — shared primitives.
+- ADR-0007 / ADR-0008 / ADR-0009 — design, node-as-interface, in-band.
+- ADR-0028 — delta consolidation + 4-section schema (mode selection in
+  `consolidate.sh`, schema + delta checks in `lint.sh`).
+- ADR-0030 — strict `.lock` retired; `mark.sh consolidated` no longer
+  removes lock files.
+- ADR-0012 / ADR-0014 — code-glob mandate + fnmatch semantics.
+- tests/marker.sh, tests/consolidate.sh — the covering suites.
 
-## Open questions
+## Deltas
+
+- 2026-05-27: `ANTHROPIC_API_KEY`/curl path removed from helpers;
+  prompt builders consumed in-band — ADR-0009.
+- 2026-06-11: `fm_set` mode preservation (L2); lint subshell/`issues`
+  fix + missing-commit branch (L1); bash≥4 guards (L4); leaf size cap —
+  91fe2bd.
+- 2026-07-15: schema checks retargeted to the 4-section ADR-0028
+  layout; SHA validation moved from Known-issues to Deltas;
+  compaction-due warning added — ADR-0028.
+- 2026-07-15: `readme-sync.sh` added (generated top-README index;
+  called from `mark.sh consolidated`, drift-checked by lint);
+  `plan_status`/`plans_with_status` added to `_lib.sh`; `mark.sh` no
+  longer removes `.lock` sidecars — ADR-0030,
+  docs/plans/2026-07-15-memory-subsystem-diet.md.

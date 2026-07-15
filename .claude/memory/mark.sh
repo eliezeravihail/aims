@@ -42,7 +42,9 @@ if [ "${2:-}" = "consolidated" ]; then
   fm_set "$node" dirty false
   fm_set "$node" last_touched "$NOW"
   fm_set "$node" last_consolidated "$NOW"
-  rm -f "${node%.md}.lock"   # release sidecar lock (ADR-0019)
+  # Track B: keep the top README's node index in sync with the (possibly
+  # just-rewritten) Purpose line. Deterministic, best-effort.
+  [ -r "$SCRIPT_DIR/readme-sync.sh" ] && bash "$SCRIPT_DIR/readme-sync.sh" 2>/dev/null || true
   exit 0
 fi
 

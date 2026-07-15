@@ -69,7 +69,16 @@ esac
 # A target-project source edit. If a plan is already in progress, the session is
 # planning-aware — stay silent. Otherwise inject the planning convention ONCE per
 # session (avoid repeating the same note on every edit).
-if [ -d "$PLAN_DIR" ] && grep -lqE '^Status:[[:space:]]*in-progress' "$PLAN_DIR"/*.md 2>/dev/null; then
+# Track D: plan state is header-scoped (first 5 lines) via plans_with_status —
+# a code block quoting "Status: in-progress" deep in a plan body must not count.
+for _d in .claude/memory templates/memory; do
+  [ -r "$_d/_lib.sh" ] && { . "$_d/_lib.sh"; break; }
+done
+command -v plans_with_status >/dev/null 2>&1 || plans_with_status() {
+  grep -lE "^Status:[[:space:]]*$2" "$1"/*.md 2>/dev/null
+  return 0
+}
+if [ -d "$PLAN_DIR" ] && [ -n "$(plans_with_status "$PLAN_DIR" in-progress)" ]; then
   allow_plain
 fi
 

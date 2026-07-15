@@ -1,5 +1,5 @@
 # ADR-0009: Memory consolidation runs in-band via hook-injected instructions
-Status: accepted
+Status: accepted (amended by 0028)
 Date: 2026-05-27
 Supersedes: parts of ADR-0007 (the `Stop → curl Sonnet` mechanism and
             the ⚠️ ANTHROPIC_API_KEY consequence)

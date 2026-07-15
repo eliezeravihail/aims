@@ -20,22 +20,36 @@ external_refs:
   - { path: docs/adr/0005-clone-and-bootstrap-install.md, kind: adr, why: defines the substitution-on-write template model }
 owners:
   - ema
-dirty: true
-last_touched: 2026-06-11T07:33:27Z
-last_consolidated: 2026-05-31T14:26:12Z
+dirty: false
+last_touched: 2026-07-15T09:17:02Z
+last_consolidated: 2026-07-15T09:17:02Z
 ---
 
 ## Purpose
 
-The .tmpl files under templates/ that /install-on substitutes into a target project. Substitution variables: {{PROJECT_NAME}}, {{TEST_CMD}}, {{LINT_CMD}}, {{TYPECHECK_CMD}}, {{ADR_DIR}}, {{HOOK_MODE}}, {{DATE}}. CLAUDE.md.tmpl gained a `## Memory tree` section in the ADR-0007 implementation.
-
-## Design rationale
+The `.tmpl` files under `templates/` that `/install-on` substitutes
+into a target project (substitution-on-write, ADR-0005). Variables:
+`{{PROJECT_NAME}}`, `{{TEST_CMD}}`, `{{LINT_CMD}}`, `{{TYPECHECK_CMD}}`,
+`{{ADR_DIR}}`, `{{HOOK_MODE}}`, `{{DATE}}`, `{{SUMMARY_LANG}}`.
+`CLAUDE.md.tmpl` carries a `## Memory tree` section (ADR-0007).
 
 ## Invariants & gotchas
 
-## Known issues
-
+- Templates are the single source of the installed system layer — a
+  feature not present in the `.tmpl` (and the marketplace `commands/`
+  copy) is silently missing on installed projects.
+- `settings.json.tmpl` must declare every lifecycle hook the plugin
+  ships (incl. `PreCompact` → `pre-compact.sh`, which reports dirty
+  memory state before context compaction and never touches the
+  consolidation throttle).
 
 ## Pointers
 
-## Open questions
+- ADR-0005 — substitution-on-write model.
+- ADR-0007 — the `## Memory tree` CLAUDE.md section.
+- templates/settings.json.tmpl — hook wiring.
+
+## Deltas
+
+- 2026-06-11: `PreCompact` hook wired into `settings.json.tmpl` —
+  9973146.

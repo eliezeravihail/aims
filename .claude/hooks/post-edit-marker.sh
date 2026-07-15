@@ -69,8 +69,11 @@ esac
 # Skip non-source surfaces (the memory tree itself, tooling, vendored dirs).
 # D2: docs/adr/ IS a tracked surface — nodes may cite ADRs in their `code:`
 # list so a doctrine change marks them dirty for re-consolidation.
+# Track D: docs/plans/ is SKIPPED — plan files are workflow artifacts that
+# nodes reference via `sessions:`, never `code:`; without this every fresh
+# draft landed in _inbox.md as noise.
 case "$rel" in
-  .claude/*|.git/*|*/node_modules/*|*/dist/*|*/build/*|docs/memory/*) exit 0 ;;
+  .claude/*|.git/*|*/node_modules/*|*/dist/*|*/build/*|docs/memory/*|docs/plans/*) exit 0 ;;
 esac
 
 # (1) Canonical dirty-mark + inbox routing.

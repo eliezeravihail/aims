@@ -117,18 +117,27 @@ while IFS= read -r leaf; do
     done < <(fm_list "$leaf" "$field")
   done
 
-  # ADR-0008 section checks: exactly six body sections in order.
-  EXPECTED='## Purpose|## Design rationale|## Invariants & gotchas|## Known issues|## Pointers|## Open questions|'
+  # ADR-0028 section checks: exactly four body sections in order.
+  EXPECTED='## Purpose|## Invariants & gotchas|## Pointers|## Deltas|'
   actual=$(grep -E '^## ' "$leaf" | tr '\n' '|')
   if [ "$actual" != "$EXPECTED" ]; then
     printf '%s: section headings/order wrong (got: %s)\n' "$leaf" "$actual"
     issues=$((issues + 1))
   fi
 
-  # ADR-0008 portability: no absolute paths under ## Pointers / ## Known issues.
+  # ADR-0028 compaction due: deltas at/over the threshold is informational
+  # (the next consolidation of this node runs in compact mode).
+  DELTA_MAX="${AIMS_MEMORY_DELTA_MAX:-12}"
+  n_deltas=$(awk '/^## Deltas/{d=1;next} /^## /{d=0} d && /^- /{n++} END{print n+0}' "$leaf")
+  if [ "$n_deltas" -ge "$DELTA_MAX" ]; then
+    printf '%s: warning: %d delta lines (>= %d) — compaction due at next consolidation\n' \
+      "$leaf" "$n_deltas" "$DELTA_MAX"
+  fi
+
+  # ADR-0028 portability: no absolute paths under ## Pointers / ## Deltas.
   bad=$(awk '
     /^## Pointers/      { in_section=1; next }
-    /^## Known issues/  { in_section=1; next }
+    /^## Deltas/        { in_section=1; next }
     /^## /              { in_section=0 }
     in_section && /(^|[[:space:]])(\/|~\/)[A-Za-z0-9._-]/ { print NR": "$0 }
   ' "$leaf")
@@ -143,7 +152,7 @@ while IFS= read -r leaf; do
   if [ -n "${REPO_URL_PREFIX:-}" ]; then
     bad_url=$(awk -v pre="$REPO_URL_PREFIX" '
       /^## Pointers/      { in_section=1; next }
-      /^## Known issues/  { in_section=1; next }
+      /^## Deltas/        { in_section=1; next }
       /^## /              { in_section=0 }
       in_section && index($0, pre) > 0 { print NR": "$0 }
     ' "$leaf")
@@ -155,8 +164,8 @@ while IFS= read -r leaf; do
     fi
   fi
 
-  # ADR-0008 known-issues commit validity: every fixed-bug SHA must be a
-  # real commit that touches at least one path from this node's `code:`.
+  # ADR-0028 delta commit validity: every SHA cited in a delta line must be
+  # a real commit that touches at least one path from this node's `code:`.
   if command -v git >/dev/null 2>&1 \
      && git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     # Gather node's code paths once (strip :line ranges).
@@ -184,10 +193,10 @@ while IFS= read -r leaf; do
         issues=$((issues + 1))
       fi
     done < <(awk '
-      /^## Known issues/ { in_section=1; next }
-      /^## /             { in_section=0 }
-      in_section && /^- *fixed:/ { print }
-    ' "$leaf" | grep -oE '[0-9a-f]{7,40}' | sort -u)
+      /^## Deltas/ { in_section=1; next }
+      /^## /       { in_section=0 }
+      in_section && /^- / { print }
+    ' "$leaf" | grep -oE '\b[0-9a-f]{7,40}\b' | sort -u)
   fi
 
   # Size cap (inspired by project-bedrock's memory-compaction skill —
@@ -234,6 +243,14 @@ while IFS= read -r start; do
   done
   unset seen
 done < <(list_leaves)
+
+# Track B: README node-index freshness — drift is an issue.
+if [ -r "$SCRIPT_DIR/readme-sync.sh" ]; then
+  if ! bash "$SCRIPT_DIR/readme-sync.sh" --check 2>/dev/null; then
+    printf '%s: node index out of sync (run readme-sync.sh)\n' "$MEMORY_DIR/README.md"
+    issues=$((issues + 1))
+  fi
+fi
 
 if [ "$issues" -eq 0 ]; then
   printf '[aims-memory] lint: clean (%d nodes)\n' "$(list_leaves | wc -l)" >&2

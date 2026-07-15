@@ -21,55 +21,47 @@ external_refs:
   - { path: docs/adr/0007-tree-based-memory-with-auto-maintenance.md, kind: adr, why: surfaces docs/memory/README.md (the tree's tag list) up to 2KB }
 owners:
   - ema
-dirty: true
-last_touched: 2026-06-11T07:40:11Z
-last_consolidated: 2026-06-02T15:43:20Z
+dirty: false
+last_touched: 2026-07-15T09:17:02Z
+last_consolidated: 2026-07-15T09:17:02Z
 ---
 
 ## Purpose
 
 SessionStart hook — informational only, never blocks. Surfaces:
-in-progress plans; **orphan draft plans** without an active lock
+in-progress plans; orphan draft plans without an active lock
 (ADR-0015); recently-touched ADRs; the memory tree's top-level
-README.md (ADR-0007); a one-line memory pipeline health summary
-(ADR-0008); and a **standing project-conventions block** that includes
-the planning-as-behavior convention (ADR-0022) and the
-`==== AIMS (internal) ====` reply-format convention (ADR-0021).
-
-## Design rationale
-
-- The orphan-draft warning closes the recovery hole opened by writing
-  the plan draft to disk **before** the approval gate (ADR-0015 Phase 2).
-  A power-cut or context compaction between Phase 2 and Phase 3 leaves
-  a `Status: draft` file on disk without `.claude/.planning-lock`; the
-  warning surfaces that on the next session so the user can `touch` the
-  lock to resume or `rm` the draft to abandon.
-- Memory tree README is capped at 2 KB to keep prompt injection light;
-  the trail-off message tells the model how to read more.
+README.md capped at 2 KB (ADR-0007), framed as repository data
+(ADR-0025); a one-line memory pipeline health summary; and the
+standing project-conventions block (planning-as-behavior per ADR-0022,
+reply-format `===[aims: <msg>]===` per ADR-0021).
 
 ## Invariants & gotchas
 
-- Must `exit 0` even on internal failure — SessionStart hooks should
-  not gate the session.
-- Stale-lock vs orphan-draft are mutually exclusive in steady state:
-  lock + in-progress plan = active; lock + no in-progress = stale; no
-  lock + draft = orphan; no lock + no draft = healthy.
-
-## Known issues
-
-- Recent-ADR list filters out `superseded` and `deprecated` only;
+- Must `exit 0` even on internal failure — SessionStart must not gate
+  the session.
+- Plan-state detection is **header-scoped** via `plans_with_status`
+  (first 5 lines); grep fallback when `_lib.sh` is absent.
+- Lock/draft states are mutually exclusive in steady state: lock +
+  in-progress = active; lock + draft = awaiting approval; lock +
+  neither = orphaned lock (auto-cleared); no lock + draft = orphan
+  draft (warned, with recovery hint).
+- The planning-lock line is advisory-only wording — post-ADR-0020 the
+  lock blocks nothing.
+- Recent-ADR list filters out only `superseded`/`deprecated`;
   manually-set `rejected` ADRs would still surface.
 
 ## Pointers
 
-- `templates/hooks/session-start.sh` — single source of truth.
-- `templates/hooks/exit-plan-mode.sh` — the bridge that creates the
-  drafts whose orphans this hook warns about.
-- ADR-0021 — the standing "Project conventions" block surfaces the
-  reply-format marker `===[aims: <msg>]===` for consolidation reports.
-- ADR-0022 — the conventions block describes planning-as-behavior and
-  the optional `/plan` Opus-subagent shortcut.
+- ADR-0021 — the reply-format marker the conventions block surfaces.
+- ADR-0022 — planning-as-behavior wording in the conventions block.
+- ADR-0025 — the README injection's data-framing fence.
+- templates/hooks/exit-plan-mode.sh — creates the drafts whose orphans
+  this hook warns about.
 
-## Open questions
+## Deltas
 
-None.
+- 2026-06-11: stale "Edit/Write blocked" lock line replaced with the
+  factually-correct advisory wording (L3) — 91fe2bd.
+- 2026-07-15: all four plan-state greps switched to header-scoped
+  `plans_with_status` — docs/plans/2026-07-15-memory-subsystem-diet.md.

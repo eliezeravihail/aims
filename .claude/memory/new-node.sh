@@ -80,32 +80,24 @@ last_consolidated: $NOW
 
 ## Purpose
 
-(One paragraph: what this code does.)
-
-## Design rationale
-
-(2–4 bullets: why it is shaped this way. Each bullet may end with a
-repo-relative pointer — ADR-NNNN, commit SHA, plan slug.)
+(One short paragraph: what this code does.)
 
 ## Invariants & gotchas
 
-(What must not break when editing. Concise.)
-
-## Known issues
-
-(- open:  one-line — pointer: commit SHA / repo-relative file:line / external URL)
-(- fixed: one-line: what broke and why — commit SHA)
+(What must not break when editing. Concise bullets.
+Open design questions as `- open: …` bullets.)
 
 ## Pointers
 
-(- ADRs:     ADR-NNNN)
-(- Plans:    docs/plans/<slug>.md (in-progress | done))
-(- Commits:  <SHA> — one-line  (anchor commits only))
-(- External: <URL> — one-line  (Slack threads, issues, third-party docs))
+(- ADR-NNNN — why it matters here)
+(- docs/plans/<slug>.md — plan that shaped this)
+(- <SHA> — one-line  (anchor commits only))
+(- External: <URL> — one-line  (issues, third-party docs))
 
-## Open questions
+## Deltas
 
-(Design questions not yet decided. Distinct from bugs.)
+(Appended by consolidation, newest last — ADR-0028:
+- <commit-date>: <what changed and why it matters> — <SHA|ADR|plan-slug>)
 EOF
 
 printf 'created: %s\n' "$leaf"

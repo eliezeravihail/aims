@@ -20,58 +20,53 @@ external_refs:
   - { path: tests/marker.sh, kind: test, why: six smoke cases for marker behaviour }
 owners:
   - ema
-dirty: true
-last_touched: 2026-06-11T07:45:18Z
-last_consolidated: 2026-06-02T15:13:24Z
+dirty: false
+last_touched: 2026-07-15T09:17:03Z
+last_consolidated: 2026-07-15T09:17:03Z
 ---
 
 ## Purpose
 
-Phase A of the two-phase maintenance design: a PostToolUse hook that
-runs after every Edit/Write/MultiEdit/NotebookEdit and flips
-`dirty: true` on every node whose `code:` list references the edited
-file. Pure bash + sed; ~27 ms per call on a tiny tree. Unknown paths
-go to `docs/memory/_inbox.md` for later classification. The hook
-never blocks and always exits 0.
-
-## Design rationale
-
-- The marker is dumb on purpose: it doesn't try to summarize the
-  change, only flag it. All judgment is deferred to Phase B
-  (ADR-0007) and now runs in-band (ADR-0009).
-- `mark.sh` carries the inverse `consolidated` subcommand used by
-  the in-band model to flip the same flag clean after a successful
-  body rewrite — keeps both transitions in one helper.
-- Per ADR-0024 the mutex protocol is **split** into two files. The
-  marker hook writes an **advisory `<leaf>.marker`** stamping
-  `session_id + mtime`; it never blocks and same-session refreshes are
-  silent. A separately-owned **strict `<leaf>.lock`** (acquired via
-  `set -C` by `stop-consolidate.sh`) is the consolidation mutex.
-  `mark.sh consolidated` removes the marker; only the Stop hook
-  creates/removes the strict lock. Names no longer collide.
-- The marker file write is **symlink-guarded** (M4 / ADR-0024) — if
-  the path exists and is a symlink, the marker refuses to follow it,
-  closing a write-through-symlink hazard.
-- Hook output uses the centralized `json_escape` helper from `_lib.sh`
-  (M2) so control chars and quotes in paths can't corrupt the
-  `additionalContext` JSON.
+Phase A of the two-phase maintenance design: a PostToolUse hook on
+Edit/Write/MultiEdit/NotebookEdit that flips `dirty: true` on every
+node whose `code:` references the edited file (via `mark.sh`), stamps
+an advisory `<leaf>.marker`, and injects a factual note naming the
+stale node. Unknown paths go to `docs/memory/_inbox.md`. Dumb on
+purpose — judgment is deferred to Phase B (ADR-0007/0009). Never
+blocks, always exits 0.
 
 ## Invariants & gotchas
 
-- Never blocks. Never exits non-zero. A broken marker must not
-  block the user's edit.
-- `path_matches` (in `_lib.sh`) handles trailing slashes and the
-  optional `:line` suffix in `code:` entries; don't reimplement
-  matching elsewhere.
-
-## Known issues
+- Never blocks, never exits non-zero — a broken marker must not block
+  the user's edit.
+- Skip-list: `.claude/*`, `.git/*`, vendored dirs, `docs/memory/*`,
+  and `docs/plans/*` (plan files are workflow artifacts referenced via
+  `sessions:`, never `code:`). `docs/adr/` IS tracked — nodes may cite
+  ADRs in `code:` so doctrine changes dirty-mark them (D2).
+- The advisory `.marker` (session-id + mtime) is the ONLY sidecar
+  since ADR-0030 retired the strict `.lock`. Same session refreshes
+  silently; another session's marker younger than
+  `AIMS_NODE_LOCK_STALE_SEC` (3600s) → "possible concurrent edit"
+  note (ask the user before updating); older → taken over.
+- Marker writes are symlink-guarded + O_EXCL (M4) — a planted symlink
+  cannot redirect the write.
+- `path_matches` (in `_lib.sh`) is the single matching implementation;
+  don't reimplement. Output JSON goes through `json_escape`.
 
 ## Pointers
 
 - ADR-0007 — Phase A specification.
-- ADR-0009 — adds the `consolidated` mode to `mark.sh`.
-- ADR-0019 — `mark.sh consolidated` removes the `<leaf>.lock`
-  sidecar alongside the dirty/timestamp bumps; supersedes ADR-0018.
-- `templates/memory/mark.sh:34-46` — `consolidated` subcommand.
+- ADR-0024 — introduced the `.marker`/`.lock` split (the `.lock` half
+  now retired by ADR-0030).
+- ADR-0030 — advisory markers are the only cross-session signal.
+- tests/marker.sh — smoke cases incl. glob matching (ADR-0014).
 
-## Open questions
+## Deltas
+
+- 2026-06-11: mutex split — advisory `.marker` vs strict `.lock`;
+  symlink-guarded marker write (M4) — 124e74a, ADR-0024.
+- 2026-06-11: `docs/adr/` became a tracked surface (D2) — e409d6e.
+- 2026-07-15: `docs/plans/*` added to the skip-list (drafts no longer
+  leak into `_inbox.md`); `mark.sh consolidated` now triggers
+  `readme-sync.sh` and no longer removes `.lock` sidecars — ADR-0030,
+  docs/plans/2026-07-15-memory-subsystem-diet.md.
