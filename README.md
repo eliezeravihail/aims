@@ -74,11 +74,12 @@ whatever the main session is on.
 
 - **SessionStart** — surfaces in-progress plans, recent ADRs, and the
   memory-tree overview.
-- **UserPromptSubmit** — **router** (informs, never locks). Detects intent
-  (bug, feature, refactor, decision, mechanical, question) and, for an
-  actionable prompt, injects a FACTUAL planning-convention note. It never
-  creates a lock. Suppresses on slash-prefixed prompts and short follow-ups.
-  See ADR-0004 + ADR-0020.
+- **UserPromptSubmit** — **shape-gated convention note** (informs, never
+  locks). For a task-shaped prompt (length ≥ 30 chars, no code fence, not
+  a trailing-`?` question) injects a FACTUAL planning-convention note —
+  no intent classification, language-neutral by construction (ADR-0029).
+  It never creates a lock. Suppresses on slash-prefixed prompts and short
+  follow-ups. See ADR-0020 + ADR-0029.
 - **PreToolUse** (`pre-write`) — never blocks. On the first source edit of a
   session with no `Status: draft`/`Status: in-progress` plan in `docs/plans/`,
   injects a **state-aware** factual note that names the specific file being
@@ -89,11 +90,13 @@ whatever the main session is on.
   session. See ADR-0020 + ADR-0023.
 - **PostToolUse** (`post-edit-marker`) — when an edit touches a file a memory
   node references, flags that node `dirty`, injects a factual note naming the
-  node to update, and stamps an **advisory** marker (`<leaf>.lock`; NOT a
-  block) for cross-session coordination (ADR-0007, ADR-0019/0020).
+  node to update, and stamps an **advisory** marker (`<leaf>.marker`; NOT a
+  block) for cross-session awareness (ADR-0007, ADR-0024/0030 — the strict
+  `.lock` mutex is retired).
 - **Stop** (`stop-consolidate`) — throttled. Injects the in-band memory
-  consolidation prompt for any `dirty` nodes (ADR-0009), and emits the plan
-  close-out nudge when an `in-progress` plan exists (ADR-0010).
+  consolidation prompt for any `dirty` nodes: **delta-append by default**,
+  full compaction only past size thresholds (ADR-0009/0028). Also emits the
+  plan close-out nudge when an `in-progress` plan exists (ADR-0010).
 - **SessionEnd** — flushes any pending memory state at session shutdown.
 
 All injected text is factual, never an imperative command (ADR-0020): an

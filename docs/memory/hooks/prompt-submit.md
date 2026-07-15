@@ -16,88 +16,61 @@ claude_md_refs:
   - "Hooks"
 external_refs:
   - { path: docs/adr/0004-router-via-hook-injected-context.md, kind: adr, why: original menu-based router (superseded) }
-  - { path: docs/adr/0015-auto-plan-and-draft-on-disk.md,       kind: adr, why: auto-engage /plan on edit intents }
+  - { path: docs/adr/0015-auto-plan-and-draft-on-disk.md,       kind: adr, why: auto-engage /plan on edit intents (classifier half superseded by 0029) }
   - { path: docs/adr/0016-prompt-memory-injection.md,           kind: adr, why: per-prompt memory node body auto-injection }
 owners:
   - ema
 dirty: false
-last_touched: 2026-06-18T09:31:44Z
-last_consolidated: 2026-06-18T09:31:44Z
+last_touched: 2026-07-15T09:17:01Z
+last_consolidated: 2026-07-15T09:17:01Z
 ---
 
 ## Purpose
 
-UserPromptSubmit hook — runs three jobs in **one** `additionalContext`
-emission: (1) intent classification + factual planning-convention note
-on actionable intents (bug, feature, refactor, decision, mechanical,
-ambiguous) per ADR-0020/0022 (no lock, no imperative — descriptive
-convention only); (2) **memory injector** (ADR-0016) — for every memory
-node whose `code:` glob is plausibly referenced by the prompt, inject
-that node's body (purpose, invariants, pointers, known issues) so the
-model has node context without being asked; (3) the suppression gate
-(slash / short follow-up / empty). `question` is the only intent that
-gets no planning note but still triggers memory injection when files
-are mentioned.
-
-## Design rationale
-
-- Per ADR-0020/0022 the router NEVER locks. For an actionable intent
-  it injects a single factual `router_text` describing the full
-  planning behavior — read-only discovery → draft to `docs/plans/` →
-  approval → implementation → inline close-out — and notes that the
-  `/plan` slash command is an OPTIONAL Opus-subagent shortcut. The
-  convention is descriptive, not imperative (an imperative trips
-  Claude's prompt-injection defense).
-- Hebrew / non-English prompts that don't match any English keyword
-  regex fall through to the **ambiguous** bucket and still receive the
-  factual convention note.
+UserPromptSubmit hook — two jobs in **one** `additionalContext`
+emission: (1) **shape-gated convention note** (ADR-0029): a task-shaped
+prompt (length ≥ 30 chars ∧ ≤ 4096 ∧ no ``` fence ∧ not ending in `?`)
+gets the factual planning-convention paragraph — no intent classes, no
+keyword lists, language-neutral; (2) **memory injector** (ADR-0016):
+every node whose `code:` glob is plausibly referenced by the prompt has
+its body injected. Suppression first: slash-prefix → short prompt
+during an in-progress plan → empty prompt.
 
 ## Invariants & gotchas
 
-- **Suppression rules in order**: slash-prefix → short prompt during an
-  in-progress plan → empty prompt. Any one short-circuits to `exit 0`.
-  (No planning lock since ADR-0020.)
-- A code-paste-looking prompt (contains a triple-backtick fence) is
-  treated as not-actionable to avoid injecting on review/discussion
-  pastes.
-- The hook must always `exit 0` — UserPromptSubmit hooks cannot
-  meaningfully block a prompt and the contract is "advisory only".
-- **Convention + memory are independent.** A pure-question prompt that
-  references a tracked file gets memory injection only — no convention
-  note. An actionable prompt gets both, in the same emission.
-- Memory matching derives a **literal prefix** from each `code:` glob (cut
-  at the first `*`/`?`/`[`) and substring-tests the prompt; for non-glob
-  entries it also word-matches the bare basename (≥5 chars). Compatible
-  with ADR-0014's fnmatch semantics in the marker pipeline.
-- Per-session de-dup state lives at `.claude/memory/.injected-<session_id>`
-  and is pruned after 7 days. Total injection capped at `SIZE_CAP=8192`.
-- **Length is measured in characters, not bytes.** The script forces a
-  UTF-8 `LC_ALL` (first `*.utf-8` from `locale -a`) at the top when the
-  inherited locale isn't already UTF-8, because bash `${#str}` counts
-  bytes under POSIX/C. Without it a short non-ASCII prompt overcounts
-  (Hebrew/CJK = 2-3 bytes/char) and trips the `plen >= 40` "actionable"
-  ambiguous fallback — a 22-char Hebrew comment measured 42 bytes and got
-  a spurious planning note. Falls back silently to POSIX if no UTF-8
-  locale exists (heuristics may overcount, but never block).
-
-## Known issues
-
-- False positives on imperatively-phrased questions ("explain the
-  marker hook") still auto-engage. Mitigation: documented in-turn
-  opt-out + the orphan-draft warning in session-start.
+- Must always `exit 0` and never create a lock — advisory only
+  (ADR-0020).
+- **Length is measured in characters, not bytes**: the hook forces a
+  UTF-8 `LC_ALL` when available, because bash `${#str}` counts bytes
+  under POSIX/C and a ~22-char Hebrew prompt (42 bytes) would falsely
+  clear the 30-char gate. Load-bearing for the shape gate.
+- The grep fallback for `plans_with_status` (when `_lib.sh` is absent)
+  is header-blind by design — sandbox tests that exercise Track D must
+  copy `_lib.sh` in.
+- Memory matching: literal prefix of each `code:` glob (cut at first
+  `*?[`) substring-tested against the prompt; bare-basename word match
+  (≥5 chars) for non-glob entries. Per-session de-dup at
+  `.claude/memory/.injected-<session_id>` (pruned after 7 days); total
+  injection capped at `SIZE_CAP=8192`.
+- Convention note + memory injection are independent; a question can
+  get memory injection with no note.
+- open: a `!`-prefix hook-time opt-out (`!fix typo`) — deferred until
+  friction reported.
 
 ## Pointers
 
-- `templates/hooks/prompt-submit.sh` — single source of truth.
-- `templates/commands/plan.md` — the flow this hook engages.
-- `tests/router-auto-plan.sh` — six smoke cases.
-- ADR-0016 — per-prompt memory node body auto-injection.
-- External: docs/adr/0004-router-via-hook-injected-context.md updated since last consolidation — review for impact
-- External: docs/adr/0015-auto-plan-and-draft-on-disk.md updated since last consolidation — review for impact
-- External: docs/adr/0016-prompt-memory-injection.md updated since last consolidation — review for impact
-- External: CLAUDE.md "Hooks" updated since last consolidation — review for impact
+- ADR-0029 — shape gate replaces the intent classifier.
+- ADR-0016 — memory auto-injection.
+- ADR-0025 — injected node bodies are fenced as data.
+- tests/router-auto-plan.sh — eight smoke cases.
 
-## Open questions
+## Deltas
 
-- A `!`-prefix hook-time opt-out (`!fix typo`) could shave one
-  abort-in-turn for power users; deferred until friction reported.
+- 2026-06-11: jq-less prompt extraction fixed (regex on the `prompt`
+  field instead of whole payload); `grep -qwF --` dash-safety — 91fe2bd.
+- 2026-07-15: ~200-line regex intent classifier (incl. Hebrew
+  interrogative list) replaced by the 4-condition shape gate; the old
+  "imperative questions auto-engage" false positive dissolved by
+  design (questions = trailing `?` only) — ADR-0029.
+- 2026-07-15: in-progress-plan suppression switched to header-scoped
+  `plans_with_status` — docs/plans/2026-07-15-memory-subsystem-diet.md.

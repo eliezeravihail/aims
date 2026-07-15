@@ -40,10 +40,15 @@ else
   exit 0
 fi
 
-# Source shared helpers (json_escape, etc.). Best-effort — the hook still
-# works without _lib.sh, just with the older inline escaper.
+# Source shared helpers (json_escape, plans_with_status, etc.). Best-effort —
+# the hook still works without _lib.sh, just with the older inline fallbacks.
 # shellcheck disable=SC1091
 [ -r "$MEM_HELPERS/_lib.sh" ] && . "$MEM_HELPERS/_lib.sh"
+# Track D: header-scoped plan-state parsing; grep fallback if _lib is absent.
+command -v plans_with_status >/dev/null 2>&1 || plans_with_status() {
+  grep -lE "^Status:[[:space:]]*$2" "$1"/*.md 2>/dev/null
+  return 0
+}
 
 if [ -r ".claude/memory/throttle.conf" ]; then
   # shellcheck disable=SC1091
@@ -59,7 +64,7 @@ case "${1:-}" in
   --force|-f) FORCE=1 ;;
 esac
 
-# ── Read payload once (used by URL harvest below + claim filter) ────────
+# ── Read payload once (used by the URL harvest below) ───────────────────
 payload=""
 if [ ! -t 0 ]; then
   payload=$(cat 2>/dev/null || true)
@@ -94,8 +99,7 @@ INBOX_PATH="${AIMS_MEMORY_DIR:-docs/memory}/_inbox.md"
 # In-progress plan detection (for close-out nudge).
 IN_PROGRESS_PLAN=""
 if [ -d "docs/plans" ]; then
-  IN_PROGRESS_PLAN=$(grep -lE '^Status:[[:space:]]*in-progress' \
-    docs/plans/*.md 2>/dev/null | head -1 || true)
+  IN_PROGRESS_PLAN=$(plans_with_status docs/plans in-progress | head -1)
 fi
 
 if [ "$N_DIRTY" -eq 0 ] && [ "$INBOX_NONEMPTY" -eq 0 ] && [ -z "$IN_PROGRESS_PLAN" ]; then
@@ -127,65 +131,11 @@ fi
 
 [ "$should_run" -eq 0 ] && exit 0
 
-# ── Sidecar lockfile filter (ADR-0019, supersedes ADR-0018) ─────────────
-# Drop dirty leaves another session is already consolidating. The mutex is a
-# sidecar `<leaf-without-md>.lock` next to the node, created with O_EXCL
-# (bash `set -C`). Body = our SESSION_ID; mtime drives stale-detection.
-# `mark.sh <node> consolidated` removes the file; a trap below releases on
-# any abnormal exit between claim and `mark.sh`.
-LOCK_TTL="${AIMS_LOCK_TTL_SEC:-600}"
-CLAIMED=()
-HELD_LOCKS=()
-
-reap_stale_lock() {
-  local lock="$1"
-  [ -e "$lock" ] || return 0
-  if find "$lock" -mmin "+$((LOCK_TTL / 60))" -print 2>/dev/null | grep -q .; then
-    rm -f "$lock"
-  fi
-}
-
-try_claim() {
-  local leaf="$1" lock="${leaf%.md}.lock"
-  reap_stale_lock "$lock"
-  # noclobber → O_CREAT|O_EXCL atomic create.
-  if (set -C; printf '%s\n' "$SESSION_ID" > "$lock") 2>/dev/null; then
-    HELD_LOCKS+=("$lock")
-    return 0
-  fi
-  return 1
-}
-
-for leaf in "${DIRTY[@]}"; do
-  [ -z "$leaf" ] && continue
-  try_claim "$leaf" && CLAIMED+=("$leaf")
-done
-
-# Release any lock we still hold if we die before the model marks the node
-# consolidated. mark.sh removes its own lock on success.
-release_held_locks() {
-  for l in "${HELD_LOCKS[@]}"; do
-    [ -e "$l" ] || continue
-    # Only remove if WE own it (defensive — a reclaim by another session
-    # after TTL expiry would have a different SESSION_ID inside).
-    owner=$(head -n1 "$l" 2>/dev/null || true)
-    [ "$owner" = "$SESSION_ID" ] && rm -f "$l"
-  done
-}
-# Release held mutexes ONLY on abnormal exit. On the normal success path we
-# hand the locks to the model — `mark.sh <node> consolidated` removes them
-# once each node is rewritten. A prior `trap … EXIT` deleted the mutex on
-# every normal exit, defeating the protocol entirely (ADR-0024).
-trap release_held_locks INT TERM HUP
-
-DIRTY=("${CLAIMED[@]}")
-N_DIRTY=${#DIRTY[@]}
-
-# If the throttle tripped only because of dirty nodes and another session
-# already took all of them, exit silently — no work for us this turn.
-if [ "$N_DIRTY" -eq 0 ] && [ "$INBOX_NONEMPTY" -eq 0 ] && [ -z "$IN_PROGRESS_PLAN" ]; then
-  exit 0
-fi
+# ── No consolidation mutex (ADR-0030, supersedes ADR-0024's strict half) ──
+# The strict sidecar `.lock` protocol (0018 → 0019 → 0024) is retired: the
+# tool runs single-session in practice, and the worst uncoordinated case —
+# two sessions consolidating one node — is a last-write-wins delta append.
+# Cross-session awareness remains the post-edit-marker's advisory `.marker`.
 
 # ── Repeat-offender detection (ADR-0027) ──────────────────────
 # The previous Stop fire wrote a snapshot of the work it asked the model

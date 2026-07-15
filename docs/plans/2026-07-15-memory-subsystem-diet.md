@@ -1,6 +1,7 @@
 # Plan: Memory-subsystem diet — delta consolidation, schema slim, README de-layering, shape-gated router, status hardening
-Status: draft
+Status: completed
 Started: 2026-07-15
+Completed: 2026-07-15
 
 ## תקציר מנהלים
 
@@ -80,8 +81,10 @@ Delta-mode ACTION text (replaces the six-section rewrite instructions):
 ```
 ACTION FOR THIS NODE (mode: delta):
 1. Append ONE line per meaningful change under `## Deltas` (newest last):
-   `- <TODAY>: <what changed and why it matters> — <SHA|ADR|plan-slug>`
-   Collapse many commits with one theme into one line. Skip noise
+   `- <DATE>: <what changed and why it matters> — <SHA|ADR|plan-slug>`
+   <DATE> = the commit's date from the evidence above (newest commit's
+   date when collapsing several commits with one theme into one line);
+   use <TODAY> only for uncommitted-only changes. Skip noise
    (formatting, comment tweaks).
 2. If a diff FALSIFIES a sentence in `## Purpose` or
    `## Invariants & gotchas`, fix that sentence in place (minimal edit).
@@ -380,18 +383,17 @@ line-appends, more benign still). Index row appended.
 
 ## Open design questions
 
-- **Track E go/no-go** — retire the strict lock entirely, or keep it
-  dormant behind an env flag? Recommendation: retire (dead protocol
-  code is its own staleness liability).
-- **Delta line date** — consolidation-day (`date -u +%F`, monotonic
-  append order; recommended) vs. commit date (more precise, but
-  multi-commit deltas have no single date)?
-- **`- open:` bullets under Invariants** — acceptable home for the old
-  `## Open questions` content, or keep a fifth section? Recommendation:
-  fold; a section that usually reads "None." earns no heading.
-- **Question suppression edge** — a task phrased with a trailing `?`
-  ("can you refactor X?") now gets no note. Accepted? Backstop remains
-  pre-write's first-edit note (ADR-0023).
+All resolved by the user at approval (2026-07-15):
+
+- **Track E go/no-go** — RESOLVED: retire the strict lock entirely.
+- **Delta line date** — RESOLVED: **commit date** (from the `%ad`
+  field in the evidence; newest commit's date when collapsing several
+  commits into one line; today's UTC date only for uncommitted-only
+  changes).
+- **`- open:` bullets under Invariants** — RESOLVED: fold; no fifth
+  section.
+- **Question suppression edge** — RESOLVED: accepted; pre-write's
+  first-edit note (ADR-0023) is the backstop.
 
 ## Verification
 
@@ -424,3 +426,55 @@ line-appends, more benign still). Index row appended.
   schema change and its migration gets the delta prompt against an old
   body; the prompt's truth-fix rule covers it (worst case: one manual
   fix-up pass, caught by lint).
+
+## Outcome
+
+All five tracks implemented and verified in one session. Highlights:
+
+- `consolidate.sh` now selects `mode: delta` / `mode: compact` per
+  node and ships commit summaries (2 KB caps) instead of full patches;
+  delta dates come from commit `%ad`.
+- 4-section schema (Purpose / Invariants & gotchas / Pointers /
+  Deltas) enforced by `lint.sh`; all 15 nodes migrated; scaffolds in
+  `new-node.sh` updated.
+- Per-tag READMEs deleted; `readme-sync.sh` generates the top-README
+  node index (synced on `mark.sh consolidated`, drift-checked by lint).
+- `prompt-submit.sh` intent classifier (~200 lines incl. Hebrew
+  keyword list) replaced by the 4-condition shape gate;
+  `router-auto-plan.sh` rewritten (8 cases).
+- `plan_status`/`plans_with_status` (header-scoped, first 5 lines) in
+  `_lib.sh`, used by all four plan-state call sites; `docs/plans/*`
+  added to the marker skip-list.
+- Strict `.lock` machinery removed from `stop-consolidate.sh` and
+  `mark.sh`; advisory `.marker` unchanged.
+- ADRs written: ADR-0028, ADR-0029, ADR-0030 (status `proposed`);
+  status pointers updated on 0008/0009/0015/0024; index synced.
+- One pre-existing test expectation updated to the approved ADR-0029
+  trade-off (`inform-never-block.sh`: question suppression is
+  trailing-`?` only).
+
+## Closing checks
+
+Verification (all pass):
+- `bash -n` on all hooks + memory scripts (templates + .claude): OK
+- `tests/copies-identical.sh`: PASS
+- `tests/marker.sh`: 10/10
+- `tests/consolidate.sh`: 9/9 (incl. new delta/compact + no-lock cases)
+- `tests/exit-plan-mode.sh`: 4/4
+- `tests/router-auto-plan.sh`: 8/8
+- `tests/inform-never-block.sh`: 27/27
+- `lint.sh`: clean (15 nodes, 4-section schema)
+- `readme-sync.sh --check`: in sync
+- `doctor.sh`: 15 nodes, 0 dirty, 0 inert
+
+Close-out checklist (resolved):
+- ADR: WROTE — 0028-delta-consolidation-and-four-section-schema,
+  0029-shape-gated-convention-note,
+  0030-retire-strict-consolidation-lock
+- Nodes: UPDATE — all 15 migrated + consolidated (0 dirty)
+- CLAUDE.md: UPDATE — "Hooks" section (shape gate, `.marker`, delta
+  consolidation, Stop bullet)
+- Tests: router-auto-plan.sh rewritten (8 cases); consolidate.sh
+  updated (9 cases); inform-never-block.sh case aligned to ADR-0029
+- TODO: NONE (plans-archive convention rejected — link rot; revisit on
+  browsing pain)

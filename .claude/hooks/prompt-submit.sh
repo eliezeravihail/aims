@@ -1,20 +1,23 @@
 #!/usr/bin/env bash
-# aims UserPromptSubmit hook — intent router + memory-node auto-injector.
+# aims UserPromptSubmit hook — shape-gated convention note + memory-node
+# auto-injector.
 #
 # Reads the user's prompt from stdin (Claude Code passes a JSON payload).
 #
 # Two jobs in one emission:
 #
-#   1. ROUTER (factual awareness — never a lock). Classifies intent into one
-#      of: bug, feature, refactor, decision, mechanical, question, ambiguous,
-#      or none. For any actionable intent, injects a FACTUAL planning-convention
-#      note. NEVER creates a lock and NEVER blocks (overhaul plan
-#      docs/plans/2026-06-01-aims-overhaul.md).
+#   1. CONVENTION NOTE (factual awareness — never a lock; ADR-0029). For a
+#      task-shaped prompt (length >= 30 chars, no code fence, not a
+#      trailing-`?` question) injects the FACTUAL planning-convention note.
+#      No intent classification — the note was constant across the former
+#      intent classes, so class resolution bought fragility (per-language
+#      keyword lists) with no behavioral payoff. NEVER creates a lock and
+#      NEVER blocks (ADR-0020).
 #
 #   2. MEMORY INJECTOR (ADR-0016). For every memory node whose `code:`
 #      glob (fnmatch per ADR-0014) is plausibly referenced by the prompt,
-#      injects that node's body — purpose, invariants, pointers, known
-#      issues — so the model has node context without being asked.
+#      injects that node's body — purpose, invariants, pointers, deltas —
+#      so the model has node context without being asked.
 #      Per-session de-dup via `.claude/memory/.injected-<session_id>`.
 #      Total injection capped at SIZE_CAP bytes.
 #
@@ -39,12 +42,12 @@ fi
 
 # ── Locale: count characters, not bytes ──────────────────────
 # Length heuristics below (the short-follow-up suppression and the
-# "long enough to be actionable" ambiguous fallback) measure the prompt
+# shape gate's "long enough to be a task" threshold) measure the prompt
 # with bash ${#str}. Under a POSIX/C locale that counts BYTES, so a short
 # non-ASCII prompt is overcounted (Hebrew/CJK are 2-3 bytes/char): e.g. a
-# 22-char Hebrew comment measures 42 bytes and falsely trips the 40-byte
-# "actionable" threshold, injecting a spurious planning note. Switch to a
-# UTF-8 locale when one exists so ${#str} counts characters; otherwise fall
+# 22-char Hebrew comment measures 42 bytes and would falsely clear the
+# 30-char gate, injecting a spurious planning note. Switch to a UTF-8
+# locale when one exists so ${#str} counts characters; otherwise fall
 # back silently to the current locale (heuristics may overcount, never lock).
 if ! printf '%s' "${LC_ALL:-}${LC_CTYPE:-}${LANG:-}" | grep -qiE 'utf-?8'; then
   _utf8_loc=$(locale -a 2>/dev/null | grep -iE '\.utf-?8$' | head -n1)
@@ -73,11 +76,18 @@ case "$prompt" in
 esac
 
 PLAN_DIR="${AIMS_PLAN_DIR:-docs/plans}"
+# Track D: plan state is header-scoped (first 5 lines) via plans_with_status —
+# a code block quoting "Status: in-progress" deep in a plan body must not count.
+for _d in .claude/memory templates/memory; do
+  [ -r "$_d/_lib.sh" ] && { . "$_d/_lib.sh"; break; }
+done
+command -v plans_with_status >/dev/null 2>&1 || plans_with_status() {
+  grep -lE "^Status:[[:space:]]*$2" "$1"/*.md 2>/dev/null
+  return 0
+}
 has_active_plan=0
-if [ -d "$PLAN_DIR" ]; then
-  if grep -lE '^Status:\s*in-progress' "$PLAN_DIR"/*.md 2>/dev/null | grep -q .; then
-    has_active_plan=1
-  fi
+if [ -d "$PLAN_DIR" ] && [ -n "$(plans_with_status "$PLAN_DIR" in-progress)" ]; then
+  has_active_plan=1
 fi
 
 prompt_len=${#prompt}
@@ -178,77 +188,23 @@ ${body}
   fi
 fi
 
-# ── Classify intent (first match wins) ────────────────────────────────────
-lower=$(printf '%s' "$prompt" | tr '[:upper:]' '[:lower:]')
-
-intent=""
-match() { printf '%s' "$lower" | grep -qE "$1"; }
-
-# Bug — strongest signals first.
-if match 'traceback|stack trace|exception:|error:|errno|segfault|core dumped|panic:'; then
-  intent="bug"
-elif match '\bbug\b|crash(es|ed|ing)?|broken|does ?n.?t work|not working|fails to|throws'; then
-  intent="bug"
-
-# Mechanical (cheap path; check before refactor / feature).
-elif match '\brename\b.*\bto\b|\bbump\b.*version|format (this|the|all)|update.*timestamps|^reformat\b'; then
-  intent="mechanical"
-
-# Refactor / restructure.
-elif match 'refactor|restructure|redesign|rewrite|clean ?up|extract (a |the )?(method|function|class)|migrate (to|from)'; then
-  intent="refactor"
-
-# Decision.
-elif match ' vs |should we|should i|choose between|trade-?off|which (one |is )?better|pick between'; then
-  intent="decision"
-
-# Feature.
-elif match '\b(add|implement|build|create|introduce|support)\b.*(feature|endpoint|command|module|page|screen|hook|rule)|new feature\b|add a way to|let users? '; then
-  intent="feature"
-
-# Question — asked, not commanded.
-elif printf '%s' "$prompt" | grep -qE '\?\s*$'; then
-  intent="question"
-elif match '^(how |what |why |when |where |can |could |should |does |is |are |do you |what.?s )'; then
-  intent="question"
-fi
-
-# Hebrew interrogatives — the Latin-script matchers above never fire on
-# Hebrew text, so without this branch every Hebrew question falls through to
-# the ambiguous fallback. Questions ending in "?" are already caught above
-# regardless of language; this handles the ones that don't.
-if [ -z "$intent" ]; then
-  case "$prompt" in
-    *"מה "*|*איך*|*כיצד*|*למה*|*מדוע*|*האם*|*מתי*|*איפה*|*היכן*|*כמה*|*"מי "*|*איזה*|*איזו*|*אילו*|*מהו*|*מהי*)
-      intent="question" ;;
-  esac
-fi
-
-# Multilingual fallback: regex matchers above are English-only. If no
-# intent was inferred but the prompt is long enough to be actionable
-# (and isn't pasted code), mark it ambiguous. Ambiguous no longer creates a
-# planning lock (see the router section below) — it only suggests /plan — so
-# a misread non-English prompt can never deadlock edits.
-if [ -z "$intent" ]; then
-  plen=${#prompt}
-  if [ "$plen" -ge 40 ] && [ "$plen" -le 2048 ] \
-     && ! printf '%s' "$prompt" | grep -q '```'; then
-    intent="ambiguous"
-  fi
-fi
-
-# ── Build router text — factual awareness, never a lock ───────────────────
-# AIMS informs, never blocks/locks (docs/plans/2026-06-01-aims-overhaul.md). For an
-# actionable-looking prompt, inject the planning convention as a FACTUAL note (an
-# imperative "you must plan" would trip Claude's prompt-injection defense and be shown
-# to the user instead of treated as context). NO .planning-lock is ever created.
-# Questions and trivial prompts get nothing.
+# ── Convention note — shape gate, not intent classes (ADR-0029) ──────────
+# The note is factual and self-conditional ("for a NON-TRIVIAL change"),
+# so over-firing is cheap; under-firing is backstopped by pre-write's
+# state-aware note at the first source edit (ADR-0023). Gate: long enough
+# to be a task, not a pasted code block, not a question. Language-neutral
+# by construction — no keyword lists (the former English intent regexes +
+# Hebrew interrogative list are gone; the char-counting locale block above
+# keeps the length threshold honest for non-ASCII prompts).
+# AIMS informs, never blocks/locks (ADR-0020): an imperative "you must
+# plan" would trip Claude's prompt-injection defense and be shown to the
+# user instead of treated as context. NO .planning-lock is ever created.
 router_text=""
-case "$intent" in
-  bug|feature|refactor|decision|mechanical|ambiguous)
-    router_text="[aims] Project convention: for a non-trivial change, plan before implementing — read-only discovery, then a \`Status: draft\` plan written to \`docs/plans/\`, then user approval, then implementation, then inline close-out (verify, ADR-if-warranted, mark completed, refresh memory). The full flow is documented in \`.claude/commands/plan.md\`. Planning is the *behavior*; the \`/plan\` slash command is an OPTIONAL shortcut that dispatches the planning pass to an Opus subagent — use it when the current model is not Opus and the task warrants careful planning. If you (the assistant) are not running on Opus and this prompt looks like a non-trivial change, ask the user ONCE via AskUserQuestion whether to use \`/plan\` for an Opus planner; otherwise just plan inline. (Informational; nothing is blocked.)"
-    ;;
-esac
+if [ "${#prompt}" -ge 30 ] && [ "${#prompt}" -le 4096 ] \
+   && ! printf '%s' "$prompt" | grep -q '```' \
+   && ! printf '%s' "$prompt" | grep -qE '\?[[:space:]]*$'; then
+  router_text="[aims] Project convention: for a non-trivial change, plan before implementing — read-only discovery, then a \`Status: draft\` plan written to \`docs/plans/\`, then user approval, then implementation, then inline close-out (verify, ADR-if-warranted, mark completed, refresh memory). The full flow is documented in \`.claude/commands/plan.md\`. Planning is the *behavior*; the \`/plan\` slash command is an OPTIONAL shortcut that dispatches the planning pass to an Opus subagent — use it when the current model is not Opus and the task warrants careful planning. If you (the assistant) are not running on Opus and this prompt looks like a non-trivial change, ask the user ONCE via AskUserQuestion whether to use \`/plan\` for an Opus planner; otherwise just plan inline. (Informational; nothing is blocked.)"
+fi
 
 # ── Combine + emit one additionalContext ─────────────────────────────────
 combined=""
@@ -280,6 +236,6 @@ else
 fi
 
 # Breadcrumbs on stderr.
-[ -n "$router_text" ] && printf '[aims-router] intent=%s — factual planning note injected (no lock).\n' "$intent" >&2
+[ -n "$router_text" ] && printf '[aims-router] shape gate hit — factual planning note injected (no lock).\n' >&2
 [ "${#matched[@]}" -gt 0 ] && printf '[aims-memory] injected %d node(s)\n' "${#matched[@]}" >&2
 exit 0

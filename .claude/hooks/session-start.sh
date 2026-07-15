@@ -12,6 +12,16 @@ ADR_DIR="${AIMS_ADR_DIR:-docs/adr}"
 PLAN_DIR="${AIMS_PLAN_DIR:-docs/plans}"
 LOCK=".claude/.planning-lock"
 
+# Track D: plan state is header-scoped (first 5 lines) via plans_with_status —
+# a code block quoting "Status: in-progress" deep in a plan body must not count.
+for _d in .claude/memory templates/memory; do
+  [ -r "$_d/_lib.sh" ] && { . "$_d/_lib.sh"; break; }
+done
+command -v plans_with_status >/dev/null 2>&1 || plans_with_status() {
+  grep -lE "^Status:[[:space:]]*$2" "$1"/*.md 2>/dev/null
+  return 0
+}
+
 print_section() {
   local title="$1"
   printf '  %s\n' "$title"
@@ -27,8 +37,8 @@ if [ -f "$LOCK" ]; then
   has_active_plan=0
   has_draft=0
   if [ -d "$PLAN_DIR" ]; then
-    grep -lE '^Status:[[:space:]]*in-progress' "$PLAN_DIR"/*.md 2>/dev/null | grep -q . && has_active_plan=1
-    grep -lE '^Status:[[:space:]]*draft' "$PLAN_DIR"/*.md 2>/dev/null | grep -q . && has_draft=1
+    [ -n "$(plans_with_status "$PLAN_DIR" in-progress)" ] && has_active_plan=1
+    [ -n "$(plans_with_status "$PLAN_DIR" draft)" ] && has_draft=1
   fi
   if [ "$has_active_plan" -eq 1 ]; then
     printf '[aims] Planning lock present (advisory only — hooks inform, never block per ADR-0020).\n'
@@ -45,7 +55,7 @@ fi
 # (Draft plans live in docs/plans/ between /plan Phase 2 and Phase 3
 # approval; without a lock they were left behind by an interrupted run.)
 if [ ! -f "$LOCK" ] && [ -d "$PLAN_DIR" ]; then
-  drafts=$(grep -lE '^Status:[[:space:]]*draft' "$PLAN_DIR"/*.md 2>/dev/null || true)
+  drafts=$(plans_with_status "$PLAN_DIR" draft)
   if [ -n "$drafts" ]; then
     printf '[aims] WARNING: draft plan(s) with no active planning lock:\n'
     while IFS= read -r d; do
@@ -57,7 +67,7 @@ fi
 
 # In-progress plans.
 if [ -d "$PLAN_DIR" ]; then
-  active=$(grep -lE '^Status:\s*in-progress' "$PLAN_DIR"/*.md 2>/dev/null || true)
+  active=$(plans_with_status "$PLAN_DIR" in-progress)
   if [ -n "$active" ]; then
     printf '[aims] In-progress plans:\n'
     while IFS= read -r f; do

@@ -21,83 +21,55 @@ external_refs:
 owners:
   - ema
 dirty: false
-last_touched: 2026-06-18T09:31:44Z
-last_consolidated: 2026-06-18T09:31:44Z
+last_touched: 2026-07-15T09:17:02Z
+last_consolidated: 2026-07-15T09:17:02Z
 ---
 
 ## Purpose
 
-Documents `/install-on` (renamed from `/init-workflow` per ADR-0010) — the
-clone-and-bootstrap installer. Six phases: (1) detect install state +
-`PRIOR_AIMS` flag, (2) interview gaps via AskUserQuestion, (3) show planned
-changes per class + approval gate, (4) apply (copy from AIMS_ROOT, clean
-stale files, merge settings/CLAUDE.md), (5) memory tree — cold-start, or for
-an existing tree a freshness-gated audit/augment (ADR-0007/0009/0012),
-(6) doctor report. Memory tree is always installed. Interview question 6
-captures the plan executive-summary language (default `en`), written to
-`.claude/aims-summary-lang` and substituted as `{{SUMMARY_LANG}}`; used
-by `/plan` for the TL;DR heading (`en` → `## TL;DR`, `he` →
-`## תקציר מנהלים`; unknown codes fall back to `en`).
-
-## Design rationale
-
-ADR-0011 made re-install **self-refreshing**: the system layer is fully
-replaced and stale aims files are deleted, while user-authored documentation
-stays sacred. This split exists because aims ships some docs (the ADR
-bootstrap `0001`, `_template.md`, the ADR README prose) that must track the
-plugin, not freeze at first install.
+`/install-on` — the clone-and-bootstrap installer (renamed from
+`/init-workflow` per ADR-0010). Six phases: (1) detect install state,
+(2) interview gaps via AskUserQuestion (incl. question 6: plan
+summary language → `.claude/aims-summary-lang` / `{{SUMMARY_LANG}}`),
+(3) planned-changes preview + approval, (4) apply, (5) memory tree —
+cold-start or freshness-gated augment, (6) doctor report. Memory tree
+is always installed.
 
 ## Invariants & gotchas
 
-- **The idempotency seam (ADR-0011).** Refresh: hooks, memory scripts, the two
-  commands, aims-owned `settings.json` hook entries, and aims-shipped ADR
-  scaffolding. Delete: `*.sh` in `.claude/{hooks,memory}/` not in the shipped
-  set; commands other than `install-on`/`plan`. Never touch: authored ADRs
-  (`NNNN != 0001`), the ADR README `## Index` rows, CLAUDE.md sections, plans,
-  memory node bodies, non-`hooks` settings keys.
-- **`docs/adr/README.md` is index-aware** — refresh the prose above
-  `## Index`, splice the existing index rows back verbatim. Never overwrite it
-  wholesale (that destroys the user's ADR log).
-- All three command copies (`commands/`, `templates/commands/`,
-  `.claude/commands/`) must stay byte-identical — verify with `md5sum`.
-- **Phase 5 freshness gate (ADR-0012).** A missing tree is always
-  cold-started; an existing tree is audited/augmented only if its newest
-  node `last_consolidated` is older than 7 days — within a week, tree work
-  is skipped and only system files refresh. Probe reads frontmatter, never
-  file mtime (a clone resets mtimes).
-- **Cold-start must fill `code:` globs** for every `module` node, and the
-  augment path backfills inert (`code: []`) module nodes — otherwise the
-  tree never consolidates (ADR-0012).
-- **Hooks list must stay complete.** The copy table installs
-  `session-start, prompt-submit, pre-write, post-edit-marker,
-  exit-plan-mode, stop-consolidate, session-end, pre-compact` — a hook
-  omitted here is silently absent on installed projects (commit f777955
-  added `pre-compact.sh`).
-- **Freshness probe walks the whole tree** via `find ... -name '*.md'`
-  (excluding `README.md`/`_inbox.md`), not a one-level `*/*.md` glob,
-  so nodes nested deeper than one tag are seen by the 7-day gate (L7,
-  commit f777955). Applies to all three install-on copies.
-
-## Known issues
-
-- fixed: `commands/install-on.md` (the marketplace copy) was missing
-  the entire summary-language feature — question 6, the
-  `.claude/aims-summary-lang` write-out row, the `{{SUMMARY_LANG}}`
-  variable, and the doctor line — so marketplace users got a stale
-  install command. Re-synced from `templates/commands/install-on.md`,
-  the single source of truth (commit f777955).
-- fixed: the freshness probe globbed only one tag-level deep and missed
-  deeply-nested nodes; replaced with a `find`-based walk (commit
-  f777955).
+- **Idempotency seam (ADR-0011).** Refresh: hooks, memory scripts, the
+  two commands, aims-owned settings hooks, aims-shipped ADR
+  scaffolding. Delete: unshipped `*.sh` in `.claude/{hooks,memory}/`;
+  commands other than `install-on`/`plan`. Never touch: authored ADRs,
+  ADR README `## Index` rows, CLAUDE.md sections, plans, memory node
+  bodies, non-`hooks` settings keys.
+- `docs/adr/README.md` is index-aware: refresh prose above `## Index`,
+  splice existing rows back verbatim.
+- All three command copies must stay byte-identical
+  (`tests/copies-identical.sh`).
+- **Hooks/scripts lists must stay complete** — an entry omitted from
+  the copy table is silently absent on installed projects. Current
+  memory-scripts set includes `readme-sync.sh`; hooks include
+  `pre-compact.sh`.
+- **Phase 5 freshness gate (ADR-0012)** reads newest
+  `last_consolidated` from frontmatter via a `find`-based whole-tree
+  walk (never file mtime — clones reset mtimes); tree work only if
+  older than 7 days.
+- Cold-start must fill `code:` globs for every module node; augment
+  backfills inert ones (ADR-0012).
 
 ## Pointers
 
-- ADR-0005 — clone-and-bootstrap install model this command implements.
-- ADR-0010 / ADR-0011 — rename + self-refreshing idempotency seam.
-- ADR-0012 — Phase 5 freshness gate + mandatory `code:` globs.
-- `tests/copies-identical.sh` — guards the three-way byte-identity of
-  the command copies (commit f777955).
-- External: docs/adr/0005-clone-and-bootstrap-install.md updated since last consolidation — review for impact
-- External: CLAUDE.md "Build & test commands" / "Workflow" updated since last consolidation — review for impact
+- ADR-0005 — clone-and-bootstrap model.
+- ADR-0010 / ADR-0011 — two-command surface + self-refreshing seam.
+- ADR-0012 — freshness gate + mandatory code globs.
+- tests/copies-identical.sh — three-way byte-identity guard.
 
-## Open questions
+## Deltas
+
+- 2026-06-11: marketplace copy re-synced (summary-language feature was
+  missing); freshness probe became a find-based walk (L7);
+  `pre-compact.sh` added to the hooks list; copies-identical CI guard
+  added — docs/plans/2026-06-11-aims-audit-fixes-master.md (Track 4).
+- 2026-07-15: `readme-sync.sh` added to the memory-scripts copy row
+  (all three copies) — docs/plans/2026-07-15-memory-subsystem-diet.md.

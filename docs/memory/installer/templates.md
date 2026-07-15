@@ -21,44 +21,35 @@ external_refs:
 owners:
   - ema
 dirty: false
-last_touched: 2026-06-18T09:31:44Z
-last_consolidated: 2026-06-18T09:31:44Z
+last_touched: 2026-07-15T09:17:02Z
+last_consolidated: 2026-07-15T09:17:02Z
 ---
 
 ## Purpose
 
 The `.tmpl` files under `templates/` that `/install-on` substitutes
-into a target project (substitution-on-write, ADR-0005). Substitution
-variables: `{{PROJECT_NAME}}`, `{{TEST_CMD}}`, `{{LINT_CMD}}`,
-`{{TYPECHECK_CMD}}`, `{{ADR_DIR}}`, `{{HOOK_MODE}}`, `{{DATE}}`, and
-`{{SUMMARY_LANG}}` (the `/plan` TL;DR language). `CLAUDE.md.tmpl`
-gained a `## Memory tree` section in the ADR-0007 implementation.
-
-## Design rationale
-
-- Templates are the single source of the installed system layer, so a
-  feature must land in the `.tmpl` (and the marketplace `commands/`
-  copy) or installed projects silently miss it.
-- `settings.json.tmpl` wires the full hook set, including a `PreCompact`
-  entry running `pre-compact.sh` (commit 9973146).
+into a target project (substitution-on-write, ADR-0005). Variables:
+`{{PROJECT_NAME}}`, `{{TEST_CMD}}`, `{{LINT_CMD}}`, `{{TYPECHECK_CMD}}`,
+`{{ADR_DIR}}`, `{{HOOK_MODE}}`, `{{DATE}}`, `{{SUMMARY_LANG}}`.
+`CLAUDE.md.tmpl` carries a `## Memory tree` section (ADR-0007).
 
 ## Invariants & gotchas
 
+- Templates are the single source of the installed system layer — a
+  feature not present in the `.tmpl` (and the marketplace `commands/`
+  copy) is silently missing on installed projects.
 - `settings.json.tmpl` must declare every lifecycle hook the plugin
-  ships; a missing entry means the hook never fires on installed
-  projects. The `PreCompact` hook reports dirty memory state before
-  context summarization and never touches the consolidation throttle.
-
-## Known issues
-
+  ships (incl. `PreCompact` → `pre-compact.sh`, which reports dirty
+  memory state before context compaction and never touches the
+  consolidation throttle).
 
 ## Pointers
 
-- ADR-0005 — substitution-on-write template model.
-- ADR-0007 — added the `## Memory tree` section to `CLAUDE.md.tmpl`.
-- `templates/settings.json.tmpl` — hook wiring (PreCompact added in
-  commit 9973146).
-- External: docs/adr/0005-clone-and-bootstrap-install.md updated since last consolidation — review for impact
-- External: CLAUDE.md "Plugin-specific notes (not from template)" updated since last consolidation — review for impact
+- ADR-0005 — substitution-on-write model.
+- ADR-0007 — the `## Memory tree` CLAUDE.md section.
+- templates/settings.json.tmpl — hook wiring.
 
-## Open questions
+## Deltas
+
+- 2026-06-11: `PreCompact` hook wired into `settings.json.tmpl` —
+  9973146.

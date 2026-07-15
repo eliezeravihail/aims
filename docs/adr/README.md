@@ -51,3 +51,6 @@ add a row to the index below.
 | 0025 | Repo content injected as additionalContext is framed as data | accepted | 2026-06-11 |
 | 0026 | Stop-hook `decision: block` is the consolidation-continuation gate (amends 0020) | accepted | 2026-06-11 |
 | 0027 | Stop hook detects consolidation-report discrepancy across fires | accepted | 2026-06-11 |
+| 0028 | Consolidation appends dated deltas; nodes carry four sections (amends 0008/0009) | proposed | 2026-07-15 |
+| 0029 | Convention note gated by prompt shape, not intent classes (supersedes 0015's classifier) | proposed | 2026-07-15 |
+| 0030 | Retire the strict consolidation lock; advisory markers only (supersedes 0024's strict half) | proposed | 2026-07-15 |

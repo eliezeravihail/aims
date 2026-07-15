@@ -20,55 +20,52 @@ claude_md_refs:
 external_refs: []
 owners: []
 dirty: false
-last_touched: 2026-06-18T09:31:44Z
-last_consolidated: 2026-06-18T09:31:44Z
+last_touched: 2026-07-15T09:19:34Z
+last_consolidated: 2026-07-15T09:19:34Z
 ---
 
 ## Purpose
 
 Bash smoke tests for aims internals — no Anthropic API, no network.
-- `marker.sh` (10 cases) — `path_matches` / marker hook / inbox dedup,
-  including glob matching (ADR-0014 case 10).
-- `consolidate.sh` (7 cases) — `consolidate.sh` prompt builder + Stop
-  hook, including the three ADR-0027 discrepancy cases: first-emit
-  writes the snapshot with no breadcrumb; a second emit on byte-identical
-  state surfaces the discrepancy; a real state change clears it
-  (commit ba9d38d).
-- `exit-plan-mode.sh` (4 cases) — the harness-bridge hook (ADR-0015).
-- `router-auto-plan.sh` (6 cases) — auto-engage intent router
-  (ADR-0015). Case 6 guards char-vs-byte length: a short Hebrew prompt
-  (~22 chars / 42 bytes) must NOT trip the actionable fallback.
-
-## Design rationale
-
-- Each script is self-contained: `mktemp -d` sandbox, ROOT-anchored,
-  `trap rm -rf` cleanup. No global state survives a run.
-- Helpers print `[PASS]` / `[FAIL]` and the failing case exits non-zero,
-  so a CI runner can shell them sequentially without a framework.
-- `jq` is the only non-POSIX dep; tests `[SKIP]` cleanly when it's
-  missing.
+`marker.sh` (10 cases): `path_matches` / marker hook / inbox dedup /
+glob matching. `consolidate.sh`: Stop block-JSON, no-`.lock` +
+marker-independence (ADR-0030), delta vs compact mode selection
+(ADR-0028), throttle, and the three ADR-0027 discrepancy cases.
+`exit-plan-mode.sh` (4 cases): the harness-bridge hook.
+`router-auto-plan.sh` (8 cases): the ADR-0029 shape gate incl.
+language-neutral positive/negative and the Track D header-scoped
+Status decoy. `inform-never-block.sh`: never-block + once-per-session
+invariants. `copies-identical.sh`: distribution-pair byte identity.
 
 ## Invariants & gotchas
 
-- Run from any directory: `bash tests/<file>.sh` resolves `$ROOT` via
-  `BASH_SOURCE` so the helper paths stay correct under `cd`.
-- The router tests touch `.claude/.planning-lock` inside their sandbox;
-  never let the working `.claude/` directory leak into the test cwd
-  (the `cd $TMP` line is load-bearing).
-
-## Known issues
-
-None open.
+- Each script is self-contained: `mktemp -d` sandbox, `$ROOT` resolved
+  via `BASH_SOURCE` (run from any directory), `trap rm -rf` cleanup.
+- `[PASS]`/`[FAIL]` + non-zero exit on failure; `jq` is the only
+  non-POSIX dep and tests `[SKIP]` cleanly without it.
+- The router tests run hooks inside the sandbox cwd; never let the
+  working `.claude/` leak in. Case 8 deliberately copies `_lib.sh`
+  into the sandbox — without it the hook's header-blind grep fallback
+  would defeat the header-scoping assertion.
+- `consolidate.sh` cases assert on prompt text (`mode: delta`,
+  `mode: compact`, `DISCREPANCY DETECTED`) — keep those strings stable
+  in the generators or update both sides together.
 
 ## Pointers
 
-- ADR-0014 — glob matching, covered by `marker.sh` case 10.
-- ADR-0015 — auto-plan flow, covered by both new tests.
-- ADR-0027 — Stop-hook consolidation-report discrepancy detection,
-  covered by `consolidate.sh` (commit ba9d38d).
+- ADR-0028 / ADR-0029 / ADR-0030 — the behaviors the updated suites
+  pin down.
+- ADR-0027 — discrepancy cases in `tests/consolidate.sh`.
 - `CLAUDE.md` "Build & test commands" — invocation contract.
-- External: CLAUDE.md "Build & test commands" updated since last consolidation — review for impact
 
-## Open questions
+## Deltas
 
-None.
+- 2026-06-11: ADR-0027 discrepancy cases added to
+  `tests/consolidate.sh` — ba9d38d.
+- 2026-07-15: `router-auto-plan.sh` rewritten for the shape gate
+  (8 cases; keeps the char-vs-byte Hebrew guard, adds a Hebrew
+  positive + the Status-decoy case); `consolidate.sh` updated for
+  delta/compact modes and lock retirement; `inform-never-block.sh`
+  Hebrew-question case now uses a trailing `?` (non-`?` questions
+  over-fire the note by design) — ADR-0028/0029/0030,
+  docs/plans/2026-07-15-memory-subsystem-diet.md.

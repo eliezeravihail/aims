@@ -1,6 +1,6 @@
 # ADR-0008: Node as primary context interface
 
-Status: accepted
+Status: accepted (amended by 0028)
 Date: 2026-05-27
 Supersedes: —
 Superseded by: —

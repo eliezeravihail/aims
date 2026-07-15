@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
-# Smoke test for the UserPromptSubmit intent router
+# Smoke test for the UserPromptSubmit convention-note gate
 # (templates/hooks/prompt-submit.sh).
 #
-# Post-overhaul (ADR-0020): the router INFORMS, it never locks. For an
-# actionable intent it injects a FACTUAL planning-convention note; it NEVER
-# creates a .planning-lock. Questions / slash-commands / code-pastes get nothing.
+# Post-ADR-0029 the hook has NO intent classifier: a task-shaped prompt
+# (length >= 30 chars, no ``` fence, not a trailing-`?` question) gets the
+# FACTUAL planning-convention note. It NEVER creates a .planning-lock
+# (ADR-0020). Slash-commands / short prompts / questions / code-pastes get
+# nothing.
 
 set -eu
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
@@ -17,50 +19,86 @@ cd "$TMP"
 HOOK="$ROOT/templates/hooks/prompt-submit.sh"
 note_has() { printf '%s' "$1" | jq -r '.hookSpecificOutput.additionalContext // empty' | grep -q "$2"; }
 
-# Case 1: bug intent → NO lock; a factual planning note (never an imperative).
+# Case 1: task-shaped English prompt → factual note, NO lock.
 rm -rf .claude
-out=$(printf '{"prompt":"the parser crashes on empty input"}' | bash "$HOOK" 2>/dev/null)
-[ ! -f .claude/.planning-lock ] || fail "case 1: router must NOT create a lock"
+out=$(printf '{"prompt":"the parser crashes on empty input, please fix"}' | bash "$HOOK" 2>/dev/null)
+[ ! -f .claude/.planning-lock ] || fail "case 1: gate must NOT create a lock"
 note_has "$out" 'Project convention' || fail "case 1: expected a factual planning note"
 note_has "$out" 'nothing is blocked'  || fail "case 1: note should state nothing is blocked"
-pass "bug intent → factual note, no lock"
+pass "task-shaped prompt → factual note, no lock"
 
-# Case 2: question intent → no lock, no planning note.
+# Case 2: trailing-? question → no note, no lock (any length).
 rm -rf .claude
 out=$(printf '{"prompt":"how does the marker hook decide which node to flag?"}' | bash "$HOOK" 2>/dev/null)
 [ ! -f .claude/.planning-lock ] || fail "case 2: no lock for question"
 if note_has "$out" 'Project convention'; then fail "case 2: question should get no planning note"; fi
-pass "question → no note, no lock"
+pass "trailing-? question → no note, no lock"
 
 # Case 3: slash-prefixed prompt → suppressed (no output, no lock).
 rm -rf .claude
 out=$(printf '{"prompt":"/plan something"}' | bash "$HOOK" 2>/dev/null)
 [ ! -f .claude/.planning-lock ] || fail "case 3: no lock for slash command"
 [ -z "$out" ] || fail "case 3: slash-prefixed prompt should produce no output"
-pass "router suppresses on slash-command prompts"
+pass "gate suppresses on slash-command prompts"
 
-# Case 4: ambiguous actionable prose → factual note, still NO lock.
+# Case 4: short prompt (<30 chars) → no note.
 rm -rf .claude
-out=$(printf '{"prompt":"make the inbox surface the bytes-truncated indicator in a way that survives compaction"}' | bash "$HOOK" 2>/dev/null)
-[ ! -f .claude/.planning-lock ] || fail "case 4: ambiguous prompt must NOT create a lock"
-note_has "$out" 'Project convention' || fail "case 4: ambiguous actionable → factual note"
-pass "ambiguous actionable → factual note, no lock"
+out=$(printf '{"prompt":"fix the login typo"}' | bash "$HOOK" 2>/dev/null)
+[ ! -f .claude/.planning-lock ] || fail "case 4: short prompt must not lock"
+if note_has "$out" 'Project convention'; then fail "case 4: short prompt should get no planning note"; fi
+pass "short prompt → no note"
 
 # Case 5: code-paste prompt → no note, no lock.
 rm -rf .claude
 out=$(printf '%s' '{"prompt":"```python\nprint(1)\n```"}' | bash "$HOOK" 2>/dev/null)
 [ ! -f .claude/.planning-lock ] || fail "case 5: code-paste must not lock"
 if note_has "$out" 'Project convention'; then fail "case 5: code-paste should get no planning note"; fi
-pass "router skips code-paste prompts"
+pass "gate skips code-paste prompts"
 
 # Case 6: short non-ASCII prompt → no note (byte-vs-char length must not
-# trip the "actionable" fallback). "How much does this add?" in Hebrew is
-# ~22 chars but 42 bytes; under a POSIX locale a byte count would falsely
-# classify it as ambiguous/actionable.
+# clear the 30-char gate). "How much does this add?" in Hebrew is ~22 chars
+# but 42 bytes; under a POSIX locale a byte count would falsely pass it.
 rm -rf .claude
 out=$(printf '%s' '{"prompt":"כמו עלות זה מוסיף לשיחה"}' | bash "$HOOK" 2>/dev/null)
 [ ! -f .claude/.planning-lock ] || fail "case 6: short non-ASCII prompt must not lock"
 if note_has "$out" 'Project convention'; then fail "case 6: short non-ASCII prompt should get no planning note"; fi
 pass "short non-ASCII prompt → no note (char-counted, not byte-counted)"
 
-printf '\nAll router (inform-never-lock) tests passed.\n'
+# Case 7: task-shaped Hebrew prompt (>=30 chars, no ?) → note. The old
+# English-keyword classifier could never fire on this; the shape gate is
+# language-neutral by construction.
+rm -rf .claude
+out=$(printf '%s' '{"prompt":"תוסיף מנגנון קאש לשכבת האחסון וכתוב לזה טסטים"}' | bash "$HOOK" 2>/dev/null)
+[ ! -f .claude/.planning-lock ] || fail "case 7: Hebrew task must not lock"
+note_has "$out" 'Project convention' || fail "case 7: task-shaped Hebrew prompt should get the note"
+pass "task-shaped Hebrew prompt → note (language-neutral gate)"
+
+# Case 8 (Track D): plan-state detection is header-scoped. A plan whose
+# header says completed but whose BODY quotes "Status: in-progress" (e.g.
+# in a code block) must NOT count as an active plan — so a task-shaped
+# prompt still gets the note. Requires _lib.sh in the sandbox (otherwise
+# the hook's grep FALLBACK — which is deliberately the old, header-blind
+# behavior — would kick in and the decoy would suppress).
+rm -rf .claude docs
+mkdir -p docs/plans .claude/memory
+cp "$ROOT/templates/memory/_lib.sh" .claude/memory/_lib.sh
+cat > docs/plans/2026-01-01-decoy.md <<'EOF'
+# Plan: decoy
+Status: completed
+Started: 2026-01-01
+
+## Outcome
+Done. The hook used to grep for:
+```
+Status: in-progress
+```
+which this line must no longer confuse.
+EOF
+# With header-scoped parsing there is NO active plan, so neither the
+# short-follow-up suppression nor anything else may swallow a task-shaped
+# prompt because of the decoy.
+out=$(printf '{"prompt":"add a cache layer to the storage adapter now"}' | bash "$HOOK" 2>/dev/null)
+note_has "$out" 'Project convention' || fail "case 8: decoy body Status must not suppress the note"
+pass "header-scoped Status — decoy 'in-progress' in body ignored"
+
+printf '\nAll gate (inform-never-lock) tests passed.\n'

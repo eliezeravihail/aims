@@ -24,54 +24,33 @@ external_refs:
 owners:
   - ema
 dirty: false
-last_touched: 2026-06-18T09:31:44Z
-last_consolidated: 2026-06-18T09:31:44Z
+last_touched: 2026-07-15T09:17:02Z
+last_consolidated: 2026-07-15T09:17:02Z
 ---
 
 ## Purpose
 
-User-facing entry points to the memory tree. `/memory-init` (Sonnet,
-one-time) scans the codebase, proposes a tree, and seeds
-`docs/memory/` after user approval. `/remember` (Haiku) files a note
-into the right node and section — does NOT write to CLAUDE.md (that
-path stays reserved for Claude-native `/memory`).
-
-## Design rationale
-
-- `/remember` is a structural file-edit only — pick the right node
-  and section, then Edit. It does not synthesize content with the
-  Anthropic API and does not need network access. (Consolidation,
-  which DOES rewrite bodies, runs in-band via the Stop hook per
-  ADR-0009; `/remember` is the lightweight cousin.)
+Historical breadcrumb for the memory tree's former user-facing
+commands. `/memory-init` (cold-start scan) and `/memory-augment`
+(refresh) moved into `/install-on` Phase 5; `/remember` (note-filing)
+became ordinary Edit work. `templates/commands/remember.md` no longer
+exists.
 
 ## Invariants & gotchas
 
-- `/remember` MUST NOT write to CLAUDE.md.
-- `/remember` MUST NOT create a new node for a one-off note — file
-  under the nearest existing node's appropriate section instead, or
-  suggest `/memory-augment` if the topic genuinely deserves its own
-  node.
-
-## Known issues
-
-- superseded by ADR-0010: `/memory-init`, `/memory-augment`, and
-  `/remember` are removed. Cold-start scan and augment-only refresh
-  moved into `/install-on` Phase 5 (runs at the end of every
-  install or re-install). Note-filing into a node is just an
-  ordinary Edit.
-- fixed: `/remember` guidance referenced an "Anthropic API" rule
-  that no longer made sense after consolidation moved in-band;
-  the obsolete bullet was removed (commit 0c0852f).
+- Note-filing must NOT write to CLAUDE.md (that path stays reserved
+  for Claude-native `/memory`) and must NOT create a new node for a
+  one-off note — file under the nearest existing node's section.
+- No aims command opens the Anthropic API (ADR-0009); filing and
+  consolidation are Edit work by the active session.
 
 ## Pointers
 
-- ADR-0007 — defines the cold-start (`/memory-init`) and note-filing
-  (`/remember`) UX.
-- ADR-0009 — clarifies that no aims command opens the Anthropic API.
-- ADR-0010 — removed `/memory-init`, `/memory-augment`, `/remember`;
-  `templates/commands/remember.md` no longer exists (cold-start +
-  augment moved into `/install-on` Phase 5; note-filing is ordinary Edit).
-- External: docs/adr/0007-tree-based-memory-with-auto-maintenance.md updated since last consolidation — review for impact
-- External: CLAUDE.md "Workflow" / "Models policy" updated since last consolidation — review for impact
+- ADR-0007 — defined the original cold-start + note-filing UX.
+- ADR-0009 — no-API-key rule.
+- ADR-0010 — removed the three commands; Phase 5 absorbed bootstrap.
 
-## Open questions
+## Deltas
+
+- 2026-05-27: `/memory-init`, `/memory-augment`, `/remember` removed;
+  bootstrap+augment folded into `/install-on` Phase 5 — ADR-0010.
