@@ -7,7 +7,7 @@
     {
       "name": "aims",
       "source": ".",
-      "description": "Lean code-development discipline: /plan, /adr, /grunt, /done + per-project hooks. Zero ceremony for trivial work, real discipline for non-trivial."
+      "description": "Lean code-development discipline: /plan + /install-on and per-project hooks that inform, never block. Zero ceremony for trivial work, real discipline for non-trivial — plans on disk, ADRs, a self-maintaining memory tree."
     }
   ]
 }

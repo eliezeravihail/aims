@@ -1,7 +1,7 @@
 {
   "name": "aims",
   "version": "0.1.0",
-  "description": "Lean code-development discipline for Claude Code: /plan with planning lock, /adr for architecture decisions, model assignment per task, and per-project hooks installed on /init-workflow.",
+  "description": "Lean code-development discipline for Claude Code: /plan (optional Opus planner) and /install-on, plus per-project hooks that inform but never block. Planning as a behavior, decisions in ADRs, and a self-maintaining memory tree.",
   "author": {
     "name": "aims"
   },
