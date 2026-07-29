@@ -1,5 +1,5 @@
 # Plan: Base aims on the Capsa capsule format
-Status: draft
+Status: in-progress
 Started: 2026-07-29
 
 ## תקציר מנהלים
