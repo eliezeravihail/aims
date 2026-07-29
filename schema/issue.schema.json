@@ -1,0 +1,194 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Capsa issue",
+  "type": "object",
+  "required": [
+    "id",
+    "title",
+    "kind",
+    "status",
+    "source",
+    "opened"
+  ],
+  "properties": {
+    "id": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "kind": {
+      "enum": [
+        "bug",
+        "risk",
+        "task"
+      ]
+    },
+    "severity": {
+      "enum": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        null
+      ]
+    },
+    "status": {
+      "enum": [
+        "new",
+        "triaged",
+        "in_progress",
+        "awaiting_verification",
+        "closed",
+        "rejected"
+      ]
+    },
+    "source": {
+      "enum": [
+        "ceo",
+        "system",
+        "agent"
+      ]
+    },
+    "owner": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "opened": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+    },
+    "triaged": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+    },
+    "closed": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+    },
+    "fix_commit": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "fix_plan_ref": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "regression_ref": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "reopens": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "verification": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "enum": [
+            "verified",
+            "unverified",
+            "failed"
+          ]
+        },
+        "method": {
+          "enum": [
+            "test",
+            "scan",
+            "ci",
+            "manual",
+            "none"
+          ]
+        },
+        "evidence_ref": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "checked_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "verified"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "evidence_ref"
+            ],
+            "properties": {
+              "evidence_ref": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "closed"
+          },
+          "kind": {
+            "const": "bug"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "required": [
+          "fix_commit",
+          "regression_ref"
+        ],
+        "properties": {
+          "fix_commit": {
+            "type": "string",
+            "minLength": 7
+          },
+          "regression_ref": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  ]
+}

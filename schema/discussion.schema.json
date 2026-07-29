@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Capsa discussion",
+  "type": "object",
+  "required": [
+    "id",
+    "title",
+    "status",
+    "opened"
+  ],
+  "properties": {
+    "id": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "enum": [
+        "open",
+        "resolved",
+        "archived"
+      ]
+    },
+    "opened": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+    },
+    "decision_ref": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    }
+  }
+}

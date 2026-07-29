@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Capsa manifest (capsule.yaml)",
+  "type": "object",
+  "required": [
+    "capsa_version",
+    "project",
+    "status"
+  ],
+  "properties": {
+    "capsa_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "project": {
+      "type": "object",
+      "required": [
+        "name",
+        "slug"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "slug": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+        },
+        "repo": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "created": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+        }
+      }
+    },
+    "status": {
+      "enum": [
+        "planning",
+        "active",
+        "maintained",
+        "paused",
+        "archived"
+      ]
+    }
+  }
+}
