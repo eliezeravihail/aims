@@ -95,48 +95,85 @@ ADR-0005 (פריסת docs/), ADR-0007/0008/0028 (סכמת הזיכרון הבי�
 כמו-שהוא") הייתה החלטת-scope של *Capsa*; זו החלטה עצמאית של *aims* לאמץ
 בכיוון ההפוך.
 
+### מודל המצב של המנוע — **הוכרע: טריות מחושבת** (state model)
+
+הכרעת-עיצוב מרכזית לשלב ב'. הקפסולה היא פורמט-שמירה **סטטי**; aims (ה-hooks
+והמעטפת) הוא **התוכנה** שמחשבת ומתחזקת. לכן השלישייה הביתית של aים
+(`dirty`/`last_touched`/`last_consolidated` בתוך כל צומת) מתמוטטת:
+
+| aims היום (מאוחסן בצומת) | Capsa (המודל החדש) |
+|---|---|
+| `last_consolidated` | ← `updated:` על ה-insight (עובדה דורבלית, לגיטימית) |
+| `last_touched` | מיותר — git יודע מתי הקוד השתנה |
+| `dirty: true/false` | **מחושב, לא מאוחסן**: insight "מיושן" ⇔ קובץ ב-`code_globs` שלו קיבל commit **אחרי** `updated:`, או שיש עליו diff לא-מקומם |
+
+הנמקה: §1.4 של Capsa ("מה שנגזר מרשומות — מחושב ע"י צרכנים, לא מאוחסן")
+ו-§1.5 (אין run-state בקפסולה). טריות **אינה** run-state של המפעיל (מי-מבצע,
+משמרות, עלות) — היא מידע-פרויקט שנראה בקפסולה דרך `updated:`, אבל הדגל
+עצמו נגזר ולא נשמר. יתרון-לוואי: אין דגל שיוצא מסנכרון; מחיקת המטמון לא
+פוגעת בנכונות. **דורש אפס שינוי ב-Capsa** (משתמש ב-`updated:` הקיים).
+
+- `find-dirty` הופך ל-`find-stale`: לכל insight, `git log -1 --since=<updated>`
+  על ה-`code_globs` (+ `git diff` לשינויים לא-מקומָמים) → מיושן/לא.
+- ה-marker hook (`post-edit-marker`) נשאר רק כ**מטמון-ביצועים** אופציונלי
+  ב-`.claude/` ("אלה נגעו בסשן") — מאיץ, לא מקור-אמת.
+- קונסולידציה מסתיימת ב-`mark.sh <insight> consolidated` שרק **מקדם את
+  `updated:`** (ומנקה את המטמון) — לא נוגע בשום דגל.
+
 ### שלב ב' — מקד מחדש את כלי aims ל-`.capsa/` (עוקב, גדול)
 
-- **hooks**: `session-start` (מציף `.capsa/plans` + `decisions` + charter);
-  `prompt-submit` (מזריק גוף insight לפי `code_globs`); `post-edit-marker`
-  (מסמן insights נושאי-קוד dirty); `stop-consolidate` + `consolidate.sh`
-  (מוסיף Deltas לגוף ה-insight); `pre-write`/`exit-plan-mode` (קוראים
-  `.capsa/plans`).
-- **memory scripts** (`_lib.sh`, `mark`, `find-dirty`, `lint`, `check-refs`,
-  `consolidate`, `readme-sync`, `doctor`): פרסינג frontmatter YAML של Capsa
-  במקום הסכמה הביתית; `lint` מאציל ל-`validator/validate.py`.
-- **commands** (`/plan`, `/install-on`): `/plan` כותב ל-`.capsa/plans/`;
-  `/install-on` מבצע bootstrap ל-`.capsa/` בפרויקט-יעד (מחליף את זריעת
-  `docs/adr|plans|memory`).
-- **tests**: מותאמים לפריסת `.capsa/`.
-- **הסרה**: `docs/adr|plans|memory` + `docs/adr/README.md` +
-  `readme-sync.sh` (האינדקס נגזר עכשיו). `docs/index.html` נשאר.
+- **memory scripts** (`_lib.sh`, `mark`, `find-dirty`→`find-stale`, `lint`,
+  `check-refs`, `consolidate`, `doctor`; `readme-sync` נמחק): קריאת
+  frontmatter YAML של Capsa; טריות מחושבת מ-`updated:`+git (למעלה); `mark
+  consolidated` מקדם `updated:` בלבד; `lint` מאציל ל-`validator/validate.py`.
+- **hooks**: `session-start` (מציף `.capsa/plans` + `decisions` אחרונים +
+  `charter`); `prompt-submit` (מזריק גוף insight לפי התאמת `code_globs`);
+  `post-edit-marker` (מטמון-טריות אופציונלי + הערה עובדתית);
+  `stop-consolidate`+`consolidate.sh` (מוסיף שורת-דלתא מתוארכת לגוף
+  ה-insight + מקדם `updated:`); `pre-write`/`exit-plan-mode` (קוראים/כותבים
+  `.capsa/plans` עם `status:` YAML במקום `Status:` פרוזה).
+- **commands** (`/plan`, `/install-on`): `/plan` כותב `.capsa/plans/NNNN-slug.md`
+  (frontmatter של Capsa); `/install-on` מבצע bootstrap ל-`.capsa/` (+ validator)
+  בפרויקט-יעד במקום זריעת `docs/adr|plans|memory`.
+- **tests**: ששת החבילות מותאמות לפריסת `.capsa/` ולמודל הטריות-המחושבת.
+- **הסרה**: `docs/adr|plans|memory` + `docs/adr/README.md` + `readme-sync.sh`
+  (אינדקס נגזר). `docs/index.html` נשאר.
+- **dogfooding**: לערוך `templates/` ואז לסנכרן ל-`.claude/` דרך
+  `/install-on .` בסוף — כדי לא לשבור את ה-hooks החיים של הסשן באמצע.
 
-## Open design questions
+## Open design questions — הוכרעו
 
-1. **שלב ב' עכשיו או אחר-כך?** שלב א' לבדו כבר "מבסס את aims על Capsa"
-   ברמת-הנתונים ובר-אימות (validator עובר), בלי לשבור כלום. שלב ב' הוא
-   מאמץ נפרד וגדול (~15 סקריפטים + טסטים). המלצה: לאשר ולבצע את שלב א'
-   עכשיו, ולפצל את שלב ב' ל-PR/סשן נפרד.
-2. **חלון-כפילות.** בין שלב א' לשלב ב' גם `.capsa/decisions/` וגם
-   `docs/adr/` קיימים עם אותו תוכן — מפר זמנית את "בית יחיד" (§1.4).
-   מקובל כחלון-מיגרציה, או שעדיף לבצע א'+ב' יחד למרות הגודל?
-3. **סטטוס ADRs שלא באנום.** aims משתמש ב-"accepted (amended by 0026)",
-   "superseded by 0020". Capsa: `superseded` דורש `superseded_by` מספרי.
-   מיפוי: amended→`accepted`+tag; superseded→`superseded`+`superseded_by`.
-   מאשר?
-4. **לזרוע requirements?** aims לא מנהל requirements פורמליים היום. אפשר
-   לגזור 3–4 מה-README ("hooks inform never block", "zero deps",
-   "idempotent install", "single-dispatch") עם verification-block, או
-   להשאיר את התיקייה נעדרת. המלצה: להשאיר נעדרת בשלב א'.
+1. **עומק / פיצול** — RESOLVED: מבצעים גם שלב א' וגם שלב ב'. שלב א' כבר
+   הושלם, אומת ונדחף (additive). שלב ב' עוקב באותו PR (#42).
+2. **מודל המצב** — RESOLVED: **טריות מחושבת** (ראה הסעיף למעלה). לא מאחסנים
+   דגל `dirty`; `updated:` + git הם המקור, marker = מטמון אופציונלי.
+3. **מיפוי סטטוס-ADR** — RESOLVED (בוצע בשלב א'): amended→`accepted`+tag;
+   superseded מלא→`superseded`+`superseded_by`; multi-supersede→tags.
+4. **requirements** — RESOLVED: התיקייה נשארת נעדרת בינתיים (§2: נעדר =
+   "אין עדיין"). תיזרע רק כשיהיה צורך אמיתי.
+5. **חלון-כפילות** — RESOLVED: מקובל כחלון-מיגרציה קצר בתוך אותו PR; שלב ב'
+   מסיר את `docs/` ומשאיר בית יחיד (`.capsa/`).
+
+## Status
+
+- **שלב א' — הושלם, אומת (validator: conforming), נדחף** (commit f051ace,
+  PR #42): capsule.yaml, charter, 30 decisions, 19 plans, 15 insights,
+  decision 0031, validator+schema מוטמעים.
+- **שלב ב' — הוכרע ומעוגן (מודל טריות-מחושבת); טרם מומש.**
 
 ## Verification
 
-- `python3 validator/validate.py .capsa` → נקי (manifest + כל רשומה מול schema).
+שלב א' (בוצע):
+- `python3 validator/validate.py .capsa` → conforming ✔.
 - `bash tests/*.sh` (חבילת aims הקיימת) → ירוקה (שלב א' לא נוגע בכלים).
-- ספירת המרה: `ls .capsa/decisions | wc -l` = 30 (+ה-ADR החדש = 31);
-  כל `docs/memory` leaf → insight; כל `docs/plans` → plan.
-- בדיקת רגרסיה ב-validator: להשחית frontmatter אחד, לוודא כישלון, לשחזר.
+- בדיקת רגרסיה ב-validator: השחתת frontmatter → כישלון; שוחזר → ✔.
+
+שלב ב' (יעדים):
+- כל ששת חבילות הטסטים ירוקות אחרי המיקוד ל-`.capsa/`.
+- `find-stale` מחשב טריות נכון: עריכת קובץ ב-`code_globs` של insight →
+  מזוהה מיושן; `mark consolidated` מקדם `updated:` → כבר לא מיושן.
+- `.capsa/` הוא הבית היחיד: `docs/adr|plans|memory` הוסרו; `validator`
+  עדיין conforming; `bash -n` נקי על כל הסקריפטים; `copies-identical` עובר.
 
 ## Close-out checklist
 - ADR: WRITE — NNNN-adopt-capsa-format (partial-supersede 0005/0007/0008/0028)
