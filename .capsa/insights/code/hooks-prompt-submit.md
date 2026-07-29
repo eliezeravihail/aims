@@ -3,7 +3,7 @@ kind: code
 title: "UserPromptSubmit hook — two jobs in **one** `additionalContext`"
 created: 2026-07-15
 updated: null
-code_globs: ["templates/hooks/prompt-submit.sh", ".claude/hooks/prompt-submit.sh", "docs/adr/0029-shape-gated-convention-note.md"]
+code_globs: ["templates/hooks/prompt-submit.sh", ".claude/hooks/prompt-submit.sh"]
 tags: [hooks]
 ---
 

@@ -1,46 +1,50 @@
-# Plan: <title>
-Status: in-progress
-Started: YYYY-MM-DD
+---
+id: <N>
+title: "<title>"
+kind: initiative
+status: in_progress
+opened: {{DATE}}
+completed: null
+priority: null
+target_date: null
+milestone: null
+requirement_refs: []
+decision_refs: []
+---
 
 ## TL;DR
 
 One paragraph. What + why + how. Read this and you know whether to
 keep reading.
 
-## Goal
+## Changes
 
-One sentence. Measurable.
+One subsection per file touched. Each carries the actual code/diff at
+full relevant detail — the snippet IS the spec. Order them so each is
+independently verifiable; the list doubles as the implementation steps.
 
-## Decision
+### path/to/file.ext
 
-Chosen approach. Key choices in bullets. Cite code as
-`path/to/file.ext:line`.
+<one line of intent, then the actual code/diff>
 
-## Steps
+## Open design questions
 
-1. …
-2. …
-3. …
-
-Each step independently verifiable. Order matters where it matters;
-otherwise note "any order".
+- <pre-implementation branch the Changes section does not yet pin down>
 
 ## Verification
 
 Exact commands or tests that prove the plan succeeded:
 
 - `<command>`
-- `<command>`
+
+## Close-out checklist
+
+- ADR: NONE — <reason> | WRITE — <NNNN-slug: title>
+- Insights: NONE | UPDATE — <insight paths>
+- Charter: NONE | UPDATE — <section>
+- Tests: <path added> | EXISTING cover it | N/A — <reason>
+- TODO: NONE | <follow-ups>
 
 ## Risks / unknowns
 
-What could still go wrong; what we don't yet know.
-
-## ADRs to record after implementation
-
-- [ ] <decision> — proposed automatically during close-out if the
-      confidence rule says "clear architectural commitment".
-
-<!-- Optional: include "## Options considered" only if more than one
-     real option was weighed. Otherwise drop a one-line "Why not X"
-     into TL;DR. -->
+Terse bullets; what could still go wrong.

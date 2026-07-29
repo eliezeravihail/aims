@@ -2,8 +2,8 @@
 kind: code
 title: "The bash helpers forming the deterministic substrate for the memory"
 created: 2026-07-15
-updated: null
-code_globs: ["templates/memory/_lib.sh", "templates/memory/mark.sh", "templates/memory/new-node.sh", "templates/memory/find-dirty.sh", "templates/memory/lint.sh", "templates/memory/check-refs.sh", "templates/memory/consolidate.sh", "templates/memory/classify-inbox.sh", "templates/memory/doctor.sh", "templates/memory/readme-sync.sh", ".claude/memory/_lib.sh", ".claude/memory/doctor.sh"]
+updated: 2026-07-29
+code_globs: ["templates/memory/_lib.sh", "templates/memory/mark.sh", "templates/memory/new-insight.sh", "templates/memory/find-dirty.sh", "templates/memory/lint.sh", "templates/memory/consolidate.sh", "templates/memory/classify-inbox.sh", "templates/memory/doctor.sh", ".claude/memory/_lib.sh", ".claude/memory/doctor.sh"]
 tags: [memory]
 ---
 

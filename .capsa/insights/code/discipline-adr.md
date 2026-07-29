@@ -3,7 +3,7 @@ kind: code
 title: "The ADR convention and its shipped templates (`templates/adr-*.tmpl`,"
 created: 2026-07-15
 updated: null
-code_globs: ["templates/adr-template.md.tmpl", "templates/adr-readme.md.tmpl", "templates/adr-0001.md.tmpl", "docs/adr/README.md"]
+code_globs: ["templates/decision.md.tmpl"]
 tags: [discipline]
 ---
 

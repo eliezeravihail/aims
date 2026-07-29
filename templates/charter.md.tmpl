@@ -1,0 +1,30 @@
+---
+updated: {{DATE}}
+---
+
+# Charter — {{PROJECT_NAME}}
+
+## Vision
+
+(One short paragraph: what this project is and the outcome it exists to
+produce. Written for a human or an agent returning tomorrow — enough to
+orient, not a spec.)
+
+## Constraints
+
+- (Hard limits the project operates under — language/runtime, dependency,
+  platform, or policy constraints. One bullet each.)
+
+## Ground rules
+
+- **Planning is a behavior, not a command** — a non-trivial change is
+  planned before implementing: read-only discovery → a draft plan on disk
+  (`.capsa/plans/`) → approval → implementation → inline close-out.
+- **Decisions are append-only** — a changed decision is a new decision in
+  `.capsa/decisions/` that supersedes the old; history is never rewritten.
+- **aims informs, it never blocks** — hooks inject factual context only.
+
+## Initial decisions of record
+
+- (Link the founding decisions once they exist, e.g. "Chose X over Y —
+  decision 0001".)

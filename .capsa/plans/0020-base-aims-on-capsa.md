@@ -1,6 +1,17 @@
-# Plan: Base aims on the Capsa capsule format
-Status: in-progress
-Started: 2026-07-29
+---
+id: 20
+title: "Base aims on the Capsa capsule format"
+kind: initiative
+status: completed
+opened: 2026-07-29
+completed: 2026-07-29
+priority: null
+target_date: null
+milestone: null
+requirement_refs: []
+decision_refs: [31]
+---
+
 
 ## תקציר מנהלים
 
@@ -189,3 +200,52 @@ ADR-0005 (פריסת docs/), ADR-0007/0008/0028 (סכמת הזיכרון הבי�
   נשמר ב-`tags` וב-`superseded_by`, לא נמחק.
 - Capsa הוא `0.1.0`→`0.2.0` צעיר; אם התקן ישתנה, ה-`capsa_version`
   המוצמד מגן — צרכן בודק שהוא תומך בגרסה.
+
+## Outcome
+
+Both phases landed. **Phase A** created a schema-conforming `.capsa/`
+capsule (capsule.yaml, charter, 30 decisions, 19 plans, 15 insights,
+decision 0031) with the vendored stdlib-only validator. **Phase B**
+retargeted the entire active layer to the capsule under the chosen
+**computed-freshness** state model (no stored `dirty` flag; staleness =
+an insight's `code_globs` changed after its `updated:` date, per Capsa
+§1.4):
+
+- **memory scripts**: `_lib.sh` gained Capsa dir constants +
+  `list_insights`/`insight_globs`/`insight_updated_epoch`/`insight_stale`
+  + Capsa-native `plans_with_status`; `find-dirty` computes staleness;
+  `mark.sh consolidated` bumps `updated:` only; `lint.sh` delegates schema
+  to the validator + keeps the ADR-0028 body checks; `doctor.sh` reports
+  insight health; `new-node.sh`→`new-insight.sh`; `readme-sync.sh` +
+  `check-refs.sh` removed.
+- **hooks** (all 8): `post-edit-marker` names stale-candidate insights and
+  keeps advisory markers OUTSIDE the capsule (§1.5); `stop-consolidate` +
+  `consolidate.sh` drive delta/compact consolidation of stale insights;
+  `session-start` surfaces `.capsa/plans` + recent decisions + charter;
+  `prompt-submit`/`pre-write`/`exit-plan-mode` read/write `.capsa/plans`
+  with YAML `status:`; `session-end`/`pre-compact` report stale counts.
+- **commands**: `/plan` writes `.capsa/plans/NNNN-slug.md`; `/install-on`
+  bootstraps `.capsa/` + vendors the validator instead of seeding
+  `docs/{adr,plans,memory}`.
+- **templates**: added `capsule.yaml.tmpl`, `charter.md.tmpl`,
+  `decision.md.tmpl`; Capsa-ised `plan-template` + `CLAUDE.md.tmpl`;
+  removed the three `adr-*.tmpl`.
+- **tests**: all six suites rewritten for `.capsa/` + computed freshness.
+- **removed**: `docs/adr/`, `docs/plans/`, `docs/memory/`. Single home.
+- **dogfooding**: `templates/` synced to `.claude/` last, so the live
+  session switched onto the new hooks only once they were complete.
+
+## Closing checks
+
+- Verification: `python3 validator/validate.py .capsa` → conforming ✔;
+  all six suites green (copies-identical, inform-never-block, consolidate,
+  router-auto-plan, marker, exit-plan-mode); `bash -n` clean on every
+  script.
+- ADR: WROTE decision 0031 (aims adopts Capsa; partially supersedes
+  0005/0007/0008/0028) — landed in Phase A.
+- Insights: the memory tree became `.capsa/insights/`; stale ones
+  consolidate via the retargeted Stop hook.
+- Charter/CLAUDE.md: CLAUDE.md now points at `.capsa/` as the source of
+  truth and runs the validator in Build&test; `.capsa/charter.md` holds
+  the project's own summary.
+- TODO: NONE — both phases complete.

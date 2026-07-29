@@ -3,7 +3,7 @@ kind: code
 title: "Phase B: the throttled Stop-hook pass that keeps node bodies current."
 created: 2026-07-15
 updated: null
-code_globs: ["templates/hooks/stop-consolidate.sh", "templates/hooks/session-end.sh", "templates/hooks/pre-compact.sh", ".claude/hooks/stop-consolidate.sh", ".claude/hooks/session-end.sh", ".claude/hooks/pre-compact.sh", "templates/memory/consolidate.sh", "templates/memory/classify-inbox.sh", "templates/memory/check-refs.sh", "docs/adr/0028-delta-consolidation-and-four-section-schema.md", "docs/adr/0030-retire-strict-consolidation-lock.md"]
+code_globs: ["templates/hooks/stop-consolidate.sh", "templates/hooks/session-end.sh", "templates/hooks/pre-compact.sh", ".claude/hooks/stop-consolidate.sh", ".claude/hooks/session-end.sh", ".claude/hooks/pre-compact.sh", "templates/memory/consolidate.sh", "templates/memory/classify-inbox.sh"]
 tags: [memory]
 ---
 

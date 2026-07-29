@@ -7,25 +7,37 @@
 - Test: `{{TEST_CMD}}`
 - Lint: `{{LINT_CMD}}`
 - Typecheck: `{{TYPECHECK_CMD}}`
+- Capsule check: `python3 validator/validate.py .capsa`
 
 (Run before declaring work complete.)
 
-## Decision records
+## Capsule (Capsa)
 
-Architecture decisions live in `{{ADR_DIR}}/`. Index: `{{ADR_DIR}}/README.md`.
-ADRs are proposed automatically during plan close-out (the implementation
-session decides per a confidence rule; see `/plan` Phase 4). For ad-hoc
-decisions outside a plan, write `{{ADR_DIR}}/NNNN-slug.md` directly with
-status `proposed`. Past decisions are append-only — to change one, write
-a new ADR that supersedes it.
+This project's management truth is stored as a conforming **Capsa
+capsule** at `.capsa/` (Capsa 0.2.0). aims is the active
+self-maintenance layer over that passive capsule.
+
+- **Decisions (ADRs)** → `.capsa/decisions/NNNN-slug.md`. Proposed
+  automatically during plan close-out (the implementation session decides
+  per a confidence rule; see `/plan`). For ad-hoc decisions outside a
+  plan, write one directly with `status: proposed`. Decisions are
+  append-only — to change one, write a new decision that supersedes it
+  (`supersedes:` / `superseded_by:` pointers).
+- **Plans** → `.capsa/plans/NNNN-slug.md` (frontmatter `status:`).
+- **Insights (memory)** → `.capsa/insights/{code,dev,design}/`. Code
+  insights carry `code_globs`; freshness is the `updated:` date.
+- **Charter** → `.capsa/charter.md`; manifest → `.capsa/capsule.yaml`.
+
+The vendored `validator/validate.py` checks conformance (stdlib only).
 
 ## Workflow
 
 Two slash commands only:
 
-- `/plan <task>` — non-trivial change. Read-only planning, durable
-  artifact in `docs/plans/`, then implementation, then inline
-  close-out (verify, auto-ADR, mark completed, memory consolidation).
+- `/plan <task>` — non-trivial change. Read-only planning, a durable
+  `status: draft` plan record in `.capsa/plans/`, then implementation,
+  then inline close-out (verify, auto-ADR, mark completed, insight
+  consolidation).
 - `/install-on <path>` — install or re-install aims (idempotent).
 
 Everything else (bug-fix patches, refactors with obvious scope,
@@ -43,41 +55,37 @@ mechanical edits, ad-hoc questions): just do the work inline.
 (`additionalContext`), never to stop an edit (ADR-0020). Discipline is
 achieved by awareness:
 
-- `UserPromptSubmit` injects the relevant memory node and, for an actionable
+- `UserPromptSubmit` injects the relevant insight and, for an actionable
   prompt, a factual planning-convention note.
 - `PreToolUse` (`pre-write`) never blocks; on the first source edit of a
   session with no in-progress plan it injects the planning convention once.
-- `PostToolUse` (`post-edit-marker`) marks the affected memory leaf `dirty`,
-  injects a factual note naming the node to update, and stamps an advisory
-  marker (`<leaf>.lock` = session-id + mtime; NOT a block). Concurrency: same
+- `PostToolUse` (`post-edit-marker`) names any insight whose `code_globs`
+  cover the edited file (its staleness is then computed from `updated:` vs
+  git), and stamps an advisory marker outside the capsule. Concurrency: same
   session refreshes silently; another session's marker older than
   `AIMS_NODE_LOCK_STALE_SEC` (default 3600s) is taken over; a fresher one is
   reported as a possible concurrent edit (ask the user before updating).
 
 Injected text MUST be factual, never imperative ("CRITICAL: do X").
 
-## Memory tree
+## Insights (memory)
 
-The repo carries a navigable memory layer under `docs/memory/` (see
-`docs/adr/0007-tree-based-memory-with-auto-maintenance.md` for the
-full design). It is a NAVIGATOR over `CLAUDE.md`, ADRs, plans, and
-external memory — never a copy of them.
+The capsule carries a code-anchored memory layer under
+`.capsa/insights/`. Each code insight names the files it documents via
+`code_globs` and is a NAVIGATOR over the code and decisions — never a copy.
 
-- The tree is bootstrapped by `/install-on` (Phase 5) — fresh
-  install runs a cold-start scan; re-install only augments
-  (adds nodes for newly-discovered code areas; never overwrites
-  existing node bodies).
-- The `PostToolUse` marker hook flips affected leaves to
-  `dirty: true` after every Edit/Write, and (per §Hooks) injects a
-  factual note naming the node to update + stamps an advisory marker.
-  The `Stop` hook consolidates dirty leaves in-band (ADR-0009), but
-  only when the throttle trips (5 dirty leaves OR 30 min since last
-  consolidation). `SessionEnd` runs the same consolidation
-  un-throttled if the CLI is actually closed.
-- Plan close-out (inline at end of `/plan` implementation) also
-  forces consolidation of nodes touched by the plan.
-- To browse the tree manually: `cat docs/memory/README.md`, then any
-  leaf under `docs/memory/<tag>/<name>.md`.
+- Insights are bootstrapped by `/install-on` (Phase 5) — a fresh install
+  runs a cold-start scan; re-install only augments (adds insights for
+  newly-discovered code areas; never overwrites existing bodies).
+- **Staleness is computed, not stored** (Capsa §1.4): an insight is stale
+  when a file in its `code_globs` changed after its `updated:` date. The
+  `PostToolUse` marker hook surfaces this after every Edit/Write; the
+  `Stop` hook consolidates stale insights in-band (ADR-0009) when the
+  throttle trips (5 stale OR 30 min since last consolidation). Consolidation
+  appends a dated delta and bumps `updated:`, clearing the staleness.
+- Plan close-out (inline at end of `/plan` implementation) also forces
+  consolidation of insights touched by the plan.
+- To browse: `ls .capsa/insights/**` or read the charter for orientation.
 
-Project conventions (build/test, models, hooks, layout) stay in
-CLAUDE.md; the tree references them via `claude_md_refs:`.
+Project conventions (build/test, models, hooks, layout) stay in CLAUDE.md;
+the charter (`.capsa/charter.md`) is the capsule's own summary of them.

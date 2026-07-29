@@ -3,7 +3,7 @@ kind: code
 title: "The `.tmpl` files under `templates/` that `/install-on` substitutes"
 created: 2026-07-15
 updated: null
-code_globs: ["templates/CLAUDE.md.tmpl", "templates/settings.json.tmpl", "templates/adr-template.md.tmpl", "templates/adr-readme.md.tmpl", "templates/adr-0001.md.tmpl", "templates/plan-template.md.tmpl"]
+code_globs: ["templates/CLAUDE.md.tmpl", "templates/settings.json.tmpl", "templates/decision.md.tmpl", "templates/plan-template.md.tmpl", "templates/capsule.yaml.tmpl", "templates/charter.md.tmpl"]
 tags: [installer]
 ---
 

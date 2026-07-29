@@ -1,19 +1,26 @@
 #!/usr/bin/env bash
-# Shared helpers for the aims memory tree scripts.
-# Sourced (not executed) by mark.sh, find-dirty.sh, etc.
+# Shared helpers for the aims tooling over a Capsa capsule (.capsa/).
+# Sourced (not executed) by mark.sh, find-dirty.sh, the hooks, etc.
 #
-# All helpers operate on the leaf schema defined in ADR-0007:
-#   - Frontmatter delimited by `---` at lines 1 and N.
-#   - Required keys: node, kind, code.
-#   - System-managed keys: dirty, last_touched, last_consolidated.
+# aims is the ACTIVE self-maintenance layer; the capsule is PASSIVE data
+# (Capsa 0.2.0). Durable truth lives in .capsa/ records; aims' own run-state
+# (staleness cache, throttle, injection dedup) lives OUTSIDE the capsule under
+# .claude/ (Capsa §1.5). "Stale" is COMPUTED from an insight's `updated:` date
+# vs. git, never stored as a flag (Capsa §1.4).
 #
 # POSIX-friendly: only features available in mawk/BSD awk.
-# No `match(str, re, arr)` (that's gawk-only); we use match()+RSTART+RLENGTH.
 
 set -u
 
-MEMORY_DIR="${AIMS_MEMORY_DIR:-docs/memory}"
-INBOX="${MEMORY_DIR}/_inbox.md"
+CAPSA_DIR="${AIMS_CAPSA_DIR:-.capsa}"
+INSIGHTS_DIR="${AIMS_INSIGHTS_DIR:-$CAPSA_DIR/insights}"
+PLANS_DIR="${AIMS_PLAN_DIR:-$CAPSA_DIR/plans}"
+DECISIONS_DIR="${AIMS_DECISIONS_DIR:-$CAPSA_DIR/decisions}"
+# Back-compat alias — some callers still guard on MEMORY_DIR.
+MEMORY_DIR="$INSIGHTS_DIR"
+# aims run-state (never inside the capsule).
+STATE_DIR="${AIMS_STATE_DIR:-.claude/aims-state}"
+INBOX="${AIMS_INBOX:-$STATE_DIR/inbox.md}"
 
 # Strip surrounding whitespace and a single layer of matching ' or ".
 _strip_quotes_ws() {
@@ -47,7 +54,6 @@ fm_get() {
   [ "$end" -le 1 ] && return
   raw=$(awk -v k="$key" -v end="$end" '
     NR>1 && NR<end {
-      # Match a line like:  <indent><key><space>:<space><value>
       if (match($0, "^[ \t]*" k "[ \t]*:[ \t]*")) {
         v = substr($0, RSTART + RLENGTH)
         print v
@@ -65,9 +71,6 @@ fm_set() {
   end=$(fm_end_line "$f")
   [ "$end" -le 1 ] && return 1
   tmp=$(mktemp)
-  # L2: mktemp creates 0600 and a bare `mv` would silently downgrade node
-  # files from their original (typically 0644) mode. Copy the source mode
-  # onto the tempfile before the rename so it survives.
   chmod --reference="$f" "$tmp" 2>/dev/null \
     || { mode=$(stat -f '%Lp' "$f" 2>/dev/null); [ -n "$mode" ] && chmod "$mode" "$tmp" 2>/dev/null; } \
     || true
@@ -88,8 +91,8 @@ fm_set() {
 }
 
 # Iterate paths in a frontmatter list key (one path per line).
-# Lists may be inline (`code: [a, b]`) or block (`code:\n  - a\n  - b`).
-# For block-form objects (`- { path: x, kind: y }`) we extract `path`.
+# Handles inline (`code_globs: ["a", "b"]`) and block (`key:\n  - a`) lists,
+# and block-object form (`- { path: x }`).
 # Usage: fm_list <file> <key>
 fm_list() {
   local f="$1" key="$2" end
@@ -113,7 +116,6 @@ fm_list() {
         if (match($0, /^[ \t]+-[ \t]+/)) {
           v = substr($0, RSTART + RLENGTH)
           v = trim_ws(v)
-          # Inline-object form: { path: <p>, ... }
           if (match(v, /path[ \t]*:[ \t]*[^,}]+/)) {
             obj = substr(v, RSTART, RLENGTH)
             sub(/^path[ \t]*:[ \t]*/, "", obj)
@@ -123,7 +125,6 @@ fm_list() {
           if (v != "") print v
           next
         }
-        # End of block when we see a non-indented line that is not a list item.
         if ($0 !~ /^[ \t]/) in_block = 0
       }
       if (match($0, "^[ \t]*" k "[ \t]*:[ \t]*")) {
@@ -133,7 +134,6 @@ fm_list() {
           in_block = 1
           next
         }
-        # Inline list: [a, b, c]
         if (substr(rest, 1, 1) == "[" && substr(rest, length(rest), 1) == "]") {
           inner = substr(rest, 2, length(rest)-2)
           n = split(inner, parts, ",")
@@ -149,49 +149,18 @@ fm_list() {
   ' "$f"
 }
 
-# Now in ISO-8601 UTC.
+# Now in ISO-8601 UTC / date-only.
 now_iso() { date -u +'%Y-%m-%dT%H:%M:%SZ'; }
+today()   { date -u +'%Y-%m-%d'; }
 
-# Plan state lives in the file HEADER (first 5 lines). Body content — e.g.
-# a code block quoting "Status: in-progress" — must never affect plan-state
-# detection (real case: a completed plan carrying four Status: lines
-# confused `grep -l '^Status:'` callers). Track D of
-# docs/plans/2026-07-15-memory-subsystem-diet.md.
-plan_status() {
-  head -n 5 "$1" 2>/dev/null \
-    | awk -F': *' '/^Status:/{print tolower($2); exit}' | tr -d '\r '
-}
-
-# All plans in <dir> whose header Status equals <status>, one per line.
-# Usage: plans_with_status <dir> <status>
-plans_with_status() {
-  local d="$1" want="$2" f
-  for f in "$d"/*.md; do
-    [ -e "$f" ] || continue
-    [ "$(plan_status "$f")" = "$want" ] && printf '%s\n' "$f"
-  done
-  return 0
-}
-
-# True if the haystack matches the needle (exact, or needle is a prefix
-# before a `:lineRange`). Lets src/bar.py match a `code:` entry of
-# src/bar.py:10-30.
+# True if the haystack glob matches the needle path (fnmatch; ADR-0014).
 path_matches() {
   local needle="$1" hay="$2"
   local hay_path="${hay%%:*}"
   [ "$needle" = "$hay" ] && return 0
-  case "$hay" in
-    "$needle":*) return 0 ;;
-  esac
-  # ADR-0014: `code:` entries are fnmatch globs. Match needle against the
-  # path side of hay (stripping any `:line-range` suffix on hay first).
+  case "$hay" in "$needle":*) return 0 ;; esac
   # shellcheck disable=SC2254
-  case "$needle" in
-    $hay_path) return 0 ;;
-  esac
-  # Defense in depth: if needle is absolute, retry after stripping the
-  # repo root. Marker-side normalization should already have done this,
-  # but a future direct caller of mark.sh may forget.
+  case "$needle" in $hay_path) return 0 ;; esac
   case "$needle" in
     /*)
       local root rel
@@ -200,13 +169,9 @@ path_matches() {
         "$root"/*)
           rel="${needle#$root/}"
           [ "$rel" = "$hay" ] && return 0
-          case "$hay" in
-            "$rel":*) return 0 ;;
-          esac
+          case "$hay" in "$rel":*) return 0 ;; esac
           # shellcheck disable=SC2254
-          case "$rel" in
-            $hay_path) return 0 ;;
-          esac
+          case "$rel" in $hay_path) return 0 ;; esac
           ;;
       esac
       ;;
@@ -214,15 +179,7 @@ path_matches() {
   return 1
 }
 
-# Escape a string for embedding inside a JSON string literal (ADR-0025 /
-# audit M2). Handles: backslash, double-quote, every C0 control char (\b
-# \f \n \r \t are short-form; others become \u00XX).
-#
-# The prior ad-hoc sed/awk escapers handled only `\` `"` (and sometimes
-# `\n`), producing invalid JSON whenever the source string contained
-# tabs/CR — which `git log -p` diffs and YAML bodies routinely do.
-#
-# Usage:  esc=$(json_escape "$str")
+# Escape a string for embedding inside a JSON string literal (ADR-0025).
 json_escape() {
   printf '%s' "$1" | awk '
     BEGIN { for (i=0; i<256; i++) ord[sprintf("%c", i)] = i; first = 1 }
@@ -245,10 +202,76 @@ json_escape() {
   '
 }
 
-# Iterate all leaf files (regular .md under MEMORY_DIR,
-# excluding README.md and _inbox.md). One path per line.
-list_leaves() {
-  [ -d "$MEMORY_DIR" ] || return
-  find "$MEMORY_DIR" -type f -name '*.md' \
-    ! -name 'README.md' ! -name '_inbox.md' 2>/dev/null | sort
+# ── Capsa insight helpers ────────────────────────────────────────────────
+
+# Iterate every insight record (insights/{code,dev,design}/*.md). One per line.
+list_insights() {
+  [ -d "$INSIGHTS_DIR" ] || return
+  local sub
+  for sub in code dev design; do
+    [ -d "$INSIGHTS_DIR/$sub" ] || continue
+    find "$INSIGHTS_DIR/$sub" -type f -name '*.md' 2>/dev/null
+  done | sort
+}
+# Back-compat alias.
+list_leaves() { list_insights; }
+
+# The code_globs of an insight (empty for dev/design).
+insight_globs() { fm_list "$1" code_globs; }
+
+# Parse an insight's freshness anchor (`updated:` else `created:`) to epoch
+# seconds. 0 if unparseable.
+insight_updated_epoch() {
+  local f="$1" d
+  d=$(fm_get "$f" updated)
+  if [ -z "$d" ] || [ "$d" = "null" ]; then d=$(fm_get "$f" created); fi
+  d="${d:0:10}"
+  [ -n "$d" ] || { printf '0\n'; return; }
+  date -u -d "$d" +%s 2>/dev/null \
+    || date -u -j -f '%Y-%m-%d' "$d" +%s 2>/dev/null \
+    || printf '0\n'
+}
+
+# COMPUTED staleness (no stored flag; Capsa §1.4). An insight is stale iff one
+# of its code_globs has a committed change newer than `updated:`, or an
+# uncommitted change, or (no git) a file mtime newer than `updated:`.
+# Exit 0 = stale, 1 = fresh. dev/design insights (no globs) are never stale.
+insight_stale() {
+  local f="$1" up g last in_git=0 p m
+  up=$(insight_updated_epoch "$f")
+  git rev-parse --is-inside-work-tree >/dev/null 2>&1 && in_git=1
+  while IFS= read -r g; do
+    [ -z "$g" ] && continue
+    g="${g%%:*}"
+    if [ "$in_git" -eq 1 ]; then
+      if [ -n "$(git status --porcelain -- "$g" 2>/dev/null)" ]; then
+        return 0
+      fi
+      last=$(git log -1 --format=%ct -- "$g" 2>/dev/null || echo 0)
+      case "$last" in ''|*[!0-9]*) last=0 ;; esac
+      [ "$last" -gt "$up" ] && return 0
+    else
+      for p in $g; do
+        [ -e "$p" ] || continue
+        m=$(stat -c %Y "$p" 2>/dev/null || stat -f %m "$p" 2>/dev/null || echo 0)
+        [ "$m" -gt "$up" ] && return 0
+      done
+    fi
+  done < <(insight_globs "$f")
+  return 1
+}
+
+# ── Plan helpers (Capsa plans: `status:` is a frontmatter field) ─────────
+
+# The status of a plan record, from frontmatter.
+plan_status() { fm_get "$1" status; }
+
+# Print plan files whose frontmatter status == $2, from directory $1.
+plans_with_status() {
+  local d="$1" want="$2" f
+  [ -d "$d" ] || return
+  for f in "$d"/*.md; do
+    [ -e "$f" ] || continue
+    [ "$(fm_get "$f" status)" = "$want" ] && printf '%s\n' "$f"
+  done
 }

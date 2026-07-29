@@ -1,10 +1,21 @@
 #!/usr/bin/env bash
-# Lint the memory tree.
-# For every leaf, verify that:
-#   - each path in `code:` exists on disk
-#   - each path in `external_refs:` exists on disk
-#   - each `claude_md_refs:` heading exists in CLAUDE.md
-# Reports orphans to stdout, one per line.  Exit code 0 (informational).
+# Lint the aims layer over a Capsa capsule (.capsa/).
+#
+# Two tiers:
+#   1. SCHEMA conformance — delegated to the vendored Capsa validator
+#      (validator/validate.py). This is the source of truth for record
+#      structure (frontmatter fields, enums, required code_globs, etc.).
+#   2. aims BODY conventions the validator does not model, checked over
+#      code insights only:
+#        - literal code_globs entries resolve on disk
+#        - ADR-0028 four-section schema (## Purpose / ## Invariants & gotchas
+#          / ## Pointers / ## Deltas) in order
+#        - delta compaction due (>= AIMS_MEMORY_DELTA_MAX)
+#        - no non-portable (absolute / same-repo-URL) pointers
+#        - every SHA cited in a delta is a real commit touching a code_glob
+#        - body size caps (ADR-0008)
+#
+# Reports issues to stdout, one per line. Exit code 0 (informational).
 #
 # Usage:  lint.sh
 
@@ -25,22 +36,38 @@ if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
   cat <<'EOF'
 usage: lint.sh
 
-Walks every leaf under docs/memory/ and reports references that do
-not resolve on disk. Always exits 0.
+Runs the Capsa validator over .capsa/ (schema conformance) and then checks
+the aims body conventions over code insights. Always exits 0.
 EOF
   exit 0
 fi
 
-CLAUDE_MD="${AIMS_CLAUDE_MD:-CLAUDE.md}"
+issues=0
 
-# Derive this repo's URL prefix (host/org/repo) so we can flag pointers
-# that round-trip through a host instead of staying repo-relative.
+# ── Tier 1: Capsa schema conformance (delegated) ─────────────────────────
+VALIDATOR="${AIMS_VALIDATOR:-validator/validate.py}"
+if [ -r "$VALIDATOR" ] && command -v python3 >/dev/null 2>&1; then
+  vout=$(python3 "$VALIDATOR" "$CAPSA_DIR" 2>&1 || true)
+  case "$vout" in
+    *"conforming capsule"*) : ;;   # ✔
+    *)
+      while IFS= read -r line; do
+        [ -z "$line" ] && continue
+        printf 'capsule schema: %s\n' "$line"
+        issues=$((issues + 1))
+      done <<< "$vout"
+      ;;
+  esac
+fi
+
+# Derive this repo's URL prefix so we can flag pointers that round-trip
+# through a host instead of staying repo-relative.
 REPO_URL_PREFIX=""
 if command -v git >/dev/null 2>&1 \
    && git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   origin=$(git remote get-url origin 2>/dev/null || true)
   case "$origin" in
-    git@*:*)         # SSH form: git@github.com:org/repo.git
+    git@*:*)
       host="${origin#git@}"; host="${host%%:*}"
       path="${origin#*:}"; path="${path%.git}"
       REPO_URL_PREFIX="${host}/${path}"
@@ -52,70 +79,24 @@ if command -v git >/dev/null 2>&1 \
   esac
 fi
 
-# Collect CLAUDE.md headings (without leading #s).
-declare -A CLAUDE_HEADINGS=()
-if [ -r "$CLAUDE_MD" ]; then
-  while IFS= read -r h; do
-    [ -z "$h" ] && continue
-    CLAUDE_HEADINGS["$h"]=1
-  done < <(awk '/^#+ /{ sub(/^#+ +/, ""); print }' "$CLAUDE_MD")
-fi
-
-issues=0
-
+# ── Tier 2: aims body conventions over code insights ─────────────────────
 while IFS= read -r leaf; do
   [ -z "$leaf" ] && continue
+  [ "$(fm_get "$leaf" kind)" = "code" ] || continue
 
-  # code: paths
+  # code_globs: literal entries must resolve; glob patterns are skipped
+  # (they legitimately may match nothing at a given moment).
   while IFS= read -r p; do
     [ -z "$p" ] && continue
     base="${p%%:*}"   # strip :start-end if present
-    if ! [ -e "$base" ]; then
-      printf '%s: code path missing: %s\n' "$leaf" "$p"
-      issues=$((issues + 1))
-    fi
-  done < <(fm_list "$leaf" code)
-
-  # Inert-node check: a `module` node with no code: globs can never be
-  # flagged dirty by post-edit-marker, so it never consolidates.
-  if [ "$(fm_get "$leaf" kind)" = "module" ] && [ -z "$(fm_list "$leaf" code)" ]; then
-    printf '%s: inert node — code: [] (module not tracked by post-edit-marker)\n' "$leaf"
-    issues=$((issues + 1))
-  fi
-
-  # external_refs: paths (already reduced to just the path by fm_list)
-  while IFS= read -r p; do
-    [ -z "$p" ] && continue
-    # Expand ~ for files under the user's home.
-    case "$p" in
-      "~/"*) p="${HOME}/${p#~/}" ;;
-      "~") p="${HOME}" ;;
+    case "$base" in
+      *'*'*|*'?'*|*'['*) continue ;;   # glob pattern — don't existence-check
     esac
-    if ! [ -e "$p" ]; then
-      printf '%s: external_ref missing: %s\n' "$leaf" "$p"
+    if ! [ -e "$base" ]; then
+      printf '%s: code_globs path missing: %s\n' "$leaf" "$p"
       issues=$((issues + 1))
     fi
-  done < <(fm_list "$leaf" external_refs)
-
-  # claude_md_refs: headings
-  while IFS= read -r h; do
-    [ -z "$h" ] && continue
-    if [ -z "${CLAUDE_HEADINGS[$h]+x}" ]; then
-      printf '%s: claude_md_ref missing in %s: %s\n' "$leaf" "$CLAUDE_MD" "$h"
-      issues=$((issues + 1))
-    fi
-  done < <(fm_list "$leaf" claude_md_refs)
-
-  # parents: / children: must resolve on disk (repo-relative).
-  for field in parents children; do
-    while IFS= read -r p; do
-      [ -z "$p" ] && continue
-      if ! [ -e "$p" ]; then
-        printf '%s: %s entry missing: %s\n' "$leaf" "$field" "$p"
-        issues=$((issues + 1))
-      fi
-    done < <(fm_list "$leaf" "$field")
-  done
+  done < <(insight_globs "$leaf")
 
   # ADR-0028 section checks: exactly four body sections in order.
   EXPECTED='## Purpose|## Invariants & gotchas|## Pointers|## Deltas|'
@@ -125,8 +106,7 @@ while IFS= read -r leaf; do
     issues=$((issues + 1))
   fi
 
-  # ADR-0028 compaction due: deltas at/over the threshold is informational
-  # (the next consolidation of this node runs in compact mode).
+  # ADR-0028 compaction due: informational.
   DELTA_MAX="${AIMS_MEMORY_DELTA_MAX:-12}"
   n_deltas=$(awk '/^## Deltas/{d=1;next} /^## /{d=0} d && /^- /{n++} END{print n+0}' "$leaf")
   if [ "$n_deltas" -ge "$DELTA_MAX" ]; then
@@ -165,18 +145,14 @@ while IFS= read -r leaf; do
   fi
 
   # ADR-0028 delta commit validity: every SHA cited in a delta line must be
-  # a real commit that touches at least one path from this node's `code:`.
+  # a real commit that touches at least one literal path from code_globs.
   if command -v git >/dev/null 2>&1 \
      && git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    # Gather node's code paths once (strip :line ranges).
-    mapfile -t NODE_CODE < <(fm_list "$leaf" code | sed 's/:.*//')
-    # L1: process substitution instead of a pipeline so `issues` updates
-    # land in the parent shell. Also: the missing-commit branch now
-    # actually increments issues (previously fell through silently).
+    mapfile -t NODE_CODE < <(insight_globs "$leaf" | sed 's/:.*//')
     while IFS= read -r sha; do
       [ -z "$sha" ] && continue
       if ! git cat-file -e "$sha" 2>/dev/null; then
-        printf '%s: fixed-bug commit not in git: %s (shallow clone?)\n' "$leaf" "$sha"
+        printf '%s: delta commit not in git: %s (shallow clone?)\n' "$leaf" "$sha"
         issues=$((issues + 1))
         continue
       fi
@@ -184,12 +160,13 @@ while IFS= read -r leaf; do
       hit=0
       for c in "${NODE_CODE[@]}"; do
         [ -z "$c" ] && continue
+        case "$c" in *'*'*|*'?'*|*'['*) continue ;; esac
         if printf '%s\n' "$touched" | grep -qxF -- "$c"; then
           hit=1; break
         fi
       done
       if [ "$hit" -eq 0 ]; then
-        printf '%s: fixed-bug commit %s does not touch any code: path\n' "$leaf" "$sha"
+        printf '%s: delta commit %s does not touch any code_globs path\n' "$leaf" "$sha"
         issues=$((issues + 1))
       fi
     done < <(awk '
@@ -199,10 +176,7 @@ while IFS= read -r leaf; do
     ' "$leaf" | grep -oE '\b[0-9a-f]{7,40}\b' | sort -u)
   fi
 
-  # Size cap (inspired by project-bedrock's memory-compaction skill —
-  # https://github.com/robotaitai/project-bedrock). Bedrock warns at ~150
-  # body lines (excluding frontmatter) and treats >200 as CRITICAL. Both
-  # are informational; the model decides whether to split or extract.
+  # Size cap (ADR-0008). Informational.
   end=$(fm_end_line "$leaf")
   body_lines=$(awk -v e="$end" 'NR>e' "$leaf" | wc -l | tr -d ' ')
   if [ "$body_lines" -gt 200 ]; then
@@ -211,49 +185,10 @@ while IFS= read -r leaf; do
   elif [ "$body_lines" -gt 150 ]; then
     printf '%s: warning: body is %d lines (>150) — consider splitting at next consolidation\n' "$leaf" "$body_lines"
   fi
-done < <(list_leaves)
-
-# DAG acyclicity: follow parents: upward from each node; if we revisit
-# a node, report a cycle. O(N^2) worst case — fine for hundreds of nodes.
-while IFS= read -r start; do
-  [ -z "$start" ] && continue
-  declare -A seen=()
-  seen["$start"]=1
-  frontier=("$start")
-  while [ "${#frontier[@]}" -gt 0 ]; do
-    next=()
-    for n in "${frontier[@]}"; do
-      while IFS= read -r p; do
-        [ -z "$p" ] && continue
-        # Only follow parents that are themselves memory nodes (in docs/memory).
-        case "$p" in
-          docs/memory/*) ;;
-          *) continue ;;
-        esac
-        if [ -n "${seen[$p]+x}" ]; then
-          printf '%s: parent cycle through %s\n' "$start" "$p"
-          issues=$((issues + 1))
-          break 3
-        fi
-        seen["$p"]=1
-        next+=("$p")
-      done < <(fm_list "$n" parents 2>/dev/null)
-    done
-    frontier=("${next[@]}")
-  done
-  unset seen
-done < <(list_leaves)
-
-# Track B: README node-index freshness — drift is an issue.
-if [ -r "$SCRIPT_DIR/readme-sync.sh" ]; then
-  if ! bash "$SCRIPT_DIR/readme-sync.sh" --check 2>/dev/null; then
-    printf '%s: node index out of sync (run readme-sync.sh)\n' "$MEMORY_DIR/README.md"
-    issues=$((issues + 1))
-  fi
-fi
+done < <(list_insights)
 
 if [ "$issues" -eq 0 ]; then
-  printf '[aims-memory] lint: clean (%d nodes)\n' "$(list_leaves | wc -l)" >&2
+  printf '[aims-memory] lint: clean (%d insights)\n' "$(list_insights | wc -l)" >&2
 fi
 
 exit 0

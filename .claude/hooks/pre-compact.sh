@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # aims PreCompact hook — advisory only (ADR-0020).
 #
-# Fires just before Claude Code summarizes context. Reports dirty memory
+# Fires just before Claude Code summarizes context. Reports stale-insight
 # state on stderr so the developer (and any later session inspecting the
 # transcript) sees what was pending the moment context was compacted.
 # Never blocks compaction; never touches the throttle state file (so the
 # next post-compaction Stop can still trigger normally).
 #
-# Per ADR-0024 this hook MUST NOT race the consolidation mutex —
-# it does no consolidation work, only reads `find-dirty.sh`.
+# It does no consolidation work, only reads `find-dirty.sh` (computed
+# staleness; Capsa §1.4).
 #
 # Inspiration / credit:
 #   - project-bedrock (https://github.com/robotaitai/project-bedrock) —
@@ -27,6 +27,6 @@ else exit 0; fi
 
 n=$(bash "$MEM_HELPERS/find-dirty.sh" 2>/dev/null | grep -c . || echo 0)
 if [ "$n" -gt 0 ]; then
-  printf '[aims] PreCompact: %d dirty memory node(s) — will resume after compaction.\n' "$n" >&2
+  printf '[aims] PreCompact: %d stale insight(s) — will resume after compaction.\n' "$n" >&2
 fi
 exit 0
