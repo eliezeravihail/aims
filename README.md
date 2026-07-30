@@ -41,28 +41,35 @@ session after session.
 
 Planning is a project **behavior**, not a command to remember (ADR-0022).
 For a non-trivial change, the assistant runs read-only discovery → writes a
-`Status: draft` plan to `docs/plans/` → asks for approval → implements →
+`status: draft` plan to `.capsa/plans/` → asks for approval → implements →
 inline close-out. The `prompt-submit` hook describes this convention
 factually for every actionable prompt.
+
+aims stores its management truth as a conforming **Capsa 0.2.0** capsule at
+`.capsa/` — aims is the active self-maintenance layer over that passive,
+schema-backed capsule (decision 0031). Decisions live in
+`.capsa/decisions/`, plans in `.capsa/plans/`, the code-anchored memory in
+`.capsa/insights/`, with a `charter.md` and a `capsule.yaml` manifest; a
+vendored stdlib-only validator (`validator/validate.py`) checks conformance.
 
 Two slash commands exist as optional shortcuts (see ADR-0010, ADR-0022):
 
 | Command              | What it does                                                                                          |
 |----------------------|--------------------------------------------------------------------------------------------------------|
 | `/plan <task>`       | Dispatches Phase 1-2 to an Opus subagent (read-only discovery + draft write); main session resumes for approval / implementation / close-out. Use when the session model is not Opus. |
-| `/install-on <path>` | Bootstrap (or idempotently re-install) ADRs, hooks, memory tree, CLAUDE.md.                            |
+| `/install-on <path>` | Bootstrap (or idempotently re-install) a Capsa capsule (`.capsa/`) + the vendored validator, hooks, and CLAUDE.md.        |
 
 Everything that used to be its own command now happens **inline**, with no
 command to remember:
 
 - **Plan close-out** (verify steps, run `## Verification`, decide ADRs, mark
-  the plan `completed`, consolidate memory) runs at the end of the
-  implementation session, nudged by the Stop hook when an `in-progress` plan
+  the plan `completed`, consolidate insights) runs at the end of the
+  implementation session, nudged by the Stop hook when an `in_progress` plan
   exists.
-- **ADRs** are auto-decided per change: created when it's a clear
-  architectural commitment, skipped for bug/refactor/doc/test/mechanical work,
-  asked only when borderline. They always start `proposed`.
-- **Memory bootstrap** runs at the end of `/install-on`; maintenance after
+- **ADRs** (Capsa decision records) are auto-decided per change: created when
+  it's a clear architectural commitment, skipped for bug/refactor/doc/test/
+  mechanical work, asked only when borderline. They always start `proposed`.
+- **Insight bootstrap** runs at the end of `/install-on`; maintenance after
   that is the automatic marker + consolidation loop (ADR-0007 / ADR-0009).
 - **Mechanical edits and notes** are just ordinary edits — do the work.
 
@@ -72,8 +79,8 @@ whatever the main session is on.
 
 ## Hooks (per-project, installed by `/install-on`)
 
-- **SessionStart** — surfaces in-progress plans, recent ADRs, and the
-  memory-tree overview.
+- **SessionStart** — surfaces in-progress plans, recent decisions, and the
+  charter for orientation.
 - **UserPromptSubmit** — **shape-gated convention note** (informs, never
   locks). For a task-shaped prompt (length ≥ 30 chars, no code fence, not
   a trailing-`?` question) injects a FACTUAL planning-convention note —
@@ -81,22 +88,24 @@ whatever the main session is on.
   It never creates a lock. Suppresses on slash-prefixed prompts and short
   follow-ups. See ADR-0020 + ADR-0029.
 - **PreToolUse** (`pre-write`) — never blocks. On the first source edit of a
-  session with no `Status: draft`/`Status: in-progress` plan in `docs/plans/`,
+  session with no `status: draft`/`status: in_progress` plan in `.capsa/plans/`,
   injects a **state-aware** factual note that names the specific file being
   edited, the missing plan, and the approval-semantics rule (brief
   `yes`/`do it` approvals authorize Phase 2, not Phase 4). "Source" is
-  defined by exclusion (anything outside `docs/`, `tests/`, `*.md`,
+  defined by exclusion (anything outside `.capsa/`, `docs/`, `tests/`, `*.md`,
   `.claude/`); no project path is hardcoded. The note fires once per
   session. See ADR-0020 + ADR-0023.
-- **PostToolUse** (`post-edit-marker`) — when an edit touches a file a memory
-  node references, flags that node `dirty`, injects a factual note naming the
-  node to update, and stamps an **advisory** marker (`<leaf>.marker`; NOT a
-  block) for cross-session awareness (ADR-0007, ADR-0024/0030 — the strict
-  `.lock` mutex is retired).
-- **Stop** (`stop-consolidate`) — throttled. Injects the in-band memory
-  consolidation prompt for any `dirty` nodes: **delta-append by default**,
-  full compaction only past size thresholds (ADR-0009/0028). Also emits the
-  plan close-out nudge when an `in-progress` plan exists (ADR-0010).
+- **PostToolUse** (`post-edit-marker`) — when an edit touches a file an insight's
+  `code_globs` covers, names that insight (its staleness is then **computed**
+  from the insight's `updated:` date vs git — Capsa §1.4, no stored flag) and
+  refreshes an **advisory** marker kept OUTSIDE the capsule (NOT a block) for
+  cross-session awareness (ADR-0007, ADR-0024/0030 — the strict `.lock` mutex
+  is retired).
+- **Stop** (`stop-consolidate`) — throttled. Injects the in-band consolidation
+  prompt for any **stale** insights: **delta-append by default**, full
+  compaction only past size thresholds (ADR-0009/0028), ending with
+  `mark.sh <insight> consolidated` which bumps `updated:`. Also emits the plan
+  close-out nudge when an `in_progress` plan exists (ADR-0010).
 - **SessionEnd** — flushes any pending memory state at session shutdown.
 
 All injected text is factual, never an imperative command (ADR-0020): an
@@ -106,8 +115,8 @@ instead of being treated as context. No hook ever blocks an edit — there is no
 
 When the Stop / consolidation-update hook reports its result, that report
 is emitted as a single short line `===[aims: <message>]===` — examples:
-`===[aims: nodes updated]===`, `===[aims: queue drained]===`,
-`===[aims: 4 dirty]===`. The marker applies ONLY to the update-hook
+`===[aims: insights updated]===`, `===[aims: queue drained]===`,
+`===[aims: 4 stale]===`. The marker applies ONLY to the update-hook
 result, not to regular conversational mentions of aims topics elsewhere
 in a reply (ADR-0021).
 
@@ -223,28 +232,31 @@ rationale.
 ```
 TARGET/
 ├── CLAUDE.md                    # created or merged section-aware
-├── docs/
-│   ├── adr/
-│   │   ├── README.md            # decision index
-│   │   ├── _template.md
-│   │   └── 0001-record-architecture-decisions.md
-│   └── memory/                  # seeded by /install-on's final step (ADR-0007)
+├── .capsa/                      # the Capsa capsule (bootstrapped by /install-on)
+│   ├── capsule.yaml             # manifest
+│   ├── charter.md               # project vision / conventions
+│   ├── decisions/               # ADRs (NNNN-slug.md)
+│   ├── plans/                   # plans (NNNN-slug.md)
+│   └── insights/{code,dev,design}/   # code-anchored memory (ADR-0007)
+├── validator/validate.py        # vendored Capsa validator (stdlib only)
+├── schema/*.json                # vendored Capsa schemas
 └── .claude/
     ├── commands/                # install-on, plan
     ├── hooks/                   # session-start, prompt-submit, pre-write,
-    │                            # post-edit-marker, stop-consolidate, session-end
-    ├── memory/                  # _lib, mark, new-node, find-dirty, lint,
-    │                            # check-refs, consolidate, classify-inbox,
-    │                            # doctor (.sh)
+    │                            # post-edit-marker, exit-plan-mode,
+    │                            # stop-consolidate, session-end, pre-compact
+    ├── memory/                  # _lib, mark, new-insight, find-dirty, lint,
+    │                            # consolidate, classify-inbox, doctor (.sh)
     └── settings.json            # wires the hooks
 ```
 
 `/install-on` is **idempotent** and doubles as the upgrade path: re-running
-it overwrites hooks, memory scripts, and the two commands (with a diff
-preview), deletes obsolete commands from a previous install, and **never
-touches** existing CLAUDE.md sections, ADRs, plan files, or memory node
-bodies. Update aims by `git pull` in the source repo (and `/plugin update`
-if you took path B), then re-run `/install-on` against your targets.
+it overwrites hooks, memory scripts, the vendored validator, and the two
+commands (with a diff preview), deletes obsolete commands from a previous
+install, and **never touches** existing CLAUDE.md sections or capsule records
+(decisions, plans, insight bodies, the charter). Update aims by `git pull` in
+the source repo (and `/plugin update` if you took path B), then re-run
+`/install-on` against your targets.
 
 ## How it feels in practice
 
@@ -255,12 +267,12 @@ you: TypeError: cannot unpack non-iterable NoneType at parser.py:42
 
   [prompt-submit injects the planning convention as factual context]
   Claude: <reads, judges non-trivial, writes
-           docs/plans/2026-…-fix-parser-none.md with Status: draft>
-  Claude: Draft saved to docs/plans/…. Approve / edit / abort?
+           .capsa/plans/NNNN-fix-parser-none.md with status: draft>
+  Claude: Draft saved to .capsa/plans/…. Approve / edit / abort?
   you: approve
-  Claude: <flips Status to in-progress, implements, runs verification,
-           writes ADR if architectural, marks completed, refreshes
-           the memory tree — all inline, no /done command>
+  Claude: <flips status to in_progress, implements, runs verification,
+           writes a decision if architectural, marks completed, refreshes
+           the affected insights — all inline, no /done command>
 ```
 
 The Opus-subagent case (main session is on Sonnet/Haiku and you want
@@ -286,10 +298,10 @@ you: rename CamelCase to snake_case in scripts/
            session as a factual reminder, never blocks>
 ```
 
-On every edit, the `post-edit-marker` hook flags affected memory nodes
-`dirty`; the throttled `Stop` hook later injects the in-band
-consolidation prompt, and the consolidation result is reported back
-in a single `===[aims: <message>]===` line (ADR-0021).
+On every edit, the `post-edit-marker` hook names affected insights (their
+staleness is computed from `updated:` vs git); the throttled `Stop` hook
+later injects the in-band consolidation prompt, and the consolidation result
+is reported back in a single `===[aims: <message>]===` line (ADR-0021).
 
 ## Layout
 
@@ -308,19 +320,25 @@ templates/                   ← never globally registered; copied per target
     prompt-submit.sh
     pre-write.sh
     post-edit-marker.sh
+    exit-plan-mode.sh
     stop-consolidate.sh
     session-end.sh
-  memory/                    ← memory subsystem scripts copied per target
+    pre-compact.sh
+  memory/                    ← insight/consolidation scripts copied per target
   CLAUDE.md.tmpl
-  adr-readme.md.tmpl
-  adr-template.md.tmpl
-  adr-0001.md.tmpl
+  charter.md.tmpl
+  capsule.yaml.tmpl
+  decision.md.tmpl
   plan-template.md.tmpl
   settings.json.tmpl
+validator/                   ← vendored Capsa validator (copied per target)
+schema/                      ← vendored Capsa schemas (copied per target)
+.capsa/                      ← this repo's own capsule (aims is its own target)
+  capsule.yaml  charter.md  decisions/  plans/  insights/
 .claude/                     ← dogfood install (this repo is itself a target)
   commands/                  ← lets us run /install-on + /plan here
   hooks/                     ← live hooks for working on aims itself
-  memory/                    ← live memory scripts for the dogfooded tree
+  memory/                    ← live insight scripts for the dogfooded capsule
   settings.json
 ```
 
@@ -335,7 +353,7 @@ templates/                   ← never globally registered; copied per target
    gets reviewed, and grounds the implementation session.
 3. **Hooks inform, they never block (ADR-0020).** No hook can stop an edit;
    each only injects factual context. Discipline comes from awareness — the
-   planning convention and node-update reminders are surfaced at the moment
+   planning convention and insight-update reminders are surfaced at the moment
    they matter, and the human stays in control.
 4. **Idempotent and merge-aware.** Running `/install-on` on an existing
    project must not damage existing CLAUDE.md, settings, or layout.

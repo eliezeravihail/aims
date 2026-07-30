@@ -1,31 +1,31 @@
 #!/usr/bin/env bash
-# aims Stop hook — throttled in-band memory consolidation (ADR-0009).
+# aims Stop hook — throttled in-band insight consolidation over a Capsa
+# capsule (.capsa/). (ADR-0009 / ADR-0028.)
 #
 # Stop fires after every Claude turn. Unconditional work here would
 # spike turn cost, so throttle in bash:
 #
 #   Run consolidation only when
-#       N_DIRTY >= AIMS_MEMORY_DIRTY_MAX   (default 5)
+#       N_STALE >= AIMS_MEMORY_DIRTY_MAX   (default 5)
 #     OR
-#       (now - last_consolidated) >= AIMS_MEMORY_INTERVAL_SEC  (default 1800s)
+#       (now - last consolidation run) >= AIMS_MEMORY_INTERVAL_SEC  (def 1800s)
 #
-# When the threshold trips, this hook does NOT call any LLM directly
-# (per ADR-0009: there is no ANTHROPIC_API_KEY in this environment).
-# Instead it builds a consolidation prompt in bash and injects it via
-# the Stop-hook `decision: block` + `reason` contract; blocking keeps
-# the turn going so the active Claude Code session performs the Edits
-# in-band, ending with `bash .claude/memory/mark.sh <node> consolidated`.
+# "Stale" is COMPUTED (find-dirty.sh compares each insight's `updated:` date
+# against git; Capsa §1.4), never a stored flag. When the threshold trips this
+# hook does NOT call any LLM (there is no ANTHROPIC_API_KEY here). It builds a
+# consolidation prompt in bash and injects it via the Stop-hook
+# `decision: block` + `reason` contract; blocking keeps the turn going so the
+# active Claude Code session performs the Edits in-band, ending each insight
+# with `bash <helpers>/mark.sh <insight> consolidated` (which bumps `updated:`).
 #
-# Override per project via .claude/memory/throttle.conf.
-# Blocks the stop ONLY when the throttle trips (to inject the prompt);
-# otherwise exits 0 with no output.
+# All aims run-state (throttle timer, report snapshot, inbox) lives OUTSIDE the
+# capsule under .claude/ (Capsa §1.5). Override per project via throttle.conf.
+# Blocks the stop ONLY when the throttle trips; otherwise exits 0 silently.
 
 set -u
 
-# L4: this hook uses mapfile (bash 4) and `declare -A`-style features
-# downstream. macOS ships bash 3.2 by default; rather than polyfill, emit a
-# factual breadcrumb and exit 0 (informational, per ADR-0020). To upgrade:
-#     brew install bash
+# L4: this hook uses mapfile (bash 4). macOS ships bash 3.2; rather than
+# polyfill, emit a factual breadcrumb and exit 0 (informational, ADR-0020).
 if (( BASH_VERSINFO[0] < 4 )); then
   printf '[aims] stop-consolidate.sh: bash >= 4 required; current is %s. Skipping.\n' \
     "$BASH_VERSION" >&2
@@ -40,24 +40,27 @@ else
   exit 0
 fi
 
-# Source shared helpers (json_escape, plans_with_status, etc.). Best-effort —
-# the hook still works without _lib.sh, just with the older inline fallbacks.
+# Source shared helpers (json_escape, plans_with_status, list_insights, etc.).
 # shellcheck disable=SC1091
 [ -r "$MEM_HELPERS/_lib.sh" ] && . "$MEM_HELPERS/_lib.sh"
-# Track D: header-scoped plan-state parsing; grep fallback if _lib is absent.
 command -v plans_with_status >/dev/null 2>&1 || plans_with_status() {
-  grep -lE "^Status:[[:space:]]*$2" "$1"/*.md 2>/dev/null
+  local d="$1" want="$2" f
+  [ -d "$d" ] || return
+  for f in "$d"/*.md; do
+    [ -e "$f" ] || continue
+    grep -qE "^status:[[:space:]]*$want" "$f" 2>/dev/null && printf '%s\n' "$f"
+  done
   return 0
 }
 
-if [ -r ".claude/memory/throttle.conf" ]; then
+if [ -r "$MEM_HELPERS/throttle.conf" ]; then
   # shellcheck disable=SC1091
-  . ".claude/memory/throttle.conf"
+  . "$MEM_HELPERS/throttle.conf"
 fi
 
 DIRTY_MAX="${AIMS_MEMORY_DIRTY_MAX:-5}"
 INTERVAL_SEC="${AIMS_MEMORY_INTERVAL_SEC:-1800}"
-STATE_FILE="${AIMS_MEMORY_STATE_FILE:-.claude/memory/.last-consolidated}"
+STATE_FILE="${AIMS_MEMORY_STATE_FILE:-$STATE_DIR/.last-consolidated}"
 FORCE=0
 
 case "${1:-}" in
@@ -93,13 +96,14 @@ mapfile -t DIRTY < <(bash "$MEM_HELPERS/find-dirty.sh" 2>/dev/null || true)
 N_DIRTY=${#DIRTY[@]}
 
 INBOX_NONEMPTY=0
-INBOX_PATH="${AIMS_MEMORY_DIR:-docs/memory}/_inbox.md"
+INBOX_PATH="$INBOX"
 [ -s "$INBOX_PATH" ] && INBOX_NONEMPTY=1
 
-# In-progress plan detection (for close-out nudge).
+# In-progress plan detection (for close-out nudge). Capsa plans carry a
+# frontmatter `status:` field; `in_progress` is the active value.
 IN_PROGRESS_PLAN=""
-if [ -d "docs/plans" ]; then
-  IN_PROGRESS_PLAN=$(plans_with_status docs/plans in-progress | head -1)
+if [ -d "$PLANS_DIR" ]; then
+  IN_PROGRESS_PLAN=$(plans_with_status "$PLANS_DIR" in_progress | head -1)
 fi
 
 if [ "$N_DIRTY" -eq 0 ] && [ "$INBOX_NONEMPTY" -eq 0 ] && [ -z "$IN_PROGRESS_PLAN" ]; then
@@ -131,22 +135,21 @@ fi
 
 [ "$should_run" -eq 0 ] && exit 0
 
-# ── No consolidation mutex (ADR-0030, supersedes ADR-0024's strict half) ──
-# The strict sidecar `.lock` protocol (0018 → 0019 → 0024) is retired: the
-# tool runs single-session in practice, and the worst uncoordinated case —
-# two sessions consolidating one node — is a last-write-wins delta append.
-# Cross-session awareness remains the post-edit-marker's advisory `.marker`.
+# ── No consolidation mutex (ADR-0030) ──
+# The strict sidecar `.lock` protocol is retired: the tool runs single-session
+# in practice, and the worst uncoordinated case — two sessions consolidating
+# one insight — is a last-write-wins delta append. Cross-session awareness
+# remains the post-edit-marker's advisory marker (kept outside the capsule).
 
 # ── Repeat-offender detection (ADR-0027) ──────────────────────
-# The previous Stop fire wrote a snapshot of the work it asked the model
-# to do. If we now see the SAME state (same inbox bytes, same dirty leaf
-# set), the prior `===[aims: <msg>]===` report drained nothing — it was
-# a false report. We don't block; we name the discrepancy factually so
-# the next attempt cannot proceed without seeing it.
-SNAPSHOT_FILE="${AIMS_MEMORY_DIR:-docs/memory}/.last-report-snapshot"
+# The previous Stop fire wrote a snapshot of the work it asked the model to do.
+# If we now see the SAME state (same inbox bytes, same stale insight set), the
+# prior `===[aims: <msg>]===` report drained nothing. We don't block; we name
+# the discrepancy factually so the next attempt cannot proceed without it.
+SNAPSHOT_FILE="${AIMS_SNAPSHOT_FILE:-$STATE_DIR/.last-report-snapshot}"
 N_INBOX_LINES=0
 [ -f "$INBOX_PATH" ] && N_INBOX_LINES=$(grep -c '^- ' "$INBOX_PATH" 2>/dev/null || echo 0)
-# State fingerprint: inbox content + sorted dirty leaf paths.
+# State fingerprint: inbox content + sorted stale insight paths.
 state_now=$( {
   [ -f "$INBOX_PATH" ] && cat "$INBOX_PATH"
   printf -- '--dirty--\n'
@@ -157,77 +160,75 @@ PREV_LIED=0
 PREV_N_DIRTY=0
 PREV_N_INBOX=0
 if [ -r "$SNAPSHOT_FILE" ]; then
-  # Snapshot format: one line each — N_DIRTY, N_INBOX, state_hash, emit_ts.
   PREV_N_DIRTY=$(sed -n '1p' "$SNAPSHOT_FILE" 2>/dev/null || echo 0)
   PREV_N_INBOX=$(sed -n '2p' "$SNAPSHOT_FILE" 2>/dev/null || echo 0)
   PREV_HASH=$(sed -n '3p' "$SNAPSHOT_FILE" 2>/dev/null || true)
   case "$PREV_N_DIRTY" in ''|*[!0-9]*) PREV_N_DIRTY=0 ;; esac
   case "$PREV_N_INBOX" in ''|*[!0-9]*) PREV_N_INBOX=0 ;; esac
-  # The prior emit asked the model to drain SOMETHING (dirty or inbox);
-  # if state hash is byte-identical to what was sent, the model didn't.
   if [ -n "$PREV_HASH" ] && [ "$PREV_HASH" = "$state_now" ] \
      && [ $((PREV_N_DIRTY + PREV_N_INBOX)) -gt 0 ]; then
     PREV_LIED=1
   fi
 fi
 
-# ── Build the per-node prompt sections in bash ────────────────
+# ── Build the per-insight prompt sections in bash ────────────────
 EXTRA_CTX="${AIMS_EXTRA_CONTEXT:-}"
 
 prompt_parts=()
 if [ "$PREV_LIED" -eq 1 ]; then
-  prompt_parts+=("[aims-memory] DISCREPANCY DETECTED (ADR-0027). The previous Stop hook fired with $PREV_N_DIRTY dirty node(s) and $PREV_N_INBOX inbox bullet(s); a \`===[aims: <msg>]===\` report was emitted. State has NOT changed since: the same dirty set and the same inbox bytes are still present. The previous report did not match measured state. Do the work this turn before any reply: apply the Edits below, run the mark.sh commands, drain the inbox bullets per the classification rules. Do not emit \`queue drained\` (or any drain-claim) unless the inbox file is actually empty and zero leaves are dirty.")
+  prompt_parts+=("[aims-memory] DISCREPANCY DETECTED (ADR-0027). The previous Stop hook fired with $PREV_N_DIRTY stale insight(s) and $PREV_N_INBOX inbox bullet(s); a \`===[aims: <msg>]===\` report was emitted. State has NOT changed since: the same stale set and the same inbox bytes are still present. The previous report did not match measured state. Do the work this turn before any reply: apply the Edits below, run the mark.sh commands, drain the inbox bullets per the classification rules. Do not emit \`queue drained\` (or any drain-claim) unless the inbox file is actually empty and zero insights are stale.")
 fi
-prompt_parts+=("[aims-memory] Consolidation queue is ready (per ADR-0009).
-There are $N_DIRTY dirty node(s) below. Before responding to the user,
-process each one in order: apply the Edit per the rules, then run the
-mark.sh command at the end of its section. If there are more than 10
-dirty nodes, handle the first 10 and report that the rest will be
-caught on the next turn. Do NOT touch frontmatter dirty/last_touched/
-last_consolidated — mark.sh owns those.
+prompt_parts+=("[aims-memory] Consolidation queue is ready (ADR-0009 / ADR-0028).
+There are $N_DIRTY stale insight(s) below — insights in .capsa/insights/
+whose code_globs changed after their \`updated:\` date. Before responding to
+the user, process each one in order: append a dated delta line to the insight
+body per the rules, then run the mark.sh command at the end of its section
+(which bumps \`updated:\` to today — clearing the computed staleness). If there
+are more than 10 stale insights, handle the first 10 and report that the rest
+will be caught on the next turn. Do NOT hand-edit the \`updated:\` field —
+\`mark.sh <insight> consolidated\` owns it.
 Reply-format: report this consolidation pass to the user as a single
 short line in the form \`===[aims: <message>]===\` — examples:
-\`===[aims: nodes updated]===\`, \`===[aims: queue drained]===\`,
-\`===[aims: 4 dirty]===\`. One line only, no per-node prose unless the
+\`===[aims: insights updated]===\`, \`===[aims: queue drained]===\`,
+\`===[aims: 4 stale]===\`. One line only, no per-insight prose unless the
 user asks, no opening/closing wrapper. Regular conversational mentions
 of aims topics elsewhere in the reply are NOT prefixed.
-The drain-claim words (\`queue drained\`, \`nodes updated\`, \`inbox cleared\`)
+The drain-claim words (\`queue drained\`, \`insights updated\`, \`inbox cleared\`)
 are reserved — emit them ONLY when the corresponding measured state has
-actually changed (inbox empty, dirty count zero). Otherwise pick a
-state-accurate message (e.g. \`N dirty, M inbox\`).")
+actually changed (inbox empty, stale count zero). Otherwise pick a
+state-accurate message (e.g. \`N stale, M inbox\`).")
 
 if [ -n "$IN_PROGRESS_PLAN" ]; then
   prompt_parts+=("[aims-plan] In-progress plan detected: $IN_PROGRESS_PLAN
 If the implementation steps in that plan are complete (or you just
 finished implementing them), run the inline close-out per the /plan
 command's Phase 4: verify steps, run \`## Verification\`, auto-decide
-ADRs (create when clear architectural commitment; skip when bug/
-refactor/doc/test/mechanical; ask only when borderline), set
-\`Status: completed\`, append \`## Outcome\` + \`## Closing checks\`.
+ADRs (create a .capsa/decisions/ record when there is a clear
+architectural commitment; skip when bug/refactor/doc/test/mechanical;
+ask only when borderline), set the plan's frontmatter \`status: completed\`
+and \`completed:\` date, append \`## Outcome\` + \`## Closing checks\`.
 If implementation isn't done yet, ignore this nudge.")
 fi
 
 if [ -n "$EXTRA_CTX" ]; then
   prompt_parts+=("=== ADDITIONAL CONTEXT (from caller) ===
-Mine for invariants (→ ## Invariants & gotchas), design rationale
-(→ ## Design rationale), fixed bugs (→ ## Known issues > fixed, ONLY
-if a real commit SHA is cited), and open design questions
-(→ ## Open questions). Do NOT add content where the connection to
-this node's code is weak.
+Mine for invariants, design rationale, fixed bugs (ONLY if a real commit
+SHA is cited), and open design questions. Append as a dated delta line to
+the relevant insight body. Do NOT add content where the connection to
+this insight's code is weak.
 
 $EXTRA_CTX")
 fi
 
 if [ -n "$TRANSCRIPT_URLS" ]; then
   prompt_parts+=("=== URLs CITED IN SESSION TRANSCRIPT ===
-Consider for '## Pointers > External'. Only add a URL if it is clearly
-about a given node's code; otherwise drop it. Format:
-  - External: <URL> — <one-line context>
+Consider citing under an insight's body as an external pointer. Only add a
+URL if it is clearly about a given insight's code; otherwise drop it.
 
 $TRANSCRIPT_URLS")
 fi
 
-# Per-node sections (capped at 10 to keep prompt size bounded).
+# Per-insight sections (capped at 10 to keep prompt size bounded).
 PROCESSED=0
 for leaf in "${DIRTY[@]}"; do
   [ -z "$leaf" ] && continue
@@ -246,15 +247,11 @@ fi
 # Assemble.
 full_prompt=$(printf '%s\n\n' "${prompt_parts[@]}")
 
-# Bump the throttle state file so we don't re-nudge on the very next
-# turn while the model is still working on this batch.
+# Bump the throttle state file so we don't re-nudge on the very next turn.
 mkdir -p "$(dirname "$STATE_FILE")"
 printf '%s\n' "$NOW" > "$STATE_FILE"
 
-# ADR-0027: write the report snapshot AFTER we've decided to emit. Next
-# Stop fire will compare against it; if state is unchanged but the model
-# emitted a drain-claim reply between the two fires, the discrepancy
-# breadcrumb prepends to the next prompt.
+# ADR-0027: write the report snapshot AFTER we've decided to emit.
 mkdir -p "$(dirname "$SNAPSHOT_FILE")"
 {
   printf '%s\n' "$N_DIRTY"
@@ -263,18 +260,12 @@ mkdir -p "$(dirname "$SNAPSHOT_FILE")"
   printf '%s\n' "$NOW"
 } > "$SNAPSHOT_FILE"
 
-# Emit JSON for Claude Code's Stop hook contract. A Stop hook injects an
-# instruction by blocking the stop: `decision: block` keeps the turn going
-# and feeds `reason` back to the model as the work to do. (`additionalContext`
-# via hookSpecificOutput is not valid for the Stop event.) The throttle state
-# is already bumped above, so this won't re-fire on the very next turn.
+# Emit JSON for Claude Code's Stop hook contract. `decision: block` keeps the
+# turn going and feeds `reason` back to the model as the work to do.
 if command -v jq >/dev/null 2>&1; then
   jq -nc --arg r "$full_prompt" \
     '{decision: "block", reason: $r}'
 else
-  # M2: shared json_escape — handles tabs / CR / all C0 control chars. The
-  # reason field embeds `git log -p` diffs which are full of tabs; the prior
-  # sed-only escaper produced JSON that jq-less consumers couldn't parse.
   if command -v json_escape >/dev/null 2>&1; then
     esc=$(json_escape "$full_prompt")
   else
@@ -285,5 +276,5 @@ else
   printf '{"decision":"block","reason":"%s"}\n' "$esc"
 fi
 
-printf '[aims-memory] queued %d node(s) for in-band consolidation\n' "$PROCESSED" >&2
+printf '[aims-memory] queued %d insight(s) for in-band consolidation\n' "$PROCESSED" >&2
 exit 0

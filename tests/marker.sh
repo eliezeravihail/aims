@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 # Smoke test for the PostToolUse marker hook (templates/hooks/post-edit-marker.sh)
-# and the underlying mark.sh logic.
+# over a Capsa capsule with COMPUTED freshness (no stored dirty flag).
 #
-# Pure bash; no Anthropic API needed. Exits 0 on success, non-zero on
-# first failure with a clear message.
+# The hook's jobs now: name any insight whose `code_globs` cover the edited
+# path (factual note), route unmatched paths to the out-of-capsule inbox, and
+# refresh an advisory marker under .claude/ (never inside the capsule).
+#
+# Self-contained: builds a throwaway git repo with its own .claude/memory
+# (copied from templates) and .capsa/insights, so git-based staleness is real
+# and nothing touches the host repo. Pure bash. Exits 0 on success.
 
 set -eu
 
@@ -14,154 +19,135 @@ trap 'rm -rf "$TMP"' EXIT
 pass() { printf '[PASS] %s\n' "$1"; }
 fail() { printf '[FAIL] %s\n' "$1" >&2; exit 1; }
 
-export AIMS_MEMORY_DIR="$TMP/memory"
+# ── Build an isolated repo ──────────────────────────────────────────────
+cd "$TMP"
+git init -q
+git config user.email t@t; git config user.name t
+mkdir -p .claude/memory .capsa/insights/code src
+cp "$ROOT"/templates/memory/*.sh .claude/memory/
+HOOK="$ROOT/templates/hooks/post-edit-marker.sh"
+INBOX=".claude/aims-state/inbox.md"
 
-# Seed a leaf with a couple of code paths.
-bash "$ROOT/templates/memory/new-node.sh" interface/foo module >/dev/null
-LEAF="$AIMS_MEMORY_DIR/interface/foo.md"
-[ -f "$LEAF" ] || fail "scaffold did not create $LEAF"
-python3 -c "
-p='$LEAF'
-s=open(p).read()
-s=s.replace('code: []', 'code:\n  - src/foo.py\n  - src/bar.py:10-30')
-open(p,'w').write(s)
-"
+# Seed a code insight covering two paths (one range-suffixed).
+LEAF=".capsa/insights/code/foo.md"
+cat > "$LEAF" <<'EOF'
+---
+kind: code
+title: "Foo module"
+created: 2026-01-01
+updated: 2026-01-01
+code_globs: ["src/foo.py", "src/bar.py:10-30"]
+tags: []
+---
 
-# Case 1: marker on a matching path flips dirty:true.
-printf '%s' '{"tool_input":{"file_path":"src/foo.py"}}' | \
-  bash "$ROOT/templates/hooks/post-edit-marker.sh"
-. "$ROOT/templates/memory/_lib.sh"
-v=$(fm_get "$LEAF" dirty)
-[ "$v" = "true" ] || fail "case 1: expected dirty=true, got '$v'"
-pass "marker flips dirty:true on matching code: entry"
+## Purpose
+p
+## Invariants & gotchas
+i
+## Pointers
+ptr
+## Deltas
+EOF
+: > src/foo.py; : > src/bar.py
 
-# Case 2: range-suffixed code: entries match the bare path.
-# Reset to dirty:false first.
-python3 -c "
-import re
-p='$LEAF'
-s=open(p).read()
-s=re.sub(r'dirty: true', 'dirty: false', s, count=1)
-open(p,'w').write(s)
-"
-printf '%s' '{"tool_input":{"file_path":"src/bar.py"}}' | \
-  bash "$ROOT/templates/hooks/post-edit-marker.sh"
-v=$(fm_get "$LEAF" dirty)
-[ "$v" = "true" ] || fail "case 2: expected dirty=true on range match, got '$v'"
+# Case 1: matching path → note names the insight; inbox NOT created.
+out=$(printf '%s' '{"tool_input":{"file_path":"src/foo.py"}}' | bash "$HOOK")
+case "$out" in *"Foo module"*) ;; *) fail "case 1: note should name the insight (got: $out)";; esac
+[ ! -f "$INBOX" ] || fail "case 1: matching path must NOT go to the inbox"
+pass "marker names the insight on a matching code_globs entry"
+
+# Case 2: range-suffixed entry matches the bare path.
+out=$(printf '%s' '{"tool_input":{"file_path":"src/bar.py"}}' | bash "$HOOK")
+case "$out" in *"Foo module"*) ;; *) fail "case 2: range match should name insight";; esac
 pass "marker matches src/bar.py against src/bar.py:10-30"
 
-# Case 3: non-matching path goes to _inbox.md.
-rm -f "$AIMS_MEMORY_DIR/_inbox.md"
-python3 -c "
-import re
-p='$LEAF'
-s=open(p).read()
-s=re.sub(r'dirty: true', 'dirty: false', s, count=1)
-open(p,'w').write(s)
-"
-printf '%s' '{"tool_input":{"file_path":"src/unknown.py"}}' | \
-  bash "$ROOT/templates/hooks/post-edit-marker.sh"
-v=$(fm_get "$LEAF" dirty)
-[ "$v" = "false" ] || fail "case 3: leaf should stay clean for unknown path, got '$v'"
-grep -qxF -- "- src/unknown.py" "$AIMS_MEMORY_DIR/_inbox.md" || \
-  fail "case 3: inbox missing src/unknown.py entry"
-pass "marker routes unknown paths to _inbox.md (no leaf marked)"
+# Case 3: non-matching path goes to the inbox.
+rm -f "$INBOX"
+printf '%s' '{"tool_input":{"file_path":"src/unknown.py"}}' | bash "$HOOK" >/dev/null
+grep -qxF -- "- src/unknown.py" "$INBOX" || fail "case 3: inbox missing src/unknown.py"
+pass "marker routes unmatched paths to the inbox"
 
-# Case 4: marker correctly skips paths under docs/memory/ and .claude/.
-python3 -c "
-import re
-p='$LEAF'
-s=open(p).read()
-s=re.sub(r'dirty: true', 'dirty: false', s, count=1)
-open(p,'w').write(s)
-"
-printf '%s' '{"tool_input":{"file_path":"docs/memory/foo.md"}}' | \
-  bash "$ROOT/templates/hooks/post-edit-marker.sh"
-printf '%s' '{"tool_input":{"file_path":".claude/settings.json"}}' | \
-  bash "$ROOT/templates/hooks/post-edit-marker.sh"
-v=$(fm_get "$LEAF" dirty)
-[ "$v" = "false" ] || fail "case 4: leaf should NOT be dirty after meta-path edits, got '$v'"
-pass "marker skips docs/memory/* and .claude/* edits"
+# Case 4: capsule + tooling surfaces are skipped (no inbox, no note).
+rm -f "$INBOX"
+o1=$(printf '%s' '{"tool_input":{"file_path":".capsa/insights/code/foo.md"}}' | bash "$HOOK")
+o2=$(printf '%s' '{"tool_input":{"file_path":".claude/settings.json"}}' | bash "$HOOK")
+[ -z "$o1$o2" ] || fail "case 4: .capsa/ and .claude/ edits must inject nothing"
+[ ! -f "$INBOX" ] || fail "case 4: skip-listed paths must not touch the inbox"
+pass "marker skips .capsa/* and .claude/* edits"
 
-# Case 5: find-dirty.sh sees the right state.
-python3 -c "
-p='$LEAF'
-s=open(p).read()
-s=s.replace('dirty: false', 'dirty: true', 1)
-open(p,'w').write(s)
-"
-out=$(bash "$ROOT/templates/memory/find-dirty.sh")
-[ "$out" = "$LEAF" ] || fail "case 5: find-dirty got '$out', expected '$LEAF'"
-pass "find-dirty.sh returns the dirty leaf path"
-
-# Case 6: inbox dedup — same unknown path twice yields one entry.
-printf '%s' '{"tool_input":{"file_path":"src/unknown.py"}}' | \
-  bash "$ROOT/templates/hooks/post-edit-marker.sh"
-n=$(grep -cxF -- "- src/unknown.py" "$AIMS_MEMORY_DIR/_inbox.md" || true)
-[ "$n" = "1" ] || fail "case 6: expected 1 inbox entry for src/unknown.py, got $n"
+# Case 5: inbox de-dup — same unmatched path twice yields one entry.
+rm -f "$INBOX"
+printf '%s' '{"tool_input":{"file_path":"src/dup.py"}}' | bash "$HOOK" >/dev/null
+printf '%s' '{"tool_input":{"file_path":"src/dup.py"}}' | bash "$HOOK" >/dev/null
+n=$(grep -cxF -- "- src/dup.py" "$INBOX" || true)
+[ "$n" = "1" ] || fail "case 5: expected 1 inbox entry, got $n"
 pass "inbox de-duplicates identical paths"
 
-# Case 7 (regression for issue #17): absolute path inside the repo
-# is normalized and matched against a relative `code:` entry.
-python3 -c "
-import re
-p='$LEAF'
-s=open(p).read()
-s=re.sub(r'dirty: true', 'dirty: false', s, count=1)
-open(p,'w').write(s)
-"
-rm -f "$AIMS_MEMORY_DIR/_inbox.md"
-printf '%s' "{\"tool_input\":{\"file_path\":\"$ROOT/src/foo.py\"}}" | \
-  bash "$ROOT/templates/hooks/post-edit-marker.sh"
-v=$(fm_get "$LEAF" dirty)
-[ "$v" = "true" ] || fail "case 7: absolute path inside repo should mark dirty, got '$v'"
-[ ! -f "$AIMS_MEMORY_DIR/_inbox.md" ] || \
-  fail "case 7: absolute matching path must NOT leak into _inbox.md"
-pass "marker normalizes absolute repo-path before matching (issue #17)"
+# Case 6: absolute path inside the repo is normalized and matched.
+rm -f "$INBOX"
+out=$(printf '%s' "{\"tool_input\":{\"file_path\":\"$TMP/src/foo.py\"}}" | bash "$HOOK")
+case "$out" in *"Foo module"*) ;; *) fail "case 6: absolute repo path should match";; esac
+[ ! -f "$INBOX" ] || fail "case 6: absolute matching path must NOT leak into inbox"
+pass "marker normalizes an absolute repo path before matching"
 
-# Case 8: absolute path under the skip-list (.claude/) is silently
-# dropped, not added to the inbox.
-python3 -c "
-import re
-p='$LEAF'
-s=open(p).read()
-s=re.sub(r'dirty: true', 'dirty: false', s, count=1)
-open(p,'w').write(s)
-"
-rm -f "$AIMS_MEMORY_DIR/_inbox.md"
-printf '%s' "{\"tool_input\":{\"file_path\":\"$ROOT/.claude/settings.json\"}}" | \
-  bash "$ROOT/templates/hooks/post-edit-marker.sh"
-v=$(fm_get "$LEAF" dirty)
-[ "$v" = "false" ] || fail "case 8: .claude/ edit should not mark anything"
-[ ! -f "$AIMS_MEMORY_DIR/_inbox.md" ] || \
-  fail "case 8: absolute .claude/ path must NOT leak into inbox"
-pass "marker skip-list catches absolute paths under .claude/"
+# Case 7: absolute path outside the repo bails out silently.
+rm -f "$INBOX"
+printf '%s' '{"tool_input":{"file_path":"/etc/passwd"}}' | bash "$HOOK" >/dev/null
+[ ! -f "$INBOX" ] || fail "case 7: outside-repo path must NOT be added to the inbox"
+pass "marker bails on absolute paths outside the repo"
 
-# Case 9: absolute path outside the repo bails out silently (no
-# match, no inbox pollution).
-rm -f "$AIMS_MEMORY_DIR/_inbox.md"
-printf '%s' '{"tool_input":{"file_path":"/etc/passwd"}}' | \
-  bash "$ROOT/templates/hooks/post-edit-marker.sh"
-[ ! -f "$AIMS_MEMORY_DIR/_inbox.md" ] || \
-  fail "case 9: outside-repo path must NOT be added to the inbox"
-pass "marker bails out on absolute paths outside the repo"
+# Case 8 (ADR-0014): a glob code_globs entry matches.
+LEAF2=".capsa/insights/code/loaders.md"
+cat > "$LEAF2" <<'EOF'
+---
+kind: code
+title: "Loaders"
+created: 2026-01-01
+updated: 2026-01-01
+code_globs: ["src/loaders/*.py"]
+tags: []
+---
 
-# Case 10 (ADR-0014): `code:` entry as a glob — src/loaders/*.py.
-bash "$ROOT/templates/memory/new-node.sh" interface/loaders module >/dev/null
-LEAF2="$AIMS_MEMORY_DIR/interface/loaders.md"
-python3 -c "
-p='$LEAF2'
-s=open(p).read()
-s=s.replace('code: []', 'code:\n  - src/loaders/*.py')
-open(p,'w').write(s)
-"
-rm -f "$AIMS_MEMORY_DIR/_inbox.md"
-printf '%s' '{"tool_input":{"file_path":"src/loaders/json_loader.py"}}' | \
-  bash "$ROOT/templates/hooks/post-edit-marker.sh"
-v=$(fm_get "$LEAF2" dirty)
-[ "$v" = "true" ] || fail "case 10: glob src/loaders/*.py should match src/loaders/json_loader.py, got '$v'"
-[ ! -f "$AIMS_MEMORY_DIR/_inbox.md" ] || \
-  fail "case 10: glob-matched path must NOT leak into inbox"
-pass "marker matches code: globs (ADR-0014)"
+## Purpose
+p
+## Invariants & gotchas
+i
+## Pointers
+ptr
+## Deltas
+EOF
+mkdir -p src/loaders; : > src/loaders/json_loader.py
+rm -f "$INBOX"
+out=$(printf '%s' '{"tool_input":{"file_path":"src/loaders/json_loader.py"}}' | bash "$HOOK")
+case "$out" in *"Loaders"*) ;; *) fail "case 8: glob should match json_loader.py";; esac
+[ ! -f "$INBOX" ] || fail "case 8: glob-matched path must NOT leak into inbox"
+pass "marker matches code_globs globs (ADR-0014)"
+
+# Case 9: computed staleness — find-dirty reports an insight whose code_globs
+# has an uncommitted change; a fresh (committed & up-to-date) insight is not.
+git add -A && git commit -qm seed
+# Now edit a tracked file without committing → src/foo.py is dirty.
+echo "// change" > src/foo.py
+out=$(bash .claude/memory/find-dirty.sh)
+case "$out" in *"$LEAF"*) ;; *) fail "case 9: find-dirty should list the stale insight (got: $out)";; esac
+pass "find-dirty reports the insight with an uncommitted code_globs change"
+
+# Case 10: `mark.sh <insight> consolidated` bumps updated: (clears staleness
+# for committed state — here still stale due to the uncommitted edit, so we
+# just assert the date bumped).
+bash .claude/memory/mark.sh "$LEAF" consolidated
+. .claude/memory/_lib.sh
+today_val=$(today)
+got=$(fm_get "$LEAF" updated)
+[ "$got" = "$today_val" ] || fail "case 10: expected updated=$today_val, got '$got'"
+pass "mark.sh consolidated bumps updated: to today"
+
+# Case 11 (convergence): after committing the same-day change, the insight is
+# no longer stale — committed changes are compared at DAY granularity, so a
+# commit made the same day it was consolidated does not re-flag it forever.
+git add -A && git commit -qm "same-day change"
+out=$(bash .claude/memory/find-dirty.sh)
+case "$out" in *"$LEAF"*) fail "case 11: same-day commit must NOT keep the insight stale (got: $out)";; esac
+pass "find-dirty converges: a same-day commit does not re-flag a consolidated insight"
 
 printf '\nAll marker tests passed.\n'

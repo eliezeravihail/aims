@@ -1,22 +1,21 @@
 #!/usr/bin/env bash
-# Behavior guard for the aims hooks (CLAUDE.md §4.2), rewritten for the
-# 2026-06-01 overhaul: HOOKS INFORM, THEY NEVER BLOCK.
+# Behavior guard for the aims hooks: HOOKS INFORM, THEY NEVER BLOCK (ADR-0020),
+# over a Capsa capsule with COMPUTED freshness.
 #
 # Invariants asserted:
-#   A. pre-write.sh NEVER exits non-zero (no path, with/without a plan) and
-#      injects a FACTUAL planning note (additionalContext) once per session on a
-#      source edit with no in-progress plan; nothing for docs/tests/.claude.
+#   A. pre-write.sh NEVER exits non-zero and injects a FACTUAL planning note
+#      once per session on a source edit with no in-progress plan; nothing for
+#      docs/tests/.claude/.capsa.
 #   B. prompt-submit.sh NEVER creates a .planning-lock; injects a factual note
-#      for actionable intents; nothing for questions.
-#   C. post-edit-marker.sh NEVER blocks; injects a factual node note + stamps an
-#      advisory marker; same-session refreshes silently; a fresh other-session
-#      marker is reported as concurrent (not clobbered); a stale one is taken over.
+#      for task-shaped prompts; nothing for trailing-? questions.
+#   C. post-edit-marker.sh NEVER blocks; names the matching insight + refreshes
+#      an advisory marker OUTSIDE the capsule; same-session refreshes silently;
+#      a fresh other-session marker is reported as concurrent (not clobbered);
+#      a stale one is taken over.
 #   D. session-start.sh never blocks; prints the factual conventions; still
 #      auto-clears an orphaned planning-lock left by an older session.
 #
-# jq-free: runs in any environment (the other tests/ need jq/python3).
-# Run from anywhere:  bash tests/inform-never-block.sh
-# Exercises the dogfood .claude/hooks (kept identical to templates/hooks).
+# jq-free. Exercises the dogfood .claude/hooks (kept identical to templates/).
 
 set -u
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
@@ -39,17 +38,15 @@ has "$out" "Project convention" "source edit injects factual planning note"
 has "$out" '"permissionDecision":"allow"' "decision is allow"
 out2=$(pw '{"session_id":"s1","tool_input":{"file_path":"C:/x/y/src/app/other.py"}}'); ok "$?" "0" "2nd source edit returns 0"
 ok "$out2" "" "2nd edit same session is silent (once-per-session)"
-od=$(pw '{"session_id":"s2","tool_input":{"file_path":"C:/x/y/docs/plans/p.md"}}'); ok "$?" "0" "docs path returns 0"
+od=$(pw '{"session_id":"s2","tool_input":{"file_path":"C:/x/y/docs/notes.md"}}'); ok "$?" "0" "docs path returns 0"
 ok "$od" "" "docs path injects nothing"
+oc=$(pw '{"session_id":"s2b","tool_input":{"file_path":"C:/x/y/.capsa/plans/0001-x.md"}}'); ok "$oc" "" ".capsa path injects nothing"
 ot=$(pw '{"session_id":"s2","tool_input":{"file_path":"C:/x/y/tests/test_a.py"}}'); ok "$ot" "" "tests path injects nothing"
 ok "$(ls "$LOCK" 2>/dev/null && echo y || echo n)" "n" "pre-write created NO lock"
 rm -f .claude/.aims-plan-note-* 2>/dev/null; rm -rf "$PD"
 
-echo "### B. prompt-submit.sh — never locks; factual note for actionable ###"
+echo "### B. prompt-submit.sh — never locks; factual note for task-shaped ###"
 PD=$(mktemp -d)
-# M1 fix: wrap raw prose as a UserPromptSubmit JSON payload so jq parses it.
-# A prior version piped bare text, which silently broke section B when jq was
-# installed (jq -r '.prompt' would error → empty prompt → hook short-circuited).
 ps(){
   rm -f "$LOCK"
   local payload
@@ -63,52 +60,46 @@ ps(){
   printf '%s' "$payload" | AIMS_PLAN_DIR="$PD" bash "$H/prompt-submit.sh" 2>/dev/null
 }
 lockstate(){ [ -f "$LOCK" ] && echo y || echo n; }
-o=$(ps 'please fix the crash that throws an exception'); ok "$(lockstate)" "n" "English bug: NO lock"
-has "$o" "Project convention" "English bug: factual note injected"
+o=$(ps 'please fix the crash that throws an exception'); ok "$(lockstate)" "n" "English task: NO lock"
+has "$o" "Project convention" "English task: factual note injected"
 o=$(ps 'תבצע אופטימיזציה כללית על כל המערכת שלנו בבקשה רבה'); ok "$(lockstate)" "n" "Hebrew prose: NO lock"
-# ADR-0029: questions are detected by trailing `?` only (language-neutral);
-# a question phrased WITHOUT `?` over-fires the note by design — the note is
-# self-conditional and cheap. So the suppression assertion uses `?`.
 o=$(ps 'מה אתה מציע לגבי הבאג הזה ואיך לתקן אותו בבקשה?'); ok "$(lockstate)" "n" "Hebrew question: NO lock"
 no "$o" "Project convention" "Hebrew ?-question: no planning note"
 rm -f "$LOCK"; rm -rf "$PD"
 
-echo "### C. post-edit-marker.sh — node note + advisory marker; never blocks ###"
+echo "### C. post-edit-marker.sh — insight note + advisory marker; never blocks ###"
 MD=$(mktemp -d)
-cat > "$MD/tnode.md" <<EOF
+mkdir -p "$MD/code" "$MD/markers"
+cat > "$MD/code/tnode.md" <<'EOF'
 ---
-node: test/tnode
-kind: module
-code:
-  - foo/bar.py
-dirty: false
-last_touched: 2026-01-01T00:00:00Z
-last_consolidated: 2026-01-01T00:00:00Z
+kind: code
+title: "Test tnode"
+created: 2026-01-01
+updated: 2026-01-01
+code_globs: ["foo/bar.py"]
+tags: []
 ---
 body
 EOF
-pem(){ printf '%s' "$1" | AIMS_MEMORY_DIR="$MD" bash "$H/post-edit-marker.sh" 2>/dev/null; }
+LEAF="$MD/code/tnode.md"
+MARKER="$MD/markers/$(printf '%s' "$LEAF" | tr '/' '_').marker"
+pem(){ printf '%s' "$1" | AIMS_INSIGHTS_DIR="$MD" AIMS_MARKER_DIR="$MD/markers" AIMS_INBOX="$MD/inbox.md" bash "$H/post-edit-marker.sh" 2>/dev/null; }
 P="$PWD/foo/bar.py"
 o=$(pem "{\"session_id\":\"A\",\"tool_input\":{\"file_path\":\"$P\"}}"); ok "$?" "0" "edit returns 0 (never blocks)"
-has "$o" "test/tnode" "injects the matching node name"
-ok "$(head -n1 "$MD/tnode.marker" 2>/dev/null)" "A" "advisory marker stamped with session id"
+has "$o" "Test tnode" "injects the matching insight title"
+ok "$(head -n1 "$MARKER" 2>/dev/null)" "A" "advisory marker stamped with session id"
 o=$(pem "{\"session_id\":\"A\",\"tool_input\":{\"file_path\":\"$P\"}}")
 no "$o" "is possible" "same session: no concurrent warning (silent refresh)"
-# fresh OTHER-session marker -> concurrent, not clobbered ("is possible" is unique
-# to the concurrent detail; the word "concurrent" also appears in the convention
-# boilerplate of every note, so it is not a distinctive marker).
-printf 'B\nfoo/bar.py\n' > "$MD/tnode.marker"
+printf 'B\nfoo/bar.py\n' > "$MARKER"
 o=$(pem "{\"session_id\":\"A\",\"tool_input\":{\"file_path\":\"$P\"}}")
 has "$o" "is possible" "fresh other-session marker -> concurrent warning"
-ok "$(head -n1 "$MD/tnode.marker")" "B" "fresh peer marker NOT clobbered"
-# stale OTHER-session marker -> taken over
-printf 'B\nfoo/bar.py\n' > "$MD/tnode.marker"
+ok "$(head -n1 "$MARKER")" "B" "fresh peer marker NOT clobbered"
+printf 'B\nfoo/bar.py\n' > "$MARKER"
 o=$(AIMS_NODE_LOCK_STALE_SEC=0 pem "{\"session_id\":\"A\",\"tool_input\":{\"file_path\":\"$P\"}}")
 has "$o" "taken over" "stale other-session marker -> taken over"
-ok "$(head -n1 "$MD/tnode.marker")" "A" "stale marker overwritten by us"
-# unrelated path -> no node note
+ok "$(head -n1 "$MARKER")" "A" "stale marker overwritten by us"
 o=$(pem "{\"session_id\":\"A\",\"tool_input\":{\"file_path\":\"$PWD/zzz/nope.py\"}}"); ok "$?" "0" "unrelated path returns 0"
-no "$o" "test/tnode" "unrelated path: no node note"
+no "$o" "Test tnode" "unrelated path: no insight note"
 rm -rf "$MD"
 
 echo "### D. session-start.sh — never blocks; conventions; clears orphan lock ###"

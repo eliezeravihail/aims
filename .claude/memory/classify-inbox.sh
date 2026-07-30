@@ -4,7 +4,11 @@
 # Per ADR-0009, classification runs in-band: the Stop hook (or plan close-out)
 # injects this prompt as additionalContext; the active Claude Code
 # session classifies each entry and either Edits it into an existing
-# node, scaffolds a new one, or surfaces it via AskUserQuestion.
+# insight's `code_globs`, scaffolds a new insight, or surfaces it via
+# AskUserQuestion.
+#
+# The inbox lives OUTSIDE the capsule (.claude/, Capsa §1.5) — it is aims
+# run-state, not a durable record.
 #
 # Usage:  classify-inbox.sh
 # Output: prompt text on stdout (empty if inbox is empty or absent).
@@ -19,8 +23,8 @@ if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
   cat <<'EOF'
 usage: classify-inbox.sh
 
-Emits a prompt for in-band classification of docs/memory/_inbox.md
-entries. Pure bash, no LLM call. Empty stdout if inbox is empty.
+Emits a prompt for in-band classification of the inbox entries. Pure
+bash, no LLM call. Empty stdout if inbox is empty.
 EOF
   exit 0
 fi
@@ -31,11 +35,11 @@ fi
 leaves_summary=""
 while IFS= read -r leaf; do
   [ -z "$leaf" ] && continue
-  node=$(fm_get "$leaf" node)
+  title=$(fm_get "$leaf" title)
   kind=$(fm_get "$leaf" kind)
-  paths=$(fm_list "$leaf" code | tr '\n' ',' | sed 's/,$//')
-  leaves_summary+="- ${leaf} (node=${node}, kind=${kind}, code=[${paths}])"$'\n'
-done < <(list_leaves)
+  paths=$(insight_globs "$leaf" | tr '\n' ',' | sed 's/,$//')
+  leaves_summary+="- ${leaf} (title=${title}, kind=${kind}, code_globs=[${paths}])"$'\n'
+done < <(list_insights)
 
 inbox_entries=$(cat "$INBOX")
 
@@ -43,20 +47,21 @@ cat <<EOF
 === INBOX CLASSIFICATION ===
 
 Each bullet in INBOX below is a source path that was edited this
-session but matched no existing node. For each, decide one of:
+session but matched no existing insight's code_globs. For each, decide
+one of:
 
-  - existing-node  → the path clearly belongs to an existing node.
-                     Action: Edit that node's frontmatter `code:` list
+  - existing-insight → the path clearly belongs to an existing insight.
+                     Action: Edit that insight's frontmatter `code_globs`
                      to include the new path, then remove the bullet
                      from $INBOX.
-  - new-node       → the path is significant enough to deserve its
-                     own node. Action: ask the user via
+  - new-insight    → the path is significant enough to deserve its
+                     own insight. Action: ask the user via
                      AskUserQuestion before scaffolding; on approval
-                     run new-node.sh and remove the bullet.
+                     run new-insight.sh and remove the bullet.
   - uncertain      → not enough signal. Action: leave the bullet in
                      place; surface to the user via AskUserQuestion.
 
-EXISTING NODES:
+EXISTING INSIGHTS:
 ${leaves_summary:-(none)}
 
 INBOX ($INBOX):

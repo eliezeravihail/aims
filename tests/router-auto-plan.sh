@@ -73,32 +73,36 @@ out=$(printf '%s' '{"prompt":"תוסיף מנגנון קאש לשכבת האחס
 note_has "$out" 'Project convention' || fail "case 7: task-shaped Hebrew prompt should get the note"
 pass "task-shaped Hebrew prompt → note (language-neutral gate)"
 
-# Case 8 (Track D): plan-state detection is header-scoped. A plan whose
-# header says completed but whose BODY quotes "Status: in-progress" (e.g.
-# in a code block) must NOT count as an active plan — so a task-shaped
-# prompt still gets the note. Requires _lib.sh in the sandbox (otherwise
-# the hook's grep FALLBACK — which is deliberately the old, header-blind
-# behavior — would kick in and the decoy would suppress).
-rm -rf .claude docs
-mkdir -p docs/plans .claude/memory
+# Case 8: plan-state detection reads the Capsa frontmatter `status:` field,
+# not the body. A plan whose frontmatter says completed but whose BODY quotes
+# "status: in_progress" (e.g. in a code block) must NOT count as an active
+# plan — so a task-shaped prompt still gets the note. Requires _lib.sh in the
+# sandbox so plans_with_status parses frontmatter (the grep fallback is
+# frontmatter-anchored too, but _lib is the real path).
+rm -rf .claude .capsa
+mkdir -p .capsa/plans .claude/memory
 cp "$ROOT/templates/memory/_lib.sh" .claude/memory/_lib.sh
-cat > docs/plans/2026-01-01-decoy.md <<'EOF'
-# Plan: decoy
-Status: completed
-Started: 2026-01-01
+cat > .capsa/plans/0001-decoy.md <<'EOF'
+---
+id: 1
+title: "decoy"
+kind: initiative
+status: completed
+opened: 2026-01-01
+completed: 2026-01-01
+---
 
 ## Outcome
-Done. The hook used to grep for:
+Done. The frontmatter status is completed; this body line —
 ```
-Status: in-progress
+status: in_progress
 ```
-which this line must no longer confuse.
+must no longer be confused for an active plan.
 EOF
-# With header-scoped parsing there is NO active plan, so neither the
-# short-follow-up suppression nor anything else may swallow a task-shaped
-# prompt because of the decoy.
+# With frontmatter-scoped parsing there is NO active plan, so nothing may
+# swallow a task-shaped prompt because of the decoy.
 out=$(printf '{"prompt":"add a cache layer to the storage adapter now"}' | bash "$HOOK" 2>/dev/null)
-note_has "$out" 'Project convention' || fail "case 8: decoy body Status must not suppress the note"
-pass "header-scoped Status — decoy 'in-progress' in body ignored"
+note_has "$out" 'Project convention' || fail "case 8: decoy body status must not suppress the note"
+pass "frontmatter-scoped status — decoy 'in_progress' in body ignored"
 
 printf '\nAll gate (inform-never-lock) tests passed.\n'

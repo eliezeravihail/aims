@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Capsa dependency",
+  "type": "object",
+  "required": [
+    "name",
+    "version",
+    "ecosystem",
+    "tier",
+    "direct"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "ecosystem": {
+      "enum": [
+        "pypi",
+        "npm",
+        "vendored-js",
+        "other"
+      ]
+    },
+    "license": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "tier": {
+      "enum": [
+        "allow",
+        "review",
+        "deny",
+        "unknown"
+      ]
+    },
+    "direct": {
+      "type": "boolean"
+    },
+    "decision_ref": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "hash": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "added": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "tier": {
+            "const": "deny"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "decision_ref"
+        ],
+        "properties": {
+          "decision_ref": {
+            "type": "integer"
+          }
+        }
+      }
+    }
+  ]
+}

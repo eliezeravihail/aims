@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # aims PreToolUse hook (Edit | Write | MultiEdit | NotebookEdit).
 #
-# PHILOSOPHY: inform, never block (docs/plans/2026-06-01-aims-overhaul.md).
+# PHILOSOPHY: inform, never block (ADR-0020).
 # This hook NEVER returns a blocking exit code and NEVER creates a lock. Its only
 # effect is to inject a FACTUAL project note (additionalContext) at the moment a
 # target-project SOURCE file is about to be edited without an in-progress plan —
 # making the session aware of the planning convention. Allowlisted surfaces
-# (docs/, tests/, *.md, .claude/) get nothing.
+# (.capsa/, docs/, tests/, *.md, .claude/) get nothing.
 #
 # "Source" is defined by EXCLUSION — anything not in the generic, tool-owned
 # allow-set. No project path is ever hardcoded (the consuming project's source
@@ -20,7 +20,7 @@
 
 set -u
 
-PLAN_DIR="${AIMS_PLAN_DIR:-docs/plans}"
+PLAN_DIR="${AIMS_PLAN_DIR:-.capsa/plans}"
 
 allow_plain() { exit 0; }   # allow, inject nothing
 
@@ -62,8 +62,9 @@ case "$ctarget" in
 esac
 
 # Generic, project-independent allow-set — never "source", never reminded.
+# .capsa/ is the passive capsule (records are data, edited freely).
 case "$target_rel" in
-  docs/*|*.md|*.txt|tests/*|*/tests/*|*_test.*|*test_*.*|*.spec.*|.claude/*) allow_plain ;;
+  .capsa/*|docs/*|*.md|*.txt|tests/*|*/tests/*|*_test.*|*test_*.*|*.spec.*|.claude/*) allow_plain ;;
 esac
 
 # A target-project source edit. If a plan is already in progress, the session is
@@ -75,10 +76,10 @@ for _d in .claude/memory templates/memory; do
   [ -r "$_d/_lib.sh" ] && { . "$_d/_lib.sh"; break; }
 done
 command -v plans_with_status >/dev/null 2>&1 || plans_with_status() {
-  grep -lE "^Status:[[:space:]]*$2" "$1"/*.md 2>/dev/null
+  grep -lE "^status:[[:space:]]*$2" "$1"/*.md 2>/dev/null
   return 0
 }
-if [ -d "$PLAN_DIR" ] && [ -n "$(plans_with_status "$PLAN_DIR" in-progress)" ]; then
+if [ -d "$PLAN_DIR" ] && [ -n "$(plans_with_status "$PLAN_DIR" in_progress)" ]; then
   allow_plain
 fi
 
@@ -90,7 +91,7 @@ MARK=".claude/.aims-plan-note-${sid:-default}"
 mkdir -p .claude 2>/dev/null && : > "$MARK" 2>/dev/null || true
 find .claude -maxdepth 1 -name '.aims-plan-note-*' -mtime +1 -delete 2>/dev/null || true
 
-NOTE="About to edit '${target_rel}'. No \`Status: draft\` or \`Status: in-progress\` plan in \`${PLAN_DIR}\` covers this prompt. Project convention: a non-trivial change is materialized as a draft plan in \`${PLAN_DIR}/<YYYY-MM-DD>-<slug>.md\` BEFORE the first source edit — the plan file is the contract; the edit comes after the draft lands on disk and the user confirms. A brief user approval (\"yes\"/\"do it\") of a conversational proposal is approval to enter Phase 2 (write the draft), not to skip to Phase 4 (implement). (Informational only; nothing is blocked. This note fires once per session — subsequent edits are silent.)"
+NOTE="About to edit '${target_rel}'. No \`status: draft\` or \`status: in_progress\` plan in \`${PLAN_DIR}\` covers this prompt. Project convention: a non-trivial change is materialized as a draft plan (a Capsa plan record in \`${PLAN_DIR}/NNNN-<slug>.md\`, frontmatter \`status: draft\`) BEFORE the first source edit — the plan file is the contract; the edit comes after the draft lands on disk and the user confirms. A brief user approval (\"yes\"/\"do it\") of a conversational proposal is approval to enter Phase 2 (write the draft), not to skip to Phase 4 (implement). (Informational only; nothing is blocked. This note fires once per session — subsequent edits are silent.)"
 
 if command -v jq >/dev/null 2>&1; then
   jq -nc --arg c "$NOTE" \

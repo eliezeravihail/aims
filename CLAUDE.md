@@ -8,30 +8,41 @@ so its hooks and conventions apply to its own development. Dogfooding.
 
 ## Build & test commands
 
-This plugin has no language toolchain — it is markdown + bash. The closest
-thing to a test is a syntax check on the hook scripts:
+This plugin has no language toolchain — it is markdown + bash. The tests
+are bash smoke tests plus the vendored Capsa validator:
 
-- Test: `bash -n templates/hooks/*.sh && bash -n .claude/hooks/*.sh && bash tests/copies-identical.sh && bash tests/inform-never-block.sh && bash tests/consolidate.sh && bash tests/router-auto-plan.sh`
+- Test: `bash -n templates/hooks/*.sh && bash -n .claude/hooks/*.sh && bash tests/copies-identical.sh && bash tests/inform-never-block.sh && bash tests/consolidate.sh && bash tests/router-auto-plan.sh && bash tests/marker.sh && bash tests/exit-plan-mode.sh && python3 validator/validate.py .capsa`
 - Lint / Typecheck: n/a
 
 (Run before declaring work complete.)
 
+## Storage: Capsa capsule (`.capsa/`)
+
+aims stores its own management truth as a conforming **Capsa 0.2.0**
+capsule at `.capsa/` — aims is the active self-maintenance layer over
+that passive capsule (decision 0031). The mapping: ADRs →
+`.capsa/decisions/`, plans → `.capsa/plans/`, the memory tree →
+`.capsa/insights/{code,dev,design}/`, CLAUDE.md's conventions →
+`.capsa/charter.md`, manifest → `.capsa/capsule.yaml`. The vendored
+`validator/validate.py` (stdlib only) checks conformance.
+
 ## Decision records
 
-Architecture decisions live in `docs/adr/`. Index: `docs/adr/README.md`.
-ADRs are proposed automatically during plan close-out (the implementation
-session decides per a confidence rule; see `/plan` Phase 4). For ad-hoc
-decisions outside a plan, write `docs/adr/NNNN-slug.md` directly with
-status `proposed`. Past decisions are append-only — to change one, write
-a new ADR that supersedes it.
+Architecture decisions are Capsa decision records in `.capsa/decisions/NNNN-slug.md`.
+They are proposed automatically during plan close-out (the implementation
+session decides per a confidence rule; see `/plan`). For ad-hoc decisions
+outside a plan, write one directly with `status: proposed`. Decisions are
+append-only — to change one, write a new decision that supersedes it
+(`supersedes:` / `superseded_by:` pointers), never edit a past body.
 
 ## Workflow
 
 Planning is a **behavior**, not a command. For a non-trivial change the
 assistant plans before implementing — read-only discovery, then a
-`Status: draft` plan in `docs/plans/`, then user approval, then
-implementation, then inline close-out (verify, auto-ADR, mark completed,
-memory consolidation). The full flow is in `.claude/commands/plan.md`.
+`status: draft` Capsa plan record in `.capsa/plans/`, then user approval,
+then implementation, then inline close-out (verify, auto-ADR, mark
+completed, insight consolidation). The full flow is in
+`.claude/commands/plan.md`.
 
 Two slash commands exist:
 
@@ -48,7 +59,7 @@ questions: just do the work inline. The hooks layer keeps you honest.
 **Approval is for Phase 2, not Phase 4.** When the user says
 `כן` / `yes` / `do it` to a *proposal* (a sketch the assistant offered
 in conversation), that approves moving to Phase 2 — writing the
-`Status: draft` plan to `docs/plans/` — NOT Phase 4 (implementing).
+`status: draft` plan to `.capsa/plans/` — NOT Phase 4 (implementing).
 The plan-on-disk + a re-confirm gate stays in force even when the
 conversational reply is brief. This closes the conversational-drift
 gap that the PreToolUse hook's state-aware note exists to anchor
@@ -79,22 +90,25 @@ mode ADR-0023 addresses; an announced skip is a recorded judgment.
 (`additionalContext`), never to stop an edit (ADR-0020). Discipline is
 achieved by awareness:
 
-- `UserPromptSubmit` injects the relevant memory node and, for a
+- `UserPromptSubmit` injects the relevant insight and, for a
   task-shaped prompt (length ≥ 30 chars, no code fence, not a trailing-`?`
   question — ADR-0029, no intent classes), a factual planning-convention
   note.
 - `PreToolUse` (`pre-write`) never blocks; on the first source edit of a
   session with no in-progress plan it injects the planning convention once.
-- `PostToolUse` (`post-edit-marker`) marks the affected memory leaf `dirty`,
-  injects a factual note naming the node to update, and stamps an advisory
-  marker (`<leaf>.marker` = session-id + mtime; NOT a block — the strict
-  `.lock` mutex was retired by ADR-0030). Concurrency: same
-  session refreshes silently; another session's marker older than
-  `AIMS_NODE_LOCK_STALE_SEC` (default 3600s) is taken over; a fresher one is
-  reported as a possible concurrent edit (ask the user before updating).
-- `Stop` (`stop-consolidate`) injects the throttled consolidation prompt:
-  **delta-append by default** (one dated line per change + minimal
-  truth-fixes), full compaction only past size thresholds (ADR-0028).
+- `PostToolUse` (`post-edit-marker`) names any insight whose `code_globs`
+  cover the edited file (its staleness is then **computed** from the
+  insight's `updated:` date vs git — Capsa §1.4, no stored flag), and
+  refreshes an advisory marker kept OUTSIDE the capsule (session-id + mtime;
+  NOT a block — the strict `.lock` mutex was retired by ADR-0030).
+  Concurrency: same session refreshes silently; another session's marker
+  older than `AIMS_NODE_LOCK_STALE_SEC` (default 3600s) is taken over; a
+  fresher one is reported as a possible concurrent edit (ask the user first).
+- `Stop` (`stop-consolidate`) injects the throttled consolidation prompt for
+  **stale** insights: **delta-append by default** (one dated line per change
+  + minimal truth-fixes), full compaction only past size thresholds
+  (ADR-0028). Consolidation ends with `mark.sh <insight> consolidated`,
+  which bumps `updated:` and clears the computed staleness.
 
 Injected text MUST be factual, never imperative ("CRITICAL: do X"). Behavior
 guard: `tests/inform-never-block.sh` (jq-free) + `tests/router-auto-plan.sh`.
