@@ -2,7 +2,7 @@
 kind: code
 title: "Historical breadcrumb for the memory tree's former user-facing"
 created: 2026-07-15
-updated: null
+updated: 2026-07-29
 code_globs: ["templates/commands/install-on.md", ".claude/commands/install-on.md"]
 tags: [memory]
 ---
@@ -33,3 +33,5 @@ exists.
 
 - 2026-05-27: `/memory-init`, `/memory-augment`, `/remember` removed;
   bootstrap+augment folded into `/install-on` Phase 5 — ADR-0010.
+- 2026-07-29: `/install-on` Phase 5 now bootstraps `.capsa/insights/`
+  (via `new-insight.sh`) instead of a `docs/memory/` tree — f62ef11.

@@ -2,19 +2,22 @@
 kind: code
 title: "Phase B: the throttled Stop-hook pass that keeps node bodies current."
 created: 2026-07-15
-updated: null
+updated: 2026-07-29
 code_globs: ["templates/hooks/stop-consolidate.sh", "templates/hooks/session-end.sh", "templates/hooks/pre-compact.sh", ".claude/hooks/stop-consolidate.sh", ".claude/hooks/session-end.sh", ".claude/hooks/pre-compact.sh", "templates/memory/consolidate.sh", "templates/memory/classify-inbox.sh"]
 tags: [memory]
 ---
 
 ## Purpose
 
-Phase B: the throttled Stop-hook pass that keeps node bodies current.
-Bash-only throttle (5 dirty nodes OR 30 min); when tripped, the hook
-assembles per-node prompts from `consolidate.sh` and injects them via
+Phase B: the throttled Stop-hook pass that keeps insight bodies current.
+Bash-only throttle (5 stale insights OR 30 min); when tripped, the hook
+assembles per-insight prompts from `consolidate.sh` and injects them via
 the Stop-hook `decision: block` + `reason` contract (ADR-0009/0026) so
-the active session Edits in-band and finishes each node with `mark.sh
-<node> consolidated`. Per ADR-0028 the default per-node action is
+the active session Edits in-band and finishes each with `mark.sh
+<insight> consolidated` (which bumps `updated:`, clearing the computed
+staleness). Stale insights come from `find-dirty.sh` (`updated:` vs git,
+Capsa §1.4). It also nudges plan close-out when a `.capsa/plans/` record
+is `in_progress`. Per ADR-0028 the default per-node action is
 **delta-append** (one dated line + minimal truth-fixes); **compact**
 (full 4-section rewrite folding deltas) only past thresholds
 (`AIMS_MEMORY_DELTA_MAX`=12 deltas or >150 body lines). SessionEnd is
@@ -23,8 +26,8 @@ compaction.
 
 ## Invariants & gotchas
 
-- The hook MUST NOT touch node frontmatter; only `mark.sh consolidated`
-  does.
+- The hook MUST NOT touch insight frontmatter; only `mark.sh
+  consolidated` writes `updated:`.
 - Stop is the only hook that may emit `decision: block` — it is the
   in-band continuation channel, not a refusal (ADR-0026).
   `hookSpecificOutput.additionalContext` is invalid for Stop and gets
@@ -32,20 +35,20 @@ compaction.
 - The throttle state file is bumped when the prompt is QUEUED (not
   after Edits land) to avoid re-nudge on the very next turn; SessionEnd
   must never bump it (M3).
-- **No consolidation mutex** (ADR-0030): dirty nodes are handed to the
-  model unfiltered; the worst concurrent case is a last-write-wins
-  delta append. The advisory `.marker` remains the cross-session
-  signal.
-- ADR-0027 discrepancy detection: a state snapshot
-  (`docs/memory/.last-report-snapshot`, gitignored) is written on
-  every emit; an unchanged snapshot on the next fire prepends a
-  factual "previous report did not match measured state" breadcrumb.
-  Drain-claim reply words are reserved for actually-drained state.
+- **No consolidation mutex** (ADR-0030): stale insights are handed to
+  the model unfiltered; the worst concurrent case is a last-write-wins
+  delta append. The advisory marker (outside the capsule) remains the
+  cross-session signal.
+- ADR-0027 discrepancy detection: a state snapshot (under the aims
+  state dir, outside the capsule) is written on every emit; an
+  unchanged snapshot on the next fire prepends a factual "previous
+  report did not match measured state" breadcrumb. Drain-claim reply
+  words are reserved for actually-drained state.
 - Evidence per source is commit summaries (`git log --pretty='%h %ad
   %s' --stat`, 2 KB cap) + uncommitted stat/patch (2 KB cap); delta
   dates come from the `%ad` field (today only for uncommitted-only
   changes). Payloads are fenced as data (ADR-0025).
-- Per-turn cap of 10 nodes; the rest re-queue on the next Stop.
+- Per-turn cap of 10 insights; the rest re-queue on the next Stop.
   bash ≥ 4 required (soft guard, exits 0 on 3.2).
 - open: should the per-turn cap (10) be configurable per project?
 
@@ -77,5 +80,9 @@ compaction.
   with threshold-gated compaction; evidence shrunk to commit summaries
   (2 KB caps) — ADR-0028.
 - 2026-07-15: strict `.lock` claim/reap/trap machinery removed from the
-  Stop hook — ADR-0030,
-  docs/plans/2026-07-15-memory-subsystem-diet.md.
+  Stop hook — ADR-0030, plan 0017.
+- 2026-07-29: retargeted to Capsa — consolidates STALE insights (from
+  `find-dirty` computing `updated:` vs git); ends each with `mark
+  consolidated` bumping `updated:`; throttle/snapshot state moved
+  outside the capsule; close-out nudge reads `.capsa/plans/` status —
+  f62ef11 (decision 0031).

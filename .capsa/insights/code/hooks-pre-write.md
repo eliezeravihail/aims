@@ -2,7 +2,7 @@
 kind: code
 title: "PreToolUse hook on `Edit | Write | MultiEdit | NotebookEdit`."
 created: 2026-07-15
-updated: null
+updated: 2026-07-29
 code_globs: ["templates/hooks/pre-write.sh", ".claude/hooks/pre-write.sh"]
 tags: [hooks]
 ---
@@ -20,12 +20,12 @@ moment of first edit.
 ## Invariants & gotchas
 
 - Never block, never `exit 2` — always exit 0 with `allow` (ADR-0020).
-- "Source" is defined by exclusion: `docs/*`, `*.md`, `*.txt`,
-  tests, and `.claude/*` get nothing; everything else counts. No
-  project path is hardcoded.
-- Plan-state detection is **header-scoped** via `plans_with_status`
-  from `_lib.sh` (first 5 lines only); the grep fallback (when
-  `_lib.sh` is absent) is deliberately the old header-blind behavior.
+- "Source" is defined by exclusion: `.capsa/*`, `docs/*`, `*.md`,
+  `*.txt`, tests, and `.claude/*` get nothing; everything else counts.
+  No project path is hardcoded.
+- Plan-state detection reads the Capsa plan frontmatter `status:`
+  (value `in_progress`) via `plans_with_status` from `_lib.sh`; the
+  grep fallback (when `_lib.sh` is absent) is frontmatter-anchored too.
 - `target` extraction handles both `tool_input.file_path` and
   `tool_input.path` (NotebookEdit); absolute paths normalize against
   `$PWD` / git toplevel, cross-platform (Windows drive letters, MSYS).
@@ -50,4 +50,7 @@ moment of first edit.
   (tabs/CR-safe additionalContext) — 9973146.
 - 2026-07-15: in-progress-plan check switched to header-scoped
   `plans_with_status` (body text quoting "Status: in-progress" no
-  longer counts) — docs/plans/2026-07-15-memory-subsystem-diet.md.
+  longer counts) — plan 0017 (memory-subsystem-diet).
+- 2026-07-29: reads `.capsa/plans/` (`status: draft`/`in_progress` YAML)
+  instead of `docs/plans/`; `.capsa/*` added to the allow-set; NOTE
+  wording Capsa-ised — f62ef11 (decision 0031).

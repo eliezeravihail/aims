@@ -2,7 +2,7 @@
 kind: code
 title: "Phase A of the two-phase maintenance design: a PostToolUse hook on"
 created: 2026-07-15
-updated: null
+updated: 2026-07-29
 code_globs: ["templates/hooks/post-edit-marker.sh", ".claude/hooks/post-edit-marker.sh", "templates/memory/mark.sh"]
 tags: [memory]
 ---
@@ -10,25 +10,26 @@ tags: [memory]
 ## Purpose
 
 Phase A of the two-phase maintenance design: a PostToolUse hook on
-Edit/Write/MultiEdit/NotebookEdit that flips `dirty: true` on every
-node whose `code:` references the edited file (via `mark.sh`), stamps
-an advisory `<leaf>.marker`, and injects a factual note naming the
-stale node. Unknown paths go to `docs/memory/_inbox.md`. Dumb on
-purpose — judgment is deferred to Phase B (ADR-0007/0009). Never
-blocks, always exits 0.
+Edit/Write/MultiEdit/NotebookEdit that names every insight whose
+`code_globs` covers the edited file (via `mark.sh` + `list_insights`),
+refreshes an advisory marker kept OUTSIDE the capsule (Capsa §1.5), and
+injects a factual note. Staleness itself is COMPUTED (Capsa §1.4), not
+flagged — the marker is only a cache. Unmatched paths go to the
+out-of-capsule inbox. Dumb on purpose — judgment is deferred to Phase B
+(ADR-0007/0009). Never blocks, always exits 0.
 
 ## Invariants & gotchas
 
 - Never blocks, never exits non-zero — a broken marker must not block
   the user's edit.
-- Skip-list: `.claude/*`, `.git/*`, vendored dirs, `docs/memory/*`,
-  and `docs/plans/*` (plan files are workflow artifacts referenced via
-  `sessions:`, never `code:`). `docs/adr/` IS tracked — nodes may cite
-  ADRs in `code:` so doctrine changes dirty-mark them (D2).
-- The advisory `.marker` (session-id + mtime) is the ONLY sidecar
-  since ADR-0030 retired the strict `.lock`. Same session refreshes
-  silently; another session's marker younger than
-  `AIMS_NODE_LOCK_STALE_SEC` (3600s) → "possible concurrent edit"
+- Skip-list: `.capsa/*` (the capsule is data, not tracked code),
+  `.claude/*`, `.git/*`, and vendored dirs (`node_modules`/`dist`/
+  `build`). Decision records live in `.capsa/decisions/` and belong in
+  insight `## Pointers` prose, not `code_globs`.
+- The advisory marker (session-id + mtime, kept under `.claude/`,
+  §1.5) is the ONLY sidecar since ADR-0030 retired the strict `.lock`.
+  Same session refreshes silently; another session's marker younger
+  than `AIMS_NODE_LOCK_STALE_SEC` (3600s) → "possible concurrent edit"
   note (ask the user before updating); older → taken over.
 - Marker writes are symlink-guarded + O_EXCL (M4) — a planted symlink
   cannot redirect the write.
@@ -51,4 +52,8 @@ blocks, always exits 0.
 - 2026-07-15: `docs/plans/*` added to the skip-list (drafts no longer
   leak into `_inbox.md`); `mark.sh consolidated` now triggers
   `readme-sync.sh` and no longer removes `.lock` sidecars — ADR-0030,
-  docs/plans/2026-07-15-memory-subsystem-diet.md.
+  plan 0017.
+- 2026-07-29: retargeted to Capsa — names insights by `code_globs`,
+  staleness computed not flagged, markers + inbox moved OUTSIDE the
+  capsule (§1.5), skip-list now `.capsa/*`+`.claude/*` — f62ef11
+  (decision 0031).

@@ -2,7 +2,7 @@
 kind: code
 title: "Bash smoke tests for aims internals — no Anthropic API, no network."
 created: 2026-07-15
-updated: null
+updated: 2026-07-29
 code_globs: ["tests/marker.sh", "tests/consolidate.sh", "tests/exit-plan-mode.sh", "tests/router-auto-plan.sh", "tests/inform-never-block.sh", "tests/copies-identical.sh"]
 tags: [testing]
 ---
@@ -14,7 +14,8 @@ Bash smoke tests for aims internals — no Anthropic API, no network.
 glob matching. `consolidate.sh`: Stop block-JSON, no-`.lock` +
 marker-independence (ADR-0030), delta vs compact mode selection
 (ADR-0028), throttle, and the three ADR-0027 discrepancy cases.
-`exit-plan-mode.sh` (4 cases): the harness-bridge hook.
+`exit-plan-mode.sh` (6 cases): the harness-bridge hook writing Capsa
+plan records + validator conformance.
 `router-auto-plan.sh` (8 cases): the ADR-0029 shape gate incl.
 language-neutral positive/negative and the Track D header-scoped
 Status decoy. `inform-never-block.sh`: never-block + once-per-session
@@ -50,5 +51,10 @@ invariants. `copies-identical.sh`: distribution-pair byte identity.
   positive + the Status-decoy case); `consolidate.sh` updated for
   delta/compact modes and lock retirement; `inform-never-block.sh`
   Hebrew-question case now uses a trailing `?` (non-`?` questions
-  over-fire the note by design) — ADR-0028/0029/0030,
-  docs/plans/2026-07-15-memory-subsystem-diet.md.
+  over-fire the note by design) — ADR-0028/0029/0030, plan 0017.
+- 2026-07-29: all six suites rewritten for the `.capsa/` layout +
+  computed freshness — marker/consolidate build isolated git repos
+  with `.capsa/insights`; exit-plan-mode asserts Capsa plan records
+  (`status: in_progress`, auto id) + validator conformance; router
+  case 8 uses a `.capsa/plans` frontmatter-status decoy — f62ef11
+  (decision 0031).

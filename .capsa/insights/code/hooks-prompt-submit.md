@@ -2,7 +2,7 @@
 kind: code
 title: "UserPromptSubmit hook — two jobs in **one** `additionalContext`"
 created: 2026-07-15
-updated: null
+updated: 2026-07-29
 code_globs: ["templates/hooks/prompt-submit.sh", ".claude/hooks/prompt-submit.sh"]
 tags: [hooks]
 ---
@@ -13,10 +13,10 @@ UserPromptSubmit hook — two jobs in **one** `additionalContext`
 emission: (1) **shape-gated convention note** (ADR-0029): a task-shaped
 prompt (length ≥ 30 chars ∧ ≤ 4096 ∧ no ``` fence ∧ not ending in `?`)
 gets the factual planning-convention paragraph — no intent classes, no
-keyword lists, language-neutral; (2) **memory injector** (ADR-0016):
-every node whose `code:` glob is plausibly referenced by the prompt has
-its body injected. Suppression first: slash-prefix → short prompt
-during an in-progress plan → empty prompt.
+keyword lists, language-neutral; (2) **insight injector** (ADR-0016):
+every Capsa insight whose `code_globs` is plausibly referenced by the
+prompt has its body injected. Suppression first: slash-prefix → short
+prompt during an in_progress plan → empty prompt.
 
 ## Invariants & gotchas
 
@@ -29,11 +29,11 @@ during an in-progress plan → empty prompt.
 - The grep fallback for `plans_with_status` (when `_lib.sh` is absent)
   is header-blind by design — sandbox tests that exercise Track D must
   copy `_lib.sh` in.
-- Memory matching: literal prefix of each `code:` glob (cut at first
-  `*?[`) substring-tested against the prompt; bare-basename word match
-  (≥5 chars) for non-glob entries. Per-session de-dup at
-  `.claude/memory/.injected-<session_id>` (pruned after 7 days); total
-  injection capped at `SIZE_CAP=8192`.
+- Insight matching: literal prefix of each `code_globs` entry (cut at
+  first `*?[`) substring-tested against the prompt; bare-basename word
+  match (≥5 chars) for non-glob entries. Per-session de-dup at
+  `<state-dir>/.injected-<session_id>` (outside the capsule, §1.5;
+  pruned after 7 days); total injection capped at `SIZE_CAP=8192`.
 - Convention note + memory injection are independent; a question can
   get memory injection with no note.
 - open: a `!`-prefix hook-time opt-out (`!fix typo`) — deferred until
@@ -55,4 +55,7 @@ during an in-progress plan → empty prompt.
   "imperative questions auto-engage" false positive dissolved by
   design (questions = trailing `?` only) — ADR-0029.
 - 2026-07-15: in-progress-plan suppression switched to header-scoped
-  `plans_with_status` — docs/plans/2026-07-15-memory-subsystem-diet.md.
+  `plans_with_status` — plan 0017 (memory-subsystem-diet).
+- 2026-07-29: memory injector reads Capsa `code_globs` from
+  `.capsa/insights/`; injected-state moved outside the capsule; plan
+  state reads `.capsa/plans/` `status:` — f62ef11 (decision 0031).
