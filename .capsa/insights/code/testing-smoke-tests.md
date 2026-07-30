@@ -2,7 +2,7 @@
 kind: code
 title: "Bash smoke tests for aims internals — no Anthropic API, no network."
 created: 2026-07-15
-updated: 2026-07-29
+updated: 2026-07-30
 code_globs: ["tests/marker.sh", "tests/consolidate.sh", "tests/exit-plan-mode.sh", "tests/router-auto-plan.sh", "tests/inform-never-block.sh", "tests/copies-identical.sh"]
 tags: [testing]
 ---
@@ -10,8 +10,8 @@ tags: [testing]
 ## Purpose
 
 Bash smoke tests for aims internals — no Anthropic API, no network.
-`marker.sh` (10 cases): `path_matches` / marker hook / inbox dedup /
-glob matching. `consolidate.sh`: Stop block-JSON, no-`.lock` +
+`marker.sh` (11 cases): `path_matches` / marker hook / inbox dedup /
+glob matching / computed-staleness convergence. `consolidate.sh`: Stop block-JSON, no-`.lock` +
 marker-independence (ADR-0030), delta vs compact mode selection
 (ADR-0028), throttle, and the three ADR-0027 discrepancy cases.
 `exit-plan-mode.sh` (6 cases): the harness-bridge hook writing Capsa

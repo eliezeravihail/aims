@@ -2,7 +2,7 @@
 kind: code
 title: "The bash helpers forming the deterministic substrate for the memory"
 created: 2026-07-15
-updated: 2026-07-29
+updated: 2026-07-30
 code_globs: ["templates/memory/_lib.sh", "templates/memory/mark.sh", "templates/memory/new-insight.sh", "templates/memory/find-dirty.sh", "templates/memory/lint.sh", "templates/memory/consolidate.sh", "templates/memory/classify-inbox.sh", "templates/memory/doctor.sh", ".claude/memory/_lib.sh", ".claude/memory/doctor.sh"]
 tags: [memory]
 ---
@@ -22,8 +22,10 @@ Capsa frontmatter `status:` field. Six thin commands sit on top:
 ## Invariants & gotchas
 
 - **Staleness is COMPUTED, never stored** (Capsa §1.4): `insight_stale`
-  returns true when a `code_globs` file has an uncommitted change, a
-  commit newer than the insight's `updated:` date, or (no git) a newer
+  returns true when a `code_globs` file has an uncommitted change, or a
+  commit dated a calendar day AFTER `updated:` (compared at DAY
+  granularity — a same-day commit counts as captured, so consolidation
+  converges instead of re-flagging forever), or (no git) a later-day
   mtime. There is no `dirty` flag. `mark.sh consolidated` only bumps
   `updated:` (via `fm_set`); it writes no other state and has no
   README-sync side effect.
@@ -81,3 +83,7 @@ Capsa frontmatter `status:` field. Six thin commands sit on top:
   `new-node.sh`→`new-insight.sh`; `check-refs.sh`+`readme-sync.sh`
   removed; the `dirty`/`last_touched`/`last_consolidated` triple is
   gone — f62ef11 (decision 0031).
+- 2026-07-30: `insight_stale` compares committed changes at DAY
+  granularity (truncate commit epoch to UTC day) so a same-day commit
+  no longer re-flags a just-consolidated insight — fixes a
+  non-converging Stop-hook loop; uncommitted changes still count.

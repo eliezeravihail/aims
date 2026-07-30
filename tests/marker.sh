@@ -142,4 +142,12 @@ got=$(fm_get "$LEAF" updated)
 [ "$got" = "$today_val" ] || fail "case 10: expected updated=$today_val, got '$got'"
 pass "mark.sh consolidated bumps updated: to today"
 
+# Case 11 (convergence): after committing the same-day change, the insight is
+# no longer stale — committed changes are compared at DAY granularity, so a
+# commit made the same day it was consolidated does not re-flag it forever.
+git add -A && git commit -qm "same-day change"
+out=$(bash .claude/memory/find-dirty.sh)
+case "$out" in *"$LEAF"*) fail "case 11: same-day commit must NOT keep the insight stale (got: $out)";; esac
+pass "find-dirty converges: a same-day commit does not re-flag a consolidated insight"
+
 printf '\nAll marker tests passed.\n'

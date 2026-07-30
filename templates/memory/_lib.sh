@@ -233,11 +233,19 @@ insight_updated_epoch() {
 }
 
 # COMPUTED staleness (no stored flag; Capsa §1.4). An insight is stale iff one
-# of its code_globs has a committed change newer than `updated:`, or an
-# uncommitted change, or (no git) a file mtime newer than `updated:`.
+# of its code_globs has an UNCOMMITTED change, or a COMMITTED change dated a
+# calendar day AFTER `updated:`, or (no git) a file mtime on a later day.
 # Exit 0 = stale, 1 = fresh. dev/design insights (no globs) are never stale.
+#
+# Committed changes are compared at DAY granularity, not second granularity:
+# `updated:` is a date (Capsa insights carry a date, not a timestamp), and
+# `mark.sh consolidated` sets it to *today*. A second-granularity `>` would
+# make any same-day commit re-flag the insight the instant it is consolidated
+# — a non-converging loop where consolidation never clears staleness within a
+# day. Truncating the commit epoch to its UTC day makes a same-day commit count
+# as captured (the in-session edit is still caught by the uncommitted check).
 insight_stale() {
-  local f="$1" up g last in_git=0 p m
+  local f="$1" up g last last_day in_git=0 p m m_day
   up=$(insight_updated_epoch "$f")
   git rev-parse --is-inside-work-tree >/dev/null 2>&1 && in_git=1
   while IFS= read -r g; do
@@ -249,12 +257,14 @@ insight_stale() {
       fi
       last=$(git log -1 --format=%ct -- "$g" 2>/dev/null || echo 0)
       case "$last" in ''|*[!0-9]*) last=0 ;; esac
-      [ "$last" -gt "$up" ] && return 0
+      last_day=$(( last - (last % 86400) ))   # truncate to UTC day start
+      [ "$last_day" -gt "$up" ] && return 0
     else
       for p in $g; do
         [ -e "$p" ] || continue
         m=$(stat -c %Y "$p" 2>/dev/null || stat -f %m "$p" 2>/dev/null || echo 0)
-        [ "$m" -gt "$up" ] && return 0
+        m_day=$(( m - (m % 86400) ))
+        [ "$m_day" -gt "$up" ] && return 0
       done
     fi
   done < <(insight_globs "$f")
