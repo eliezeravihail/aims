@@ -1,6 +1,22 @@
 # {{PROJECT_NAME}}
 
-<!-- aims-managed sections below; safe to edit, but keep the section headings stable. -->
+<!-- aims-managed section; safe to edit, but keep the heading stable. -->
+
+## Design & documentation (aims)
+
+This project uses **aims**: design is the goal, and the durable design knowledge lives in a **capsa**
+capsule at `.capsa/` — one record per fact, placed in the tree at the node it governs (placement is
+scope). Work the design through the `/aims-*` commands.
+
+- **Where design knowledge goes:** a boundary/ownership/architecture decision → `.capsa/decisions/`
+  (append-only ADRs; supersede, never rewrite); a requirement/rule → `.capsa/requirements/`; the
+  structure of a part → `.capsa/components/<slug>/component.md`; an engineering lesson →
+  `.capsa/insights/`.
+- **Anchor every record on filing** with `python3 .aims/aims_anchor.py` — `anchors:` for a record about
+  file content, `--shape` for one about structure. Never hash by hand.
+- **Read by placement:** at a node, read the normative records on the walk to the capsule root plus
+  in-scope insights — not the whole capsule. If the read-time hook flags a record as possibly stale,
+  re-verify it against the current code before relying on it.
 
 ## Build & test commands
 
@@ -9,75 +25,3 @@
 - Typecheck: `{{TYPECHECK_CMD}}`
 
 (Run before declaring work complete.)
-
-## Decision records
-
-Architecture decisions live in `{{ADR_DIR}}/`. Index: `{{ADR_DIR}}/README.md`.
-ADRs are proposed automatically during plan close-out (the implementation
-session decides per a confidence rule; see `/plan` Phase 4). For ad-hoc
-decisions outside a plan, write `{{ADR_DIR}}/NNNN-slug.md` directly with
-status `proposed`. Past decisions are append-only — to change one, write
-a new ADR that supersedes it.
-
-## Workflow
-
-Two slash commands only:
-
-- `/plan <task>` — non-trivial change. Read-only planning, durable
-  artifact in `docs/plans/`, then implementation, then inline
-  close-out (verify, auto-ADR, mark completed, memory consolidation).
-- `/install-on <path>` — install or re-install aims (idempotent).
-
-Everything else (bug-fix patches, refactors with obvious scope,
-mechanical edits, ad-hoc questions): just do the work inline.
-
-## Models policy
-
-- Planning + plan close-out → **Opus** (auto via slash command frontmatter).
-- Implementation → any model — switch with `/model <name>` per preference.
-
-## Hooks
-
-**aims hooks inform; they never block.** There is no planning lock and no
-`block` mode — a hook's only effect is to inject **factual** context
-(`additionalContext`), never to stop an edit (ADR-0020). Discipline is
-achieved by awareness:
-
-- `UserPromptSubmit` injects the relevant memory node and, for an actionable
-  prompt, a factual planning-convention note.
-- `PreToolUse` (`pre-write`) never blocks; on the first source edit of a
-  session with no in-progress plan it injects the planning convention once.
-- `PostToolUse` (`post-edit-marker`) marks the affected memory leaf `dirty`,
-  injects a factual note naming the node to update, and stamps an advisory
-  marker (`<leaf>.lock` = session-id + mtime; NOT a block). Concurrency: same
-  session refreshes silently; another session's marker older than
-  `AIMS_NODE_LOCK_STALE_SEC` (default 3600s) is taken over; a fresher one is
-  reported as a possible concurrent edit (ask the user before updating).
-
-Injected text MUST be factual, never imperative ("CRITICAL: do X").
-
-## Memory tree
-
-The repo carries a navigable memory layer under `docs/memory/` (see
-`docs/adr/0007-tree-based-memory-with-auto-maintenance.md` for the
-full design). It is a NAVIGATOR over `CLAUDE.md`, ADRs, plans, and
-external memory — never a copy of them.
-
-- The tree is bootstrapped by `/install-on` (Phase 5) — fresh
-  install runs a cold-start scan; re-install only augments
-  (adds nodes for newly-discovered code areas; never overwrites
-  existing node bodies).
-- The `PostToolUse` marker hook flips affected leaves to
-  `dirty: true` after every Edit/Write, and (per §Hooks) injects a
-  factual note naming the node to update + stamps an advisory marker.
-  The `Stop` hook consolidates dirty leaves in-band (ADR-0009), but
-  only when the throttle trips (5 dirty leaves OR 30 min since last
-  consolidation). `SessionEnd` runs the same consolidation
-  un-throttled if the CLI is actually closed.
-- Plan close-out (inline at end of `/plan` implementation) also
-  forces consolidation of nodes touched by the plan.
-- To browse the tree manually: `cat docs/memory/README.md`, then any
-  leaf under `docs/memory/<tag>/<name>.md`.
-
-Project conventions (build/test, models, hooks, layout) stay in
-CLAUDE.md; the tree references them via `claude_md_refs:`.

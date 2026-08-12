@@ -1,341 +1,62 @@
 # aims
-*AI Manager System*
 
-📄 **Site:** https://eliezeravihail.github.io/aims/
+**aims makes design the goal of coding-agent work — and makes the design knowledge durable.**
 
-Lean code-development discipline for Claude Code. Two slash commands,
-project-local hooks that inform but never block, idempotent bootstrap.
-No multi-agent pipeline, no orchestration overhead — just the discipline
-that makes single-dispatch sessions reliable on Opus / Sonnet baselines.
+It is [Balash](https://github.com/eliezeravihail/balash)'s design method carried onto a
+[capsa](https://github.com/eliezeravihail/capsa) knowledge layer. The method produces genuinely
+well-designed software as a product grows; the capsa layer files the design knowledge it produces —
+intent, the substrate, the architecture, the decisions and lessons behind them — as durable records
+that survive across sessions and years, so a later **clean session reads the prior conclusions and
+builds on them instead of re-deriving from scratch**.
 
-## What this is for (and what it isn't)
+## The three layers
 
-The point of aims is **not** to make the agent smarter or more correct.
-The model's reasoning capability is whatever it is — aims doesn't change it.
+1. **The design method (the brain).** A Guide holds the product vision and hands a capable Worker one
+   *design/quality objective* at a time, with the feature as a constraint; then measures the result and
+   chooses the next. Discovery, a feasibility gate, ownership/encapsulation, a subtractive pass, a
+   review panel. Lives in [`skills/aims-guide/`](skills/aims-guide/SKILL.md).
+2. **The durable knowledge layer.** The method files ADRs, requirements, components, and insights into
+   the product's `.capsa/` capsule — **one record per fact, placed in a tree where placement is
+   scope**, so a later session reads only what is in force where it is working, never one file that
+   bloats. Mapping: [`skills/aims-guide/references/design-record.md`](skills/aims-guide/references/design-record.md);
+   format: [`docs/format-profile.md`](docs/format-profile.md); vendored spec: [`vendor/capsa/`](vendor/capsa/).
+3. **One advisory signal.** Each record is *anchored* to the code it describes when filed; a read-time
+   hook re-hashes the anchor and, if the code drifted, flags *"re-verify"* when a later session reads
+   the record. It **never blocks**. That replaces keeping docs true by hand.
 
-What aims actually does:
+## Commands
 
-- **Keeps the human side of the work organized.** Plans on disk, decisions
-  in ADRs, a router that asks before edits — a workflow you can fall into
-  without having to remember ceremony every time.
-- **Lets the agent know the project better.** CLAUDE.md, the ADR log, and
-  plans on disk all become durable context that survives session
-  compaction and crosses sessions. The Claude session that picks up your
-  work tomorrow has access to what was decided yesterday and why.
+- `/aims-plan` — choose one design objective, file the durable records it commits to, draft the Worker
+  handoff; stop for review.
+- `/aims-build` — delegate the objective to a Worker (or run it inline); stop before evaluation.
+- `/aims-review` — measure the result against the exit criteria with the review panel (also works
+  standalone on any diff/branch/PR).
+- `/aims-plan-and-build` — the full autonomous loop, pausing only for open product decisions.
+- `/install-on <path>` — install aims' per-project pieces (the two hooks + capsule scaffolding) into a
+  target project.
 
-What aims explicitly doesn't try to do:
+## The staleness model — the anchor follows the claim
 
-- It doesn't change how the model reasons.
-- It doesn't turn wrong answers into right ones.
-- It doesn't substitute for tests, domain knowledge, or careful prompts.
-- It doesn't add an "intelligence layer" via routers, validators, or
-  multi-agent orchestration. (That was the previous design; see ADR-0002
-  for why we dropped it.)
+| A record claims about… | Anchor | Drift = |
+|---|---|---|
+| **file content** | `anchors:` — whole-file content hash per file | the file changed |
+| **arrangement / structure** | `shape:` — child-name fingerprint of a subtree (content-blind) | the shape changed (moved / renamed / merged) |
+| **a content invariant** ("core stays pure") | just `anchors:` on the files that embody it | a governed file changed → re-verify |
 
-If the agent is making bad calls, aims will not fix that — better tests,
-clearer requirements, or a different model will. aims addresses a different
-problem: the human-side cost of remembering what was decided and why,
-session after session.
+The hook re-reads the *actual* file/tree, so it catches drift whether the change went through aims or
+was made by hand or another tool.
 
-## What you get
+## What aims deliberately does not have
 
-Planning is a project **behavior**, not a command to remember (ADR-0022).
-For a non-trivial change, the assistant runs read-only discovery → writes a
-`Status: draft` plan to `docs/plans/` → asks for approval → implements →
-inline close-out. The `prompt-submit` hook describes this convention
-factually for every actionable prompt.
+No memory tree, no consolidation/doctor/lint machinery, no write hook, no planning lock. capsa's
+passivity plus the method's documentation discipline keep design rationale current by construction; the
+one read-time advisory is the whole of the active machinery. Content-invariant *enforcement* (a linter)
+is an opt-in fitness-function emitting capsa `X-` findings — never part of the passive layer.
 
-Two slash commands exist as optional shortcuts (see ADR-0010, ADR-0022):
+## Name
 
-| Command              | What it does                                                                                          |
-|----------------------|--------------------------------------------------------------------------------------------------------|
-| `/plan <task>`       | Dispatches Phase 1-2 to an Opus subagent (read-only discovery + draft write); main session resumes for approval / implementation / close-out. Use when the session model is not Opus. |
-| `/install-on <path>` | Bootstrap (or idempotently re-install) ADRs, hooks, memory tree, CLAUDE.md.                            |
+aims = AI Manager System, and "aims / goals": the design *aim* is what the system manages.
 
-Everything that used to be its own command now happens **inline**, with no
-command to remember:
+## License
 
-- **Plan close-out** (verify steps, run `## Verification`, decide ADRs, mark
-  the plan `completed`, consolidate memory) runs at the end of the
-  implementation session, nudged by the Stop hook when an `in-progress` plan
-  exists.
-- **ADRs** are auto-decided per change: created when it's a clear
-  architectural commitment, skipped for bug/refactor/doc/test/mechanical work,
-  asked only when borderline. They always start `proposed`.
-- **Memory bootstrap** runs at the end of `/install-on`; maintenance after
-  that is the automatic marker + consolidation loop (ADR-0007 / ADR-0009).
-- **Mechanical edits and notes** are just ordinary edits — do the work.
-
-`/plan` does NOT switch the main session model — only the Phase 1-2
-subagent runs on Opus (ADR-0022). Implementation and close-out run on
-whatever the main session is on.
-
-## Hooks (per-project, installed by `/install-on`)
-
-- **SessionStart** — surfaces in-progress plans, recent ADRs, and the
-  memory-tree overview.
-- **UserPromptSubmit** — **shape-gated convention note** (informs, never
-  locks). For a task-shaped prompt (length ≥ 30 chars, no code fence, not
-  a trailing-`?` question) injects a FACTUAL planning-convention note —
-  no intent classification, language-neutral by construction (ADR-0029).
-  It never creates a lock. Suppresses on slash-prefixed prompts and short
-  follow-ups. See ADR-0020 + ADR-0029.
-- **PreToolUse** (`pre-write`) — never blocks. On the first source edit of a
-  session with no `Status: draft`/`Status: in-progress` plan in `docs/plans/`,
-  injects a **state-aware** factual note that names the specific file being
-  edited, the missing plan, and the approval-semantics rule (brief
-  `yes`/`do it` approvals authorize Phase 2, not Phase 4). "Source" is
-  defined by exclusion (anything outside `docs/`, `tests/`, `*.md`,
-  `.claude/`); no project path is hardcoded. The note fires once per
-  session. See ADR-0020 + ADR-0023.
-- **PostToolUse** (`post-edit-marker`) — when an edit touches a file a memory
-  node references, flags that node `dirty`, injects a factual note naming the
-  node to update, and stamps an **advisory** marker (`<leaf>.marker`; NOT a
-  block) for cross-session awareness (ADR-0007, ADR-0024/0030 — the strict
-  `.lock` mutex is retired).
-- **Stop** (`stop-consolidate`) — throttled. Injects the in-band memory
-  consolidation prompt for any `dirty` nodes: **delta-append by default**,
-  full compaction only past size thresholds (ADR-0009/0028). Also emits the
-  plan close-out nudge when an `in-progress` plan exists (ADR-0010).
-- **SessionEnd** — flushes any pending memory state at session shutdown.
-
-All injected text is factual, never an imperative command (ADR-0020): an
-imperative trips Claude's prompt-injection defense and is shown to the user
-instead of being treated as context. No hook ever blocks an edit — there is no
-`aims-mode` and no planning lock.
-
-When the Stop / consolidation-update hook reports its result, that report
-is emitted as a single short line `===[aims: <message>]===` — examples:
-`===[aims: nodes updated]===`, `===[aims: queue drained]===`,
-`===[aims: 4 dirty]===`. The marker applies ONLY to the update-hook
-result, not to regular conversational mentions of aims topics elsewhere
-in a reply (ADR-0021).
-
-## A note on plugin sprawl
-
-Command and tool pollution in AI coding environments is a real and growing
-problem, not a hypothetical one. By early 2026 unofficial registries index
-**16,000+ MCP servers** and GitHub hosts **20,000+ repositories**
-implementing them. Teams routinely exceed Claude's 128-tool soft ceiling,
-at which point tool-calling accuracy degrades — and every enabled plugin
-contributes its full surface area (command definitions, agent descriptions,
-MCP schemas) to the model's context on every turn, whether or not the
-current task actually needs it. Five MCP servers with thirty tools each is
-already 150 tool definitions, ~150K tokens, injected into every prompt.
-
-The community is exploring partial mitigations:
-
-- **Claude Code namespaces** plugin commands (`pluginname:command`) to
-  avoid hard collisions. Helpful, but namespacing is mandatory in
-  practice even when docs say otherwise (issue #15882), and subagents
-  struggle to discover namespaced commands (issue #11328).
-- **MCP gateways** apply the API-gateway pattern to tool fan-out: a
-  single entry point, centralized auth/budgeting/filtering. Enterprise
-  scope.
-- **Dynamic / lazy tool loading** (MCP Tool Search and similar) loads a
-  tool only when invoked, instead of pre-injecting all of them.
-- **Sandboxing** (microVMs, gVisor, hardened containers) addresses
-  *runtime* isolation but doesn't help with command-namespace scope.
-
-What's still missing at the platform level is the equivalent of Python's
-`venv` or Node's per-project `node_modules` — a real **per-project
-scope** where a tool is *available here, invisible everywhere else*,
-with no global registration step. Anthropic's namespacing is a step in
-that direction but not a substitute for true per-project scoping.
-
-Until that gap closes at the Claude Code level, aims opts out of the
-global surface entirely: the `/plan` discipline command lives exclusively
-inside target projects you've explicitly bootstrapped. The only file aims
-can ever expose globally is `/install-on`, and only if you opt into the
-plugin install path — otherwise even that stays scoped to the aims source
-repo.
-
-If/when Claude Code grows a real per-project plugin scope, aims should
-adopt it and retire its custom split. For now, the split below is the
-mechanism.
-
-## Install
-
-Two paths. Both end with the same per-project state. **Only `/install-on`
-is ever globally available** — the `/plan` discipline command lives
-exclusively in target projects you've bootstrapped.
-
-### Path A — Clone-and-bootstrap (recommended; zero global state)
-
-1. **Clone (or download + extract) this repo** somewhere convenient.
-   ```sh
-   git clone https://github.com/eliezeravihail/aims.git ~/tools/aims
-   ```
-
-2. **Open Claude Code inside the aims source repo.**
-   ```sh
-   cd ~/tools/aims
-   claude
-   ```
-   The repo is dogfooded — its own `.claude/commands/install-on.md`
-   makes `/install-on` available locally without any global install.
-
-3. **Bootstrap your target project.**
-   ```
-   /install-on /path/to/my-project
-   ```
-   Sniffs the target (read-only), asks a few gap-filling questions, shows
-   a diff preview, applies only after you approve, then seeds the memory
-   tree against the target as its final step.
-
-4. **From now on, use the target project.**
-   ```sh
-   cd /path/to/my-project
-   claude
-   ```
-   The target's own `.claude/` provides `/plan` plus hooks and CLAUDE.md.
-   **Nothing is installed globally** — open Claude in any unrelated
-   directory and aims isn't there.
-
-### Path B — Global plugin install (one global command for ergonomics)
-
-If you'd rather not have to `cd ~/tools/aims` every time you bootstrap a
-new project:
-
-```sh
-# inside Claude Code, anywhere:
-/plugin marketplace add /path/to/this/repo
-/plugin install aims@aims
-```
-
-This adds **only `/install-on`** to your global Claude config — not the
-`/plan` discipline command. From any directory:
-
-```
-/install-on /path/to/my-project
-```
-
-Bootstraps the target identically to path A. `/plan` still appears only
-inside bootstrapped projects.
-
-The split is enforced by the repo layout: `commands/install-on.md` is
-the single globally-visible file; `templates/commands/{install-on,plan}.md`
-are templates the bootstrap copies into each target. See ADR-0005 for the
-rationale.
-
-### What ends up in the target (either path)
-
-```
-TARGET/
-├── CLAUDE.md                    # created or merged section-aware
-├── docs/
-│   ├── adr/
-│   │   ├── README.md            # decision index
-│   │   ├── _template.md
-│   │   └── 0001-record-architecture-decisions.md
-│   └── memory/                  # seeded by /install-on's final step (ADR-0007)
-└── .claude/
-    ├── commands/                # install-on, plan
-    ├── hooks/                   # session-start, prompt-submit, pre-write,
-    │                            # post-edit-marker, stop-consolidate, session-end
-    ├── memory/                  # _lib, mark, new-node, find-dirty, lint,
-    │                            # check-refs, consolidate, classify-inbox,
-    │                            # doctor (.sh)
-    └── settings.json            # wires the hooks
-```
-
-`/install-on` is **idempotent** and doubles as the upgrade path: re-running
-it overwrites hooks, memory scripts, and the two commands (with a diff
-preview), deletes obsolete commands from a previous install, and **never
-touches** existing CLAUDE.md sections, ADRs, plan files, or memory node
-bodies. Update aims by `git pull` in the source repo (and `/plugin update`
-if you took path B), then re-run `/install-on` against your targets.
-
-## How it feels in practice
-
-The natural-planning case (no slash command needed):
-
-```
-you: TypeError: cannot unpack non-iterable NoneType at parser.py:42
-
-  [prompt-submit injects the planning convention as factual context]
-  Claude: <reads, judges non-trivial, writes
-           docs/plans/2026-…-fix-parser-none.md with Status: draft>
-  Claude: Draft saved to docs/plans/…. Approve / edit / abort?
-  you: approve
-  Claude: <flips Status to in-progress, implements, runs verification,
-           writes ADR if architectural, marks completed, refreshes
-           the memory tree — all inline, no /done command>
-```
-
-The Opus-subagent case (main session is on Sonnet/Haiku and you want
-Opus-quality planning):
-
-```
-you: add an OAuth2 callback handler
-  Claude: This is non-trivial and the session is on Sonnet — use
-          /plan for an Opus planner subagent, or plan inline here?
-  you: /plan add OAuth2 callback handler
-  Claude: <dispatches Phase 1-2 to an Opus subagent; main session
-           stays on Sonnet, receives the draft path, resumes for
-           Phase 3 → 5 — approval, implementation, inline close-out>
-```
-
-Trivial / mechanical work skips planning, but the judgement is
-declared (CLAUDE.md "Trivial-skip must be declared"):
-
-```
-you: rename CamelCase to snake_case in scripts/
-  Claude: Trivial — no plan, proceeding inline.
-          <ordinary edit; the pre-write note still fires once per
-           session as a factual reminder, never blocks>
-```
-
-On every edit, the `post-edit-marker` hook flags affected memory nodes
-`dirty`; the throttled `Stop` hook later injects the in-band
-consolidation prompt, and the consolidation result is reported back
-in a single `===[aims: <message>]===` line (ADR-0021).
-
-## Layout
-
-```
-.claude-plugin/
-  plugin.json
-  marketplace.json
-commands/                    ← the only globally-installable surface
-  install-on.md              ← becomes /install-on if plugin is installed
-templates/                   ← never globally registered; copied per target
-  commands/                  ← these become the target's .claude/commands/
-    install-on.md
-    plan.md
-  hooks/                     ← these become the target's .claude/hooks/
-    session-start.sh
-    prompt-submit.sh
-    pre-write.sh
-    post-edit-marker.sh
-    stop-consolidate.sh
-    session-end.sh
-  memory/                    ← memory subsystem scripts copied per target
-  CLAUDE.md.tmpl
-  adr-readme.md.tmpl
-  adr-template.md.tmpl
-  adr-0001.md.tmpl
-  plan-template.md.tmpl
-  settings.json.tmpl
-.claude/                     ← dogfood install (this repo is itself a target)
-  commands/                  ← lets us run /install-on + /plan here
-  hooks/                     ← live hooks for working on aims itself
-  memory/                    ← live memory scripts for the dogfooded tree
-  settings.json
-```
-
-## Design principles
-
-1. **Lean over orchestrated.** The 2025–2026 evidence on multi-agent LLM
-   systems is consistent: with a strong baseline (Opus / Sonnet), single
-   dispatch with discipline beats orchestrated pipelines on accuracy, cost,
-   and debuggability. Pipelines pay off mainly for weak baselines.
-2. **Discipline through artifacts, not exhortation.** A plan that lives only
-   in conversation context evaporates at compaction. A plan on disk survives,
-   gets reviewed, and grounds the implementation session.
-3. **Hooks inform, they never block (ADR-0020).** No hook can stop an edit;
-   each only injects factual context. Discipline comes from awareness — the
-   planning convention and node-update reminders are surfaced at the moment
-   they matter, and the human stays in control.
-4. **Idempotent and merge-aware.** Running `/install-on` on an existing
-   project must not damage existing CLAUDE.md, settings, or layout.
+MIT. capsa under `vendor/capsa/` is MIT (© eliezeravihail) and is developed here now.

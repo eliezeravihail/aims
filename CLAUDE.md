@@ -1,109 +1,67 @@
 # aims
 
-This repository **is** the `aims` plugin. Working on it = developing the
-plugin itself. The plugin is also installed locally (under `.claude/`)
-so its hooks and conventions apply to its own development. Dogfooding.
+This repository **is** the `aims` plugin. Working on it = developing the plugin itself. The plugin is
+also installed locally (under `.claude/`) so its hooks apply to its own development. Dogfooding.
 
-<!-- aims-managed sections below; safe to edit, but keep the section headings stable. -->
+aims is Balash's design method carried onto a capsa durable-knowledge layer. See `README.md` for the
+overview; this file is the working guidance for developing aims itself.
 
-## Build & test commands
+## What is where
 
-This plugin has no language toolchain — it is markdown + bash. The closest
-thing to a test is a syntax check on the hook scripts:
+- `skills/aims-guide/` — the design method (SKILL + references + assets). The heart.
+- `skills/aims-sharpen-prompt/` — the general-purpose "sharpen the task into a brief" companion.
+- `commands/aims-*.md` — the design-method slash commands; `commands/install-on.md` — per-project install.
+- `docs/format-profile.md` — the capsa subset aims writes + the `anchors:`/`shape:` fields.
+- `vendor/capsa/` — the capsa format, **developed here now** (the standalone repo is retired). Editing
+  the grammar is a reviewed act that bumps `vendor/capsa/VERSION`.
+- `tools/aims_anchor.py` — stamps a record's staleness anchor at file time (never a hook).
+- `hooks/staleness_read.py` — the one active mechanism: a Read advisory that flags drift; never blocks.
+- `.capsa/` — aims' own design capsule (dogfood): its decisions, components, and insights as capsa records.
 
-- Test: `bash -n templates/hooks/*.sh && bash -n .claude/hooks/*.sh && bash tests/copies-identical.sh && bash tests/inform-never-block.sh && bash tests/consolidate.sh && bash tests/router-auto-plan.sh`
-- Lint / Typecheck: n/a
+## How aims documents itself — use the capsule
 
-(Run before declaring work complete.)
+Durable design knowledge for aims lives in the `.capsa/` capsule, not in scattered notes:
 
-## Decision records
+- A boundary/ownership/architecture decision → a `decisions/` ADR (append-only; supersede, never
+  rewrite), placed at the component it governs or root if cross-cutting.
+- A requirement / rule the plugin must honor → `requirements/`.
+- The structure of a part → `components/<slug>/component.md`.
+- An engineering lesson → `insights/dev/`; a note tied to specific code → `insights/code/`.
 
-Architecture decisions live in `docs/adr/`. Index: `docs/adr/README.md`.
-ADRs are proposed automatically during plan close-out (the implementation
-session decides per a confidence rule; see `/plan` Phase 4). For ad-hoc
-decisions outside a plan, write `docs/adr/NNNN-slug.md` directly with
-status `proposed`. Past decisions are append-only — to change one, write
-a new ADR that supersedes it.
+**Anchor every record on filing** with `python3 tools/aims_anchor.py` — `anchors:` for a record about
+file content, `--shape` for one about structure. Never hash by hand. When you read a record and the
+staleness hook flags it, re-verify against the current code before relying on it.
 
-## Workflow
+Read by placement: at a node, read the normative records on the walk to the capsule root plus in-scope
+insights — not the whole capsule.
 
-Planning is a **behavior**, not a command. For a non-trivial change the
-assistant plans before implementing — read-only discovery, then a
-`Status: draft` plan in `docs/plans/`, then user approval, then
-implementation, then inline close-out (verify, auto-ADR, mark completed,
-memory consolidation). The full flow is in `.claude/commands/plan.md`.
+## Build & test
 
-Two slash commands exist:
+Markdown + bash + a little stdlib Python; no toolchain. Before declaring work complete, run:
 
-- `/plan <task>` — **optional** shortcut: dispatches Phase 1-2 to an
-  Opus subagent (without switching the main session model). Use it when
-  the current model is not Opus and the task warrants careful planning.
-  Otherwise the assistant just runs the same flow inline (ADR-0022).
-- `/install-on <path>` — install or re-install aims into a target
-  project. Idempotent; never destroys hand-edited content.
+```
+bash tests/copies-identical.sh   # distribution surfaces stay byte-identical
+bash tests/capsa-anchor.sh       # anchor stamping + staleness detection behavior
+python3 -m py_compile tools/aims_anchor.py hooks/staleness_read.py
+```
 
-Bug-fix patches, refactors with obvious scope, mechanical edits, ad-hoc
-questions: just do the work inline. The hooks layer keeps you honest.
+## Hooks — inform, never block
 
-**Approval is for Phase 2, not Phase 4.** When the user says
-`כן` / `yes` / `do it` to a *proposal* (a sketch the assistant offered
-in conversation), that approves moving to Phase 2 — writing the
-`Status: draft` plan to `docs/plans/` — NOT Phase 4 (implementing).
-The plan-on-disk + a re-confirm gate stays in force even when the
-conversational reply is brief. This closes the conversational-drift
-gap that the PreToolUse hook's state-aware note exists to anchor
-(ADR-0023).
+aims has exactly two hooks, and neither blocks:
 
-**Trivial-skip must be declared.** When the assistant judges a request
-inline-eligible (doc-only edit, mechanical change, obvious-scope bug
-fix, ad-hoc question), it states that judgment explicitly in one
-short sentence before editing — e.g. *"Trivial — no plan, proceeding
-inline."* / *"טריוויאלי, לא צריך תכנון, עובר לביצוע."* — so the
-planning-vs-inline decision is visible and you can override it. A
-silent skip is indistinguishable from the conversational-drift failure
-mode ADR-0023 addresses; an announced skip is a recorded judgment.
+- `SessionStart` (`session-start.sh`) — surfaces in-progress plans and the presence of the `.capsa/`
+  capsule with the reading rule. Informational.
+- `PostToolUse` on `Read` (`staleness_read.py`) — when a capsa record is read, re-hashes its anchor and,
+  on drift, injects an advisory "re-verify" note. Advisory only, fail-open.
 
-## Models policy
+The plugin's distributable hook source lives under `templates/hooks/`; the locally-installed copy under
+`.claude/hooks/` (dogfooding). Keep them byte-identical (guarded by `tests/copies-identical.sh`); refresh
+via `/install-on .`.
 
-- Planning quality scales with model. If the main session is not on
-  Opus and a prompt looks like a non-trivial change, the assistant asks
-  once whether to use `/plan` (Opus subagent) or to plan inline on the
-  current model.
-- Implementation, close-out, ADR writing → any model in the main session;
-  `/plan` does NOT switch the session, only the Phase 1-2 subagent.
+## What was removed (and why)
 
-## Hooks
-
-**aims hooks inform; they never block.** There is no planning lock and no
-`block` mode — a hook's only effect is to inject **factual** context
-(`additionalContext`), never to stop an edit (ADR-0020). Discipline is
-achieved by awareness:
-
-- `UserPromptSubmit` injects the relevant memory node and, for a
-  task-shaped prompt (length ≥ 30 chars, no code fence, not a trailing-`?`
-  question — ADR-0029, no intent classes), a factual planning-convention
-  note.
-- `PreToolUse` (`pre-write`) never blocks; on the first source edit of a
-  session with no in-progress plan it injects the planning convention once.
-- `PostToolUse` (`post-edit-marker`) marks the affected memory leaf `dirty`,
-  injects a factual note naming the node to update, and stamps an advisory
-  marker (`<leaf>.marker` = session-id + mtime; NOT a block — the strict
-  `.lock` mutex was retired by ADR-0030). Concurrency: same
-  session refreshes silently; another session's marker older than
-  `AIMS_NODE_LOCK_STALE_SEC` (default 3600s) is taken over; a fresher one is
-  reported as a possible concurrent edit (ask the user before updating).
-- `Stop` (`stop-consolidate`) injects the throttled consolidation prompt:
-  **delta-append by default** (one dated line per change + minimal
-  truth-fixes), full compaction only past size thresholds (ADR-0028).
-
-Injected text MUST be factual, never imperative ("CRITICAL: do X"). Behavior
-guard: `tests/inform-never-block.sh` (jq-free) + `tests/router-auto-plan.sh`.
-
-## Plugin-specific notes (not from template)
-
-- The plugin's distributable hook sources live under `templates/hooks/`.
-- The locally-installed copies live under `.claude/hooks/` (for dogfooding).
-- If you change a hook in `templates/`, refresh `.claude/hooks/` by
-  running `/install-on .` — self-install is the dogfooding refresh path.
-- This repo has no `src/`, `lib/`, or `app/` paths, so the `pre-write` hook
-  in `block` mode would be a no-op here. `nudge` is the appropriate default.
+The memory-tree subsystem (mark/consolidate/find-dirty/lint/doctor/check-refs/classify-inbox/new-node/
+readme-sync) and its hooks were **cut**. capsa's placement-addressed, one-record-per-file grammar makes
+relevance structural (a tree walk) rather than computed, so there is no mutable store to keep coherent —
+the machinery was maintaining a problem the format does not create. The history of that subsystem lives
+in `.capsa/` as superseded decisions.

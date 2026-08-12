@@ -1,13 +1,11 @@
 #!/usr/bin/env bash
-# Assert that aims's three distribution surfaces stay byte-identical:
-#   templates/<dir>/*  ←→  .claude/<dir>/*  (dogfood install)
-#   templates/commands/*  ←→  commands/*    (marketplace install)
+# Assert that aims's distribution surfaces stay byte-identical:
+#   templates/hooks/*      ←→  .claude/hooks/*        (dogfood install)
+#   templates/commands/install-on.md ←→ .claude/commands/install-on.md ←→ commands/install-on.md
 #
-# Why: the marketplace `commands/` copy is loaded by users who install
-# aims as a plugin; the dogfooded `.claude/` copy is what the project
-# itself runs. A drift between any pair means /install-on missed a
-# refresh — the exact failure mode that produced audit finding M6
-# (commands/install-on.md was missing the summary-language feature).
+# The design-method slash commands (commands/aims-*.md) are plugin-marketplace commands loaded when
+# aims is enabled as a plugin; they are not per-project installed, so they are not paired here. The
+# memory subsystem this test used to check is gone (replaced by the capsa capsule + staleness hook).
 
 set -u
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
@@ -20,9 +18,7 @@ check_pair() {
     [ -f "$f" ] || continue
     g="$dst/$(basename "$f")"
     if [ ! -f "$g" ]; then
-      printf '  MISSING: %s\n' "$g" >&2
-      fail=$((fail + 1))
-      continue
+      printf '  MISSING: %s\n' "$g" >&2; fail=$((fail + 1)); continue
     fi
     if ! diff -q "$f" "$g" >/dev/null; then
       printf '  DIFFER:  %s vs %s\n' "$f" "$g" >&2
@@ -32,31 +28,25 @@ check_pair() {
   done
 }
 
-# Pair 1: hooks (templates/.claude dogfood)
-check_pair templates/hooks   .claude/hooks   sh
+# Pair 1: hooks (templates ↔ dogfood .claude)
+check_pair templates/hooks .claude/hooks sh
 
-# Pair 2: memory helpers
-check_pair templates/memory  .claude/memory  sh
-
-# Pair 3: slash commands — both dogfood (.claude/) and marketplace (commands/).
-check_pair templates/commands .claude/commands md
-for f in templates/commands/install-on.md templates/commands/plan.md; do
-  g="commands/$(basename "$f")"
+# Pair 2: install-on across template, dogfood, and marketplace copies.
+for pair in "templates/commands/install-on.md:.claude/commands/install-on.md" \
+            "templates/commands/install-on.md:commands/install-on.md"; do
+  f="${pair%%:*}"; g="${pair##*:}"
   if [ ! -f "$g" ]; then
-    printf '  MISSING: %s\n' "$g" >&2
-    fail=$((fail + 1))
-    continue
+    printf '  MISSING: %s\n' "$g" >&2; fail=$((fail + 1)); continue
   fi
   if ! diff -q "$f" "$g" >/dev/null; then
-    printf '  DIFFER:  %s vs %s (marketplace copy)\n' "$f" "$g" >&2
+    printf '  DIFFER:  %s vs %s\n' "$f" "$g" >&2
     diff -u "$f" "$g" | head -20 >&2
     fail=$((fail + 1))
   fi
 done
 
 if [ "$fail" -eq 0 ]; then
-  printf '[PASS] all paired copies identical\n'
-  exit 0
+  printf '[PASS] all paired copies identical\n'; exit 0
 fi
 printf '[FAIL] %d divergence(s)\n' "$fail" >&2
 exit 1

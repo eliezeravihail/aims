@@ -1,10 +1,10 @@
 {
   "name": "aims",
-  "version": "0.1.0",
-  "description": "Lean code-development discipline for Claude Code: /plan (optional Opus planner) and /install-on, plus per-project hooks that inform but never block. Planning as a behavior, decisions in ADRs, and a self-maintaining memory tree.",
+  "version": "0.2.0",
+  "description": "Makes design the goal of coding-agent work, and makes the design knowledge durable. A design method (discovery, feasibility gate, ownership/encapsulation, a subtractive pass, a review panel) delegates a design objective to a Worker, then files the resulting ADRs, requirements, components, and insights into a capsa knowledge capsule — placement-scoped and anchored to the code — so a later clean session reads prior conclusions instead of re-deriving. One advisory read-time hook flags documentation that drifted from the code; nothing runs in the background. Commands: /aims-plan, /aims-build, /aims-review, /aims-plan-and-build, /install-on.",
   "author": {
     "name": "aims"
   },
   "homepage": "https://github.com/eliezeravihail/aims",
-  "keywords": ["workflow", "adr", "planning", "discipline", "code"]
+  "keywords": ["design", "architecture", "adr", "capsa", "documentation", "planning"]
 }

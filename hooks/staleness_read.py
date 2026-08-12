@@ -13,14 +13,21 @@ hooks/staleness-read.md and docs/format-profile.md.
 from __future__ import annotations
 
 import json
+import os
 import re
 import sys
 from pathlib import Path
 
-# Share the exact hashing used at write time. If it can't be imported, stay fail-open (no advisory).
+# Share the exact hashing used at write time. Search likely layouts (dogfood repo: hooks/ + ../tools/;
+# installed: both files together under .aims/; or an explicit AIMS_HOME). If none import, stay
+# fail-open (no advisory) — the hook must never break a read.
 _HASH_OK = True
+_here = Path(__file__).resolve().parent
+for _cand in (_here, _here.parent / "tools", Path(os.environ.get("AIMS_HOME", ""))):
+    if _cand and (_cand / "aims_anchor.py").is_file():
+        sys.path.insert(0, str(_cand))
+        break
 try:
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
     from aims_anchor import content_hash, shape_hash  # type: ignore
 except Exception:  # pragma: no cover - degrade silently, never break a read
     _HASH_OK = False

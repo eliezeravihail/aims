@@ -7,7 +7,7 @@
     {
       "name": "aims",
       "source": ".",
-      "description": "Lean code-development discipline: /plan + /install-on and per-project hooks that inform, never block. Zero ceremony for trivial work, real discipline for non-trivial — plans on disk, ADRs, a self-maintaining memory tree."
+      "description": "Makes design the goal of coding-agent work and makes the design knowledge durable: a design method files ADRs, requirements, components, and insights into a placement-scoped, anchored capsa capsule, so a later clean session reads prior conclusions instead of re-deriving. One advisory read-time drift hook; nothing in the background. Commands: /aims-plan, /aims-build, /aims-review, /aims-plan-and-build, /install-on."
     }
   ]
 }
