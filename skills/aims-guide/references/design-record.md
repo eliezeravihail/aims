@@ -52,6 +52,16 @@ deliberately unable to express a scattered anchor, so that poor cohesion surface
 being quietly absorbed. Treat a record that *wants* to point at scattered files as a discovered
 refactoring objective.
 
+**But do not mistake a project-wide norm for the smell.** A genuine capsule-wide convention ("all types
+are PascalCase", "public functions carry a docstring", a house style) legitimately applies to *all* code
+uniformly — it is not a scattered responsibility, it is a standing rule. File it as a `code:`-less
+normative record (a `decisions/` ADR or a `requirements/` record) at the **capsule root**; placement
+gives it capsule-wide scope, like the charter, and it carries **no anchor** (nothing specific to hash;
+a norm does not "drift" from a file). The distinguishing question: does the rule name **one
+responsibility that ought to have a single home** but leaked (→ smell, refactor), or a **uniform norm
+that by nature applies everywhere** (→ root, no `code:`)? Enforcing such a norm, if wanted, is the
+opt-in fitness-function (a linter emitting capsa `X-` findings), never the passive record.
+
 ## Who files, and when
 
 The Guide owns the capsule. You file the durable records — from your own decisions and from the design

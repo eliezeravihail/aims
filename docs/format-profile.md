@@ -68,6 +68,20 @@ one unit — after which the anchor is again a single `code:` + one hash. The fo
 deliberate: it makes poor cohesion visible instead of absorbing it. (See
 `../skills/aims-guide/references/design-record.md`.)
 
+### The exception — a genuine project-wide norm has no `code:`
+
+A **capsule-wide convention** ("all types are PascalCase", "every public function has a docstring", a
+house style) is **not** the scatter smell — it applies uniformly to *all* code, so it correctly has no
+single cohesive target. File it as a `code:`-less normative record (a `decisions/` ADR, or a
+`requirements/` record) at the **capsule root**, where placement makes it apply capsule-wide, like the
+charter. It carries **no anchor**, because it is a standing norm, not code that could drift.
+
+Tell the two apart with one question: does the rule name **one responsibility that ought to have a
+single home** but leaked across files → that is the smell (refactor); or a **uniform norm that by its
+nature applies everywhere** → root, no `code:`. If you want the norm *enforced* rather than just
+recorded, that is the opt-in fitness-function (a linter over all code emitting capsa `X-` findings) —
+never the passive layer.
+
 ## Two rules that keep the capsule trustworthy
 
 1. **`decisions/` are append-only.** To change a decision, write a new one that supersedes it; the body

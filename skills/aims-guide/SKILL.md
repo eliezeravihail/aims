@@ -282,7 +282,9 @@ re-hashes it and, if the code drifted, injects an advisory "re-verify" — it ne
 If a record wants to point at a scattered subset of files, do **not** list them — that inability means
 the concern lacks a single home (shotgun surgery) or the directory is over-generic. Treat it as a
 discovered **refactoring objective**: give the concern its own module/directory so it *can* be named as
-one unit, then file the record. See `references/design-record.md` and `docs/format-profile.md`.
+one unit, then file the record. The one exception is a genuine **project-wide norm** ("all types are
+PascalCase") — that legitimately applies everywhere, so it is a `code:`-less record at the capsule root
+(no anchor), not a smell. See `references/design-record.md` and `docs/format-profile.md`.
 
 ### Presenting the plan report (manual plan)
 
