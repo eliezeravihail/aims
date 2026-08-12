@@ -1,0 +1,6 @@
+capsa_version: "0.8.0"
+project:
+  name: "Ledger"
+  slug: ledger
+  created: 2026-08-12
+status: active
