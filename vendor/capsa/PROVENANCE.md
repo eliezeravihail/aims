@@ -23,11 +23,13 @@ grammar changes go through the same review as any design decision and bump the v
 
 ## What aims uses, and what aims adds
 
-aims does **not** use all of capsa. The subset aims relies on, and the two consumer-side
-fields aims layers on top (permitted by capsa's "unknown frontmatter keys are preserved"
-rule), are defined in [`../../docs/format-profile.md`](../../docs/format-profile.md). The
-spec here is the source of truth for the grammar; the profile is the source of truth for
-aims' use of it.
+aims does **not** use all of capsa, and it **relaxes** the spec's per-type required-field sets to a
+lean minimal core: a record is `title` + `date` + a body, the kind comes from its folder, and every
+other field is optional. A record concerning code declares it once in `code:` and carries a single
+tool-stamped anchor (`hash:` or `shape:`). This lean profile — authoritative for aims records — is
+defined in [`../../docs/format-profile.md`](../../docs/format-profile.md). The spec here is the
+underlying grammar and lineage; where the profile is leaner, the profile wins for aims, and an aims
+capsule stays a readable capsa capsule.
 
 To change the grammar, edit these files here and bump the version above — this is where
 capsa lives now. Keep the invariant that makes that safe: an aims capsule stays a

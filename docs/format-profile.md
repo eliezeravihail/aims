@@ -1,128 +1,89 @@
-# aims format profile — the capsa subset aims uses, and the two fields it adds
+# The aims capsule format
 
-aims stores durable design knowledge as a **capsa** capsule (`.capsa/` at the project root). The
-grammar is defined by the vendored spec — [`../vendor/capsa/core/PRINCIPLES.md`](../vendor/capsa/core/PRINCIPLES.md)
-and [`../vendor/capsa/project/SPEC.md`](../vendor/capsa/project/SPEC.md), pinned at project format
-`0.8.0` / core `0.6.0`. This profile states only **which part of capsa aims uses** and **the two
-consumer-side fields aims layers on top**. Where this profile and the spec ever disagree about the
-grammar, the spec wins; this profile only narrows and extends within what the spec permits.
+This is the **whole** format aims uses — a lean profile of [capsa](../vendor/capsa/). You do not need
+to read the full capsa spec to write records; this page is self-contained. (The vendored spec under
+`vendor/capsa/` is the underlying grammar and lineage; aims relaxes its required-field sets to the
+minimal core below. An aims capsule stays a readable capsa capsule.)
 
-## 1. The subset aims uses
+## A record
 
-aims writes a small number of capsa record types — the ones that hold *design knowledge*:
+Design knowledge lives in a `.capsa/` capsule at the repo root, **one record per fact**, as a Markdown
+file: a small YAML frontmatter + a prose body. A record is placed in the tree at the node it governs,
+so **placement is scope** — a reader loads only the records in force where it is working.
 
-| capsa type | aims uses it for | normative? (capsa §2.7) |
-|---|---|---|
-| `decisions/` (ADRs) | ownership/boundary decisions the design surfaces; append-only | normative |
-| `requirements/` | what the product must hold, in checkable form | normative |
-| `insights/dev/` | engineering lessons: what was tried, what failed, why | descriptive |
-| `insights/design/` | product/UX/structure reasoning | descriptive |
-| `insights/code/` | notes anchored to specific code (`code_globs` REQUIRED per capsa §4.9) | descriptive |
-| `components/**/component.md` | the structural tree; a subtree = a component (carries scope) | normative |
-
-The rest of capsa's types (`plans/`, `discussions/`, `issues/`, `dependencies/`, `releases/`,
-`interfaces/`, `milestones/`, `lines/`, `charter.md`) are **valid but not written by the method** in
-this skeleton. A project may use them; aims does not require them. An absent directory means "none of
-these yet" (capsa §2), never an error.
-
-**Placement carries scope.** A record under `components/render/` applies to `render` and everything
-beneath; a record at the root is cross-cutting. Relevance is the walk from the working node to the
-root (capsa §2.4, §2.7). No record declares its own scope. This is what replaces both a
-central-folder store (bloats) and source-file-coupled notes (fragile).
-
-## 2. The two fields aims adds
-
-capsa permits unknown frontmatter keys and requires writers to preserve them (core §Grammar). aims
-uses that to carry a **staleness anchor**. The anchor's *kind follows the ontology of the record's
-claim* — this is the one rule that makes the whole thing honest.
-
-### 2.1 `anchors:` — for a record that claims about **file content**
-
-A list of the specific files the record is about, each with a whole-file content hash taken **at
-write time**:
+**Required frontmatter is minimal — just two lines:**
 
 ```yaml
-anchors:
-  - {path: src/tiling/cache.py, hash: "sha256:3af9c1…"}
-  - {path: src/tiling/evict.py, hash: "sha256:91b0de…"}
+---
+title: "core owns arithmetic"
+date: 2026-08-12
+---
+core owns all arithmetic — a single owner. We chose X over Y because Z.
 ```
 
-- `path` is repo-relative (to the product root, not the capsule). `hash` is `sha256:` of the file's
-  bytes at the moment the record was filed.
-- The list is 0..n. Empty is legal — a pure-rationale ADR anchored to nothing concrete.
-- Whole-file only. Line ranges are **not** used: line numbers drift as a file grows and would produce
-  false staleness. If a file is too noisy to anchor whole, that is a signal to anchor a smaller,
-  more specific file — not to track lines.
-- For `insights/code/`, `anchors[].path` values SHOULD fall within the record's capsa `code_globs`.
+- `title` — one line naming the fact.
+- `date` — `YYYY-MM-DD`.
+- The **body** carries everything else in prose: the decision and its rationale, the road not taken.
+- The record's **kind is its folder** — you never restate it. `decisions/`, `requirements/`,
+  `insights/{dev,design,code}/`, `components/<slug>/component.md`, `charter.md`.
+- Every other capsa field (`level`, `status`, `verification`, `tags`, `links`, …) is **optional** —
+  add one only when it genuinely earns its place. Default to leaving them out.
 
-### 2.2 `shape:` — for a record that claims about **arrangement / structure**
+## The anchor — two fields, both machine-written
 
-A structural claim ("we deliberately split `core/` and `api/`") has no file to hash. Its anchor is
-its **placement** plus a fingerprint of the *shape* of its subtree — the set of child names, not
-their contents:
+To detect drift between a record and the code it describes, a record that concerns code declares that
+code **once** and carries a single anchor hash:
 
 ```yaml
-shape:
-  root: src/            # the product-repo subtree this record describes
-  children_hash: "sha256:be21…"   # hash of the sorted child-name set under root
+code: src/core.py            # what this record concerns — a file, a dir, or a dir/** glob
+hash: "sha256:3af9…"         # ← the anchor. YOU NEVER TYPE THIS — the tool stamps it.
 ```
 
-- `children_hash` is over the **names** of the immediate children (and MAY, by a declared depth, the
-  names beneath) — never file contents.
-- This is deliberately **content-blind**. Editing a file's internals under a structural record does
-  not make the structural claim false, so a content signal there would be a false-positive storm
-  (exactly the whole-directory hash this design rejected). A structural claim is threatened only by a
-  structural change — a move, rename, or merge — and `children_hash` catches precisely that.
+- **`code:`** — you write this: a single, **cohesive** target (one file, one directory, or one
+  `dir/**` glob). Omit it for a pure-intent record (a charter, a thesis decision) that concerns no
+  specific code.
+- **The anchor** is one of two, and **the tool writes it, never you**:
+  - `hash:` — a content hash of the concerned file(s). For a record about what the code *says*.
+  - `shape:` — a child-name fingerprint of a subtree (content-blind). For a record about *arrangement*
+    (a `component.md`). A file changing *inside* the subtree does not trip it; a move/rename/merge does.
 
-### 2.3 Content invariants are not a third mechanism — they are `anchors:` on the files that embody them
+Stamp it by running, from the repo root:
 
-A record may state a **content invariant** — "nothing under `core/` does I/O". This needs no new
-mechanism. It is a record that **claims about file content**, so it takes a §2.1 `anchors:` list on
-the specific files that carry the rule (e.g. `core/cache.py`, `core/model.py`). When one of them
-changes, the read-time hook re-hashes it and advises *"this file changed since the record was
-written — re-verify"*; a reader opens the "core stays pure" rule and checks the change against it.
-Detection comes from the hash we already have.
+```
+python3 tools/aims_anchor.py .capsa/decisions/0001-core-owns-math
+```
 
-The one thing `anchors:` does **not** do is decide *automatically* whether the change actually broke
-the rule (still-pure vs. now-impure) — that verdict needs code re-analysis. Automatic **enforcement**
-is therefore the only optional extra: a separate **opt-in** fitness-function that scans the code and
-emits findings in capsa's shape with an `X-` operator code (core §Checking), composing with the
-reference validator without polluting the format. aims does not build it; the passive layer gives
-*detection*, and enforcement is a door left open, not a tier of its own.
+The tool reads `code:` from the record, computes the right anchor (content by default; `shape:` for a
+`component.md`, or force with `--shape`/`--content`), and writes the single `hash:`/`shape:` line —
+preserving everything else. You never compute a hash or write that line by hand.
 
-**One caveat, stated honestly.** If an invariant spans a *whole* subtree and you anchor it to every
-file, the record fires on every content change beneath it — which is the noisy whole-directory hash
-this design rejected (§2.2). So anchor a broad invariant to the few files that genuinely embody it,
-or accept it is detection-only, or wait until it earns the opt-in scanner. A narrow invariant (a
-handful of files) is served cleanly by `anchors:` as-is.
+## `code:` is a single cohesive target — and that is a design signal
 
-## 3. What to read, and when — the surfacing rule
+`code:` names **one** unit on purpose. If you find you cannot name a record's code as a single cohesive
+target — if the concern is scattered across an arbitrary *subset* of files in a directory (A, C, F but
+not B, D, E) — **do not list the scattered paths.** That inability is an architecture smell: the
+concern lacks a single home (shotgun surgery), or the directory is over-generic and mixes unrelated
+things. The fix is in the **code** — give the concern its own module/directory so it *can* be named as
+one unit — after which the anchor is again a single `code:` + one hash. The format's simplicity is
+deliberate: it makes poor cohesion visible instead of absorbing it. (See
+`../skills/aims-guide/references/design-record.md`.)
 
-Relevance is **derived from placement**, not chosen by judgment. When work begins at a node (a file
-or component in the product), the reader loads exactly:
+## Two rules that keep the capsule trustworthy
 
-1. **Every normative record in force on the walk** from that node to the capsule root — the
-   `decisions/`, `requirements/`, and `component.md` records at each level whose `status` still binds
-   (capsa §2.7). This is not optional; skipping it is reading wrongly.
-2. **Insights on that same walk** — `insights/**` records placed at or above the node. Insights are
-   descriptive (they inform, they do not bind), so they are read for context, not obligation, but the
-   *walk* is still what selects them: an insight filed under `components/render/` surfaces for work in
-   `render`, and stays invisible elsewhere. Placement does the filtering; there is no "read the whole
-   insights folder" step, which is the bloat this design exists to avoid.
-3. Anything else — records under sibling subtrees, deeper detail — **on demand only**.
+1. **`decisions/` are append-only.** To change a decision, write a new one that supersedes it; the body
+   of the new record names the one it replaces. Never rewrite a decided record.
+2. **Anchor on filing** — run `aims_anchor.py` the moment you file a record that has a `code:`. Never by
+   hand.
 
-**Surfacing runs the staleness check on what it loads.** Each record surfaced in steps 1–2 has its
-anchor recomputed (§4); the session opens with, e.g., *"2 of 7 in-scope records are possibly stale —
-re-verify before relying on them."* This is the same read-time check below, applied to the records
-already being loaded — no scheduler, no background scan, no new mechanism.
+## Reading — the surfacing rule
 
-## 4. Writing and checking
+At a node, read by placement: every normative record on the walk to the capsule root (decisions,
+requirements, `component.md`) plus in-scope insights — not the whole capsule. If the read-time hook
+flags a record as possibly stale, re-verify it against the current code before relying on it.
 
-- **Writing** is done by the method (see the skill), and the anchor is stamped by
-  [`../tools/aims-anchor`](../tools/aims-anchor.md) at file time — never by hand, never by a hook.
-- **Reading** triggers the one active check: [`../hooks/staleness-read`](../hooks/staleness-read.md)
-  recomputes the anchor for the record's kind (`anchors:` → re-hash each file; `shape:` → re-hash the
-  child-name set) and, on mismatch, injects an advisory "re-verify" note. It never blocks.
-- **Conformance** to the grammar itself is capsa's own concern; `anchors:`/`shape:` are unknown keys
-  to the reference validator, which preserves and ignores them — so an aims capsule is a conforming
-  capsa capsule, readable by any capsa tool.
+## Not in the passive layer — enforcement
+
+A content invariant ("core stays pure") is just a record with `code: core/**` and a content anchor:
+when core changes, you are told to re-verify. *Automatically* deciding whether a change broke the rule
+needs code analysis — an opt-in fitness-function (a linter) emitting capsa `X-` findings, never part of
+this passive format.

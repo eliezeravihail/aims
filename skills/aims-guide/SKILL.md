@@ -271,12 +271,18 @@ over that*, the road not taken — is recorded **in the record itself** (rule 1)
 "deliberations" store. That is what makes a plan report cheap: it is *derived* from the records you
 already filed, never a second place you maintain.
 
-**Anchor every record on filing.** The moment you file a record, stamp its staleness anchor with the
-explicit command `tools/aims_anchor.py` (never by hand): `anchors:` (a per-file content hash) for a
-record about **file content**, or `--shape` (a child-name fingerprint of a subtree) for a record about
-**structure/arrangement**. A read-time hook later re-hashes the anchor and, if the code drifted, injects
-an advisory "re-verify" — it never blocks. This is the whole of the active machinery; there is no write
-hook and no background maintenance. See `references/design-record.md` and `docs/format-profile.md`.
+**Records are lean; anchor on filing.** A record is `title` + `date` + a prose body (the kind comes from
+its folder; every other capsa field is optional). If it concerns specific code, add one `code:` line —
+a single cohesive target (a file, a directory, or a `dir/**` glob) — then stamp its anchor with the
+explicit command `python3 tools/aims_anchor.py <record>` (never by hand): it reads `code:` and writes a
+single `hash:` (content) or `shape:` (structure, for a `component.md`) line. A read-time hook later
+re-hashes it and, if the code drifted, injects an advisory "re-verify" — it never blocks.
+
+**A `code:` that cannot be named as one cohesive target is a design signal, not a format limitation.**
+If a record wants to point at a scattered subset of files, do **not** list them — that inability means
+the concern lacks a single home (shotgun surgery) or the directory is over-generic. Treat it as a
+discovered **refactoring objective**: give the concern its own module/directory so it *can* be named as
+one unit, then file the record. See `references/design-record.md` and `docs/format-profile.md`.
 
 ### Presenting the plan report (manual plan)
 

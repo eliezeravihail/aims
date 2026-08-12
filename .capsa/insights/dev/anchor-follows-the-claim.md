@@ -1,16 +1,14 @@
 ---
-kind: dev
-title: "The anchor must match the ontology of the claim"
-created: 2026-08-12
-tags: [staleness, design]
-anchors:
-- {path: "tools/aims_anchor.py", hash: "sha256:d93324b3d2f9b9a150582f1855cb92361b8288c6277948fe9054238cd85939b5"}
+title: "The anchor must match the ontology of the claim — and be one cohesive target"
+date: 2026-08-12
+code: tools/aims_anchor.py
+hash: "sha256:fd9bad9c0846166cc4bf66978337c3ded9349c9c41256ee59da07b6136fa808e"
 ---
 
-The dead-end was trying to make one staleness signal serve every record. Forcing a content hash onto a
-structural claim ("we split core and api") fires on every unrelated edit beneath it — the noisy
-whole-directory hash. The fix that unlocked the whole design: **let the anchor follow what the record
-actually claims about.** Content claim → content hash; structural claim → shape fingerprint
-(content-blind); a content invariant is just content anchors on the few files that carry it. Once the
-anchor tracks the ontology, false positives disappear and "tier 3" collapses into "content anchors +
-an optional linter for enforcement".
+Two lessons converged into the lean anchor. First: one staleness signal cannot serve every record —
+forcing a content hash onto a structural claim fires on every unrelated edit; let the anchor follow
+what the record claims about (content → hash, structure → shape). Second: the concerned code is named
+once in `code:`; storing a path list inside the anchor duplicates it. And if a record cannot name its
+code as ONE cohesive target, that is not a format gap to patch with a scattered list — it is a
+cohesion smell in the code, to be fixed by a refactoring objective. The format's inability to express
+scatter is the feature that surfaces it.
