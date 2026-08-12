@@ -13,14 +13,15 @@ Enter the `aims-guide` skill and run **only the PLAN phase** (operating-loop ste
   `implementation` | `refactoring` — see `references/objective-selection.md`; it sets the review lens),
   and draft a bounded Worker handoff per `references/worker-handoff.md`. Write both into `state.md`; set
   the Loop cursor to `planned:awaiting-build`.
-- **File the round's durable design into the `.capsa/` capsule** (`references/design-record.md`): the
-  charter / requirements the design commits to, the substrate ADR + dependencies, the structural
-  `decisions/` with their rejected alternatives, and any `insights/`. Place each record at the node it
-  governs, and **anchor it on filing** with `tools/aims_anchor.py`. `decisions/` are append-only.
+- **File the round's durable design as records in the code tree** (`references/design-record.md`): the
+  root `charter` / substrate `decisions/` the design commits to, and the structural `decisions/` (with
+  rejected alternatives) and `component.md` records beside the code they govern. Place each record where
+  the code it governs lives, and **anchor it on filing** with `python3 knowledge/anchor.py <record>`.
+  `decisions/` are append-only.
 - **Stop here. Do not delegate and do not write implementation code.** **Present a plan report** — an
-  executive summary compiled from the objective and the capsule records (dependencies, decisions and
+  executive summary compiled from the objective and the filed records (dependencies, decisions and
   their rationale, chosen architecture, exit criteria) — so the user can read the round's reasoning,
   inspect or edit the objective, and comment before anything is built. It is a presentation, not a new
-  stored file: the substance already lives in the capsule. Then tell them to run the build command.
+  stored file: the substance already lives in the records. Then tell them to run the build command.
 
 $ARGUMENTS

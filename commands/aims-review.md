@@ -18,7 +18,7 @@ opposite-disposition second reviewer as the stakes warrant). Report reproduced r
 exit criteria the readings show met/unmet, and what this implies for the next direction. Then record
 where the loop now is by updating the cursor (`ready-to-choose-next` when the objective is reached, or
 back toward `plan`/`build` when the readings say it isn't). **File the round's structural outcome into
-the capsule** (`references/design-record.md`): a decision that changed direction is a *new*, superseding
+the code tree** (`references/design-record.md`): a decision that changed direction is a *new*, superseding
 `decisions/` ADR (append-only — never rewrite the old one); a durable lesson is an `insights/` record.
 Anchor each. Do not silently repair everything reported — the Guide/human decides what matters now.
 

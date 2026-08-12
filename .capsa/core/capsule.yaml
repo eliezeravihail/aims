@@ -1,7 +1,0 @@
-capsa_version: "0.8.0"
-project:
-  name: "aims"
-  slug: aims
-  repo: "https://github.com/eliezeravihail/aims"
-  created: 2026-08-12
-status: active

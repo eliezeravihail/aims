@@ -1,17 +1,17 @@
 ---
 title: "aims-guide (the design method)"
 date: 2026-08-12
-code: skills/aims-guide
-shape: "sha256:cbffb0dc9fea38d946db5fbd401c472b2552ce01f2941739a4cba538b37de9b9"
+shape: "sha256:6dc5f9ce20119b347155bfe7982be38315ce1a2ca5dd0bbb3ab5a008c2011f55"
 ---
 
 ## Purpose
 The design method: a Guide hands a Worker one design/quality objective at a time (feature as a
-constraint), measures the result, chooses the next.
+constraint), measures the result, chooses the next. Discovery, a feasibility gate, ownership/
+encapsulation, a subtractive pass, a review panel.
 
 ## Boundaries & seams
-The method produces knowledge; where it lands is the capsa-layer's concern. The seam is
-`references/design-record.md`: method output → record → placement → anchor.
+Produces knowledge; where it lands is the knowledge component's concern. The seam is
+references/design-record.md.
 
 ## Invariants
 - Design is the objective; the feature is a constraint.

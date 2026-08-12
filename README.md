@@ -62,50 +62,52 @@ The method lives in [`skills/aims-guide/`](skills/aims-guide/SKILL.md); the "goo
 
 # Chapter 2 — Documenting & preserving knowledge · תיעוד ושימור ידע
 
-A design objective's result is not narrated into the chat and lost — it is **filed as a durable record**
-in the product's `.capsa/` knowledge capsule, so the next session inherits it. This is what turns a
+A design objective's result is not narrated into the chat and lost — it is **filed as a record in the
+code tree, next to the code it describes**, so the next session inherits it. This is what turns a
 one-session method into long-term development: months later, a fresh session at some part of the code
 reads the conclusions in force there and continues, instead of starting over.
 
-**The idea — placement is scope.** The capsule is a tree of one-record-per-fact files, each **placed at
-the node it governs**. A record under `components/api/` governs `api` and everything beneath it; a
-record at the root is capsule-wide. So relevance is *derived from the path*: a reader loads only the
-records in force where it is working — never one growing file it must read whole. This replaces both
-notes glued to a source file (fragile — code moves orphan them) and a central store (bloats).
+**The idea — the structure carries both the code and the knowledge.** A component's record is a
+`component.md` **inside that component's directory**, its `decisions/` and `insights/` beside it;
+cross-cutting records live at the repo root. There is no separate folder and no `.capsa/` tree that
+mirrors the code — the one directory structure is *both* the code graph and the knowledge tree, so
+understanding and navigation come from the structure itself. **Location is scope:** a reader loads only
+the records in force where it is working (walk from that directory up to the root), never one growing
+file it must read whole. And because a record lives *in* the code's own directory, **moving a directory
+moves its knowledge with it** — no parallel tree to keep in sync.
 
 **A record is lean.** Just a title, a date, and a prose body carrying the decision and its rationale;
-the *kind* comes from the folder (`decisions/`, `requirements/`, `insights/`, `components/`,
-`charter.md`). Everything else is optional.
+the *kind* comes from the location (`component.md`, a file under `decisions/` or `insights/`, or
+`charter.md` at the root). There is **no `code:` field** — the record's own directory is its subject.
 
 ```yaml
 ---
-title: "core owns arithmetic"
+title: "render owns SVG output"
 date: 2026-08-12
-code: src/core.py        # only if it concerns specific code
 ---
-core owns all arithmetic — a single owner. Chose X over Y because Z.
+render turns a maze into SVG. It must not know how the maze was generated. Chose SVG over canvas
+because the pages are static.
 ```
 
-**Knowledge is anchored, so drift is detected — not trusted.** A record that concerns code names it
-once in `code:` (a single cohesive target — a file, a directory, or a `dir/**` glob), and a small tool
-stamps a single anchor: a content `hash:`, or a `shape:` fingerprint for a structural record. You never
-compute or write a hash by hand. When a later session **reads** a record whose code has since changed,
-one advisory hook says *"re-verify"* — it **never blocks**, and it reads the actual file, so it catches
-drift whether the change went through aims or was made by hand. That advisory, at the exact moment
-someone is about to rely on the record, is what replaces keeping docs true by hand.
+**Knowledge is anchored, so drift is detected — not trusted.** A small tool derives a record's anchor
+target from *where the record sits* and stamps one hash: a `shape:` fingerprint for a `component.md`
+(its directory's parts), a content `hash:` for a decision/insight (its component's code), none for a
+cross-cutting root record. You never compute a hash or name a path. When a later session **reads** a
+record whose code has since changed, one advisory hook says *"re-verify"* — it **never blocks**, and it
+reads the actual code, so it catches drift whether the change went through aims or was made by hand.
 
-**The format is also a design signal.** `code:` deliberately cannot name a *scattered* subset of files.
-If a record can't point at one cohesive target, that inability is telling you the concern lacks a single
-home (shotgun surgery) or a directory is over-generic — so it becomes a **refactoring objective** in the
-code, not a workaround in the record. (The one exception is a genuine project-wide norm — "all types are
-PascalCase" — which legitimately applies everywhere: it is a `code:`-less record at the root, carrying
-no anchor.)
+**The structure is also a design signal.** Because a record lives *in* a directory, a component **is** a
+directory. If a concern cannot be given its own directory — if it is scattered across an arbitrary
+subset of files — that inability is telling you the concern lacks a single home (shotgun surgery) or a
+directory is over-generic, so it becomes a **refactoring objective** in the code, not a workaround in the
+record. (The one exception is a genuine project-wide norm — "all types are PascalCase" — which applies
+everywhere: a root record, no anchor.)
 
-**`decisions/` are append-only** — to change a decision you write a new one that supersedes it, so the
+**`decisions/` are append-only** — to change a decision you add a new one that supersedes it, so the
 history of what once bound the code is never rewritten.
 
-The format is [`docs/format-profile.md`](docs/format-profile.md); the mapping from method output to
-record is [`design-record.md`](skills/aims-guide/references/design-record.md).
+The format is [`knowledge/format.md`](knowledge/format.md); the mapping from method output to record is
+[`design-record.md`](skills/aims-guide/references/design-record.md).
 
 ---
 
@@ -117,8 +119,8 @@ record is [`design-record.md`](skills/aims-guide/references/design-record.md).
 - `/aims-review` — measure the result against the exit criteria with the review panel (also works
   standalone on any diff/branch/PR).
 - `/aims-plan-and-build` — the full autonomous loop, pausing only for open product decisions.
-- `/install-on <path>` — install aims' per-project pieces (the two hooks + the anchor tool + capsule
-  scaffolding) into a target project.
+- `/install-on <path>` — install aims' per-project pieces (the two hooks + the anchor tool) into a
+  target project.
 
 ## What aims deliberately does not have
 
@@ -129,9 +131,9 @@ linter over the code) is an **opt-in** fitness-function, never part of the passi
 
 ## The two moving parts
 
-- [`tools/aims_anchor.py`](tools/aims_anchor.py) — write-time: stamps a record's anchor from its
-  `code:`. Called explicitly by the method, never as a hook. Stdlib only.
-- [`hooks/staleness_read.py`](hooks/staleness_read.py) — read-time: the advisory drift check. Never
+- [`knowledge/anchor.py`](knowledge/anchor.py) — write-time: stamps a record's anchor, derived from the
+  record's own location. Called explicitly by the method, never as a hook. Stdlib only.
+- [`knowledge/staleness_hook.py`](knowledge/staleness_hook.py) — read-time: the advisory drift check. Never
   blocks, fail-open.
 
 ## License

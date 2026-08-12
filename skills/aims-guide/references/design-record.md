@@ -1,95 +1,78 @@
-# The design record — how the method's outputs become capsa records
+# The design record — how the method's outputs become co-located records
 
 Everything the loop produces that is worth having *next year* — product intent, the substrate, the
-architecture, the decisions and lessons behind them — is filed as a capsa record in the product's
-`.capsa/` capsule. The complete format is `docs/format-profile.md` (short and self-contained); this
-file is the Guide's working map from "what I just decided" to "which record, placed where, anchored".
+architecture, the decisions and lessons behind them — is filed as a record **in the code tree, next to
+the code it describes.** The complete format is `../../../knowledge/format.md` (short, self-contained);
+this file is the Guide's working map from "what I just decided" to "which record, placed where".
 
-## Why a capsule and not three flat files
+## The idea — the structure carries both the code and the knowledge
 
-Balash kept durable design in three flat files kept true by hand. They **bloat** (a later session reads
-the whole thing to find the little that bears on the code in front of it) and **drift silently** ("keep
-it true by hand" fails the moment code changes without the doc). A capsa capsule fixes both: **one
-record per fact**, placed where **placement is scope** (a reader loads only what is in force where it
-works), and **each record anchored** to the code it concerns so drift is *detected*, not trusted.
+Design knowledge does not live in a separate folder or a `.capsa/` tree that mirrors the code. It lives
+**in** the code tree: a component's record is a `component.md` inside that component's directory, its
+`decisions/` and `insights/` beside it; cross-cutting records live at the repo root. The one directory
+structure is *both* the code graph and the knowledge tree — understanding and navigation come from the
+structure itself, and moving a directory moves its knowledge with it. There is no parallel tree to sync.
 
-## The mapping — method output → record → placement
+## The mapping — method output → where it is filed
 
-| The method produces… | capsa record | placed at | `code:` anchor |
-|---|---|---|---|
-| primary goal, non-goals, the product frame | `charter.md` | root | none (pure intent) |
-| a use scenario / product rule as a checkable need | `requirements/NNNN-slug.md` | root, or the component it constrains | `code:` on the code that satisfies it, if any |
-| the foundational substrate choice | a substrate `decisions/` ADR | root | none |
-| the current structure of a part: boundaries, seams, what it must not know | `components/<slug>/component.md` | the component's node | `code: <its dir>` → **shape** anchor |
-| a structural/boundary/ownership decision + rejected alternatives | `decisions/NNNN-slug.md` (append-only) | the component it governs, or root | `code:` on the file(s) it governs → content |
-| a content invariant ("core stays pure") | a `decisions/` or `requirements/` record | the node it governs | `code: <that dir>/**` → content |
-| an engineering lesson: what was tried, what failed, why | `insights/dev/*.md` | at/above the relevant node | `code:` if tied to specific code |
-| a note anchored to specific code | `insights/code/*.md` | the relevant node | `code:` on those files |
+| The method produces… | record | placed |
+|---|---|---|
+| primary goal, non-goals, the product frame | `charter.md` | repo root |
+| a use scenario / product rule as a checkable need | a `decisions/` or a `requirements/` record | root if cross-cutting, else in the component it constrains |
+| the foundational substrate choice | a substrate `decisions/` record | repo root |
+| the current structure of a part: boundaries, seams, what it must not know | `component.md` | **inside that part's directory** |
+| a structural/boundary/ownership decision + rejected alternatives | `decisions/NNNN-slug.md` (append-only) | the component's directory, or root if cross-cutting |
+| a project-wide norm ("all types are PascalCase") | a `decisions/` record | repo root (no anchor) |
+| an engineering lesson: what was tried, what failed, why | `insights/{dev,design,code}/*.md` | in the relevant component's directory (or root) |
 
-Nothing declares its own scope — **the path is the scope.** File the record under the node it governs.
+**Location is scope.** File a record where the code it governs lives; a reader walks from where it works
+up to the root, reading the records at each level.
 
-## The record is lean — write two fields + prose
+## The record is lean — two fields + prose, no `code:`
 
-Required frontmatter is `title` + `date`; the folder gives the kind; the body carries the rationale.
-Add a `code:` line when the record concerns specific code, then anchor it. Everything else capsa offers
-is optional — reach for it only when it earns its place. See `docs/format-profile.md` for the shape.
+`title` + `date` + a body carrying the rationale. The **kind comes from the location**; there is **no
+`code:` field** — the record's own directory is its subject. See `../../../knowledge/format.md`.
 
-## `code:` is one cohesive target — and if it can't be, fix the architecture
+## A component is a directory — and if a concern can't get one, fix the architecture
 
-A record names its code in a single `code:` field: one file, one directory, or one `dir/**` glob. This
-is not just brevity — it is a **design check the method must act on.**
+Because a record lives *in* a directory, a design component **is** a directory of code.
 
-> **If you cannot name a record's code as one cohesive target — if the concern is scattered across an
-> arbitrary subset of files in a directory (A, C, F but not B, D, E) — stop. Do not list the scattered
-> paths. That inability is telling you the architecture is wrong:** the concern has no single home
-> (shotgun surgery), or the directory is over-generic and mixes unrelated responsibilities.
+> **If a concern cannot be given its own directory — if it is scattered across an arbitrary subset of
+> files — do not scatter records to chase it.** That inability is an architecture smell: the concern
+> lacks a single home (shotgun surgery), or a directory is over-generic. The fix is a **design
+> objective on the code** — give the concern its own directory (single-owner / cohesion / SRP,
+> `design-principles.md`) — after which it has a natural home for its record. Treat a concern that wants
+> to scatter as a discovered refactoring objective.
 
-When this happens, the right move is a **design objective on the code**, not a workaround in the record:
-give the concern its own module/directory so it *can* be named as one unit (this is the
-single-owner / cohesion / SRP work in `design-principles.md`). File the record only once the concern is
-cohesive — then its `code:` is a single target and its anchor is one hash. The lean format is
-deliberately unable to express a scattered anchor, so that poor cohesion surfaces as a task instead of
-being quietly absorbed. Treat a record that *wants* to point at scattered files as a discovered
-refactoring objective.
+**The exception — a genuine project-wide norm.** A convention that applies to *all* code uniformly
+("PascalCase types", a house style) is not the smell: it is a root record (no anchor), like the charter.
+Distinguish by one question — one responsibility that leaked across files (→ refactor), or a uniform
+norm that by nature applies everywhere (→ root). Enforcing a norm is an opt-in linter, never a record.
 
-**But do not mistake a project-wide norm for the smell.** A genuine capsule-wide convention ("all types
-are PascalCase", "public functions carry a docstring", a house style) legitimately applies to *all* code
-uniformly — it is not a scattered responsibility, it is a standing rule. File it as a `code:`-less
-normative record (a `decisions/` ADR or a `requirements/` record) at the **capsule root**; placement
-gives it capsule-wide scope, like the charter, and it carries **no anchor** (nothing specific to hash;
-a norm does not "drift" from a file). The distinguishing question: does the rule name **one
-responsibility that ought to have a single home** but leaked (→ smell, refactor), or a **uniform norm
-that by nature applies everywhere** (→ root, no `code:`)? Enforcing such a norm, if wanted, is the
-opt-in fitness-function (a linter emitting capsa `X-` findings), never the passive record.
+## Anchor on filing — the target is the record's location, never by hand
+
+The moment you file a record, stamp its anchor: `python3 knowledge/anchor.py <record>`. The tool derives
+the target from where the record sits — a `component.md` gets a `shape:` of its directory; a
+decision/insight gets a `hash:` of its component's code; a cross-cutting root record gets none — and
+writes the single `hash:`/`shape:` line (design records are excluded, so editing knowledge never trips
+its own anchor). A read-time hook later re-derives and, on drift, advises *"re-verify"* — never blocks.
+
+## `decisions/` are append-only
+
+To change a decision, add a new one that supersedes it (name the superseded one in the body, mark the
+old one superseded); never rewrite a decided record.
 
 ## Who files, and when
 
-The Guide owns the capsule. You file the durable records — from your own decisions and from the design
-reasoning the Worker returns. At planning time file the charter/requirements/substrate/decisions the
-design commits to; at review time file the structural decisions and insights the round produced, and
-append a *superseding* ADR when a decision changed. Don't batch it "for later" — an unfiled decision is
-a lost one.
+The Guide owns the records — from its own decisions and the design reasoning the Worker returns. At
+planning time file the charter/substrate/decisions the design commits to; at review time file the
+structural decisions and insights the round produced, and add a *superseding* decision when one changed.
+An unfiled decision is a lost one.
 
-## Two rules that keep the capsule trustworthy
+## Reading — walk from where you work
 
-1. **`decisions/` are append-only.** To change one, write a new ADR naming the one it supersedes; never
-   rewrite a decided record.
-2. **Anchor on filing, never by hand.** Run `python3 tools/aims_anchor.py <record>` — it reads the
-   record's `code:`, computes the right anchor (content, or shape for a `component.md`), and stamps the
-   single `hash:`/`shape:` line. A read-time hook later re-hashes it and advises *"re-verify"* if the
-   code drifted — it never blocks.
-
-## Reading the capsule — the surfacing rule
-
-Starting work at a node, read by placement: every normative record on the walk to the capsule root
-(requirements, decisions, `component.md`) plus in-scope insights — not the whole capsule. This is the
-whole point of the long-term layer: a continuation session does **not** start from scratch and
-re-derive — it reads the records in force, builds on them, and files its own new conclusions the same
-way. A stale-flagged record is *possibly* out of date; re-verify against the current code before
-relying on it.
-
-## Bootstrapping
-
-If `.capsa/` does not exist, create `core/capsule.yaml` (the manifest — `capsa_version`, project
-name/slug) on the first filing; add record directories as records appear. Templates for each record
-type are in `../assets/capsa-record-templates.md`.
+Starting work in a directory, read the record in force there (its `component.md` and local
+`decisions/`/`insights/`) and walk up to the root (`charter.md`, root `decisions/`) — not the whole
+tree. This is the point of the long-term layer: a continuation session reads the records in force and
+builds on them instead of re-deriving, and files its own new conclusions the same way. A stale-flagged
+record is *possibly* out of date; re-verify against the current code before relying on it.

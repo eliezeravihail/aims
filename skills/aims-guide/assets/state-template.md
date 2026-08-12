@@ -1,8 +1,8 @@
 # aims Guide State
 
 Loop status only — the flags that drive the loop and let it survive compaction. This file is **not**
-the design record, and it lives *outside* the capsule (capsa forbids run-state in a capsule). The
-durable engineering design lives in the product's `.capsa/` capsule (facts, kept next to the code,
+the design record, and it lives in `.aims/state.md`, outside the design records. The
+durable engineering design lives as records in the code tree (facts, kept next to the code they describe,
 anchored to it — see `references/design-record.md`). Keep this short; do not use it as a transcript or
 a worker task log.
 
@@ -32,8 +32,8 @@ auto
 ## Current objective
 
 <!-- The single unit of work in flight. Transient loop state — it is replaced each objective, not a
-     durable design record. When it resolves, its lasting design output is filed into the `.capsa/`
-     capsule (charter / requirements / decisions / component.md / insights); it does not accumulate here. -->
+     durable design record. When it resolves, its lasting design output is filed as records in the code
+     tree (a root charter / decisions, and a component.md + decisions/insights beside the code); it does not accumulate here. -->
 
 **Kind:** <!-- design | implementation | refactoring — sets the review lens. -->
 

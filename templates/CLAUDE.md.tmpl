@@ -4,19 +4,21 @@
 
 ## Design & documentation (aims)
 
-This project uses **aims**: design is the goal, and the durable design knowledge lives in a **capsa**
-capsule at `.capsa/` — one record per fact, placed in the tree at the node it governs (placement is
-scope). Work the design through the `/aims-*` commands.
+This project uses **aims**: design is the goal, and durable design knowledge lives **in the code tree,
+next to the code it describes** — a component's `component.md` inside its directory, its `decisions/`
+and `insights/` beside it; cross-cutting records (`charter.md`, root `decisions/`) at the repo root. The
+one directory structure is both the code graph and the knowledge tree. Work the design through the
+`/aims-*` commands.
 
-- **Where design knowledge goes:** a boundary/ownership/architecture decision → `.capsa/decisions/`
-  (append-only ADRs; supersede, never rewrite); a requirement/rule → `.capsa/requirements/`; the
-  structure of a part → `.capsa/components/<slug>/component.md`; an engineering lesson →
-  `.capsa/insights/`.
-- **Anchor every record on filing** with `python3 .aims/aims_anchor.py` — `anchors:` for a record about
-  file content, `--shape` for one about structure. Never hash by hand.
-- **Read by placement:** at a node, read the normative records on the walk to the capsule root plus
-  in-scope insights — not the whole capsule. If the read-time hook flags a record as possibly stale,
-  re-verify it against the current code before relying on it.
+- **Where design knowledge goes:** a boundary/ownership/architecture decision → a `decisions/` record
+  beside the code (append-only; supersede, never rewrite); the structure of a part → a `component.md`
+  in that part's directory; an engineering lesson → `insights/{dev,design,code}/` there; a project-wide
+  norm → a root `decisions/` record.
+- **Anchor every record on filing** with `python3 .aims/anchor.py <record>` — it derives the anchor
+  from the record's location; never hash by hand.
+- **Read by location:** at a directory, read its `component.md` and local `decisions/`/`insights/`,
+  then walk up to the root. If the read-time hook flags a record as possibly stale, re-verify it against
+  the current code before relying on it.
 
 ## Build & test commands
 

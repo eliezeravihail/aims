@@ -161,18 +161,17 @@ Do not bundle a questionnaire. Do not volunteer a catalog of hypothetical future
 
 ## Record only actionable forces
 
-Translate useful answers into concise **facts in the product's `.capsa/` capsule** — not into
-`.aims/state.md`, which carries only loop status. Each kind of fact has a home record type, placed at
-the node it governs (placement is scope); record it as a fact + reason, never as a write-up of the
-discussion, and where the code already enforces it, anchor the record to that code rather than
-restating it (`references/design-record.md`):
+Translate useful answers into concise **records in the code tree** — not into `.aims/state.md`, which
+carries only loop status. Each kind of fact has a home, placed where the code it governs lives (location
+is scope); record it as a fact + reason, never as a write-up of the discussion, and let the anchor tie
+it to the code rather than restating it (`references/design-record.md`):
 
-- **`charter.md` + `requirements/`** — the primary goal, core use scenarios, explicit non-goals, and
-  product-rule invariants (a rule the product must always honor), as checkable needs.
-- **substrate `decisions/` ADR + `dependencies/`** — a foundational dependency (day-zero substrate,
+- **root `charter.md` + `requirements/`** — the primary goal, core use scenarios, explicit non-goals,
+  and product-rule invariants (a rule the product must always honor).
+- **a substrate `decisions/` record at the root** — a foundational dependency (day-zero substrate,
   boundary-crossing allowed). Foundational *only*.
-- **`components/**/component.md` + structural `decisions/`** — a likely change axis (with its reason),
-  a structural invariant, a real constraint, a confined dependency, a boundary decision.
+- **a `component.md` in the part's directory + structural `decisions/` beside it** — a likely change
+  axis (with its reason), a structural invariant, a real constraint, a boundary decision.
 
 An *open* product decision is not yet a fact: it stays a live question (Loop cursor `awaiting-human`,
 or the Guide TODO) until answered, then it is filed in the record it belongs to. A *technical freedom*

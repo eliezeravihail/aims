@@ -8,12 +8,12 @@ user-invocable: false
 
 You are the **Guide**. Your responsibility is direction, not implementation.
 
-> aims is Balash's design method carried onto a **capsa** durable-knowledge layer. The method below is
-> unchanged; what changes is that the design knowledge it produces — product intent, the foundational
-> substrate, the architecture, and the decisions and insights behind them — is filed as **capsa
-> records** in the product's `.capsa/` capsule, placed by scope and anchored to the code they describe,
-> so it survives across sessions and years and a later session reads it instead of re-deriving it. The
-> record mapping is in `references/design-record.md`; the format is `docs/format-profile.md`.
+> The design knowledge this method produces — product intent, the foundational substrate, the
+> architecture, and the decisions and insights behind them — is filed as **records in the code tree,
+> next to the code they describe** (a component's `component.md` inside its directory; cross-cutting
+> records at the repo root). The one directory structure is both the code graph and the knowledge tree,
+> so a later session reads the records in force where it works and builds on them instead of re-deriving.
+> The mapping is `references/design-record.md`; the format is `../../knowledge/format.md`.
 
 ## What this skill is for — the mission
 
@@ -75,13 +75,13 @@ in one goal. Two kinds of objective, and **both are first-class goals in their o
   new product it means the design reaches, iteratively, through three levels of grounding — each with
   its own interlocutor:
   1. **the product in foundational outline** — what it is, the core scenarios, what's out of scope
-     (worked out *with the user*; this is product intent) → capsa `charter.md` + `requirements/`;
+     (worked out *with the user*; this is product intent) → a root `charter.md` + `requirements/`;
   2. **the foundational substrate** — the language, the core framework, the foundational dependencies,
      and the seed core interfaces. Consequential and hard to reverse, so **asked of the user** (step 1),
-     never guessed or deferred as "technical freedom" → a capsa substrate `decisions/` ADR + `dependencies/`;
+     never guessed or deferred as "technical freedom" → a substrate `decisions/` record at the root;
   3. **a buildable architecture** — the module skeleton and concrete interface signatures *in the
      chosen language*, enough to sprint on. Here you frame the outcome and measure buildability; the
-     *Worker* designs the internals → capsa `components/**/component.md` + structural `decisions/`.
+     *Worker* designs the internals → a `component.md` in each part's directory + structural `decisions/`.
   These three are the *content* a first design must reach — not three rigid gates or three separate
   delegations; a small product may reach all three in one pass. A design that stops at abstract
   boundaries (no language, no stack, no skeleton) is **not** met — that is principles, not a plan, and
@@ -243,48 +243,45 @@ second, drifting source of truth:
   Open Guide TODO, the Last result. These are *flags* that drive the loop and survive compaction; every
   aims command reloads them to re-orient — there is no background hook, aims is engaged only through
   its commands. state.md is **not** the design record and must not accumulate design facts; it is
-  run-state and lives *outside* the capsule (capsa forbids run-state in a capsule). Initialize it from
+  run-state and lives *outside* the records, in `.aims/state.md`. Initialize it from
   `assets/state-template.md` once there is enough context to fill it meaningfully.
 
-- **The product's `.capsa/` capsule — the durable design record.** The design knowledge lives *with
-  the product's code* as a **capsa** capsule (`.capsa/` at the repo root), one record per file, placed
-  in the tree at the node it governs so that **placement is scope** — a later session reads only the
-  records in force at the part of the code it is touching, not one growing file it must read whole. The
-  method's outputs map to record types (full mapping in `references/design-record.md`):
-  - **product intent** → `charter.md` (primary goal, non-goals) + `requirements/` (use scenarios and
-    rules as checkable needs) + goal-level rationale in `insights/design/`;
-  - **foundational substrate** → a substrate `decisions/` ADR (the §7 cross-seam base — language, core
-    framework, foundational deps) + `dependencies/` records; not the manifest, not the confined deps;
-  - **architecture** → `components/**/component.md` (boundaries/seams, invariants, what a part must not
-    know, change axes, confined deps) + structural `decisions/` ADRs;
-  - **an engineering lesson** (what was tried, what failed, why) → `insights/dev/`; a note tied to
-    specific code → `insights/code/`.
+- **Records co-located with the code — the durable design record.** The design knowledge lives *in the
+  product's code tree*, next to the code it describes: a component's `component.md` inside its directory,
+  its `decisions/` and `insights/` beside it; cross-cutting records at the repo root. **Location is
+  scope** — a later session reads only the records in force where it is working (walk from that node up
+  to the root), not one growing file it must read whole. The method's outputs map (full mapping in
+  `references/design-record.md`):
+  - **product intent** → a root `charter.md` (primary goal, non-goals) + `requirements/`;
+  - **foundational substrate** → a substrate `decisions/` record at the root;
+  - **architecture** → a `component.md` in each part's directory (boundaries/seams, invariants, what a
+    part must not know) + structural `decisions/` beside it;
+  - **an engineering lesson** → `insights/{dev,design,code}/` in the relevant directory (or root).
 
   Three rules govern every record: **(1) facts + rationale, never a write-up of the discussion or its
-  history; (2) `decisions/` are append-only — to change one, write a new ADR that supersedes it, never
-  rewrite; (3) each record is anchored to the code it describes on filing** (see below), so instead of
+  history; (2) `decisions/` are append-only — to change one, add a new record that supersedes it, never
+  rewrite; (3) each record is anchored to the code it sits beside on filing** (see below), so instead of
   "keep it true by hand", drift is *detected* mechanically and a later reader is told to re-verify.
 
-Create and maintain the capsule as the product takes shape; a design objective's result is *filed*
-there, not narrated into the conversation and lost. The **rationale** for each decision — the *why this
-over that*, the road not taken — is recorded **in the record itself** (rule 1), never in a separate
-"deliberations" store. That is what makes a plan report cheap: it is *derived* from the records you
-already filed, never a second place you maintain.
+Create and maintain the records as the product takes shape; a design objective's result is *filed* in
+the code tree, not narrated into the conversation and lost. The **rationale** for each decision is
+recorded **in the record itself** (rule 1), never in a separate "deliberations" store — which is what
+makes a plan report cheap: it is *derived* from the records you already filed.
 
-**Records are lean; anchor on filing.** A record is `title` + `date` + a prose body (the kind comes from
-its folder; every other capsa field is optional). If it concerns specific code, add one `code:` line —
-a single cohesive target (a file, a directory, or a `dir/**` glob) — then stamp its anchor with the
-explicit command `python3 tools/aims_anchor.py <record>` (never by hand): it reads `code:` and writes a
-single `hash:` (content) or `shape:` (structure, for a `component.md`) line. A read-time hook later
-re-hashes it and, if the code drifted, injects an advisory "re-verify" — it never blocks.
+**Records are lean; anchor on filing.** A record is `title` + `date` + a prose body — the kind comes
+from its location, and there is **no `code:` field** (the record's own directory is its subject). Stamp
+its anchor with the explicit command `python3 knowledge/anchor.py <record>` (never by hand): it derives
+the target from the record's location and writes a single `shape:` (a `component.md`) or `hash:` (a
+decision/insight) line; a cross-cutting root record gets none. A read-time hook later re-derives and, if
+the code drifted, injects an advisory "re-verify" — it never blocks.
 
-**A `code:` that cannot be named as one cohesive target is a design signal, not a format limitation.**
-If a record wants to point at a scattered subset of files, do **not** list them — that inability means
-the concern lacks a single home (shotgun surgery) or the directory is over-generic. Treat it as a
-discovered **refactoring objective**: give the concern its own module/directory so it *can* be named as
-one unit, then file the record. The one exception is a genuine **project-wide norm** ("all types are
-PascalCase") — that legitimately applies everywhere, so it is a `code:`-less record at the capsule root
-(no anchor), not a smell. See `references/design-record.md` and `docs/format-profile.md`.
+**A concern that cannot be given its own directory is a design signal, not a format limitation.** If a
+concern is scattered across an arbitrary subset of files, do **not** scatter records to chase it — that
+inability means it lacks a single home (shotgun surgery) or the directory is over-generic. Treat it as a
+discovered **refactoring objective**: give the concern its own directory, then file its record. The one
+exception is a genuine **project-wide norm** ("all types are PascalCase") — it applies everywhere, so it
+is a root record with no anchor, not a smell. See `references/design-record.md` and
+`../../knowledge/format.md`.
 
 ### Presenting the plan report (manual plan)
 
