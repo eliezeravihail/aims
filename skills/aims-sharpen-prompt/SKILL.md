@@ -83,3 +83,10 @@ outcome, the hard call, what to ask, what "done" checkably means, what to protec
 will back the claims — then ask the person the few things only they can answer, and only then do the
 work. For a software product that will evolve, hand off to **aims-guide**, which applies this same
 discipline with design as the goal.
+
+---
+
+*Credit: the discipline of sharpening a vague ask into a small, well-defined brief before handing it to
+an agent was learned from **Kritt-ai**'s [open·kritt](https://github.com/Kritt-ai/open-kritt) — whose
+approach is to break work into focused, precisely-framed tasks rather than point a model at a broad
+goal. aims adapts that idea to framing a single task before you execute it.*
