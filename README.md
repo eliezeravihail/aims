@@ -18,8 +18,8 @@ aims addresses both, with two matching parts:
    records beside the code, so a later clean session *reads the prior conclusions and builds on them*
    rather than re-deriving from scratch.
 
-The name: **aims = AI Manager System** — it manages the design aim of the work. (The pun on *aims /
-goals* is a nod, not the definition.)
+The name: **aims = AI Manager System** — it manages the design aim of the work, with a nod to *aims*
+as in goals.
 
 ---
 
