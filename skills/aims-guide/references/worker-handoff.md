@@ -126,7 +126,7 @@ than trusted by inspection.
 condition, validation rule, classification, and failure/retry/timeout path. Skip only what the
 language or type system already guarantees (an assignment, a getter, a pure re-export, a call that
 only forwards its arguments) — a test that restates one of those proves nothing a compiler didn't
-already prove and exists only to inflate a number. That is the same metric-escape the project README
-warns against ("test-coverage percentages... shallow performance metrics"): the instruction to the
-Worker is *every decision has a test*, never *hit N% coverage* — a coverage number is a thing to
-notice afterward, not a target that was ever requested.
+already prove and exists only to inflate a number. That is the same metric-escape `design-principles.md`
+rejects ("comprehension checks, not code metrics" — a good design is never scored by a line or coverage
+count): the instruction to the Worker is *every decision has a test*, never *hit N% coverage* — a
+coverage number is a thing to notice afterward, not a target that was ever requested.
