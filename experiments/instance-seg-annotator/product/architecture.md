@@ -37,6 +37,8 @@ asserted in `tests/test_coords.py`.
 | `app/main.py` | HTTP transport only — wires pure modules to disk and browser, holds no annotation logic |
 | `app/static/coords.js` | frontend transform (a faithful mirror of `coords.py`) |
 | `app/static/app.js` | canvas rendering + pointer interaction only |
+| `app/tiling.py` (Stage 2) | tile geometry — overlapping-grid layout, coordinate remap, polygon clipping (pure) |
+| `app/export.py` (Stage 2) | export-format owner — tile raster crop + COCO dataset write (the confined format + I/O) |
 
 ## The change axis this is built for
 
@@ -46,4 +48,9 @@ annotations already live in, and the on-disk format is confined behind `storage.
 designed to be a **pure addition**: a new module does `from app.model import AnnotationDocument`, reads
 instance geometry in image space, tiles/clips/exports — touching neither the annotation model nor the
 UI. The seam it plugs into is `AnnotationDocument`.
+
+**Stage 2 landed exactly this way.** `app/tiling.py` + `app/export.py` were added; `model.py`,
+`coords.py`, and the UI were byte-untouched (empty tracked diff). A tile's result *is itself* an
+`AnnotationDocument` (image + instances in that tile's pixel space), so no parallel geometry type was
+introduced. Export is COCO instance segmentation, confined to `export.py` (`decisions/0004`).
 </content>

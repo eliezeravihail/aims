@@ -54,10 +54,59 @@ is a thin mirror of the authoritative Python — recorded in `decisions/0003`.
 
 ## Stage 2 — result
 
-_(filled in after the evolution: how tiling + export plugged into the Stage-1 seam, what the Stage-2
-session read vs. re-derived, test output, records filed.)_
+The evolution was delegated to a **fresh Worker session** — a clean continuation. It was *not* told
+where the boundary was; it was told to consult the co-located design records to find the seam, and to
+add rather than rewrite. This is the actual test of the knowledge layer.
+
+**What the continuation session read to orient itself.** By its own report: `goals.md`, `architecture.md`,
+`base-dependencies.md`, `dependencies.md`, the three `decisions/`, and `app/model.py` + its companion
+`model.py.md` (plus the existing tests). `architecture.md` names the seam outright — *"a new module does
+`from app.model import AnnotationDocument` … the seam it plugs into is `AnnotationDocument`."* The Worker
+plugged into exactly that, and reused `AnnotationDocument` as the per-tile representation (a tile *is* an
+image + instances in tile-local pixels), so it introduced **no parallel geometry type**.
+
+**What was built** (additively): `app/tiling.py` — pure tile geometry (overlapping-grid layout,
+coordinate remap, Sutherland–Hodgman polygon clip; no I/O); `app/export.py` — the confined COCO
+export-format owner (tile raster crop + `annotations.json`); plus `tests/test_tiling.py` and
+`tests/test_export.py`.
+
+**Measurement (Guide, re-run honestly).**
+- `python3 -m pytest` → **48 passed** (30 Stage-1 + 18 new).
+- **The key result — was the boundary fought? No.** `git diff` on tracked files since the Stage-1 commit
+  is a single README note (the explicitly-permitted export blurb); `app/model.py`, `app/coords.py`, and
+  everything under `app/static/` are **byte-identical**. Import check confirms `tiling.py` pulls in only
+  stdlib + `app.model`; the format + all I/O sit in `export.py`. The directed seam absorbed the
+  evolution as a pure addition.
+- Adversarial edges green: straddling instance clipped to bounds; fully-outside instance absent;
+  overlap → a border instance appears (clipped) in two tiles; empty tiles export validly; known-point
+  coordinate remap correct. CLI verified end-to-end (400×300, tile 200 / overlap 50 → 6 tiles).
+
+**Records filed** (co-located): `architecture.md` updated (owners table + "Stage 2 landed this way"),
+`dependencies.md` updated (export format resolved to COCO, confined), `decisions/0004` (COCO export),
+anchored companions `app/tiling.py.md` and `app/export.py.md`. The Worker's tension — where the raster
+crop belongs (I/O) vs. keeping tiling pure — is recorded in both companions' Discussions.
 
 ## Verdict
 
-_(did the directed boundary hold; was Stage 2 additive; did the records carry the design forward.)_
+Both halves of aims showed up in one real, evolving build:
+
+1. **Directing design as the goal worked.** Stage 1's objective was a *design outcome* (the
+   annotation-geometry ↔ image-presentation boundary), not a feature ticket. The Worker produced a
+   structurally-invariant coordinate boundary at construction time — the zoom/pan invariance is proven by
+   a test, not policed after the fact.
+2. **The boundary held under a genuine evolution.** Stage 2 (satellite tiling + COCO export) — the exact
+   change the boundary was chosen to absorb — landed with **zero edits to the annotation model or UI**.
+   That is the design paying off, measured by an empty tracked diff, not asserted.
+3. **The co-located records carried the design forward.** A *fresh* session with no memory of Stage 1
+   found the intended seam by **navigating the records** (`architecture.md` → `model.py` + companion),
+   and continued from the recorded conclusion instead of re-deriving or rewriting it. This is the
+   continued-development claim, reproduced on a real product rather than a toy.
+
+**Honest limits.** The two Workers are subagents of one session, not truly independent humans; the
+Stage-2 session was *instructed* to read the records (aims' method does this via the SessionStart hook in
+a real install, but here it was a prompt). Docker `compose build` could not run live in the sandbox (no
+daemon) — the app boots under uvicorn (the container's entrypoint), but a live container run is
+unverified. The favorable seam ("a tile is just another `AnnotationDocument`") is partly a credit to the
+Stage-1 design choice under test, which is the point — but it means this is one evolution, not a
+statistical claim.
 </content>

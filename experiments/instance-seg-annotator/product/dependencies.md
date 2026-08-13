@@ -14,7 +14,8 @@ meant to be swappable without reaching across the codebase.
   file, or a database) would change only `storage.py`.
 - **Default class list — `app/classes.default.json`, loaded by `app/config.py`.** Project data, not code;
   replaced per project via the mounted config. name + color + id per class.
-- **Dataset export format (Stage 2, forthcoming) — will be a confined choice** behind its own module
-  (e.g. COCO / YOLO-seg). It reads `AnnotationDocument` and writes the chosen format; swapping formats
-  touches only that module.
+- **Dataset export format (Stage 2) — COCO instance segmentation, owned by `app/export.py`.** It reads
+  `AnnotationDocument` (per tile) and writes the tile images + a single `annotations.json`. All
+  COCO-specific detail is confined to `export.py`; swapping to YOLO-seg touches only that module.
+  (system: `decisions/0004-coco-instance-segmentation-export.md`.)
 </content>

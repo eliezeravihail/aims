@@ -67,6 +67,33 @@ Everything else is an owner of exactly one concern: `storage.py` (JSON on disk),
 `images.py` (list images / read sizes), `config.py` (mounts + class list),
 `main.py` (HTTP transport), and the frontend (`static/`, rendering + input).
 
+## Stage 2: export a tiled training dataset
+
+Large source images (e.g. satellite scenes) can be cut into **overlapping tiles**
+and exported as a **COCO instance-segmentation** dataset. Annotations are remapped
+into each tile's local pixel space and polygons are clipped to the tile bounds (an
+instance straddling a border is clipped; one fully outside a tile is dropped; with
+overlap, a border instance can appear in more than one tile).
+
+```bash
+# tile size + overlap are in source-image pixels
+python -m app.export sat.png ./dataset --tile-size 512 --overlap 64
+```
+
+This writes a dataset folder:
+
+```
+dataset/
+  images/<tile>.png     one PNG crop per tile
+  annotations.json      COCO (images, annotations, categories)
+```
+
+By default it reads the source image from the input dir and its annotations from
+the annotations dir (same mounts as the app); override with `--input-dir` /
+`--annotations-dir`. Tiles with no instances still export as valid images with
+zero annotations. Tiling geometry lives in `app/tiling.py` (pure); the COCO format
+is confined to `app/export.py` — swapping formats touches only that module.
+
 ## Tests
 
 ```bash
