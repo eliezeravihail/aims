@@ -105,6 +105,41 @@ The format is [`knowledge/format.md`](knowledge/format.md); the mapping from met
 
 ---
 
+## Install
+
+aims is a Claude Code plugin. Requirements: Python 3 (standard library only) and bash — nothing else.
+
+1. **Add the marketplace and install the plugin**, from within Claude Code:
+   ```
+   /plugin marketplace add eliezeravihail/aims
+   /plugin install aims@aims
+   ```
+   This makes the `aims-guide` skill and the `/aims-*` commands available in every session.
+
+2. **Set up a project** — in the project you want to use aims on:
+   ```
+   /install-on .
+   ```
+   Idempotent. It installs the two per-project hooks (`session-start`, and the read-time staleness
+   advisory) plus the anchor tool under `.aims/`, and wires them into `.claude/settings.json`. It never
+   touches your code or any existing design records.
+
+## Getting started — how to run it
+
+Drive the design from within a session in your project:
+
+- **Autonomous** — `/aims-plan-and-build "build a URL shortener with pluggable storage"` runs the whole
+  loop (discovery → design objective → build → review → file the records), pausing only for open product
+  decisions.
+- **Supervised, phase by phase** — `/aims-plan "<task>"` → read the plan report → `/aims-build` →
+  `/aims-review`.
+- **Review any change on its own** — `/aims-review <branch | diff | path>`.
+
+As it works, aims files design knowledge **co-located with the code**: a companion `<file>.md` beside
+each source file, and root records (`goals.md`, `architecture.md`, …). A later fresh session reads those
+by navigating to the relevant file's companion — and continues instead of re-deriving. If you read a
+companion whose source has since changed, the staleness hook says *"re-verify"*.
+
 ## Commands
 
 - `/aims-plan` — choose one design objective, file the durable records it commits to, draft the Worker
@@ -115,6 +150,24 @@ The format is [`knowledge/format.md`](knowledge/format.md); the mapping from met
 - `/aims-plan-and-build` — the full autonomous loop, pausing only for open product decisions.
 - `/install-on <path>` — install aims' per-project pieces (the two hooks + the anchor tool) into a
   target project.
+
+## Running the experiments
+
+[`experiments/`](experiments/) holds the evaluations behind the design — each with a README (design +
+honest limits) and a `results.md`:
+
+- [`experiments/navigation/`](experiments/navigation/) — *does a fresh agent find the knowledge it
+  needs by navigating the structure, without reading the whole project?* Reproduce: copy
+  `navigation/product/` to a scratch directory, then run a fresh, no-history session (e.g. a
+  subagent) with the task in the README. It should open only the relevant file's companion — the
+  recorded run read 2 of 8 files and honored a constraint that lived only in the companion.
+- [`experiments/continued-development/`](experiments/continued-development/) — *does a clean session
+  continue from the records instead of re-deriving?* Reproduce: take `continued-development/product-v1/`
+  (a small product with its records), hand a fresh session the product plus a continuation task, and
+  compare against a blind session with the records withheld.
+
+Each README states exactly what was handed to each fresh session and what was measured, so a run is
+reproducible and the claims are checkable.
 
 ## What aims deliberately does not have
 
