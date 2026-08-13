@@ -4,9 +4,9 @@
 the work optimizes toward, and preserves the design knowledge so it compounds across sessions instead
 of resetting each time.**
 
-Every coding CLI already plans and builds — that is not the point. aims' point is to make *code quality
-and architecture* a first-class objective, the thing the agent optimizes for at the design stage,
-rather than whatever happens to survive getting features to ship. Two halves:
+aims' point is to make *code quality and architecture* a first-class objective, the thing the agent
+optimizes for at the design stage, rather than whatever happens to survive getting features to ship.
+Two halves:
 
 1. **Directing the agent** — hand the agent code-quality/architecture as the objective it optimizes
    toward (with the feature as a constraint), then measure the result. Good structure is produced at
