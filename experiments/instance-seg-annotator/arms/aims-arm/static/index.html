@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Instance Segmentation Annotator</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header>
+    <div class="nav">
+      <button id="prev" title="Previous (←)">‹ Prev</button>
+      <span id="position">Loading…</span>
+      <button id="next" title="Next (→)">Next ›</button>
+    </div>
+    <div class="actions">
+      <span id="flash" class="flash"></span>
+      <button id="save" title="Save (Ctrl/Cmd+S)">Save</button>
+      <button id="export" title="Cut every image into overlapping tiles and export a COCO dataset">Export tiles</button>
+      <button id="toggle-editor">Edit classes</button>
+    </div>
+  </header>
+
+  <div id="classes" class="class-bar"></div>
+
+  <div id="class-editor" class="class-editor hidden">
+    <div id="class-editor-rows"></div>
+    <div class="editor-actions">
+      <button id="add-class">+ Add class</button>
+      <button id="save-classes">Save classes</button>
+    </div>
+  </div>
+
+  <main>
+    <div class="canvas-wrap">
+      <canvas id="canvas"></canvas>
+      <p class="hint">Click to place vertices · Enter/double-click to close (≥3) · Esc cancel · Backspace undo vertex</p>
+    </div>
+    <aside class="sidebar">
+      <h2>Objects (<span id="obj-count">0</span>)</h2>
+      <ul id="objects"></ul>
+    </aside>
+  </main>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

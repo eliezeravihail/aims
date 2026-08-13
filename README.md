@@ -189,8 +189,16 @@ single task before you execute it.
 
 ## Running the experiments
 
-[`experiments/`](experiments/) holds the evaluations behind the design — each with a README (design +
-honest limits) and a `results.md`:
+[`experiments/`](experiments/) holds the evaluations behind the design. Every experiment must follow the
+protocol — a controlled, **blind-judged** comparison (a control/clean arm + a separate judge), not a
+single-arm demonstration:
+
+- **[`experiments/PROTOCOL.md`](experiments/PROTOCOL.md)** — how to run an aims pilot: two arms (aims vs.
+  clean), a hidden oracle, staged reveals with no foreknowledge, and blind judgment by separate judge
+  subagents (three unmerged reports; verify the judge). A demonstration is not an experiment; the control
+  arm and the separate blind judge are what make it one.
+
+The pilots:
 
 - [`experiments/navigation/`](experiments/navigation/) — *does a fresh agent find the knowledge it
   needs by navigating the structure, without reading the whole project?* Reproduce: copy
@@ -201,9 +209,12 @@ honest limits) and a `results.md`:
   continue from the records instead of re-deriving?* Reproduce: take `continued-development/product-v1/`
   (a small product with its records), hand a fresh session the product plus a continuation task, and
   compare against a blind session with the records withheld.
+- [`experiments/instance-seg-annotator/`](experiments/instance-seg-annotator/) — a real, container-run
+  product (multi-class instance-segmentation annotator) built across a staged evolution (general
+  annotator → satellite tiling + dataset export), run as a two-arm blind pilot under `PROTOCOL.md`.
 
-Each README states exactly what was handed to each fresh session and what was measured, so a run is
-reproducible and the claims are checkable.
+Each README states exactly what was handed to each arm and what was measured, so a run is reproducible and
+the claims are checkable.
 
 ## What aims deliberately does not have
 
