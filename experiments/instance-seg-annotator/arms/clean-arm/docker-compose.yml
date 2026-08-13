@@ -1,0 +1,13 @@
+services:
+  annotator:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      # Inside the container, images + annotations live at /data.
+      - DATA_DIR=/data
+    volumes:
+      # Point this at your own image folder:
+      #   IMAGES_DIR=/path/to/my/images docker compose up
+      # Defaults to ./data next to this file.
+      - "${IMAGES_DIR:-./data}:/data"

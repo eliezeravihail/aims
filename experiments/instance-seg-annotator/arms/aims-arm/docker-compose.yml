@@ -1,0 +1,11 @@
+services:
+  annotator:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      # Point IMAGES_DIR at your folder of PNG/JPEG images on the host.
+      # Annotations (.annotations/) and classes.json are written inside it.
+      - "${IMAGES_DIR:-./sample-images}:/data"
+    environment:
+      ANNOTATOR_DATA_DIR: /data

@@ -1,0 +1,54 @@
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  font: 14px/1.4 system-ui, sans-serif;
+  color: #1f2933;
+  background: #f4f5f7;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 14px;
+  background: #1f2933;
+  color: #fff;
+}
+header .nav, header .actions { display: flex; align-items: center; gap: 10px; }
+#position { min-width: 240px; text-align: center; }
+
+button {
+  cursor: pointer;
+  border: 1px solid #cbd2d9;
+  background: #fff;
+  color: #1f2933;
+  border-radius: 5px;
+  padding: 5px 10px;
+}
+button:hover { background: #eef1f4; }
+.flash { color: #48c774; min-width: 90px; }
+
+.class-bar { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 14px; background: #e4e7eb; }
+.class-btn { display: flex; align-items: center; gap: 6px; border-width: 2px; }
+.class-btn.active { background: #1f2933; color: #fff; }
+.swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; border: 1px solid #0003; }
+
+.class-editor { padding: 10px 14px; background: #eef1f4; border-bottom: 1px solid #cbd2d9; }
+.class-editor.hidden { display: none; }
+.editor-row { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+.editor-row input[type="text"], .editor-row input:not([type="color"]) { padding: 4px 6px; }
+.editor-actions { display: flex; gap: 8px; margin-top: 6px; }
+
+main { flex: 1; display: flex; min-height: 0; }
+.canvas-wrap { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+#canvas { flex: 1; width: 100%; background: #333; cursor: crosshair; min-height: 0; }
+.hint { margin: 0; padding: 6px 14px; color: #52606d; background: #e4e7eb; font-size: 12px; }
+
+.sidebar { width: 240px; background: #fff; border-left: 1px solid #cbd2d9; padding: 10px 14px; overflow-y: auto; }
+.sidebar h2 { font-size: 14px; margin: 0 0 8px; }
+#objects { list-style: none; margin: 0; padding: 0; }
+#objects li { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid #f0f0f0; }
+#objects li span:nth-child(2) { flex: 1; }
+#objects button { padding: 2px 8px; }
