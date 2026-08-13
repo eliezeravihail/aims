@@ -21,7 +21,7 @@ aims answers each of these:
 
 ---
 
-# Chapter 1 — Directing the agent · הכוונת הסוכן
+# Chapter 1 — Directing the agent
 
 An implementing agent optimizes toward whatever goal it is handed. Give it a feature ticket and it
 optimizes for the feature landing; design quality becomes whatever happens to survive. So if you want
@@ -65,7 +65,7 @@ The method lives in [`skills/aims-guide/`](skills/aims-guide/SKILL.md); the "goo
 
 ---
 
-# Chapter 2 — Documenting & preserving knowledge · תיעוד ושימור ידע
+# Chapter 2 — Documenting & preserving knowledge
 
 A design objective's result is not narrated into the chat and lost — it is **filed as a record in the
 code tree, next to the code it describes**, so the next session inherits it. This is what turns a
