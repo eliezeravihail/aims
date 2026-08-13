@@ -16,7 +16,7 @@ use `/aims-plan`, `/aims-build`, or `/aims-review` instead.)
   next objective → and so on. A returning Worker **auto-advances** the loop; you do not stop after one
   objective.
 - On the first objective of a new product, establish state and run discovery first — including the
-  **day-zero foundational substrate** (SKILL step 1), filed as a substrate ADR + `dependencies/` — before
+  **day-zero foundational substrate** (SKILL step 1), filed as `base-dependencies.md` — before
   choosing the objective. Records are filed beside the code they govern; cross-cutting ones at the root.
 - Pause only at the **two legitimate human moments**: an *open product decision* you must not guess,
   and *receiving the next product change*. Do not run away — the same guardrails apply: one objective

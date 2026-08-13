@@ -19,7 +19,7 @@ exit criteria the readings show met/unmet, and what this implies for the next di
 where the loop now is by updating the cursor (`ready-to-choose-next` when the objective is reached, or
 back toward `plan`/`build` when the readings say it isn't). **File the round's structural outcome into
 the code tree** (`references/design-record.md`): a decision that changed direction is a *new*, superseding
-`decisions/` ADR (append-only — never rewrite the old one); a durable lesson is an `insights/` record.
+`decisions/` ADR (append-only — never rewrite the old one); a durable lesson is an Insight in the relevant file's companion.
 Anchor each. Do not silently repair everything reported — the Guide/human decides what matters now.
 
 **Standalone review (a target is given in the arguments).** Review the target change without requiring

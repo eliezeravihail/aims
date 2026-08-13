@@ -57,9 +57,5 @@ The plugin's distributable hook source lives under `templates/hooks/`; the local
 `.claude/hooks/` (dogfooding). Keep them byte-identical (guarded by `tests/copies-identical.sh`); refresh
 via `/install-on .`.
 
-## What was removed (and why)
-
-The memory-tree subsystem (mark/consolidate/find-dirty/lint/doctor/…) and its hooks were **cut**.
-Relevance is now structural — a walk of the co-located record tree — so there is no mutable store to
-keep coherent. The history of that subsystem lives in `docs/adr/` (frozen) and in the superseding
-records here.
+There is no background maintenance machinery — no memory store, no consolidation, no doctor. Relevance
+is structural (navigate the co-located records), so nothing needs to be kept coherent between turns.

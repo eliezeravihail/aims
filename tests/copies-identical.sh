@@ -4,8 +4,7 @@
 #   templates/commands/install-on.md ←→ .claude/commands/install-on.md ←→ commands/install-on.md
 #
 # The design-method slash commands (commands/aims-*.md) are plugin-marketplace commands loaded when
-# aims is enabled as a plugin; they are not per-project installed, so they are not paired here. The
-# memory subsystem this test used to check is gone (replaced by the capsa capsule + staleness hook).
+# aims is enabled as a plugin; they are not per-project installed, so they are not paired here.
 
 set -u
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)

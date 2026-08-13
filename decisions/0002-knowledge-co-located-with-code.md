@@ -11,8 +11,7 @@ in a same-named companion beside it (`render.py` → `render.py.md`), holding it
 Discussions; read the whole companion when you touch the file. **System-level** — cross-cutting records
 at the root (`goals.md`, `architecture.md`, `base-dependencies.md`, `dependencies.md`, ADRs under
 `decisions/`). The one directory structure is both the code graph and the knowledge tree; knowledge is
-reached by navigating to the file or the root record, never by reading the whole project. Supersedes the
-earlier separate-tree and directory-`component.md` designs.
+reached by navigating to the file or the root record, never by reading the whole project.
 
 Consequences: no parallel tree — renaming a source file and its companion together stays in sync with
 nothing to update.
