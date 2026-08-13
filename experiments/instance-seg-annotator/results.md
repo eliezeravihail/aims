@@ -69,6 +69,28 @@ ownership at the price of a serialization layer, a heavier export integration, a
 the clean arm bought a leaner, self-contained export (and a richer frontend — pan/zoom/vertex-editing) at
 the price of a diffused Pillow dependency and a path-safety invariant its storage design does not own.
 
+### Verifying the judges (did they measure design, or execution?)
+
+The recurring failure in this method's history is a "design" judge that silently scores *execution* —
+does it work, test count, feature richness. So the judges were audited (a separate pass classifying every
+load-bearing finding) and one factual claim was re-checked against source:
+
+- **The design verdicts rest on design-quality criteria, not execution.** Every load-bearing finding is a
+  genuine design property — dependency confinement, invariant ownership, seam/fork structure, earned
+  abstraction, coupling, concept economy. No finding used test-pass/test-count, performance, or "it works"
+  as a design signal. The one true feature-richness axis (the clean arm's richer frontend — pan/zoom/
+  vertex-edit) was **explicitly identified and deliberately excluded** from the design score by the YAGNI
+  judge, which is the correct discipline. The split is a real design disagreement (owned boundaries vs.
+  fewer unearned abstractions), not design-vs-execution confusion.
+- **But one judge mis-observed a load-bearing fact.** The two judges gave *contradictory* observations
+  about the clean arm's Pillow use. Re-checked against source: `clean-arm/app/export.py:32` **and**
+  `images.py:13` both `from PIL import Image` (two modules), while the aims arm has it only in
+  `images.py:11` (one). So the **ownership judge was correct** and the **YAGNI judge was wrong** to list
+  "both confine Pillow" as an equivalence. This does not flip either verdict (the YAGNI judge scored on the
+  serialization tax + export self-containment, not on Pillow), but it lowers confidence in the YAGNI
+  judge's observation accuracy — and, on the one axis where they conflicted, the evidence favors the aims
+  arm. "Verify the judge, don't trust it" earned its place here.
+
 ## Q2 — continuity (did the fresh session continue from the records?) → **yes, and blind-corroborated**
 
 This is where the durable-records layer showed a real, measured effect — judged separately from Q1.
@@ -200,6 +222,9 @@ cross-room rule did.
 - **Skill pin impurity** (balash-guide vs aims-guide, above).
 - **`docker compose build` could not run live** (no daemon in the sandbox); both apps were verified booting
   under uvicorn, the container's own entrypoint. Live container runs are unverified.
-- Judges are subagents; load-bearing claims were required to carry a reproduction or `file:line`, and the
-  operator independently re-ran both suites — but the judges were not themselves re-judged by a third party.
+- Judges are subagents. Load-bearing claims were required to carry a reproduction or `file:line`; the
+  operator independently re-ran both suites; the design verdicts were audited for execution-drift (clean —
+  see "Verifying the judges"); and one contradicted structural claim (Pillow confinement) was re-checked
+  against source. That check found a genuine **mis-observation by one judge** — evidence that these judges
+  can and do err, so single-judge structural claims should be spot-verified, not trusted.
 </content>
