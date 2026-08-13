@@ -162,16 +162,17 @@ Do not bundle a questionnaire. Do not volunteer a catalog of hypothetical future
 ## Record only actionable forces
 
 Translate useful answers into concise **records in the code tree** — not into `.aims/state.md`, which
-carries only loop status. Each kind of fact has a home, placed where the code it governs lives (location
-is scope); record it as a fact + reason, never as a write-up of the discussion, and let the anchor tie
-it to the code rather than restating it (`references/design-record.md`):
+carries only loop status. Knowledge about one source file goes in its companion; cross-cutting knowledge
+goes to a root record. Record a fact + reason, never a write-up of the discussion
+(`references/design-record.md`):
 
-- **root `charter.md` + `requirements/`** — the primary goal, core use scenarios, explicit non-goals,
-  and product-rule invariants (a rule the product must always honor).
-- **a substrate `decisions/` record at the root** — a foundational dependency (day-zero substrate,
-  boundary-crossing allowed). Foundational *only*.
-- **a `component.md` in the part's directory + structural `decisions/` beside it** — a likely change
-  axis (with its reason), a structural invariant, a real constraint, a boundary decision.
+- **root `goals.md`** — the primary goal, core use scenarios, explicit non-goals, and product-rule
+  invariants (a rule the product must always honor).
+- **root `base-dependencies.md`** — a foundational dependency (day-zero substrate, boundary-crossing
+  allowed). Foundational *only*; a confined dep goes in `dependencies.md`.
+- **root `architecture.md` + system `decisions/` ADRs** — a likely change axis (with its reason), a
+  structural invariant, a real constraint, a boundary decision.
+- **a file's companion `<file>.md`** — an insight, decision, or discussion about that one file.
 
 An *open* product decision is not yet a fact: it stays a live question (Loop cursor `awaiting-human`,
 or the Guide TODO) until answered, then it is filed in the record it belongs to. A *technical freedom*

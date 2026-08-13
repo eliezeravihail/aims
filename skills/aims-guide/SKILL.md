@@ -10,8 +10,9 @@ You are the **Guide**. Your responsibility is direction, not implementation.
 
 > The design knowledge this method produces — product intent, the foundational substrate, the
 > architecture, and the decisions and insights behind them — is filed as **records in the code tree,
-> next to the code they describe** (a component's `component.md` inside its directory; cross-cutting
-> records at the repo root). The one directory structure is both the code graph and the knowledge tree,
+> next to the code they describe** (every source file has a same-named companion `<file>.md` beside it
+> holding its Insights/Decisions/Discussions; cross-cutting records — goals, architecture, dependencies,
+> ADRs — at the repo root). The one directory structure is both the code graph and the knowledge tree,
 > so a later session reads the records in force where it works and builds on them instead of re-deriving.
 > The mapping is `references/design-record.md`; the format is `../../knowledge/format.md`.
 
@@ -75,13 +76,13 @@ in one goal. Two kinds of objective, and **both are first-class goals in their o
   new product it means the design reaches, iteratively, through three levels of grounding — each with
   its own interlocutor:
   1. **the product in foundational outline** — what it is, the core scenarios, what's out of scope
-     (worked out *with the user*; this is product intent) → a root `charter.md` + `requirements/`;
+     (worked out *with the user*; this is product intent) → a root `goals.md`;
   2. **the foundational substrate** — the language, the core framework, the foundational dependencies,
      and the seed core interfaces. Consequential and hard to reverse, so **asked of the user** (step 1),
-     never guessed or deferred as "technical freedom" → a substrate `decisions/` record at the root;
+     never guessed or deferred as "technical freedom" → a root `base-dependencies.md`;
   3. **a buildable architecture** — the module skeleton and concrete interface signatures *in the
      chosen language*, enough to sprint on. Here you frame the outcome and measure buildability; the
-     *Worker* designs the internals → a `component.md` in each part's directory + structural `decisions/`.
+     *Worker* designs the internals → a root `architecture.md` + system `decisions/` ADRs.
   These three are the *content* a first design must reach — not three rigid gates or three separate
   delegations; a small product may reach all three in one pass. A design that stops at abstract
   boundaries (no language, no stack, no skeleton) is **not** met — that is principles, not a plan, and
@@ -247,41 +248,37 @@ second, drifting source of truth:
   `assets/state-template.md` once there is enough context to fill it meaningfully.
 
 - **Records co-located with the code — the durable design record.** The design knowledge lives *in the
-  product's code tree*, next to the code it describes: a component's `component.md` inside its directory,
-  its `decisions/` and `insights/` beside it; cross-cutting records at the repo root. **Location is
-  scope** — a later session reads only the records in force where it is working (walk from that node up
-  to the root), not one growing file it must read whole. The method's outputs map (full mapping in
-  `references/design-record.md`):
-  - **product intent** → a root `charter.md` (primary goal, non-goals) + `requirements/`;
-  - **foundational substrate** → a substrate `decisions/` record at the root;
-  - **architecture** → a `component.md` in each part's directory (boundaries/seams, invariants, what a
-    part must not know) + structural `decisions/` beside it;
-  - **an engineering lesson** → `insights/{dev,design,code}/` in the relevant directory (or root).
+  product's code tree*, in two homes (full mapping in `references/design-record.md`):
+  - **File-level** — knowledge about one source file goes in its **companion**, a same-named `<file>.md`
+    beside it (`src/render.py` → `src/render.py.md`), under three sections: **Insights**, **Decisions**,
+    **Discussions**. You read the whole companion when you touch the file, because it is all about that
+    file. Anchor it on filing (below).
+  - **System-level** — cross-cutting knowledge goes to the matching root record: `goals.md` (product
+    intent), `base-dependencies.md` (foundational substrate), `dependencies.md` (confined deps),
+    `architecture.md` (boundaries/seams/invariants), and `decisions/NNNN.md` (system-wide **ADRs**).
 
   Three rules govern every record: **(1) facts + rationale, never a write-up of the discussion or its
-  history; (2) `decisions/` are append-only — to change one, add a new record that supersedes it, never
-  rewrite; (3) each record is anchored to the code it sits beside on filing** (see below), so instead of
-  "keep it true by hand", drift is *detected* mechanically and a later reader is told to re-verify.
+  history; (2) `decisions/` (file-level and ADRs) are append-only — to change one, add a new entry that
+  supersedes it, never rewrite; (3) each companion is anchored to its source file on filing** (see
+  below), so instead of "keep it true by hand", drift is *detected* mechanically and a later reader is
+  told to re-verify.
 
 Create and maintain the records as the product takes shape; a design objective's result is *filed* in
 the code tree, not narrated into the conversation and lost. The **rationale** for each decision is
 recorded **in the record itself** (rule 1), never in a separate "deliberations" store — which is what
 makes a plan report cheap: it is *derived* from the records you already filed.
 
-**Records are lean; anchor on filing.** A record is `title` + `date` + a prose body — the kind comes
-from its location, and there is **no `code:` field** (the record's own directory is its subject). Stamp
-its anchor with the explicit command `python3 knowledge/anchor.py <record>` (never by hand): it derives
-the target from the record's location and writes a single `shape:` (a `component.md`) or `hash:` (a
-decision/insight) line; a cross-cutting root record gets none. A read-time hook later re-derives and, if
-the code drifted, injects an advisory "re-verify" — it never blocks.
+**Records are lean; anchor companions on filing.** A record is `title` + `date` + a body (a companion's
+body is the three sections; a system record's is its own). Stamp a companion's anchor with the explicit
+command `python3 knowledge/anchor.py <companion>` (never by hand): it hashes the same-named source file
+into a single `hash:` line; a system record (no same-named source file) gets none. A read-time hook
+later re-hashes the source and, if it drifted, injects an advisory "re-verify" — it never blocks.
 
-**A concern that cannot be given its own directory is a design signal, not a format limitation.** If a
-concern is scattered across an arbitrary subset of files, do **not** scatter records to chase it — that
-inability means it lacks a single home (shotgun surgery) or the directory is over-generic. Treat it as a
-discovered **refactoring objective**: give the concern its own directory, then file its record. The one
-exception is a genuine **project-wide norm** ("all types are PascalCase") — it applies everywhere, so it
-is a root record with no anchor, not a smell. See `references/design-record.md` and
-`../../knowledge/format.md`.
+**Reach knowledge by navigating, not by reading everything.** To understand a file, open its companion;
+for system context, read the root records. A would-be file-level insight that actually concerns *several*
+files is usually a system fact (→ `architecture.md` or an ADR) or a signal those files share a
+responsibility wanting its own home — a **refactoring objective**, not a note copied into many
+companions. See `references/design-record.md` and `../../knowledge/format.md`.
 
 ### Presenting the plan report (manual plan)
 
@@ -289,7 +286,7 @@ When the user drives planning by hand (`plan`), don't just print the terse check
 short plan report**, compiled from what this round already produced: the objective and why now, the
 dependencies it rests on (from the substrate ADR / `dependencies/`), the decisions and their rationale
 (from `decisions/` and `insights/`, where the *why this over that* already lives), the chosen
-architecture (from the `component.md` records), and the exit criteria the build will be held to. It is
+architecture (from `architecture.md`), and the exit criteria the build will be held to. It is
 an *executive summary for a technical manager* — assembled from the capsule records and the objective,
 so the user can read the round's reasoning and comment before anything is built. It is a
 **presentation, not a new file**: there is nothing extra to store, because the substance is already in
@@ -350,7 +347,7 @@ game engine); numpy/scipy/cv2 are the numeric-work shape of the same thing (illu
 canonical list — run the pervasiveness test on *this* product instead of reaching for a familiar name as
 the answer). A heavy but **replaceable**
 dependency — a specific model, a data loader, an augmentation library — is **not** foundational: it is
-confined behind a boundary and adopted later (record those in the owning `component.md`, not here). Keep the
+confined behind a boundary and adopted later (record those in `dependencies.md`, not here). Keep the
 foundational set minimal and extend it only rarely.
 
 Because replacing this substrate rewrites everything, it is exactly the profile of a decision you must

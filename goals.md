@@ -1,5 +1,5 @@
 ---
-title: "aims — charter"
+title: "goals"
 date: 2026-08-12
 ---
 

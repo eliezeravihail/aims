@@ -67,43 +67,37 @@ code tree, next to the code it describes**, so the next session inherits it. Thi
 one-session method into long-term development: months later, a fresh session at some part of the code
 reads the conclusions in force there and continues, instead of starting over.
 
-**The idea — the structure carries both the code and the knowledge.** A component's record is a
-`component.md` **inside that component's directory**, its `decisions/` and `insights/` beside it;
-cross-cutting records live at the repo root. There is no separate folder and no `.capsa/` tree that
-mirrors the code — the one directory structure is *both* the code graph and the knowledge tree, so
-understanding and navigation come from the structure itself. **Location is scope:** a reader loads only
-the records in force where it is working (walk from that directory up to the root), never one growing
-file it must read whole. And because a record lives *in* the code's own directory, **moving a directory
-moves its knowledge with it** — no parallel tree to keep in sync.
-
-**A record is lean.** Just a title, a date, and a prose body carrying the decision and its rationale;
-the *kind* comes from the location (`component.md`, a file under `decisions/` or `insights/`, or
-`charter.md` at the root). There is **no `code:` field** — the record's own directory is its subject.
+**The idea — the structure carries both the code and the knowledge.** There are two homes. Every source
+file has a **companion** with the same name plus `.md`, right beside it (`src/render.py` →
+`src/render.py.md`), holding what is known about *that file* under three sections — **Insights**,
+**Decisions**, **Discussions**. Cross-cutting knowledge lives at the repo root: `goals.md`,
+`architecture.md`, `base-dependencies.md`, `dependencies.md`, and `decisions/` (system-wide ADRs). The
+one directory structure is *both* the code graph and the knowledge tree, so knowledge is reached by
+**navigating** to the file or the root record — you never read the whole project to find what bears on
+the file in front of you.
 
 ```yaml
 ---
-title: "render owns SVG output"
+title: "render.py"
 date: 2026-08-12
 ---
-render turns a maze into SVG. It must not know how the maze was generated. Chose SVG over canvas
-because the pages are static.
+## Insights
+- SVG was chosen over canvas because the pages are static.
+## Decisions
+- render must not know how the maze was generated.
+## Discussions
+- Considered PNG; dropped — not crisp when zoomed.
 ```
 
-**Knowledge is anchored, so drift is detected — not trusted.** A small tool derives a record's anchor
-target from *where the record sits* and stamps one hash: a `shape:` fingerprint for a `component.md`
-(its directory's parts), a content `hash:` for a decision/insight (its component's code), none for a
-cross-cutting root record. You never compute a hash or name a path. When a later session **reads** a
-record whose code has since changed, one advisory hook says *"re-verify"* — it **never blocks**, and it
-reads the actual code, so it catches drift whether the change went through aims or was made by hand.
+**Knowledge is anchored, so drift is detected — not trusted.** The rule is one derivation: a record
+`X.md` anchors to a sibling file named `X` (its name with `.md` removed) if it exists — so
+`render.py.md` gets a content `hash:` of `render.py`, while `goals.md` (no file named `goals`) is a
+system record with no anchor. A small tool stamps the hash; you never compute one or name a path. When a
+later session **reads** a companion whose source has changed, one advisory hook says *"re-verify"* — it
+**never blocks**. Because the pairing is by name, renaming a source and its companion **together** stays
+in sync with nothing to update.
 
-**The structure is also a design signal.** Because a record lives *in* a directory, a component **is** a
-directory. If a concern cannot be given its own directory — if it is scattered across an arbitrary
-subset of files — that inability is telling you the concern lacks a single home (shotgun surgery) or a
-directory is over-generic, so it becomes a **refactoring objective** in the code, not a workaround in the
-record. (The one exception is a genuine project-wide norm — "all types are PascalCase" — which applies
-everywhere: a root record, no anchor.)
-
-**`decisions/` are append-only** — to change a decision you add a new one that supersedes it, so the
+**`decisions/` are append-only** — to change a decision you add a new entry that supersedes it, so the
 history of what once bound the code is never rewritten.
 
 The format is [`knowledge/format.md`](knowledge/format.md); the mapping from method output to record is

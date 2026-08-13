@@ -1,75 +1,80 @@
 # Record templates (co-located)
 
-Copy a block, fill `title` + `date` + the body, place the file **in the code tree** at the node it
-governs, then anchor it: `python3 knowledge/anchor.py <record>`. The tool writes the `hash:`/`shape:`
-line — never you. There is no `code:` field: the record's own directory is its subject. Dates are
-`YYYY-MM-DD`.
+Two homes. File-level knowledge → a companion beside the source file; cross-cutting → a root record.
+Anchor a companion on filing: `python3 knowledge/anchor.py <companion>` (system records take no anchor).
+Dates are `YYYY-MM-DD`.
 
 ---
 
-## Charter — `charter.md` at the repo root (cross-cutting; no anchor)
+## File companion — `<source-file>.md` beside the source file (e.g. `src/render.py.md`)
 
 ```markdown
 ---
-title: "<Product> — charter"
+title: "render.py"
 date: <date>
 ---
+## Insights
+- <what was learned about this file — tried, failed, why>
+## Decisions
+- <a file-level choice + the rule it imposes; append-only, supersede in place>
+## Discussions
+- <a trade-off weighed, an option considered, the road not taken>
+```
 
+Leave a section empty until it has content. The anchor is a `hash:` of the same-named source file,
+stamped by the tool.
+
+## Goals — `goals.md` at the root (system; no anchor)
+
+```markdown
+---
+title: "goals"
+date: <date>
+---
 ## Primary goal
-<what this product is for.>
-
+## Use scenarios
 ## Non-goals
-<what we deliberately do not design for yet.>
 ```
 
-## Component — `<component-dir>/component.md` (inside the code directory; anchor is `shape:`)
+## Architecture — `architecture.md` at the root (system; no anchor)
 
 ```markdown
 ---
-title: "<component>"
+title: "architecture"
 date: <date>
 ---
-
-## Purpose
-## Boundaries & seams   <!-- what it separates; what may cross; what it must not know -->
-## Invariants          <!-- structural rules; point to the guarding test -->
+## Boundaries & seams
+## Invariants
+## Likely change axes
 ```
 
-## Decision — `<component-dir>/decisions/NNNN-slug.md`, or root `decisions/…` if cross-cutting (append-only)
+## Base dependencies — `base-dependencies.md` at the root (the foundational substrate only)
+
+```markdown
+---
+title: "base-dependencies"
+date: <date>
+---
+- <the language / framework / pervasive base — what stands on it and why it is foundational>
+```
+
+## Dependencies — `dependencies.md` at the root (confined, replaceable deps)
+
+```markdown
+---
+title: "dependencies"
+date: <date>
+---
+- <dependency> — what it is for, and which boundary confines it
+```
+
+## ADR — `decisions/NNNN-slug.md` at the root (system-wide; append-only)
 
 ```markdown
 ---
 title: "<decision>"
 date: <date>
 ---
-
 Context → the decision → consequences → alternatives ("chose X over Y because Z").
-If this supersedes an earlier decision, name it here.
+If this supersedes an earlier ADR, name it here.
 ```
-
-## Requirement — `requirements/NNNN-slug.md` (root, or under the component it constrains)
-
-```markdown
----
-title: "<need>"
-date: <date>
----
-
-<the need, who needs it, why. A product-rule invariant goes here.>
-```
-
-## Insight — `<component-dir>/insights/{dev,design,code}/slug.md` (or root)
-
-```markdown
----
-title: "<lesson>"
-date: <date>
----
-
-<what was learned: what was tried, what failed, why — fact + reason, not a transcript.>
-```
-
-## Project-wide norm — a `decisions/` record at the repo root (no anchor)
-
-A convention that applies to *all* code uniformly ("all types are PascalCase"). Root placement gives it
-capsule-wide scope; it carries no anchor because a norm does not drift from a file.

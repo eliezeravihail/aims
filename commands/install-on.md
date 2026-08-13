@@ -52,7 +52,7 @@ If `per-class`, walk each via `AskUserQuestion`. List every **deletion** explici
 Copy from `AIMS_ROOT` into `TARGET` per the table above; `chmod +x TARGET/.claude/hooks/*.sh`. Then
 delete the stale remnants listed in the gate — those, and only those. Read-only on `TARGET/src`,
 `TARGET/tests`, `TARGET/lib`, manifests, `TARGET/README.md`, `TARGET/LICENSE`, and every existing design
-record (`charter.md`, `component.md`, anything under a `decisions/`/`insights/`).
+record (`goals.md`, `architecture.md`, a companion `<file>.md`, anything under `decisions/`).
 
 ### settings.json merge
 

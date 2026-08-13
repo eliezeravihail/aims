@@ -33,7 +33,7 @@ auto
 
 <!-- The single unit of work in flight. Transient loop state — it is replaced each objective, not a
      durable design record. When it resolves, its lasting design output is filed as records in the code
-     tree (a root charter / decisions, and a component.md + decisions/insights beside the code); it does not accumulate here. -->
+     tree (root goals/architecture/decisions, and a companion beside each source file); it does not accumulate here. -->
 
 **Kind:** <!-- design | implementation | refactoring — sets the review lens. -->
 

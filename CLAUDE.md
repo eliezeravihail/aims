@@ -13,27 +13,26 @@ for the overview; this file is the working guidance for developing aims itself.
 - `commands/aims-*.md` — the design-method slash commands; `commands/install-on.md` — per-project install.
 - `knowledge/` — the durable-knowledge layer: `format.md` (the record format), `anchor.py` (write-time
   stamper), `staleness_hook.py` (read-time advisory).
-- Design records are **co-located in this repo's own code tree** (dogfood): `charter.md` and root
-  `decisions/` at the root; a `component.md` in each code directory (`skills/aims-guide/component.md`,
-  `knowledge/component.md`, …) with its `decisions/`/`insights/` beside it.
+- Design records are **co-located in this repo's own code tree** (dogfood): root `goals.md`,
+  `architecture.md`, and `decisions/` (system ADRs); a companion beside each source file
+  (`knowledge/anchor.py.md`, `knowledge/staleness_hook.py.md`, …).
 
-## How aims documents itself — co-located records
+## How aims documents itself — companions + root records
 
-Durable design knowledge for aims lives **next to the code it describes**, not in a separate folder:
+Durable design knowledge for aims lives **next to the code it describes**, in two homes:
 
-- A boundary/ownership/architecture decision → a `decisions/` record beside the code (append-only;
-  supersede, never rewrite), or at the root if cross-cutting.
-- The structure of a part → a `component.md` **inside that part's directory**.
-- An engineering lesson → `insights/{dev,design,code}/` in the relevant directory (or root).
-- A project-wide norm → a root `decisions/` record (no anchor).
+- Knowledge about one source file → its **companion** `<file>.md` beside it, under the sections
+  Insights / Decisions / Discussions (Decisions are append-only — supersede in place, never rewrite).
+- Cross-cutting knowledge → a root record: `goals.md`, `architecture.md`, `base-dependencies.md`,
+  `dependencies.md`, or a `decisions/` ADR.
 
-**Anchor every record on filing** with `python3 knowledge/anchor.py <record>` — it derives the target
-from the record's location (shape for a `component.md`, content for a decision/insight, none for a root
-record) and stamps the single `hash:`/`shape:` line. Never hash by hand. When you read a record and the
-staleness hook flags it, re-verify against the current code before relying on it.
+**Anchor every companion on filing** with `python3 knowledge/anchor.py <companion>` — it hashes the
+same-named source file and stamps the single `hash:` line (a system record with no same-named source
+file gets none). Never hash by hand. When you read a companion and the staleness hook flags it,
+re-verify against the current code before relying on it.
 
-Read by location: at a directory, read its `component.md` and local `decisions/`/`insights/`, then walk
-up to the root — not the whole tree.
+Read by navigating: to understand a file, open its companion; for system context, read the root records
+— not the whole tree.
 
 ## Build & test
 
