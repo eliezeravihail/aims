@@ -1,112 +1,158 @@
 ---
-title: "results — instance-segmentation annotator (a real aims build)"
+title: "results — instance-segmentation annotator (two-arm blind pilot)"
 date: 2026-08-13
 ---
 
-## What this experiment is
+## What this pilot is
 
-A real, evolving product built *through* aims: the Guide chooses one design objective at a time and
-delegates each to a Worker; the design knowledge is filed as co-located records (companions beside code
-+ root `goals.md` / `architecture.md` / `base-dependencies.md` / `decisions/`). Two stages, a genuine
-evolution between them, so we can see whether the boundary aims directed at Stage 1 absorbs Stage 2
-without a rewrite.
+A **build pilot** under [`../PROTOCOL.md`](../PROTOCOL.md): a real, container-run product
+(multi-class instance-segmentation annotator) built by two arms across a **staged evolution neither arm
+saw in advance**, then judged **blind** by separate judges I did not build with. This replaces an earlier
+single-arm, self-judged *demonstration* of the same product — which is exactly the failure the protocol
+exists to prevent (a demonstration is not an experiment; the control arm and the separate blind judge are
+what make it one).
 
-- **Stage 1** — a general multi-class instance-segmentation annotator, container-run.
-- **Stage 2** — large satellite images arrive: cut into overlapping tiles, export a training dataset.
+- **aims arm** — built following the design method, files co-located records; its Stage-2 evolution run by
+  a **fresh session** told to navigate the records.
+- **clean arm** — an equally capable agent told only "build it well"; no method, no records.
 
-The claim under test: directing the *design boundary* (annotation geometry vs. image
-presentation/storage) as the Stage-1 objective makes Stage 2 a **pure addition** rather than a
-tear-open — and the co-located records let the Stage-2 session continue from the boundary instead of
-re-deriving it.
+Both arms shared an identical substrate (Python/FastAPI + vanilla-canvas + Docker), identical stage cards
+([`cards/stage-1.md`](cards/stage-1.md), [`cards/stage-2.md`](cards/stage-2.md)), and identical
+neutrally-worded oracle answers ([`hidden/spec-and-oracle.md`](hidden/spec-and-oracle.md)). The axis under
+stress: **the seam between annotation geometry and how the image is presented/stored**, exercised by the
+Stage-2 satellite tiling + dataset export.
 
-## Stage 1 — result
+Blind mapping (revealed post-judgment): **X = clean arm, Y = aims arm.** The judges saw only records-
+stripped, anonymized X/Y snapshots and a neutralized design standard.
 
-**What was built** (`product/`): a container-run FastAPI + vanilla-canvas annotator. Pure modules
-`app/coords.py` (image↔viewport transform) and `app/model.py` (annotation data model + validation),
-`app/storage.py` (byte-stable JSON persistence), `app/images.py`, `app/config.py`, `app/main.py` (HTTP
-only), a canvas frontend, `Dockerfile` + `docker-compose.yml`, and a `tests/` suite.
+## The two builds (both independently verified: `pytest` re-run by the operator)
 
-**The directed boundary.** The Stage-1 objective was not a feature ticket — it was a *design outcome*:
-draw a durable seam between annotation geometry and image presentation/storage, such that saved
-coordinates are in original-image pixels and invariant to zoom/pan. The Worker delivered exactly that:
-`ViewportTransform` is immutable, and `coords.viewport_to_image()` is the single funnel every pointer
-sample passes through before it can become a vertex, so nothing downstream holds a screen coordinate.
-`model.py` imports only the stdlib and references nothing about display/viewport/HTTP/tiling/export.
+|  | clean arm (X) | aims arm (Y) |
+|---|---|---|
+| Stage-1 core | polygons in **image-pixel space**, per-image JSON sidecar, Pillow confined | **same** independent choice |
+| Stage-1 tests | 33 passed | 31 passed |
+| Stage-2 evolution | `tiling.py` (pure) + `coco.py` (format) + `export.py` (orch, streams a **zip**); **0 core modules changed** | `tiling.py` (pure) + `export.py` (COCO); model untouched, **3 core modules extended additively** to preserve named invariants |
+| Stage-2 tests | 52 passed (independently re-run) | 66 passed (independently re-run) |
+| Records filed | none (README only) | root records + ADR 0002 + 8 anchored companions |
 
-**Measurement (Guide, re-run honestly).** `python3 -m pytest` → **30 passed in ~0.5s**. The suite
-covers every adversarial edge from the objective: <3-vertex reject, unknown-class reject, empty-document
-valid save, save→load→save byte-stable idempotence, two-instance distinct-class save/reload identity,
-and — the key one — an assertion that applying a viewport transform leaves stored image-space coords
-unchanged. The app was also verified booting under uvicorn end-to-end (config/images/save/reload/422).
-*One honest gap:* the Docker daemon isn't available in this sandbox, so `docker compose build` couldn't
-run live — the compose file validates and the app boots via the same entrypoint the container `CMD`
-uses, but a live container run is unverified here.
+**The Stage-1 convergence is itself a result.** Both arms, independently, chose to store annotations in
+original-image pixel space with the model separate from HTTP/canvas. So the "boundary that makes Stage 2
+additive" was reached by the clean arm too — and **both** landed Stage 2 without touching the annotation
+model. The earlier single-arm demo implied the *method* caused that additivity; the control shows an
+equally-capable agent reaches it unaided. That specific claim does **not** survive the control.
 
-**Records filed** (co-located): root `architecture.md`, `base-dependencies.md`, `dependencies.md`,
-`decisions/0001..0003`; companions `app/coords.py.md`, `app/model.py.md`, `app/storage.py.md` (each
-anchored to its source by the aims anchor tool). A tension the Worker surfaced — class *color* is
-presentation yet the class list is the validation authority — is recorded in `model.py.md` Discussions
-(resolved: color is opaque data the model carries but never acts on).
+## Q1 — direction (is the aims arm's final architecture better?) → **no clear advantage**
 
-One design tension worth noting for the next session: the frontend needs the same transform math as the
-tested `coords.py`. Rather than add a JS build step (forbidden by `base-dependencies.md`), `coords.js`
-is a thin mirror of the authoritative Python — recorded in `decisions/0003`.
+Two opposite-disposition design judges read the same blind X/Y. They **split**, and both called their
+margins narrow and steelmanned the other side:
 
-## Stage 2 — result
+- **Invariant-ownership judge → Y (aims), modest margin.** Y funnels its two load-bearing boundaries
+  through one seam each: **Pillow lives only in `images.py`** (X leaks `from PIL import Image` into
+  `export.py` — two modules now know Pillow), and **path-safety is one gate** in the store (every read/
+  write validates the id first). It found a **reproduction** against X: `storage.load_annotation(data,
+  "../../secret")` returns an `Annotation` read from *outside* the data dir — the invariant is protected
+  only incidentally by Starlette's router, not by X's storage design. X's one real structural win: a
+  cleaner **export-format seam** (COCO confined to `coco.py`) vs. Y inlining COCO records in its export
+  loop.
+- **YAGNI/simplicity judge → X (clean), narrow margin.** Y pays a **distributed serialization tax that
+  owns no present rule** — `Point` objects + a `*_stored`/`from_stored` mapping threaded through three
+  modules, when Y's on-disk and wire shapes are identical (it decouples nothing that diverges). X keeps
+  bare `[x,y]` lists and returns models directly. And X's export evolution touched **zero** core modules
+  (zip to a temp dir), where Y reached into the store to add an `export_dir` concept. Steelman for Y:
+  fewer modules overall (6 vs 8), COCO assembled inline instead of in a once-used builder class, tiling on
+  plain tuples — "if you weight fewest files, Y is simpler and the call flips."
 
-The evolution was delegated to a **fresh Worker session** — a clean continuation. It was *not* told
-where the boundary was; it was told to consult the co-located design records to find the seam, and to
-add rather than rewrite. This is the actual test of the knowledge layer.
+The verdict **flips with the judge's disposition**, and both margins are narrow — the taste-artifact
+signal the two-judge design exists to catch. Per PROTOCOL §7, that is reported as **no clear structural
+advantage**. The arms made different, defensible trades: the aims arm bought tighter dependency/invariant
+ownership at the price of a serialization layer, a heavier export integration, and a weaker format seam;
+the clean arm bought a leaner, self-contained export (and a richer frontend — pan/zoom/vertex-editing) at
+the price of a diffused Pillow dependency and a path-safety invariant its storage design does not own.
 
-**What the continuation session read to orient itself.** By its own report: `goals.md`, `architecture.md`,
-`base-dependencies.md`, `dependencies.md`, the three `decisions/`, and `app/model.py` + its companion
-`model.py.md` (plus the existing tests). `architecture.md` names the seam outright — *"a new module does
-`from app.model import AnnotationDocument` … the seam it plugs into is `AnnotationDocument`."* The Worker
-plugged into exactly that, and reused `AnnotationDocument` as the per-tile representation (a tile *is* an
-image + instances in tile-local pixels), so it introduced **no parallel geometry type**.
+## Q2 — continuity (did the fresh session continue from the records?) → **yes, and blind-corroborated**
 
-**What was built** (additively): `app/tiling.py` — pure tile geometry (overlapping-grid layout,
-coordinate remap, Sutherland–Hodgman polygon clip; no I/O); `app/export.py` — the confined COCO
-export-format owner (tile raster crop + `annotations.json`); plus `tests/test_tiling.py` and
-`tests/test_export.py`.
+This is where the durable-records layer showed a real, measured effect — judged separately from Q1.
 
-**Measurement (Guide, re-run honestly).**
-- `python3 -m pytest` → **48 passed** (30 Stage-1 + 18 new).
-- **The key result — was the boundary fought? No.** `git diff` on tracked files since the Stage-1 commit
-  is a single README note (the explicitly-permitted export blurb); `app/model.py`, `app/coords.py`, and
-  everything under `app/static/` are **byte-identical**. Import check confirms `tiling.py` pulls in only
-  stdlib + `app.model`; the format + all I/O sit in `export.py`. The directed seam absorbed the
-  evolution as a pure addition.
-- Adversarial edges green: straddling instance clipped to bounds; fully-outside instance absent;
-  overlap → a border instance appears (clipped) in two tiles; empty tiles export validly; known-point
-  coordinate remap correct. CLI verified end-to-end (400×300, tile 200 / overlap 50 → 6 tiles).
+The fresh aims Stage-2 session (no memory of Stage 1) **read the records and its design was shaped by
+them**: it cited the two confined seams `architecture.md` names ("Pillow confined behind `images`",
+"storage format confined behind the store") and **preserved both invariants** — keeping Pillow in one
+module (adding `crop_to_file` to `images.py` rather than importing PIL in `export.py`) and routing export
+writes through the store's path-safety owner (`export_dir`) rather than inventing a parallel filesystem
+path.
 
-**Records filed** (co-located): `architecture.md` updated (owners table + "Stage 2 landed this way"),
-`dependencies.md` updated (export format resolved to COCO, confined), `decisions/0004` (COCO export),
-anchored companions `app/tiling.py.md` and `app/export.py.md`. The Worker's tension — where the raster
-crop belongs (I/O) vs. keeping tiling pure — is recorded in both companions' Discussions.
+The corroboration: the **blind** ownership judge — which never saw the records — independently scored
+*exactly those two invariants* as the aims arm's structural wins, and independently found the
+path-traversal weakness in the clean arm that the aims arm avoided. So the co-located records measurably
+changed what the continuation session preserved, and a blind judge confirmed the preservation was real —
+not self-reported. These are invariants legible in the records but **not obvious from the code alone**,
+which is the whole point of the layer.
 
-## Verdict
+**Honest counterweight:** the same records/method also propagated the serialization layer and the
+export-dir concept that the YAGNI judge marked as cost. The records faithfully carried invariants forward;
+they did **not** guarantee a uniformly leaner design. Continuity ≠ dominance.
 
-Both halves of aims showed up in one real, evolving build:
+## Product → **no clear advantage**
 
-1. **Directing design as the goal worked.** Stage 1's objective was a *design outcome* (the
-   annotation-geometry ↔ image-presentation boundary), not a feature ticket. The Worker produced a
-   structurally-invariant coordinate boundary at construction time — the zoom/pan invariance is proven by
-   a test, not policed after the fact.
-2. **The boundary held under a genuine evolution.** Stage 2 (satellite tiling + COCO export) — the exact
-   change the boundary was chosen to absorb — landed with **zero edits to the annotation model or UI**.
-   That is the design paying off, measured by an empty tracked diff, not asserted.
-3. **The co-located records carried the design forward.** A *fresh* session with no memory of Stage 1
-   found the intended seam by **navigating the records** (`architecture.md` → `model.py` + companion),
-   and continued from the recorded conclusion instead of re-deriving or rewriting it. This is the
-   continued-development claim, reproduced on a real product rather than a toy.
+The black-box product judge found both arms satisfy every Stage-1 and Stage-2 acceptance point and produce
+byte-equivalent COCO. Offsetting minors: X has an explicit multi-instance/multi-class reload test and
+streams a downloadable zip; Y adds export-name path-safety coverage and a tighter within-bounds clip
+assertion. One small gap in Y: no automated test asserts *multiple* instances persist+reload (works live;
+coverage asymmetry, not a defect).
 
-**Honest limits.** The two Workers are subagents of one session, not truly independent humans; the
-Stage-2 session was *instructed* to read the records (aims' method does this via the SessionStart hook in
-a real install, but here it was a prompt). Docker `compose build` could not run live in the sandbox (no
-daemon) — the app boots under uvicorn (the container's entrypoint), but a live container run is
-unverified. The favorable seam ("a tile is just another `AnnotationDocument`") is partly a credit to the
-Stage-1 design choice under test, which is the point — but it means this is one evolution, not a
-statistical claim.
+## Cost → the treatment's price
+
+| | clean arm | aims arm | delta |
+|---|---|---|---|
+| output tokens (S1+S2) | ~157.7k | ~223.7k | **+42%** |
+| tool uses | 76 | 133 | +75% |
+| wall-clock | ~17 min | ~23 min | +38% |
+
+The extra reasoning + record-filing is the treatment; recorded, not equalized.
+
+## Did the aims format documentation integrate correctly? (record-layer fidelity)
+
+Audited separately from the design verdict:
+
+- **Format written correctly.** All 8 companions use `title`/`date`/`hash:` frontmatter + Insights /
+  Decisions / Discussions, same-name-as-source; all 8 anchors verified **in sync** (recomputed sha256).
+  New files got new companions (`tiling.py.md`, `export.py.md`); on **updated** files (`images.py.md`,
+  `store.py.md`) the fresh session **appended** new decisions and re-anchored (append-not-rewrite honored).
+  System-level knowledge went to root records (ADR `0002`, `architecture.md` tension, `dependencies.md`);
+  pure wiring/markup files got no companion.
+- **Reading/continuation worked.** The session navigated to the relevant records and its Stage-2 decisions
+  were shaped by them (see Q2).
+- **Impurity:** the arm produced `.balash/state.md`, but the aims-guide skill uses `.aims/state.md` — so
+  the run was actually steered by the **`balash-guide`** skill (available from the sibling repo), not
+  `aims-guide`. Because aims is the port of Balash and they share the identical companion format + method,
+  the treatment is faithfully represented and the fidelity finding holds; but the exact skill pin was
+  balash-guide, not aims-guide.
+
+## Verdict, plainly
+
+- **Q1 (does the method yield better architecture here): no clear advantage.** A genuine, narrow,
+  disposition-dependent split. Neither arm is structurally dominant on this product/axis.
+- **Q2 (do the co-located records carry the design forward): yes, blind-corroborated.** The records
+  changed what a fresh session preserved, and a blind judge independently credited those exact invariants —
+  while also showing the method propagates its costs, not only its wins.
+- **Product: no clear advantage. Cost: aims ~+42% tokens.**
+
+The single most honest sentence: on an axis where a competent engineer already reaches the good seam
+unaided, the method's measurable value was **not** a better one-shot architecture but the **faithful,
+blind-verifiable propagation of specific invariants** to a fresh continuation session — bought at ~40%
+more tokens, and not without propagating its own overhead.
+
+## Honest limits
+
+- **n = 1**, one product, one axis. Suggestive, not a measured effect size. Strength would come from a
+  *sequence* of such pilots, not this single unit.
+- **The arms are subagents of one session**, not independent humans/harnesses; convergent, not fully
+  independent.
+- **The Stage-2 aims session was *instructed* to read the records.** In a real install the SessionStart
+  hook does this; here it was a prompt, so Q2 tests "given that it reads, does it continue correctly,"
+  not "will an unprompted session read."
+- **Skill pin impurity** (balash-guide vs aims-guide, above).
+- **`docker compose build` could not run live** (no daemon in the sandbox); both apps were verified booting
+  under uvicorn, the container's own entrypoint. Live container runs are unverified.
+- Judges are subagents; load-bearing claims were required to carry a reproduction or `file:line`, and the
+  operator independently re-ran both suites — but the judges were not themselves re-judged by a third party.
 </content>

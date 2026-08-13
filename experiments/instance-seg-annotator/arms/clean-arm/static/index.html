@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Instance Segmentation Annotator</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <header id="topbar">
+      <div class="topbar-group">
+        <strong class="app-title">Segmentation Annotator</strong>
+      </div>
+      <div class="topbar-group nav">
+        <button id="prev-btn" title="Previous image ([)">‹ Prev</button>
+        <span id="image-position">–</span>
+        <button id="next-btn" title="Next image (])">Next ›</button>
+      </div>
+      <div class="topbar-group">
+        <span id="current-name" class="current-name">No image</span>
+      </div>
+      <div class="topbar-group right">
+        <span id="dirty-flag" class="dirty-flag hidden">unsaved</span>
+        <button id="save-btn" title="Save (Ctrl+S)">Save</button>
+        <button id="export-btn" title="Export overlapping tiles as a COCO dataset">Export tiles…</button>
+      </div>
+    </header>
+
+    <main id="workspace">
+      <aside id="image-panel" class="sidebar">
+        <h2>Images</h2>
+        <ul id="image-list"></ul>
+      </aside>
+
+      <section id="canvas-panel">
+        <canvas id="canvas"></canvas>
+        <div id="canvas-hint" class="canvas-hint">
+          Click to place points · click the first point or press Enter to close ·
+          Esc cancels · wheel to zoom · drag right-button to pan
+        </div>
+      </section>
+
+      <aside id="side-panel" class="sidebar">
+        <h2>Classes</h2>
+        <div id="class-panel"></div>
+
+        <h2>Objects <span id="object-count" class="badge">0</span></h2>
+        <ul id="object-list"></ul>
+
+        <div class="help">
+          <h3>Keys</h3>
+          <ul>
+            <li><kbd>Enter</kbd> close polygon</li>
+            <li><kbd>Esc</kbd> cancel drawing</li>
+            <li><kbd>Backspace</kbd> undo last point</li>
+            <li><kbd>Delete</kbd> remove selected object</li>
+            <li><kbd>[</kbd> / <kbd>]</kbd> prev / next image</li>
+          </ul>
+        </div>
+      </aside>
+    </main>
+
+    <script type="module" src="/js/app.js"></script>
+  </body>
+</html>
