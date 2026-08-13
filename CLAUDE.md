@@ -3,8 +3,9 @@
 This repository **is** the `aims` plugin. Working on it = developing the plugin itself. The plugin is
 also installed locally (under `.claude/`) so its hooks apply to its own development. Dogfooding.
 
-aims makes design the goal, and keeps the design knowledge co-located with the code. See `README.md`
-for the overview; this file is the working guidance for developing aims itself.
+aims (an AI Manager System) makes code quality and architecture an explicit optimization goal at the
+design stage, and keeps the design knowledge co-located with the code. See `README.md` for the
+overview; this file is the working guidance for developing aims itself.
 
 ## What is where
 

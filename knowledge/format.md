@@ -6,7 +6,7 @@ whole project to find what bears on the file in front of you. There are exactly 
 
 ## 1. File-level — a companion beside each source file
 
-Every source file has a **companion record with the same name plus `.md`**, sitting right next to it:
+A source file that has something worth recording gets a **companion record with the same name plus `.md`**, sitting right next to it (most files never need one):
 
 ```
 src/render.py

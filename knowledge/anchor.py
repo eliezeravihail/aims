@@ -3,7 +3,7 @@
 
 Design knowledge is co-located with the code (knowledge/format.md):
 
-  - **File-level** — every source file `foo.py` has a companion `foo.py.md` beside it, holding what is
+  - **File-level** — a source file `foo.py` that has something worth recording gets a companion `foo.py.md` beside it, holding what is
     known about *that file* under the sections Insights / Decisions / Discussions. Its anchor is a
     content `hash:` of the same-named sibling source file.
   - **System-level** — cross-cutting records at the repo root (`goals.md`, `architecture.md`,

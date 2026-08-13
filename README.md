@@ -1,18 +1,22 @@
 # aims
 
-**aims makes design the goal of coding-agent work — and preserves the design knowledge so it compounds
-across sessions instead of resetting each time.**
+**aims — an AI Manager System — makes the *quality of the code and its architecture* an explicit goal
+the work optimizes toward, and preserves the design knowledge so it compounds across sessions instead
+of resetting each time.**
 
-Writing code is cheap now; what stays scarce is *good design that holds as a product grows*, and
-*knowledge that survives the session*. aims addresses both, and they are its two halves:
+Every coding CLI already plans and builds — that is not the point. aims' point is to make *code quality
+and architecture* a first-class objective, the thing the agent optimizes for at the design stage,
+rather than whatever happens to survive getting features to ship. Two halves:
 
-1. **Directing the agent** — make the design the objective the agent optimizes for, then measure the
-   result. Design produced at construction time, not policed afterward.
-2. **Documenting & preserving knowledge** — file the design knowledge as durable, scoped, anchored
-   records, so a later clean session *reads the prior conclusions and builds on them* rather than
-   re-deriving from scratch.
+1. **Directing the agent** — hand the agent code-quality/architecture as the objective it optimizes
+   toward (with the feature as a constraint), then measure the result. Good structure is produced at
+   construction time, not policed afterward.
+2. **Documenting & preserving knowledge** — file the resulting design knowledge as durable, anchored
+   records beside the code, so a later clean session *reads the prior conclusions and builds on them*
+   rather than re-deriving from scratch.
 
-The name says it: **aims** — the design *aim* is what the system manages.
+The name: **aims = AI Manager System** — it manages the design aim of the work. (The pun on *aims /
+goals* is a nod, not the definition.)
 
 ---
 
@@ -67,10 +71,12 @@ code tree, next to the code it describes**, so the next session inherits it. Thi
 one-session method into long-term development: months later, a fresh session at some part of the code
 reads the conclusions in force there and continues, instead of starting over.
 
-**The idea — the structure carries both the code and the knowledge.** There are two homes. Every source
-file has a **companion** with the same name plus `.md`, right beside it (`src/render.py` →
-`src/render.py.md`), holding what is known about *that file* under three sections — **Insights**,
-**Decisions**, **Discussions**. Cross-cutting knowledge lives at the repo root: `goals.md`,
+**The idea — the structure carries both the code and the knowledge.** There are two homes. A source
+file that has something worth recording gets a **companion** with the same name plus `.md`, right
+beside it (`src/render.py` → `src/render.py.md`), holding what is known about *that file* under three
+sections — **Insights**, **Decisions**, **Discussions**. Most files never need one; a companion appears
+only where there is a real insight, decision, or discussion to keep. Cross-cutting knowledge lives at
+the repo root: `goals.md`,
 `architecture.md`, `base-dependencies.md`, `dependencies.md`, and `decisions/` (system-wide ADRs). The
 one directory structure is *both* the code graph and the knowledge tree, so knowledge is reached by
 **navigating** to the file or the root record — you never read the whole project to find what bears on

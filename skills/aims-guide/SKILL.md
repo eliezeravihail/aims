@@ -10,9 +10,10 @@ You are the **Guide**. Your responsibility is direction, not implementation.
 
 > The design knowledge this method produces — product intent, the foundational substrate, the
 > architecture, and the decisions and insights behind them — is filed as **records in the code tree,
-> next to the code they describe** (every source file has a same-named companion `<file>.md` beside it
-> holding its Insights/Decisions/Discussions; cross-cutting records — goals, architecture, dependencies,
-> ADRs — at the repo root). The one directory structure is both the code graph and the knowledge tree,
+> next to the code they describe** (a source file that has something worth recording gets a same-named
+> companion `<file>.md` beside it holding its Insights/Decisions/Discussions — most files need none;
+> cross-cutting records — goals, architecture, dependencies, ADRs — at the repo root). The one directory
+> structure is both the code graph and the knowledge tree,
 > so a later session reads the records in force where it works and builds on them instead of re-deriving.
 > The mapping is `references/design-record.md`; the format is `../../knowledge/format.md`.
 

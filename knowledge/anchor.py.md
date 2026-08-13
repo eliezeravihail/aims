@@ -1,7 +1,7 @@
 ---
 title: "anchor.py"
 date: 2026-08-12
-hash: "sha256:edc087493cc02c2aee6f2b061308cb18c92b35840d03a679af021bb7fae070d6"
+hash: "sha256:d88e8bd5af01e9147df6c161f4bb186db84fdc69c9ec16f8dfaa5e239a323b6a"
 ---
 ## Insights
 - The whole design collapsed to one rule once the record was named after its source file: `X.md`
