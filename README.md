@@ -1,25 +1,23 @@
 # aims
 
-aims solves two problems that show up wherever an AI agent writes code:
+**AI Manager System**
 
-- **Architecture and code quality are often what's missing.** An agent optimizes for whatever goal
-  it's handed — usually just getting the feature to work — so design quality ends up being whatever
-  happens to survive, not something anyone actually decided on.
-- **Insights and decisions made along the way get lost.** What a session learns and decides while
-  building rarely survives past that session, so later work re-derives it instead of continuing from
-  it.
+When an AI agent writes code, two things tend to go wrong:
 
-aims addresses both, with two matching parts:
+- **The architecture and the code quality suffer.** The agent optimizes for the goal it was given —
+  get the feature working — so the design is whatever happens to fall out of that, not something
+  anyone chose.
+- **What the work learned is lost.** Insights and decisions made while building do not reach the
+  next session, so later work re-derives them from scratch, or contradicts them.
 
-1. **Directing the agent** — hand the agent code-quality/architecture as the objective it optimizes
-   toward (with the feature as a constraint), then measure the result. Good structure is produced at
-   construction time, not policed afterward.
-2. **Documenting & preserving knowledge** — file the resulting design knowledge as durable, anchored
-   records beside the code, so a later clean session *reads the prior conclusions and builds on them*
-   rather than re-deriving from scratch.
+aims answers each of these:
 
-The name: **aims = AI Manager System** — it manages the design aim of the work, with a nod to *aims*
-as in goals.
+1. **Directing the agent** — the goal handed to the agent is the design outcome itself, with the
+   feature attached as a constraint it must satisfy. Quality is built in at construction time, not
+   reviewed in afterward.
+2. **Documenting & preserving knowledge** — insights and decisions are filed as records beside the
+   code they describe, so a later session reads them and continues from there instead of starting
+   over.
 
 ---
 
