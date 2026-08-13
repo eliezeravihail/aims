@@ -141,6 +141,53 @@ unaided, the method's measurable value was **not** a better one-shot architectur
 blind-verifiable propagation of specific invariants** to a fresh continuation session — bought at ~40%
 more tokens, and not without propagating its own overhead.
 
+## Why there was no gap — read against the prior experiments
+
+Earlier pilots (Balash `experiments/RESULTS.md`, #1–#4/#6/#7) **did** measure a design gap. Their decisive
+finding was always the same shape:
+
+> the method won by getting the proportionality right on the **one subtle design decision the feature
+> framing glosses over** — the decision the design objective explicitly *names* for the Worker to reason
+> about. A plain session, handed the feature, does the feature and moves past that decision.
+
+And the gap **shrank toward zero as that decision became more obvious/intrinsic**: pilot #1 (is a cycle
+even possible?) and #2 (what uniqueness do you guarantee?) were clear wins because the plain arm *missed*
+a latent judgment; pilot #3 (Sudoku) was the **closest** pilot precisely because uniqueness is *intrinsic
+to Sudoku*, so the plain arm didn't miss it and the win narrowed to ownership quality only; pilot #4's gap
+came from a late stage that **falsified an implicit assumption** ("rooms are independent").
+
+This pilot reproduces none of the three gap-generating conditions — which is *why* Q1 came back null:
+
+1. **The load-bearing decision was intrinsic, not latent.** "Store annotations in original-image pixel
+   space, model decoupled from display" is the *default any competent engineer reaches for* when building
+   an image annotator — even more obvious than Sudoku's uniqueness (the closest prior pilot). Both arms
+   made it independently at Stage 1. There was no glossed-over judgment for the method to surface, so the
+   first-order decision converged and the mechanism that won #1–#3 had nothing to bite on.
+2. **Stage 2 falsified no earlier assumption.** Unlike #4's cross-room rule, satellite tiling + export is a
+   pure *consumer* of the already-correct pixel model — it broke no hidden Stage-1 assumption, so both arms
+   absorbed it additively. The axis I picked exercised a seam both arms had **already gotten right** rather
+   than stressing a latent one. (Per `PROTOCOL.md` §0: "if you can't name the axis [that discriminates],
+   the pilot won't discriminate." Here the axis was real but its key decision was not gloss-over-able.)
+3. **Both arms ran a strong executor.** Pilot #3's lesson is that the method's edge is clearest carrying a
+   *weaker* executor (a strong Guide lifted a Sonnet Worker past a plain Sonnet). With a strong clean arm,
+   the unaided baseline is already high — that compresses any gap.
+
+What *did* survive is the residue of the same "where should this truth live?" cognition that won the prior
+pilots — the aims arm's tighter ownership of Pillow and path-safety — but it stayed **second-order**
+(because the first-order truth was already placed correctly by both) and was offset by the method's own
+recurring defect, over-build at the seams (here the rule-less serialization layer — the direct analogue of
+the "ceremony at the seams" docked in #1–#3). And it showed up most clearly through the **records
+(Q2)**, not the one-shot build.
+
+So the honest reading is not "the method doesn't work." It is: **on an axis whose key decision is the
+obvious default and whose evolution falsifies nothing, there is no latent judgment to surface, so the
+one-shot design gap collapses** — exactly as the prior sequence predicts at its narrow end — and the
+method's measurable value narrows to faithful, blind-verified *propagation of invariants* to a fresh
+session. To measure a Q1 gap on this product, the pilot would need an axis that hides a decision — e.g. a
+late requirement that the *same physical object spans multiple overlapping source images and must keep one
+identity*, which would falsify "one annotation document per image" and stress ownership the way #4's
+cross-room rule did.
+
 ## Honest limits
 
 - **n = 1**, one product, one axis. Suggestive, not a measured effect size. Strength would come from a
