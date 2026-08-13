@@ -119,14 +119,13 @@ The format is [`knowledge/format.md`](knowledge/format.md); the mapping from met
 ## What aims deliberately does not have
 
 No memory tree, no consolidation/doctor/lint machinery, no write hook, no planning lock. The method's
-documentation discipline plus placement-derived relevance keep the knowledge current by construction;
+documentation discipline plus navigation-by-structure keep the knowledge current by construction;
 the one read-time advisory is the whole of the active machinery. Enforcing a content invariant (a
 linter over the code) is an **opt-in** fitness-function, never part of the passive record layer.
 
 ## The two moving parts
 
-- [`knowledge/anchor.py`](knowledge/anchor.py) — write-time: stamps a record's anchor, derived from the
-  record's own location. Called explicitly by the method, never as a hook. Stdlib only.
+- [`knowledge/anchor.py`](knowledge/anchor.py) — write-time: stamps a companion's anchor by hashing its same-named source file. Called explicitly by the method, never as a hook. Stdlib only.
 - [`knowledge/staleness_hook.py`](knowledge/staleness_hook.py) — read-time: the advisory drift check. Never
   blocks, fail-open.
 
