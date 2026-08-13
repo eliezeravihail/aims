@@ -87,6 +87,6 @@ discipline with design as the goal.
 ---
 
 *Credit: the discipline of sharpening a vague ask into a small, well-defined brief before handing it to
-an agent was learned from **Kritt-ai**'s [open·kritt](https://github.com/Kritt-ai/open-kritt) — whose
+an agent was inspired by **Kritt-ai**'s [open·kritt](https://github.com/Kritt-ai/open-kritt) — whose
 approach is to break work into focused, precisely-framed tasks rather than point a model at a broad
 goal. aims adapts that idea to framing a single task before you execute it.*

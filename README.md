@@ -169,7 +169,7 @@ skill reasons through six things in the task's own terms:
 It is deliberately **not a form to fill in** — a frame you can tick without thinking is the failure it
 exists to prevent. For a software product that will evolve, it hands off to `aims-guide`.
 
-The framing discipline behind this skill was learned from **Kritt-ai**'s
+The framing discipline behind this skill was inspired by **Kritt-ai**'s
 [open·kritt](https://github.com/Kritt-ai/open-kritt) — whose approach is to break work into small,
 well-defined tasks rather than point a model at a broad goal; aims adapts that idea to sharpening a
 single task before you execute it.
