@@ -1,12 +1,15 @@
 # aims
 
-**aims — an AI Manager System — makes the *quality of the code and its architecture* an explicit goal
-the work optimizes toward, and preserves the design knowledge so it compounds across sessions instead
-of resetting each time.**
+aims solves two problems that show up wherever an AI agent writes code:
 
-aims' point is to make *code quality and architecture* a first-class objective, the thing the agent
-optimizes for at the design stage, rather than whatever happens to survive getting features to ship.
-Two halves:
+- **Architecture and code quality are often what's missing.** An agent optimizes for whatever goal
+  it's handed — usually just getting the feature to work — so design quality ends up being whatever
+  happens to survive, not something anyone actually decided on.
+- **Insights and decisions made along the way get lost.** What a session learns and decides while
+  building rarely survives past that session, so later work re-derives it instead of continuing from
+  it.
+
+aims addresses both, with two matching parts:
 
 1. **Directing the agent** — hand the agent code-quality/architecture as the objective it optimizes
    toward (with the feature as a constraint), then measure the result. Good structure is produced at
