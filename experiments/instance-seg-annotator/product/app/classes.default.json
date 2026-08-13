@@ -1,0 +1,7 @@
+[
+  { "id": "building",   "name": "Building",   "color": "#e6194b" },
+  { "id": "vehicle",    "name": "Vehicle",    "color": "#3cb44b" },
+  { "id": "vegetation", "name": "Vegetation", "color": "#4363d8" },
+  { "id": "water",      "name": "Water",      "color": "#42d4f4" },
+  { "id": "road",       "name": "Road",       "color": "#f58231" }
+]
