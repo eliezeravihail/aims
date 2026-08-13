@@ -21,7 +21,7 @@ aims answers each of these:
 
 ---
 
-# Chapter 1 — Directing the agent · הכוונת הסוכן
+# Chapter 1 — Directing the agent
 
 An implementing agent optimizes toward whatever goal it is handed. Give it a feature ticket and it
 optimizes for the feature landing; design quality becomes whatever happens to survive. So if you want
@@ -65,7 +65,7 @@ The method lives in [`skills/aims-guide/`](skills/aims-guide/SKILL.md); the "goo
 
 ---
 
-# Chapter 2 — Documenting & preserving knowledge · תיעוד ושימור ידע
+# Chapter 2 — Documenting & preserving knowledge
 
 A design objective's result is not narrated into the chat and lost — it is **filed as a record in the
 code tree, next to the code it describes**, so the next session inherits it. This is what turns a
@@ -121,7 +121,8 @@ aims is a Claude Code plugin. Requirements: Python 3 (standard library only) and
    /plugin marketplace add eliezeravihail/aims
    /plugin install aims@aims
    ```
-   This makes the `aims-guide` skill and the `/aims-*` commands available in every session.
+   This makes the `aims-guide` skill and the `/aims-*` commands available in every session —
+   including `/aims-sharpen-prompt`, which is useful on its own and needs no project setup.
 
 2. **Set up a project** — in the project you want to use aims on:
    ```
@@ -147,8 +148,36 @@ each source file, and root records (`goals.md`, `architecture.md`, …). A later
 by navigating to the relevant file's companion — and continues instead of re-deriving. If you read a
 companion whose source has since changed, the staleness hook says *"re-verify"*.
 
+## Sharpening any task — `/aims-sharpen-prompt`
+
+The framing discipline on its own, detached from software and from the rest of aims.
+[`/aims-sharpen-prompt`](skills/aims-sharpen-prompt/SKILL.md) turns a vague, hand-waving ask into a
+brief worth executing — *before* the work starts. Installing the plugin is all it needs: no
+`/install-on`, no records, no loop, and the task does not have to be code.
+
+An agent optimizes whatever it was told, so the framing decides whether the result helps. "Plan a
+pension" collapses into "list some funds"; "find the bugs" into "skim for the obvious ones". The
+skill reasons through six things in the task's own terms:
+
+1. the real outcome, not the easy-to-produce proxy for it;
+2. the hard judgment the task hides — faced, not routed around;
+3. what is known vs. what only the person can decide (**ask, never guess**) vs. what is free to pick;
+4. what "done" means, said so it can actually be checked;
+5. what *not* to optimize, and what must not break;
+6. what evidence must back the claims, in place of a self-report.
+
+It is deliberately **not a form to fill in** — a frame you can tick without thinking is the failure it
+exists to prevent. For a software product that will evolve, it hands off to `aims-guide`.
+
+The framing discipline behind this skill was inspired by **Kritt-ai**'s
+[open·kritt](https://github.com/Kritt-ai/open-kritt) — whose approach is to break work into small,
+well-defined tasks rather than point a model at a broad goal; aims adapts that idea to sharpening a
+single task before you execute it.
+
 ## Commands
 
+- `/aims-sharpen-prompt` — sharpen any task into a real brief before executing it; standalone, and not
+  limited to software.
 - `/aims-plan` — choose one design objective, file the durable records it commits to, draft the Worker
   handoff; stop for review.
 - `/aims-build` — delegate the objective to a Worker (or run it inline); stop before evaluation.
