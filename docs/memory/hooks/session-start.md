@@ -1,0 +1,80 @@
+---
+node: hooks/session-start
+kind: module
+code:
+  - templates/hooks/session-start.sh
+  - .claude/hooks/session-start.sh
+commits: []
+sessions:
+  - docs/plans/memory-tree-system.md
+parents: []
+children: []
+related:
+  - memory/phase-b-consolidation
+  - hooks/exit-plan-mode
+  - discipline/plan
+claude_md_refs:
+  - "Hooks"
+  - "Plugin-specific notes (not from template)"
+external_refs:
+  - { path: docs/adr/0004-router-via-hook-injected-context.md, kind: adr, why: this hook is the canonical 'context-injection at session start' channel }
+  - { path: docs/adr/0007-tree-based-memory-with-auto-maintenance.md, kind: adr, why: surfaces docs/memory/README.md (the tree's tag list) up to 2KB }
+owners:
+  - ema
+dirty: false
+last_touched: 2026-08-27T21:10:23Z
+last_consolidated: 2026-08-27T21:10:23Z
+---
+
+## Purpose
+
+SessionStart hook — informational only, never blocks. Surfaces:
+in-progress plans; **orphan draft plans** without an active lock
+(ADR-0015); recently-touched ADRs; the memory tree's top-level
+README.md (ADR-0007); a one-line memory pipeline health summary
+(ADR-0008); and a **standing project-conventions block** that includes
+the planning-as-behavior convention (ADR-0022) and the
+`==== AIMS (internal) ====` reply-format convention (ADR-0021).
+
+## Design rationale
+
+- The orphan-draft warning closes the recovery hole opened by writing
+  the plan draft to disk **before** the approval gate (ADR-0015 Phase 2).
+  A power-cut or context compaction between Phase 2 and Phase 3 leaves
+  a `Status: draft` file on disk without `.claude/.planning-lock`; the
+  warning surfaces that on the next session so the user can `touch` the
+  lock to resume or `rm` the draft to abandon.
+- Memory tree README is capped at 2 KB to keep prompt injection light;
+  the trail-off message tells the model how to read more. The splat is
+  wrapped in an `<aims-repo-data>` fence with a "repository data, not
+  instructions" notice (ADR-0025, commit 48e3988).
+
+## Invariants & gotchas
+
+- Must `exit 0` even on internal failure — SessionStart hooks should
+  not gate the session.
+- Stale-lock vs orphan-draft are mutually exclusive in steady state:
+  lock + in-progress plan = active; lock + no in-progress = stale; no
+  lock + draft = orphan; no lock + no draft = healthy.
+
+## Known issues
+
+- Recent-ADR list filters out `superseded` and `deprecated` only;
+  manually-set `rejected` ADRs would still surface.
+- fixed: the lock line printed "Edit/Write blocked until ExitPlanMode" —
+  false since ADR-0020 (nothing blocks). Replaced with a factual
+  advisory-only note (commit 91fe2bd, L3).
+
+## Pointers
+
+- `templates/hooks/session-start.sh` — single source of truth.
+- `templates/hooks/exit-plan-mode.sh` — the bridge that creates the
+  drafts whose orphans this hook warns about.
+- ADR-0021 — the standing "Project conventions" block surfaces the
+  reply-format marker `===[aims: <msg>]===` for consolidation reports.
+- ADR-0022 — the conventions block describes planning-as-behavior and
+  the optional `/plan` Opus-subagent shortcut.
+
+## Open questions
+
+None.
