@@ -1,0 +1,5 @@
+# Secret contestant mapping (NOT given to the judge)
+design-1 = Arm B (inter-model: Sonnet/Opus/Fable, synthesized)
+design-2 = Baseline (single pass)
+design-3 = Arm C (stance-seeded, synthesized)
+design-4 = Arm A (same model x3, synthesized)
