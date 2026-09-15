@@ -212,6 +212,11 @@ The pilots:
 - [`experiments/instance-seg-annotator/`](experiments/instance-seg-annotator/) — a real, container-run
   product (multi-class instance-segmentation annotator) built across a staged evolution (general
   annotator → satellite tiling + dataset export), run as a two-arm blind pilot under `PROTOCOL.md`.
+- [`experiments/aims-vs-openspec/`](experiments/aims-vs-openspec/) — **planned, not yet run**: aims against
+  a *rival method* rather than against no method. Three arms (aims / OpenSpec / plain), a checkout pricing
+  service evolved across three staged reveals, and four readings that are never merged — design,
+  requirement fidelity (scored on OpenSpec's own standard), continuity, and cost. The plain arm is what
+  distinguishes "both methods work" from "neither method is doing anything".
 
 Each README states exactly what was handed to each arm and what was measured, so a run is reproducible and
 the claims are checkable.
