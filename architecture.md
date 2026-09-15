@@ -12,8 +12,10 @@ date: 2026-08-12
 
 - **panel-plan (plan-side panel)** — generates three independent fixed-axis candidate designs and merges
   them *before* build; distinct from the review panel, which *measures* after build. The axis trio has
-  exactly one owning definition — in `decisions/0005-panel-plan-three-advisors.md`; it is not restated
-  here or anywhere else.
+  exactly one **operating** owner — `skills/aims-guide/references/panel-plan.md` §Axes, the shipping
+  surface a target project actually reads. `decisions/0005` records the decision and its rationale as
+  dated history; `decisions/0006` records the ownership split (shipping surface owns the operating
+  definition, the ADR owns the rationale). Nothing else restates the trio — everything else refers.
 
 ## Invariants
 - Design knowledge is co-located: a source file's knowledge is in its same-named companion; system-wide

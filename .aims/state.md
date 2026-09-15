@@ -6,7 +6,7 @@ stepped
 
 ## Loop cursor
 
-reviewed:awaiting-decision <panel-plan mechanism design — 5 of 7 criteria met; axis-trio ownership unmet, divergence-filing partial>
+ready-to-choose-next <panel-plan mechanism design — all 7 criteria met after the review amendments; next objective is the build>
 
 ## Current objective
 
@@ -36,16 +36,19 @@ mechanism now converts a measured result into method.
       element justified by the strengths it joins; an irreconcilable conflict is decided with a stated
       reason, never silently averaged. The three named shortcuts fail: winner-picking (one plan crowned,
       tokens from the others), union (patchwork of everything), averaging (all strengths diluted).
-- [ ] **Divergence durably filed** — each split axis lands as chosen-over-rejected-with-reason in that
+- [x] **Divergence durably filed** — each split axis lands as chosen-over-rejected-with-reason in that
       round's append-only ADR, navigable by a later session; divergence living only in the conversation
-      fails.
+      fails. *(Met after amendment: the ADR now files harmonized splits as well as decided ones —
+      `worker-result:70-83`.)*
 - [x] **Drop-in output** — the merged result is written into `state.md` under the existing schema contract
       (headings/markers unchanged), parked at `planned:awaiting-build`, and the existing build command
       consumes it with zero special-casing.
 - [x] **Convening falsifiers** — an auto loop convening the panel on a non-opening round fails; a stepped
       `/aims-plan` convening it fails; the `panel-plan` command convenes it every time.
-- [ ] **One owner for the axis trio** — the three axes are defined in exactly one place and referenced
-      everywhere else; a second verbatim copy that can drift fails.
+- [x] **One owner for the axis trio** — the three axes are defined in exactly one place and referenced
+      everywhere else; a second verbatim copy that can drift fails. *(Met after decision: `decisions/0006`
+      splits ownership by kind — the shipping reference owns the operating definition, the ADR owns the
+      rationale; `architecture.md` and `worker-result:92-101` now agree.)*
 - [x] **No gate, no score** — the panel output carries no accept/reject stamp and no numeric score; it
       feeds the Guide's direction only.
 
@@ -96,6 +99,10 @@ reconciliation and the merge procedure), result status against the design goal, 
       Worker contradictory instructions (reading 1).
 - [ ] After the mechanism lands: consider a follow-up objective — should `/aims-plan-and-build` on a new
       product route its opening round through panel-plan automatically (auto-mode convening rule)?
+- [ ] **Next objective (build):** author `skills/aims-guide/references/panel-plan.md` and
+      `commands/aims-panel-plan.md` from the amended design, plus the one-line touches to `SKILL.md`,
+      `modes.md` (the declared exception, stating the downgrade) and `aims-plan-and-build.md`. Design work
+      is closed; this is execution against `worker-result-panel-plan.md`.
 
 ## Last evaluated result
 
@@ -155,3 +162,25 @@ owns the trio) before any build can proceed — it is the one thing blocking bui
 *design amendment* (file harmonizations durably, most likely in the same ADR alternatives section).
 Readings 3 and 4 are cheap corrections to fold into whichever round addresses the first two. The
 mechanism's core — isolation and composition — measured sound; the gaps are at the record-keeping seam.
+
+## Decision on the review readings (2026-09-15)
+
+The Guide's decision at `reviewed:awaiting-decision`. All four readings mattered to the product and all four
+are closed **before** any build — the blocking one by a recorded decision, the rest by amending the design.
+
+1. **Axis-trio ownership (reading 1, blocking).** Decided in favor of the design's instinct, for the reason
+   the design did not state: `decisions/` does not ship to a target project and `skills/` does, so a
+   definition an advisor must operate from cannot live only in an ADR. Filed as
+   `decisions/0006-shipping-surface-owns-operating-definitions.md` — ownership splits **by kind of text**
+   (shipping surface owns the operating definition; the ADR owns the decision and its rationale, frozen as
+   of its date). `architecture.md`'s panel-plan bullet is amended to match; `decisions/0005` is untouched
+   (append-only) and 0006 carries the amendment. The rule generalizes past the trio.
+2. **Harmonizations filed durably (reading 2).** Design amended — the round's ADR files every axis split in
+   one of two named shapes, harmonization or decided conflict. The common case now lands durably.
+3. **The `modes.md` reconciliation (reading 3).** Design amended to state the downgrade plainly:
+   inspectable-after-the-fact advisor drafts are weaker than turn-by-turn watchability, and the exception
+   declares the trade rather than claiming the rationale is intact.
+4. **`master-notes.md` (reading 4).** Cut. `.aims/panel/` keeps the advisor drafts only.
+
+Cursor moves `reviewed:awaiting-decision` → `ready-to-choose-next`. The design objective is reached; the
+next objective is the **build** of the two prose artifacts, not more design.
