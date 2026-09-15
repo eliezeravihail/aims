@@ -35,7 +35,7 @@ valid but the other one saved you more".
 
 If they tie, apply the one the customer entered first.
 
-## Acceptance (we will run these)
+## Cases we will check against (these are what the design has to account for)
 
 | # | Cart | Codes | Expect |
 |---|---|---|---|

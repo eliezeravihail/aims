@@ -31,7 +31,7 @@ time.
 - An unknown or inapplicable code is reported back as such, not silently ignored, and does not stop the rest
   of the cart from pricing.
 
-## Acceptance (we will run these)
+## Cases we will check against (these are what the design has to account for)
 
 | # | Cart | Codes | Expect |
 |---|---|---|---|
@@ -42,8 +42,5 @@ time.
 | A5 | `COFFEE` 4.00 ×4, `WIDGET` 12.50 ×1 | `COFFEE3`, `SAVE10` | total 22.05 |
 | A6 | `WIDGET` 12.50 ×1 | `NOPE` | total 12.50, `NOPE` reported unknown |
 | A7 | `WIDGET` 1.00 ×1 | `TENOFF` | total 0.00, not negative |
-
-Run it however you like — a library with a CLI is fine, an HTTP endpoint is fine. Tests we can run
-ourselves, please.
 
 You can ask us product questions, one at a time.

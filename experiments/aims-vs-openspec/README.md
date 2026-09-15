@@ -1,223 +1,194 @@
-# Pilot — aims vs. OpenSpec (three arms, blind-judged) · **planned, not yet run**
+# Pilot — aims vs. OpenSpec, on the architecture only (planned, not yet run)
 
-A **build pilot** under [`../PROTOCOL.md`](../PROTOCOL.md), with one deliberate extension: the control is no
-longer a single method-less arm but **two** comparators — a rival method (**OpenSpec**) and a plain arm.
-This file is the frozen experiment package (PROTOCOL §1). Nothing in `cards/`, `hidden/` or `starter/` may
-be edited once the first agent runs; [`results.md`](results.md) is written afterwards.
+**Nothing is built in this pilot.** Each arm produces a **design** — the architecture of the product,
+in prose — and it is the designs that are compared. No implementation, no test suite, no running code.
+
+A pilot under [`../PROTOCOL.md`](../PROTOCOL.md), with the deviations of §7 declared. The package here is
+frozen: `cards/`, `hidden/` and `substrate.md` may not be edited once the first arm runs.
+[`results.md`](results.md) is written afterwards.
 
 ---
 
-## 0. Why this comparison is not obvious — and what it is actually measuring
+## 0. What is being compared, and why it is not obvious
 
-aims and OpenSpec are both "a method layered on a capable coding agent", and both leave durable artifacts
-behind. They are **not competitors on the same axis**, and a pilot that pretends otherwise would produce a
-rigged number:
+Both are methods laid over a capable agent, and both leave documents behind. They aim at different things:
 
 | | aims | OpenSpec |
 |---|---|---|
-| What it makes the explicit goal | the **quality of the design/architecture**, at the design stage | **agreement on what to build**, before code |
-| The durable layer | design rationale **co-located with the code** (a companion beside each source file; root `goals`/`architecture`/`decisions`) | behavioral **requirements + scenarios** in `openspec/specs/`, capability-indexed and central; per-change `proposal.md` / `design.md` / `tasks.md`, archived by date on `/opsx:archive` |
-| Indexed by | the file you are about to edit | the capability whose behavior you are about to change |
+| The explicit goal | the **quality of the design** — the architecture is what is being optimized | **agreement on what to build**, before code |
+| What it writes down | design rationale, beside the code it describes (a companion per file; root `goals` / `architecture` / `decisions`) | behavioral **requirements and scenarios** in `openspec/specs/`, plus a per-change `proposal.md`, `design.md` and `tasks.md` |
+| Indexed by | the file you are about to change | the capability whose behavior you are about to change |
 | What a later session inherits | *why this seam is shaped this way, and what it enforces* | *what this capability must do, and the scenarios that pin it* |
 
-So the pilot does **not** ask "which method wins". It asks three separate, separately-judged questions, one
-of which is each method's own home claim, and it is designed so that **"each wins its home reading"** is a
-distinguishable — and entirely publishable — outcome:
+Both produce a design document without writing code — OpenSpec's `/opsx:propose` emits `design.md`, aims'
+plan phase emits an architecture. So a design-only comparison is fair to both, and it isolates the thing
+aims actually claims.
 
-> **R1 — direction (aims' home claim).** After an evolution nobody stated up front, is the aims arm's final
-> **architecture** better than the OpenSpec arm's and the plain arm's?
+Three questions, judged separately and **never merged into one score**:
+
+> **Q1 — is the architecture better?** Read blind, against structural criteria.
 >
-> **R2 — requirement fidelity (OpenSpec's home claim).** Does the product actually do everything that was
-> asked, across all three stages — including the stage-1 and stage-2 behaviors **after** stage 3 rewrites
-> the pricing path? Is each revealed requirement pinned by something (a test, a scenario) rather than
-> merely implemented?
+> **Q2 — does it survive?** When a requirement nobody stated arrives, how much of the earlier architecture
+> stands, and how much has to be torn open? This is the measurement the pilot is built around.
 >
-> **R3 — continuity (both claim it, differently).** Does a **fresh session with no history** continue
-> correctly by navigating its arm's durable layer — reading the prior conclusion and building on it — rather
-> than re-deriving it or tearing the seam open?
+> **Q3 — does a fresh session continue from what was written?** With no memory of the earlier round, does
+> it navigate the arm's documents and build on the prior conclusion, or re-derive it?
 
-Cost is recorded as a fourth, verdict-free reading. **The four are never merged into one score** (PROTOCOL
-§7).
+## 1. Why Q2 is the heart of it
 
-### The plain arm is load-bearing, not a courtesy
+Judging two prose designs on "which is nicer" is soft and rubric-dependent. Q2 is not: it is **countable**.
 
-The [instance-seg pilot](../instance-seg-annotator/results.md) found no gap between method and no-method
-because a strong executor independently made the one decision that mattered. Without a plain arm here, an
-aims/OpenSpec tie would be unreadable: *both methods work equally well* and *neither method does anything
-the model would not have done alone* look identical. The plain arm is what separates them.
+Each arm produces three designs — one per stage. For each arm we compare its stage-2 design against its
+stage-1 design, and its stage-3 against its stage-2, and classify every named component and seam:
 
-## 1. The product and the single axis
+| Class | Meaning |
+|---|---|
+| **survived** | present, unchanged, still doing the same job |
+| **extended** | present, unchanged in responsibility, given more to do at an existing seam |
+| **reopened** | its responsibility or its boundary changed |
+| **discarded** | gone |
 
-**A checkout pricing service.** Small, deterministic, fully testable, no UI, no network, no model calls.
+The reading is the **reopened + discarded count**, with each instance named. A design that anticipated the
+right seam extends; one that did not, reopens. This does not depend on anyone's taste, and either method can
+win it.
 
-The one architectural axis its evolution stresses:
+## 2. The product and the single axis
 
-> **Who owns the composition of a price** — the ordered application of adjustments to a list price, and
-> the single place where money is rounded.
+**A checkout pricing service.** No UI, no network, no persistence — so the design is about structure and
+nothing else.
 
-A stage-1 design may quite reasonably return a price as an opaque number computed inline. That choice is
-**not wrong on the evidence available at stage 1** — it is the latent decision the feature framing glosses
-over, which is exactly the condition the prior pilots identified as necessary for any gap to appear at all.
-Stage 2 (explain every price, adjustment by adjustment, with deltas that must sum exactly) and stage 3 (a
-second market with a different tax model and a different rounding rule) are what falsify it.
+The axis its evolution stresses:
 
-## 2. The staged reveal
+> **Who owns the composition of a price** — the ordered application of adjustments to a list price, and the
+> single place money is rounded.
 
-Three stages. **Only the current card is visible**; the next is revealed only after all three arms close the
-current one. No card hints that a later stage exists (PROTOCOL §1.2).
+At stage 1 an opaque price computed inline is a perfectly reasonable design; nothing visible argues against
+it. That is the latent decision. Stage 2 and stage 3 are what falsify it.
 
-- **Stage 1** — [`cards/stage-1.md`](cards/stage-1.md): price a cart. Line amounts, a cart total, three
-  kinds of promotion. *Nothing suggests anything else is coming.*
-- **Stage 2** — [`cards/stage-2.md`](cards/stage-2.md): **explain** every price — the ordered adjustments
-  that produced it, each with its exact money delta, summing precisely; plus non-stackable promotions,
-  where the superseded one must still appear in the explanation.
+## 3. The three stages
+
+Only the current card is visible. No card hints that another stage exists.
+
+- **Stage 1** — [`cards/stage-1.md`](cards/stage-1.md): price a cart; three kinds of promotion.
+- **Stage 2** — [`cards/stage-2.md`](cards/stage-2.md): **explain** every price — the ordered adjustments,
+  each with its exact money delta, summing precisely; and non-stackable promotions, where the superseded
+  one still has to be reported.
 - **Stage 3** — [`cards/stage-3.md`](cards/stage-3.md): a **second market** — tax-inclusive listed prices,
-  per-line tax reporting, a different rounding mode — while every stage-1 and stage-2 behavior still holds
-  for the first market.
+  per-line tax reporting, a different rounding rule — while the first market keeps behaving exactly as
+  described in stages 1 and 2.
 
-The hidden staged spec and the oracle's canonical answers are in
-[`hidden/spec-and-oracle.md`](hidden/spec-and-oracle.md). No agent sees that file, ever.
+The staged spec and the oracle's pre-written answers are in
+[`hidden/spec-and-oracle.md`](hidden/spec-and-oracle.md). No arm ever sees that file.
 
-**Why three stages and not two.** The instance-seg pilot's own finding was that a one-step evolution that
-falsifies nothing collapses the gap. Stage 2 applies pressure; stage 3 is where it accumulates, and it is
-also the only stage that can test R2's regression half.
+Three stages and not two: a single evolution that falsifies nothing leaves nothing to measure — the finding
+of the [instance-seg pilot](../instance-seg-annotator/results.md). Stage 2 applies the pressure; stage 3 is
+where it accumulates.
 
-## 3. The three arms
+## 4. The three arms
+
+Each arm gets the identical card plus one line, and the standing instruction below.
 
 | | **aims arm** | **OpenSpec arm** | **plain arm** |
 |---|---|---|---|
-| Prompt | the identical stage card **+ one line**: "follow the `aims-guide` skill" | the identical stage card **+ one line**: "use OpenSpec for this work" | the identical stage card **+ one line**: "build it well" |
-| Method loop | Guide selects a design objective → Worker → measure → files **co-located records** | `/opsx:propose` → review → `/opsx:apply` → `/opsx:archive`, per stage, exactly as OpenSpec's own docs prescribe | none; one capable agent, free to plan, inspect, code, test and refactor as it likes |
-| Durable layer it may consult later | companions + root records | `openspec/specs/` + archived changes | the code and its tests only |
-| Right to ask | yes — one material product question at a time, to the oracle | same channel, same right, same oracle | same channel, same right, same oracle |
+| The added line | "follow the `aims-guide` skill" | "use OpenSpec for this" | "design it well" |
+| What it runs | the plan phase — objective, design, records | `/opsx:explore` then `/opsx:propose`, exactly as OpenSpec's docs prescribe | nothing; one capable agent designing as it sees fit |
+| The deliverable | an architecture document | the change's `design.md` (+ whatever `/opsx:propose` writes) | an architecture document |
+| What it may consult at the next stage | its companions and root records | `openspec/specs/` and its archived changes | its own earlier design document |
 
-**Stages 2 and 3 are run by a fresh session in every arm** (PROTOCOL §2), given the repository, its durable
-layer, and the stage card — and told to consult that layer, but **never told where the seam is**. That a
-fresh session finds it by navigation is the R3 result. The plain arm's fresh session gets the code alone;
-that is its honest condition, not a handicap.
+**The standing instruction, identical for all three arms:**
 
-The extra reasoning a method arm spends **is its treatment**. Record cost; never equalize it, and never feed
-any arm a hint the others did not get.
+> Design only. Produce the architecture: the components, their responsibilities, the seams between them,
+> the rules each one owns, and the reasoning. Do not write implementation code. A type signature, an
+> interface sketch or a small illustrative snippet is fine where it makes a boundary concrete; a working
+> implementation is not.
 
-## 4. Controlled variables, pins, and the two contamination risks
+**Stages 2 and 3 are run by a fresh session in every arm**, given the arm's documents and the new card, told
+to consult those documents — and never told where the seam is. That a fresh session finds it by navigating
+is the Q3 result.
 
-Held constant (PROTOCOL §3): model + version, reasoning/effort setting, tool and permission set, a fresh
-empty repository per arm, the identical starter substrate, the exact stage cards, the oracle's verbatim
-answers, the test/runtime environment, one equal time/cost ceiling per arm, and no access to any later-stage
-file before the current stage is closed.
+The plain arm is not a courtesy. Without it, aims and OpenSpec coming out level is unreadable: *both methods
+work* and *neither method is doing anything the model would not do alone* look identical. The plain arm is
+what separates them.
 
-**Pins to record in `results.md` before the first run** — a pilot whose pins you cannot name is not
-reproducible:
+## 5. Held constant, and the two contamination risks
 
-- the **aims** commit SHA the aims arm ran under (`git rev-parse HEAD`);
-- the **OpenSpec** version (`npm ls -g @fission-ai/openspec`, installed with `@latest` at pin time) and the
-  Node version;
-- the **model id** and effort level, identical across arms;
-- the date.
+Identical across arms: model and version, effort setting, the [substrate](substrate.md), the exact cards,
+the oracle's verbatim answers, one equal ceiling per arm, and no sight of a later card before the current
+stage closes.
 
-Two contamination risks are specific to this pilot and must be actively prevented:
+**Pins, recorded before the first run:** the aims commit SHA; the OpenSpec version and Node version; the
+model id and effort level; the date. A pilot whose pins cannot be named is not reproducible.
 
-1. **aims is installed in this repository.** Every arm runs in its **own fresh repository outside the aims
-   tree**. The OpenSpec and plain arms must have no aims plugin, skill, hook, `CLAUDE.md` or record in
-   context; the aims arm must have no `openspec/` directory and no OpenSpec commands. Verify by listing the
-   loaded skills/plugins at the start of each run and pasting that listing into the arm's log.
-2. **Operator fluency is asymmetric.** The operator knows aims and does not know OpenSpec. Run the OpenSpec
-   arm **strictly as its own documentation prescribes**, through its own slash commands, with no
-   aims-flavored improvement, no hand-editing of `openspec/` files the tool would have written, and no
-   coaching. If the OpenSpec loop is run in a degraded way, the R1 reading is worthless. Log every OpenSpec
-   command invoked, verbatim.
+1. **aims is installed in this repository.** Each arm runs in its own directory outside the aims tree. The
+   OpenSpec and plain arms must have no aims plugin, skill, hook, `CLAUDE.md` or record in context; the aims
+   arm must have no `openspec/`. Paste each session's loaded-skills listing into that arm's log.
+2. **Operator fluency is asymmetric** — the operator knows aims and not OpenSpec. Run the OpenSpec arm
+   strictly through its own commands, with no aims-flavoured improvement and no hand-editing of what the
+   tool writes. Log every command verbatim. A degraded OpenSpec arm makes Q1 worthless.
 
-## 5. Oracle policy
+## 6. Oracle
 
-[`../PROTOCOL.md` §4](../PROTOCOL.md) applies unchanged and strictly: answer only from the **current**
-stage's hidden facts; volunteer nothing; never reveal a later-stage requirement ("will there be X later?" →
-*"not now — build for today"*); for a technical choice an ordinary buyer would not make → *"I don't know;
-choose a simple sensible technical approach"*; word every answer neutrally — one leak word (*"still"*,
-*"yet"*, *"for now"*) disqualifies the run; log every question and the verbatim answer, and give any arm
-that asks the same question **the same answer, word for word**.
+[`../PROTOCOL.md` §4](../PROTOCOL.md) in force: answer only from the current stage; volunteer nothing; never
+reveal a later requirement; neutral wording — one leak word disqualifies the stage; log every question and
+answer; the same question from another arm gets the same answer word for word. The answers are pre-written
+in [`hidden/spec-and-oracle.md`](hidden/spec-and-oracle.md) so the operator never improvises.
 
-The canonical answers are pre-written in [`hidden/spec-and-oracle.md`](hidden/spec-and-oracle.md) precisely
-so that the operator is not improvising under time pressure.
+## 7. Judging
 
-## 6. Judging — four readings, four separate judges, never merged
-
-Judges are **not** the sessions that built any arm (PROTOCOL §6). Rubrics and the exact judge prompts are in
+Judges are not the sessions that produced any design. Prompts and criteria:
 [`judging/rubrics.md`](judging/rubrics.md).
 
-**Anonymization is harder here than in a two-arm aims pilot, because every arm has a tell.** The R1 judges
-receive **code-only snapshots** — `.aims/`, companions, root records, `openspec/`, `CLAUDE.md`, `AGENTS.md`,
-`.claude/`, git history and commit messages stripped from **all three** arms — relabelled **X / Y / Z** in an
-order the judges are not told. A judge that can name the method has not judged blind.
+Every arm has a tell, so all three are stripped identically — method names, directory names, file headers,
+provenance, commit messages — and relabelled **X / Y / Z** in an order the judges are not told. A judge that
+can name a method has not judged blind.
 
-- **R1 — design.** Two **opposite-disposition** judges (invariant-ownership vs. YAGNI/simplicity) read the
-  same three snapshots against [`design-principles.md`](../../skills/aims-guide/references/design-principles.md)
-  and [`review.md`](../../skills/aims-guide/references/review.md). A verdict must turn on a **structural**
-  property — *can the set of adjustments be extended without editing the total calculation? is rounding one
-  owner or N? does the explanation derive from the same structure that computes the price, or is it a second
-  implementation that can disagree?* — never on a removable local blemish, and "small is not unearned".
-  Every load-bearing claim carries a reproduction or a `file:line`.
-- **R2 — requirement fidelity.** A black-box judge, given only the three stage cards and the hidden final
-  probes, never the method label: run the probes against each arm, including the **stage-1 and stage-2
-  probes re-run after stage 3**. Then a coverage reading: for each revealed requirement, name the artifact
-  that pins it (a test, a scenario) or record that nothing does.
-- **R3 — continuity.** Per arm, from the fresh stage-3 session's transcript and diff: did it **read a
-  specific durable artifact and cite it** before touching the pricing path, and does the diff **reuse** the
-  composition seam rather than reopen it? Three outcomes per arm: *navigated and built on it* / *re-derived
-  the same conclusion independently* / *contradicted or tore open the prior conclusion*. For the plain arm
-  the question is whether the code alone sufficed.
-- **R4 — cost.** A recorder: tokens, turns, wall-clock, model calls, dependencies added, per arm per stage.
-  No quality verdict.
+- **Q1 — architecture.** Two opposite-disposition judges (invariant-ownership vs. YAGNI) read the three
+  stage-3 designs against [`design-principles.md`](../../skills/aims-guide/references/design-principles.md).
+  Verdicts must turn on a structural property answered **from the design text**, with a quotation.
+- **Q2 — survival.** The countable reading of §1, done per arm across both transitions, each reopened or
+  discarded component named and quoted from both versions.
+- **Q3 — continuity.** From the fresh session's transcript: did it read a specific document and cite it
+  before changing the design, or not?
+- **Cost.** Tokens, turns, wall-clock, model calls. No quality verdict.
 
-**Verify the judge, don't trust it** (PROTOCOL §6.4): re-run every arm's suite independently before
-believing any "tests pass", and reject any claim without a reproduction or a `file:line`.
+**The rubric problem, stated plainly.** Q1 judges against aims' own design principles — a house rubric,
+against a rival method. Two things offset it and neither removes it: **Q2 is rubric-free** (a count, not a
+judgment) and is the reading the pilot is built around; and Q1 verdicts must be structural and quotable, so
+a reader who rejects aims' principles can still check the fact. Recorded as a limitation in `results.md`,
+not as a solved problem.
 
-### The rubric-symmetry problem, stated plainly
+**And the one that cannot be offset:** a design is prose. A method that produces *more* prose can look more
+thorough without being better. Q2 is the defence — volume does not help you when the count is of seams that
+had to be reopened — but a Q1 judge should be told explicitly that length is not a merit.
 
-R1 judges against **aims' own** design principles. In an aims-vs-clean pilot that is fair — it is aims' own
-claim, judged blind. Against a rival method it is a **house-rubric bias**, and this pilot does not pretend
-otherwise. Two things offset it, and neither fully removes it:
+## 8. Falsifiers, fixed in advance
 
-- **R2 is scored on OpenSpec's own standard** — requirement coverage and scenario fidelity — so each method
-  is measured against its own claim as well as the other's.
-- The R1 verdicts must be **structural and reproducible**, so a reader who rejects aims' principles can still
-  check the finding ("rounding happens in four places" is true or false regardless of rubric).
+- **The plain arm's designs survive as well as both methods'** → on a product this size, method does not
+  pay.
+- **The OpenSpec arm matches aims on Q1 and Q2** → making design the explicit goal adds nothing that
+  spec-first discipline already delivers. The most informative possible result for aims.
+- **The aims arm reopens more than OpenSpec** → the central claim fails on this product.
+- **The fresh aims session never cites a companion** → the continuity claim is unsupported here.
 
-Recorded as a declared limitation in `results.md`, not as a solved problem.
+## 9. Deviations from PROTOCOL, declared
 
-## 7. Falsifiers — fixed in advance
+1. **No build.** PROTOCOL assumes both arms build a product and the final architecture is judged. Here the
+   architecture is the deliverable itself. The product reading (behavior, acceptance) is therefore **not
+   available** and is not reported — this pilot cannot say anything about whether either method ships
+   working software.
+2. **Three arms instead of two.**
+3. **Survival (Q2) replaces the built-code reading** as the primary evidence, because it is countable where
+   a prose comparison is not.
+4. **The Q1 rubric is aims' own**, bias declared and partly offset.
+5. **n = 1 per arm.** Suggestive, not robust; strength is in the sequence of pilots.
 
-The pilot is worth running only because these outcomes are possible, and each would be reported as found:
+## 10. Artifacts to keep
 
-- **The plain arm matches both methods on R1** → on a product this size, method does not pay; the honest
-  reading is that the executor is strong enough alone, exactly as the instance-seg pilot found.
-- **The OpenSpec arm matches the aims arm on R1** → making design the explicit goal adds nothing that
-  spec-first discipline does not already deliver. This is the single most informative result for aims.
-- **The aims arm loses R2** → design focus costs requirement fidelity; a real, reportable trade-off.
-- **The aims arm's fresh stage-3 session does not cite a companion** → the continuity claim is unsupported
-  for this product, whatever the code looks like.
-- **Both methods lose R3 to the plain arm** → the durable layers are overhead the code did not need.
+Per arm: the three designs as delivered, the oracle Q&A log, the loaded-skills listing, the fresh-session
+transcripts for stages 2 and 3, the verbatim OpenSpec command log, the anonymized X/Y/Z designs, the
+survival tables, and the judge reports — each claim carrying a quotation.
 
-## 8. Protocol deviations, declared
+## 11. Status
 
-Per PROTOCOL's own rule that an experiment must instantiate it or **say which part it waives and why**:
-
-1. **Three arms instead of two.** An added rival-method arm; the clean arm is retained as the plain arm.
-   Justified in §0.
-2. **Four readings instead of three.** PROTOCOL's design/product/cost becomes design/requirement-fidelity/
-   continuity/cost — continuity is promoted from a Q2 sub-check to a first-class per-arm reading because,
-   with two durable layers of different shapes, it is the reading that actually discriminates them.
-3. **The R1 rubric is aims' own**, with the bias declared and partly offset (§6).
-4. **n = 1 per arm.** Suggestive, not robust (PROTOCOL §7); the strength is the sequence of pilots, not this
-   one. No skill-wording change is under test here, so the n ≥ 2 rule for wording changes does not apply.
-
-## 9. Artifacts to keep
-
-Per PROTOCOL §8, and per arm: the three stage cards as delivered, the oracle Q&A log, a `stage-N` tagged
-commit per stage, the cost log, the loaded-skills/plugins listing, the anonymized X/Y/Z snapshots, the
-verbatim OpenSpec command log, the fresh-session transcripts for stages 2 and 3, and the four judge reports
-— each finding carrying a reproduction or a `file:line`.
-
-## 10. Status
-
-**Planned. Not run.** [`results.md`](results.md) is a stub until the package above has been executed
-end-to-end; it must not be filled in from expectation.
+**Planned. Not run.** `results.md` stays a stub until it has been executed; it must not be filled in from
+expectation.

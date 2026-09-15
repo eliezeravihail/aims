@@ -104,43 +104,46 @@ reuse it for every arm.
 > *initially*, *to begin with*, *later*, *eventually*. Re-read every answer before sending it. The phrase
 > "Not now — build for today" is pre-cleared and is the only forward-looking-sounding answer permitted.
 
-## 3. Hidden final probes
+## 3. What the judges ask of the designs
 
-Derived **only** from requirements already revealed by the end of stage 3 (PROTOCOL §1.4). Run against all
-three arms, by the R2 judge, after stage 3. No probe invents a feature nobody asked for.
+Nothing is executed — there is no code. These are questions answered **from the design text**, each answer
+carrying a quotation. They are derived only from requirements revealed by the end of stage 3.
 
-**P1 — regression, the whole of stages 1 and 2 on `NORTH`.** Every A- and B-case, re-run after stage 3, to
-the cent, explanations included. *(This is the probe stage 3 exists to make possible.)*
+### 3a. The survival count (Q2 — the primary reading)
 
-**P2 — the deltas close.** For 200 pseudo-random carts across both markets, over the three promotion kinds
-and stackability combinations: the adjustment deltas sum **exactly** to (final − list), with no residual and
-no synthetic "rounding" adjustment used to force closure.
+Per arm, twice: stage-1 → stage-2, and stage-2 → stage-3. List every named component and seam in the
+earlier design and classify each one against the later design:
 
-**P3 — amount and explanation never disagree.** For the same 200 carts: the final amount stated equals the
-amount the explanation arrives at. A pass here with a fail in P2, or vice versa, is the signature of two
-parallel implementations and is reported as such.
+| Class | Test |
+|---|---|
+| **survived** | present, unchanged, same responsibility |
+| **extended** | same responsibility and same boundary, given more to do at a seam that already existed |
+| **reopened** | its responsibility or its boundary changed |
+| **discarded** | gone |
 
-**P4 — per-line vs cart-level rounding.** `SOUTH`, three lines of 0.15: cart tax is 0.06, not 0.08.
+Report the table, then the **reopened + discarded** count, with both versions quoted for each instance.
+A component renamed but unchanged in responsibility is *survived*, not discarded — and say so explicitly,
+because renaming is the easiest way to inflate the number by accident.
 
-**P5 — half-even is real.** `SOUTH`, a line at 0.15 → tax 0.02 (a half-up implementation gives 0.03).
+### 3b. Structural questions (Q1 evidence)
 
-**P6 — supersession is reported, not silent.** A superseded non-stackable code is present in the output,
-identified, and names the code that beat it.
+Asked of each stage-3 design, answered with a quotation or with **the design does not say**:
 
-**P7 — promotions are still data.** Add a new `PCT` code to the promotion data file only — no code change,
-no restart beyond the documented one — and price a cart with it. *(Revealed at stage 1: "we are not going to
-ask an engineer each time.")*
+- **S1** — to add a fourth kind of promotion, which named components change? Does the thing that computes
+  the total change at all?
+- **S2** — how many places in this design round money? Name them.
+- **S3** — does the explanation come from the same structure that computes the amount, or is it produced
+  separately? If separately, what in the design stops the two disagreeing?
+- **S4** — to add a third market with a third tax model, which named components change?
+- **S5** — where is the order of adjustments stated? One place, or implied in several?
+- **S6** — which component owns "the deltas sum exactly to the difference"? If no component owns it, say
+  so.
 
-**P8 — the tie rule.** `WIDGET` 100.00 with two non-stackable codes worth 10.00 each: the first-entered one
-applies.
+"The design does not say" is a finding, not a gap in the judging — a design that cannot answer S1–S6 is not
+buildable, and that is a real result.
 
-### Structural probes (R1 evidence, not pass/fail)
+### 3c. Coverage (Q3's companion reading)
 
-Recorded as findings with a `file:line`, never scored:
-
-- **S1** — to add a fourth promotion kind, how many files change, and does the total calculation change?
-- **S2** — how many distinct places in the codebase round money?
-- **S3** — is the explanation derived from the same structure that computes the amount, or a second
-  implementation?
-- **S4** — to add a third market with a third tax model, how many files change?
-- **S5** — is the ordering of adjustments stated in one place, or implied by control flow in several?
+For each requirement revealed across the three cards, name the artifact in that arm that pins it — a spec
+scenario, a stated rule, a recorded decision — or record **nothing pins it**. Count per arm: revealed /
+pinned. This is the reading on which OpenSpec is at home, and it is scored on its own terms.

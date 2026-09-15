@@ -31,7 +31,7 @@ Everything stage 2 gave us still applies, in both markets: the ordered adjustmen
 exactly, the superseded non-stackable codes. Tax is part of what a customer asks about, so an explanation
 that cannot account for the tax is not an explanation.
 
-## Acceptance (we will run these)
+## Cases we will check against (these are what the design has to account for)
 
 | # | Market | Cart | Codes | Expect |
 |---|---|---|---|---|
