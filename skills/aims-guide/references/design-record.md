@@ -14,7 +14,9 @@ next to it (`src/render.py` → `src/render.py.md`) — under three sections:
 - **Discussions** — trade-offs weighed, options considered, the road not taken.
 
 You read the whole companion when you touch the file, because it is all about that file. Anchor it on
-filing (`python3 knowledge/anchor.py <companion>`) — it hashes the same-named source file.
+filing (`python3 .aims/anchor.py <companion>`) — it hashes the same-named source file. That path is
+where `/install-on` puts the tool in every project; the aims repo itself runs it from its source
+location, `knowledge/anchor.py`. This line owns the invocation — everywhere else refers to it.
 
 ## System-level → a record at the repo root
 

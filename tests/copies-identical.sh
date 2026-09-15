@@ -27,8 +27,10 @@ check_pair() {
   done
 }
 
-# Pair 1: hooks (templates ↔ dogfood .claude)
+# Pair 1: hooks (templates ↔ dogfood .claude), both directions — a one-way check lets a stale or
+# extra file linger in .claude/hooks/ that no template produces.
 check_pair templates/hooks .claude/hooks sh
+check_pair .claude/hooks templates/hooks sh
 
 # Pair 2: install-on across template, dogfood, and marketplace copies.
 for pair in "templates/commands/install-on.md:.claude/commands/install-on.md" \

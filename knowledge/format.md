@@ -34,7 +34,10 @@ date: 2026-08-12
 - **Insights** — what was learned about this file (what was tried, what failed, why).
 - **Decisions** — file-level choices and the rule they impose (append-only: to change one, add a new
   bullet that supersedes the old, naming it — never rewrite).
-- **Discussions** — trade-offs weighed, options considered, the road not taken.
+- **Discussions** — trade-offs weighed, options considered, the road not taken. An assumption the file
+  rests on but which was never proven belongs here too, stated as unproven — a Decision or an Insight
+  claims something is known, and an unproven premise recorded as knowledge is how a later session
+  inherits a guess as a fact.
 
 ## 2. System-level — cross-cutting records at the repo root
 

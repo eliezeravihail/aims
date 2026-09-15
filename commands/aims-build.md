@@ -13,9 +13,10 @@ Enter the `aims-guide` skill and run **only the BUILD phase** (operating-loop st
   supervising the phase). Run it as a clearly separated phase that *conforms to* the objective and
   handoff produced by `plan` — do not re-open the design or expand scope beyond the handoff.
 - When the Worker returns, record the result and an evidence pointer in `state.md`; set the Loop cursor
-  to `executed:awaiting-review`. File any **engineering lessons** the build surfaced as `insights/dev/`
-  records and anchor them (`references/design-record.md`) — do not manufacture insights, file only what
-  is durable.
+  to `executed:awaiting-review`. File any **engineering lessons** the build surfaced as **Insights**
+  in the companion of the file they concern (a lesson that is not about one file goes to the matching
+  root record), and anchor each companion (`references/design-record.md`) — do not manufacture
+  insights, file only what is durable.
 - **Stop here. Do NOT evaluate, accept, or choose the next objective** — that is the review phase.
   Report what was built and where the evidence is, and tell the user to run the review command.
 

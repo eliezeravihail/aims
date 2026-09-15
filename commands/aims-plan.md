@@ -16,7 +16,7 @@ Enter the `aims-guide` skill and run **only the PLAN phase** (operating-loop ste
 - **File the round's durable design as records in the code tree** (`references/design-record.md`): the
   root `goals.md` / `base-dependencies.md` the design commits to, the system `architecture.md` and
   `decisions/` ADRs (with rejected alternatives), and file-level Insights/Decisions/Discussions in the
-  companion of each file touched. **Anchor each companion on filing** with `python3 knowledge/anchor.py
+  companion of each file touched. **Anchor each companion on filing** with `python3 .aims/anchor.py
   <companion>`. `decisions/` are append-only.
 - **Stop here. Do not delegate and do not write implementation code.** **Present a plan report** — an
   executive summary compiled from the objective and the filed records (dependencies, decisions and
