@@ -39,6 +39,14 @@ and is being *conformed to*, not invented mid-build. Auto mode is different: the
 a Worker subagent, because autonomous delegation and context isolation are the point when no human is
 watching.
 
+**One declared exception:** the `panel-plan` command (`references/panel-plan.md`) runs its three
+advisor planners as parallel subagents even though it is an explicit stepped-mode command — advisor
+*independence* cannot be simulated inline (a sequential pass cannot unsee the one before it), so it
+outranks the letter of this convention. The master planner that arbitrates the drafts still runs
+inline, in this session, on the selected model. This is a declared downgrade, not an equivalence: the
+user still watches the composition happen turn by turn, but the three advisor drafts are only
+inspectable afterward (`.aims/panel/`), not while being written.
+
 ## The phases, mapped to the loop steps
 
 | Command (names are configurable) | Runs loop steps | Produces | Then parks at |

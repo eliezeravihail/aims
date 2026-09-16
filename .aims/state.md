@@ -6,103 +6,90 @@ stepped
 
 ## Loop cursor
 
-ready-to-choose-next <panel-plan mechanism design — all 7 criteria met after the review amendments; next objective is the build>
+executed:awaiting-review <panel-plan mechanism build — two new prose artifacts + three touches, per the amended design>
 
 ## Current objective
 
-**Kind:** design
+**Kind:** implementation
 
-**Objective:** Establish the **panel-plan mechanism** as part of the PLAN phase: three advisor planners on
-the fixed axis trio — whose single owning definition is in `decisions/0005` (clean code / correct
-encapsulation / correct genericity; not restated here) — planning **independently**, and a master planner that **harvests each plan's strengths and composes one
-coherent design carrying the best of all three axes simultaneously, at full strength** — filing the
-strengths harvest and any decided conflicts durably. The hard decision at the core: **how advisor isolation
-is achieved in each mode** — auto (subagents permitted) vs the explicit `panel-plan` command, which must
-reconcile the independence invariant with the "explicit commands run inline" convention
-(`references/modes.md`) — and how the merged output enters the ordinary loop with zero special-casing.
+**Objective:** Build the **panel-plan mechanism** as prose artifacts of the plugin, conforming to the
+amended design in `.aims/worker-result-panel-plan.md`: a new reference
+(`skills/aims-guide/references/panel-plan.md`, owning the axis trio's operating definition per
+`decisions/0006`) and a new stepped-mode command (`commands/aims-panel-plan.md`), plus one-line/one-
+sentence touches wiring the convening rule into `SKILL.md` step 2, the inline-convention exception into
+`references/modes.md`, and the auto-mode opening-round routing into `commands/aims-plan-and-build.md`.
+`commands/aims-plan.md` stays untouched (user decision: single-pass, always).
 
-**Why now:** `experiments/plan-diversity/` (blind, three judges) showed stance-seeded 3-pass + cross-
-examination beats a single plan pass for every judge and edges plain repetition consistently; the user
-decided convening (auto: opening design round of a product change; stepped: dedicated `panel-plan` command)
-and fixed axes. The evidence is fresh and the decisions are filed (`decisions/0005`); designing the
-mechanism now converts a measured result into method.
+**Why now:** the design objective (below, superseded) closed with all 7 exit criteria met and two amending
+decisions filed (`decisions/0006`; the harmonization-filing and `modes.md`-downgrade amendments in
+`.aims/worker-result-panel-plan.md` §10). Nothing left to design — the Open Guide TODO named the build as
+the next objective directly.
 
-**Exit criteria:**
-- [x] **Independence by construction** — the design names, per mode, how each advisor plans with no access
-      to another advisor's output, and explicitly excludes the tempting shortcut: sequential advisor passes
-      in one shared context (a later advisor cannot unsee an earlier one).
-- [x] **Composition = best-of-all-three, at full strength** — every harvested strength is attributable to
-      its source advisor and survives undiluted; master-authored content is integration glue only, each
-      element justified by the strengths it joins; an irreconcilable conflict is decided with a stated
-      reason, never silently averaged. The three named shortcuts fail: winner-picking (one plan crowned,
-      tokens from the others), union (patchwork of everything), averaging (all strengths diluted).
-- [x] **Divergence durably filed** — each split axis lands as chosen-over-rejected-with-reason in that
-      round's append-only ADR, navigable by a later session; divergence living only in the conversation
-      fails. *(Met after amendment: the ADR now files harmonized splits as well as decided ones —
-      `worker-result:70-83`.)*
-- [x] **Drop-in output** — the merged result is written into `state.md` under the existing schema contract
-      (headings/markers unchanged), parked at `planned:awaiting-build`, and the existing build command
-      consumes it with zero special-casing.
-- [x] **Convening falsifiers** — an auto loop convening the panel on a non-opening round fails; a stepped
-      `/aims-plan` convening it fails; the `panel-plan` command convenes it every time.
-- [x] **One owner for the axis trio** — the three axes are defined in exactly one place and referenced
-      everywhere else; a second verbatim copy that can drift fails. *(Met after decision: `decisions/0006`
-      splits ownership by kind — the shipping reference owns the operating definition, the ADR owns the
-      rationale; `architecture.md` and `worker-result:92-101` now agree.)*
-- [x] **No gate, no score** — the panel output carries no accept/reject stamp and no numeric score; it
-      feeds the Guide's direction only.
+**Exit criteria:** (traceability restated as implementation-conformance checks; each source design
+clause is `.aims/worker-result-panel-plan.md`, cited by section)
+- [x] `skills/aims-guide/references/panel-plan.md` exists and covers, in order: when it convenes (§1) →
+      the axis trio as sole operating definition (§6) → the grounding package (§2) → isolation per mode
+      incl. the declared stepped-mode downgrade and the honest decline (§3) → the 6-step master procedure
+      (§4) → all four output destinations, ADR alternatives carrying *both* decided conflicts and
+      harmonizations (§5) → "not a gate, never a score" (§4 step 6).
+- [x] `commands/aims-panel-plan.md` exists, mirrors `commands/aims-plan.md`'s stepped-mode plan-phase
+      shape (steps 1–3, no delegation, no code, parks at `planned:awaiting-build`), routes objective
+      drafting through the reference, and states it always convenes — never silently falls back to
+      single-pass (§1, §8).
+- [x] `SKILL.md` step 2 gains the auto-mode convening sentence, scoped to the opening design round only;
+      it points at the reference rather than restating the axes (§1 row 3).
+- [x] `references/modes.md` gains the declared exception beside the inline-convention rule it qualifies,
+      stating the visibility trade plainly (arbitration stays watchable; the three drafts are only
+      inspectable after the fact) rather than claiming the rationale intact (§1 row 4, §3, and amendment
+      3 in §10).
+- [x] `commands/aims-plan-and-build.md` gains the one-line routing of the opening round through the
+      reference; `commands/aims-plan.md` is untouched (§1 rows 5–6).
+- [x] The axis trio appears verbatim in exactly one place across the whole plugin
+      (`references/panel-plan.md` §Axes) — every other touched file (`SKILL.md`, `modes.md`,
+      `aims-plan-and-build.md`, `commands/aims-panel-plan.md`) names or points at it without restating it
+      (criterion 6 of the design objective, now an implementation conformance check).
+- [x] No hooks, no runtime code, nothing added outside `.md` prose (`decisions/0004` stands).
 
 **Preserve:**
-- `.aims/state.md` schema contract (headings + markers).
-- `/aims-plan` stays single-pass in stepped mode; existing commands' behavior unchanged.
-- `references/review-panel.md` untouched; the design states the relationship (plan-panel generates and
-  merges *before* build; review-panel measures *after*).
-- No active machinery: prose only — no new hooks, no runtime code; stdlib-only (`decisions/0004`) stands.
-- `decisions/` append-only.
+- `.aims/state.md` schema contract (headings + markers) — unchanged by this build.
+- `/aims-plan` stays single-pass in stepped mode; its file is untouched.
+- `references/review-panel.md` untouched; `references/panel-plan.md`'s opening paragraph states the
+  plan-side/review-side relationship instead.
+- `architecture.md` and `decisions/0005`, `decisions/0006` — already amended in the design round; not
+  reopened here.
 
 **Do not optimize for:**
-- A configurable axis registry or a variable advisor count (three fixed axes; no ensemble framework).
-- Numeric scoring inside the merge (the house forbids scores; the merge argues per axis).
-- Reusing the review-panel roles for generation — measuring and generating are different jobs.
+- Rewording or re-deriving the design already settled in `.aims/worker-result-panel-plan.md` — this
+  round transcribes it into prose artifacts, it does not re-design.
+- Any mechanism, config, or hook beyond the plugin's existing prose-only shape.
 
-## Worker handoff (drafted — do not execute before the build command)
+## Worker handoff (conformed to — executed inline, stepped mode, no subagent)
 
-ROLE — You are the implementation Worker, a senior engineer as capable as the Guide. The design is the
-deliverable. If evidence invalidates the objective, report it instead of expanding scope.
+ROLE — Guide executing the build phase inline (`references/modes.md`, stepped mode: explicit commands run
+on the currently selected model, no subagent).
 
-DESIGN GOAL — The structure of the panel-plan mechanism as prose artifacts of this plugin: which files
-exist or change (a command, a reference, templates — your call), the identical grounding package an advisor
-receives, the isolation mechanism per mode honoring the independence invariant, the master planner's composition
-procedure (strength harvest → best-of-all-three, glue-only authorship), and where each output lands
-(state.md, the round's ADR). The how is
-yours; the invariants are not.
+DESIGN GOAL — Author the two new prose artifacts and the three touches listed in the Objective above,
+verbatim in structure to `.aims/worker-result-panel-plan.md` §1 and §8 (the file table and the two
+skeletons), carrying forward all four amendments from §10.
 
-BEHAVIOR IT MUST SATISFY — The convening rule and fixed axis trio of `decisions/0005`; the exit criteria
-above, each of which the design must demonstrably meet.
+BEHAVIOR IT MUST SATISFY — The Exit criteria above; the Preserve list; `decisions/0005` and `decisions/0006`
+for the axis trio and its ownership split.
 
-WHAT "GOOD" AIMS AT — `references/design-principles.md`, as a target, not a checklist. §9 (one enforced
-owner) and §10 (duplication vs wrong abstraction) bear directly here.
-
-RELEVANT CONTEXT / PRESERVE / NON-GOALS — `decisions/0005-panel-plan-three-advisors.md`,
-`architecture.md` (panel-plan seam + advisor-independence invariant), `references/modes.md` (the inline
-convention you must reconcile with), `references/review-panel.md` (the measure-side sibling — untouched),
-`experiments/plan-diversity/` (the evidence). Preserve and non-goals as listed in the objective.
-
-RETURN TO GUIDE — The design + a short account of the key decisions (especially the isolation-vs-inline
-reconciliation and the merge procedure), result status against the design goal, new facts or risks.
+RETURN TO GUIDE — Evidence pointer: the files themselves —
+`skills/aims-guide/references/panel-plan.md` (new), `commands/aims-panel-plan.md` (new),
+`skills/aims-guide/SKILL.md` (step 2 addition), `skills/aims-guide/references/modes.md` (exception added
+after "Explicit commands run inline"), `commands/aims-plan-and-build.md` (routing line added). No new
+engineering lesson surfaced worth an Insight — the design was already fully buildable per the prior
+review's closing note.
 
 ## Open Guide TODO
 
-- [x] After build: review with the `design` lens — buildability = a Worker could author the command/
-      reference prose directly from the returned design. **Done** — see Last evaluated result. Buildable
-      everywhere except `references/panel-plan.md` §Axes, where the design and `architecture.md` give a
-      Worker contradictory instructions (reading 1).
-- [ ] After the mechanism lands: consider a follow-up objective — should `/aims-plan-and-build` on a new
-      product route its opening round through panel-plan automatically (auto-mode convening rule)?
-- [ ] **Next objective (build):** author `skills/aims-guide/references/panel-plan.md` and
-      `commands/aims-panel-plan.md` from the amended design, plus the one-line touches to `SKILL.md`,
-      `modes.md` (the declared exception, stating the downgrade) and `aims-plan-and-build.md`. Design work
-      is closed; this is execution against `worker-result-panel-plan.md`.
+- [x] Build the panel-plan mechanism's prose artifacts. **Done** — see Current objective and the evidence
+      pointer above; awaiting the review phase.
+- [x] Route `/aims-plan-and-build`'s opening round through panel-plan automatically. **Done as part of
+      this same build** — `SKILL.md` step 2 and `commands/aims-plan-and-build.md` both gained the routing
+      line, since the design's own file table (§1) already scoped this as a one-line touch, not a
+      separate objective.
 
 ## Last evaluated result
 
