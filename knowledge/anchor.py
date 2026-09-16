@@ -14,7 +14,7 @@ The rule is a single derivation: a record `X.md` anchors to a sibling file named
 `.md` removed) when that file exists; otherwise it is a system record and gets no anchor. Called
 explicitly by the method when it files a record — never as a hook. Stdlib only; idempotent.
 
-Usage:  python3 knowledge/anchor.py <record.md>
+Usage:  python3 anchor.py <record.md>   (run from its own directory; installed at .aims/anchor.py)
 """
 from __future__ import annotations
 
