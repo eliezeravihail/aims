@@ -53,12 +53,18 @@ Honest current reading: aims **materially improved change-absorption** and the c
 single-mechanism spec method is a **judge-dependent split, not a clean win**. The co-located record layer's
 payoff remains narrow and real: a durable append-only trail of *why a superseded decision no longer holds*.
 
-**⚠️ v3 has an unresolved validity threat, not yet ruled out.** The v3 design arms had unrestricted read
-access to this repo, including `decisions/0007` and this very section — both of which already stated the
-exact domain-specific fault ("tax folded into the explanation chain") the arms needed to avoid. They were
-not sandboxed to the method files alone. Until re-run with that isolation, the v3 result is evidence the
-method's language is *capable of* this outcome, not confirmed evidence it *generalizes* without the answer
-present in the same working tree. See `experiments/aims-vs-openspec/results-v3.md`.
+**⚠️ v3 has an unresolved validity threat, not yet ruled out — and it is structural, not a permission
+gap.** This file's own instruction (`SKILL.md`: *"for system context, read the root records"*) is generic
+and standing; a v3 design arm following it faithfully, rooted in this repo to read the method files, would
+correctly navigate to *this repo's own* root records — which include `decisions/0007` and (until corrected
+above) this very section, both already stating the exact domain-specific fault ("tax folded into the
+explanation chain") the arm needed to avoid in the product it was designing. aims recording its own
+self-evaluation as a root record, next to a rule that says "read root records for context," is a conflict
+of interest in any test of the method on its own repository — not a tooling oversight to fix by narrowing
+permissions. Until re-run with the design arms rooted somewhere that never resolves to this repo's own
+records, the v3 result is evidence the method's language is *capable of* this outcome, not confirmed
+evidence it *generalizes* without the answer reachable from the same root. See
+`experiments/aims-vs-openspec/results-v3.md`.
 
 ## Non-goals
 - Not a background daemon or self-maintaining store: nothing runs between turns except one advisory

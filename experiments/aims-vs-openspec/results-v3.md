@@ -1,17 +1,22 @@
 # Results — v3 (post concept-fit pass), design-only, three-way vs OpenSpec
 
-> **⚠️ Unresolved validity threat: possible answer leakage.** The v3 aims arms (single, panel) were
-> `general-purpose` agents with unrestricted read access to the whole `aims` repo working tree, not just
-> the three method files (`SKILL.md`, `design-principles.md`, `review.md`) they were told to read.
-> `decisions/0007-aims-vs-openspec-pilot-findings.md` — present in that same working tree since before
-> these arms were dispatched — states the exact domain-specific fault to avoid, in the pricing-cart's own
-> vocabulary: *"tax folded into the explanation chain ... dissolved aims' own delta-sum invariant into
-> per-kind folds."* Nothing sandboxed the arms away from finding and reading that file (or `goals.md`,
-> which also named the finding). If either arm did, the v3 result below is **not** evidence the
-> concept-fit pass generalizes — it would be evidence the arm was handed the answer. This was not checked
-> at the time (the raw agent transcripts were not inspected) and is not ruled out. **The finding below
-> should be treated as unconfirmed until re-run with the design arms sandboxed to method files only, with
-> no access to this repo's own experiment records.**
+> **⚠️ Unresolved validity threat: structural self-reference, not a permission gap.** `SKILL.md` itself
+> instructs, generically: *"Reach knowledge by navigating, not by reading everything. To understand a
+> file, open its companion; for system context, read the root records."* This is not an accidental
+> over-broad grant — the v3 design arms were told to read `SKILL.md` and were pointed at files inside
+> `/home/user/aims`, so a faithful execution of that instruction reads `/home/user/aims`'s own root
+> records. Those happen to include `decisions/0007-aims-vs-openspec-pilot-findings.md`, present in that
+> working tree before the arms were dispatched, which states the exact domain-specific fault to avoid, in
+> the pricing-cart's own vocabulary: *"tax folded into the explanation chain ... dissolved aims' own
+> delta-sum invariant into per-kind folds."* aims documents its own self-evaluation as a root record, and
+> its own navigation rule points there for "system context" — a conflict of interest baked into testing
+> the method on its own turf, not a tooling oversight. (The pricing product's *own* root records correctly
+> live elsewhere, in `/tmp/exp/arm-aims-v3-single/` — but nothing kept an arm rooted in `/home/user/aims`
+> from finding aims-the-tool's root records instead.) Whether either arm actually read `decisions/0007` was
+> never checked. If either did, the v3 result below is evidence the arm was handed the answer, not evidence
+> the concept-fit pass generalizes. **The finding below should be treated as unconfirmed until re-run with
+> the design arms working from a product root that never gives them a path to `/home/user/aims`'s own root
+> records — method-file content supplied without the surrounding repo.**
 
 Design-only pilot re-run after adding the **concept-fit pass** to `references/review.md` (a decomposition
 modelled as a movement, or the reverse, is a latent-architectural fault to catch *in the design*). Two aims
