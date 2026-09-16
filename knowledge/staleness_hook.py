@@ -86,20 +86,26 @@ def main() -> int:
         event = json.load(sys.stdin)
     except Exception:
         return 0
-    ti = event.get("tool_input") or {}
-    fp = ti.get("file_path") or ti.get("path")
-    if not fp:
-        return 0
-    root = Path(event.get("cwd") or ".").resolve()
-    rp = Path(fp)
-    if not rp.is_absolute():
-        rp = (root / rp).resolve()
+    # Fail-open over the whole envelope: a non-dict event, a non-string file_path, or any other
+    # malformed shape must never traceback or block a Read. Everything past the parse is guarded.
     try:
+        if not isinstance(event, dict):
+            return 0
+        ti = event.get("tool_input")
+        if not isinstance(ti, dict):
+            ti = {}
+        fp = ti.get("file_path") or ti.get("path")
+        if not isinstance(fp, str) or not fp:
+            return 0
+        root = Path(event.get("cwd") or ".").resolve()
+        rp = Path(fp)
+        if not rp.is_absolute():
+            rp = (root / rp).resolve()
         note = on_read(rp)
+        if note:
+            print(json.dumps({"hookSpecificOutput": {"hookEventName": "PostToolUse", "additionalContext": note}}))
     except Exception:
         return 0
-    if note:
-        print(json.dumps({"hookSpecificOutput": {"hookEventName": "PostToolUse", "additionalContext": note}}))
     return 0
 
 

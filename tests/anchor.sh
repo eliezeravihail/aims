@@ -64,4 +64,18 @@ python3 "$A" src/svg.py.md >/dev/null
 mv src/svg.py src/canvas.py
 hook src/svg.py.md | grep -q 'missing\|stale' || fail "orphaned companion not flagged"
 
+# fail-open: the hook must never traceback or exit non-zero on a malformed envelope (it is advisory)
+for inp in 'null' '"x"' '42' '[1]' '{"tool_input":"oops"}' '{"tool_input":{"file_path":123}}' 'notjson'; do
+  printf '%s' "$inp" | python3 "$H" >/dev/null 2>/tmp/aims_hookerr; rc=$?
+  [ "$rc" -eq 0 ] || fail "hook not fail-open (rc=$rc) on: $inp"
+  [ ! -s /tmp/aims_hookerr ] || fail "hook wrote to stderr on: $inp"
+done
+rm -f /tmp/aims_hookerr
+
+# the repo's OWN two companions must be anchored to their current sources (dogfood the discipline)
+for src in "$ROOT/knowledge/anchor.py" "$ROOT/knowledge/staleness_hook.py"; do
+  [ -z "$(printf '{"tool_input":{"file_path":"%s.md"},"cwd":"/"}' "$src" | python3 "$H")" ] \
+    || fail "repo companion $src.md is stale — re-anchor it (python3 knowledge/anchor.py $src.md)"
+done
+
 echo "anchor: all checks passed"
