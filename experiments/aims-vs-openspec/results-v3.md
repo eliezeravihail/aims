@@ -1,13 +1,7 @@
 # Results — v3 (post concept-fit pass), design-only, three-way vs OpenSpec
 
-> **⚠️ Unresolved validity threat.** `decisions/0007-aims-vs-openspec-pilot-findings.md` already documents,
-> in the pricing-cart's own vocabulary, the exact fault v3 exists to test whether the concept-fit pass
-> fixes: *"tax folded into the explanation chain ... dissolved aims' own delta-sum invariant into per-kind
-> folds."* It sat in the same repo the v3 design arms were rooted in to read the method files, and
-> `SKILL.md` itself tells them to read root records for context — so they had a path to their own answer
-> key. Whether either arm took it was never checked. **The fix is narrow: don't leave a worked example that
-> matches an in-flight test's exact scenario reachable from the design arm's root while that test runs.**
-> Until re-run that way, the finding below is unconfirmed.
+> **⚠️ Flawed experiment.** The design arms could reach `decisions/0007`, which names the exact fault being
+> tested for, in this domain's own words. Unconfirmed — superseded by the isolated re-run in `results-v4.md`.
 
 Design-only pilot re-run after adding the **concept-fit pass** to `references/review.md` (a decomposition
 modelled as a movement, or the reverse, is a latent-architectural fault to catch *in the design*). Two aims
