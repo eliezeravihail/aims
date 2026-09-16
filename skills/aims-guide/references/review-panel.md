@@ -27,6 +27,19 @@ a typed measurement has nowhere to hide from the architecture question when the 
 - **Measure:** does each truth live in exactly one place; is each invariant owned once; are boundaries
   drawn on the real change axes; has any structural assumption already been *falsified* by the product;
   is anything built for a future with no present force?
+- **Probe it, don't just assert it** — the quality-focused rules the experiment judge requires (its
+  S1–S6, `experiments/aims-vs-openspec/hidden/spec-and-oracle.md §3b`), generalized. Derive each for
+  *this* product and answer it against the design text by **quotation, or "the design does not say"**
+  (itself a finding — the design is not buildable there):
+  - **Change-locality** — for each known change axis, *"to add ⟨a new kind of the varying thing / a new
+    market / a new backend⟩, which named components change, and does the core computation change at
+    all?"* Many touched, or unnameable → the axis is not absorbed.
+  - **Single owner** — for each stated rule / value / computed quantity, *"how many places own it? Name
+    them."* More than one → split ownership.
+  - **No divergence** — wherever two things could disagree (a value and its explanation, a cache and its
+    source), *"one structure, or two? If two, what stops them diverging?"*
+  - **Invariant ownership** — for each stated invariant, *"which named component owns it?"* None → a
+    finding.
 - **Evidence:** design reasoning and fit-to-forces — **not** tests (a design objective may have no
   runnable code). Check that the design's *claims* match what exists, but measure the shape.
 - **Look for:** absent or split ownership, over- and under-abstraction, an unfalsified or now-false
