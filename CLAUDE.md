@@ -50,8 +50,9 @@ python3 -m py_compile knowledge/anchor.py knowledge/staleness_hook.py
 
 aims has exactly two hooks, and neither blocks:
 
-- `SessionStart` (`session-start.sh`) — surfaces in-progress plans and points at the co-located design
-  records with the reading rule. Informational.
+- `SessionStart` (`session-start.sh`) — when the project carries aims records, points at the co-located
+  design records with the reading rule (navigate to the relevant companion / root record; do not read the
+  whole tree). Informational; it does not read `state.md`.
 - `PostToolUse` on `Read` (`knowledge/staleness_hook.py`) — when an anchored record is read, re-derives
   its anchor from location and, on drift, injects an advisory "re-verify" note. Advisory only, fail-open.
 

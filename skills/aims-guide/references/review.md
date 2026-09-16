@@ -32,7 +32,9 @@ A design objective reliably produces a domain that is sound at the core and **ov
 seams**: value objects that own no rule, guards against callers that don't exist, a "tell-don't-ask"
 method that nothing calls, an abstraction placed for a future with no present force. The additive
 instinct ("what type would model this cleanly?") does not catch these; you need an explicit
-*subtractive* pass, and it is mandatory before you accept a design.
+*subtractive* pass — run it on every returned design before its readings inform the next direction. (This
+is a required *pass*, not a gate: like the rest of the review it measures and reports; it never stamps a
+design accepted or rejected — see `references/review-panel.md`.)
 
 For **every** type, interface, guard, wrapper, or abstraction the Worker introduced, ask one question:
 
