@@ -30,7 +30,12 @@ a typed measurement has nowhere to hide from the architecture question when the 
 - **Evidence:** design reasoning and fit-to-forces — **not** tests (a design objective may have no
   runnable code). Check that the design's *claims* match what exists, but measure the shape.
 - **Look for:** absent or split ownership, over- and under-abstraction, an unfalsified or now-false
-  assumption, speculative generality. *(This is the blind design-judge lens from the pilots.)*
+  assumption, speculative generality. *(This is the blind design-judge lens from the pilots —
+  `experiments/aims-vs-openspec/judging/rubrics.md` Q1.)*
+- **Three standing rules** (borrowed from that judge, and the usual way a design review goes wrong):
+  **length is not a merit** — a longer design is not a better one, prose volume is the main distortion;
+  **a removable local blemish must not flip the reading** — measure the shape, not a fixable typo; **small
+  is not unearned** — a single stated rule with one owner is small *and* load-bearing, never "too thin".
 
 ### implementation — *does it correctly realize the agreed design?*
 - **Deliverable:** working code conforming to a design already agreed.
@@ -56,16 +61,25 @@ roles below serve whichever lens the kind selects.
 
 ## The one rule that makes a reading real: reproduced or cited
 
-A reading is not an opinion and never a number. **Every reading carries either:**
+A reading is not an opinion and never a number. **Every reading carries one of:**
 
 - a **reproduction** — a probe/test that actually fails, or a concrete input → wrong output/state; or
 - a **precise code citation** — `file:line` of the dead abstraction, the duplicated rule, the leaked
-  boundary, the comment that overstates the code.
+  boundary, the comment that overstates the code; or
+- for a **`design` deliverable — a quotation from the design text** (`file:line` of the design artifact:
+  the boundary drawn twice, the rule with no named owner, the abstraction with no present force, the
+  falsified assumption). A design has no code to reproduce against, so a quotation *is* the admissible
+  evidence — this is exactly the rule aims' own blind design-judge used (`experiments/PROTOCOL.md`,
+  `experiments/aims-vs-openspec/judging/rubrics.md`: "a quotation is the only admissible evidence"). **"The
+  design does not say X" is itself a finding** when the objective required X — silence measured, not
+  excused.
 
-No scores, no percentages, no "looks solid," no "8/10." A reading without a reproduction or a citation is
-not a measurement — drop it. (Inventing quality numbers is the exact failure this whole project exists to
+No scores, no percentages, no "looks solid," no "8/10." A reading with none of the three is not a
+measurement — drop it. (Inventing quality numbers is the exact failure this whole project exists to
 avoid.) The contrast a second arm used to provide is replaced by the **exit criteria / stated intent**:
-measure the deliverable against *that* ground truth, not against taste.
+measure the deliverable against *that* ground truth, not against taste. (Blindness and X/Y relabeling from
+the experiment judge do **not** carry over — those serve a *comparative* judge across arms; a review has
+one deliverable and the exit criteria are its ground truth.)
 
 ## The roles — use what the task needs, scale to it
 
