@@ -26,6 +26,13 @@ and builds on them instead of re-deriving.
 - **Adopting aims on an existing project** — `/install-on .` puts the two hooks and the anchor tool
   under `.aims/` and wires `.claude/settings.json`, touching no code and no existing record.
 
+## Evidence status
+The primary goal above is a hypothesis under test, not an established result. Its one direct blind test so
+far — `experiments/aims-vs-openspec/` (three arms, design-only, n=1) — found **no design-quality advantage
+for aims** and had it reopen the most of its own structure across an evolution; see `decisions/0007`. The
+measured payoff of the co-located record layer on that pilot was narrow and real: a durable append-only
+trail of *why a superseded decision no longer holds*. Read the primary goal next to that.
+
 ## Non-goals
 - Not a background daemon or self-maintaining store: nothing runs between turns except one advisory
   read hook.

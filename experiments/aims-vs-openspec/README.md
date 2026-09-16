@@ -190,5 +190,10 @@ survival tables, and the judge reports — each claim carrying a quotation.
 
 ## 11. Status
 
-**Planned. Not run.** `results.md` stays a stub until it has been executed; it must not be filled in from
-expectation.
+**Run once, 2026-09-15/16.** See [`results.md`](results.md) for the four readings and the full run under
+[`run-log/`](run-log/) (oracle logs, cost, the operator's notebook, the four judge reports, and the blind
+X/Y/Z snapshots with their sealed mapping). Headline: aims won no reading and lost the design reading to
+OpenSpec under both opposite-disposition judges; it reopened the most of its own structure across the
+evolution (the falsifier in §8 fired); all three arms navigated their prior records rather than
+re-deriving, and the plain arm matched both methods on continuity with no machinery. n = 1 — suggestive,
+not robust.
