@@ -89,7 +89,13 @@ executed:awaiting-review <objective>
 reviewed:awaiting-decision <objective>
 ready-to-choose-next
 awaiting-human <named open product decision>
+blocked <named external dependency>
 ```
+
+`ready-to-choose-next` is also where an **invalidated** objective lands (the loop chooses again from the
+evidence). A **blocked** outcome parks at `awaiting-human` when it waits on a product decision, or at
+`blocked <named external dependency>` when it waits on something outside the loop (a service, an
+unfinished spike) that no decision resolves.
 
 ## Switching modes
 

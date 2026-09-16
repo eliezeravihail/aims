@@ -15,7 +15,9 @@ panel rebuilds both without a second arm.
 
 ## A task declares its kind; the measurement matches it
 
-Every objective declares a **Kind — `design` | `implementation` | `refactoring`** (see
+Every objective declares a **Kind — `design` | `implementation` | `refactoring`** (plus `experiment`,
+an aims-repo-internal kind whose deliverable is a *measurement of a method*, not a product change — see
+its lens below) (see
 `references/objective-selection.md`), and the review measures the outcome through the lens for that kind.
 This matters because *what "good" means, and what evidence would show it, differ by kind* — and applying
 the wrong lens is exactly how a review slides into proxy-checking: grading links, parsing, and file
@@ -52,8 +54,7 @@ a typed measurement has nowhere to hide from the architecture question when the 
 - **Evidence:** design reasoning and fit-to-forces — **not** tests (a design objective may have no
   runnable code). Check that the design's *claims* match what exists, but measure the shape.
 - **Look for:** absent or split ownership, over- and under-abstraction, an unfalsified or now-false
-  assumption, speculative generality. *(This is the blind design-judge lens from the pilots —
-  `experiments/aims-vs-openspec/judging/rubrics.md` Q1.)*
+  assumption, speculative generality. *(This is the blind design-judge lens from the pilots.)*
 - **Three standing rules** (borrowed from that judge, and the usual way a design review goes wrong):
   **length is not a merit** — a longer design is not a better one, prose volume is the main distortion;
   **a removable local blemish must not flip the reading** — measure the shape, not a fixable typo; **small
@@ -76,6 +77,18 @@ a typed measurement has nowhere to hide from the architecture question when the 
   diff is structure-only; the target smell is demonstrably gone.
 - **Look for:** behavior drift (the cardinal sin), a half-removed smell, new coupling, tests weakened to
   make the refactor "pass."
+
+### experiment — *does the comparison discriminate?* (aims-repo-internal)
+- **Deliverable:** a *measurement of a method*, not a product change — an experiment run under
+  `experiments/PROTOCOL.md` (a controlled, two-arm, blind-judged comparison). Used inside the aims repo
+  itself; a target product rarely declares this kind.
+- **Measure:** not the code and not a design's shape, but whether the **comparison discriminates** — is
+  there a real control arm, was judging genuinely blind, was the oracle hidden, is the reading countable
+  and reproducible (a named method pin)? A single-arm demonstration is not an experiment.
+- **Evidence:** the protocol's own artifacts — the sealed mapping, the per-arm readings, the judge
+  reports — measured against `experiments/PROTOCOL.md`, not against the three product-quality lenses.
+- **Look for:** a missing control arm, a judge that saw which arm was aims, a result cited to a run whose
+  artifacts do not exist, self-contamination (an arm could read the answer).
 
 If a task's declared kind and its actual deliverable disagree — a "refactoring" that changed behavior, a
 "design" objective that quietly shipped a feature — **that mismatch is itself the first reading.** The
