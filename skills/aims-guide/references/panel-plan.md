@@ -87,27 +87,40 @@ later advisor cannot unsee an earlier one.
   be simulated in one shared context, and fall back to single-pass `plan`. Never run sequential
   pseudo-advisors — fabricated independence is worse than none.
 
-## The master planner — strength harvest, then a best-of-all-three composition
+## The merge agent — objectives
 
-1. **Read** the three drafts.
-2. **Harvest strengths.** Per plan, name the concrete structural moves its axis genuinely earned —
-   where that plan is *excellent*, not a summary of it. Note the unanimous spine (choices all three
-   share) as robust, and keep it.
-3. **Compose.** Build **one** coherent design that carries every harvested strength **at full
-   strength, simultaneously** — a plan at the top of all three axes at once, not a plan good at one
-   and adequate at the others. Where two strengths collide, first try to **harmonize** — adapt the
-   mechanism so both hold. Only a genuinely irreconcilable conflict is decided by choice, with a
-   stated reason: *chosen-over-rejected + why*. Three failure modes are each a fail here:
-   - **winner-picking** — crown one plan, sprinkle tokens from the others;
-   - **union** — keep everything, producing a patchwork;
+You receive the three axis-focused implementations — one per axis (clean code / correct encapsulation /
+correct genericity). Each was produced by a Worker given the **one shared objective** (the Guide's, set
+before the fan-out) plus a single instruction to optimize its axis. Your job is **not to pick a winner**;
+it is to author one holistic implementation stronger than any of the three alone.
+
+1. **Read each implementation for what its focus let it see.** For each of the three, name:
+   - its genuine **strengths** — the concrete moves its axis earned;
+   - the **problems it steered away from** — the pitfalls its focus made it avoid;
+   - and, above all, the **requirements, problems, and needs it surfaced** that a single generalist pass
+     would likely have missed. This is the whole point of the per-axis focus: it is a *discovery
+     instrument* — a sharper, more focused way to surface what the design must satisfy. Treat each
+     implementation as discovery, not as a finished candidate.
+
+2. **Compose one holistic implementation from that raw material.** The strengths, avoided pitfalls, and
+   surfaced requirements/needs across all three are your raw material. Design one correct, clean
+   implementation that carries the genuine strength of each **at full force** — better than any
+   single-axis implementation on its own. Refuse the three failure modes:
+   - **winner-picking** — crowning one and dropping the rest (that takes the best *among*, not the best
+     *from each*);
+   - **union** — keeping everything, a patchwork;
    - **averaging** — a compromise that dilutes every strength.
-4. **Glue-only authorship.** The master may author the connective tissue the composition needs — each
-   glue element justified by the strengths it joins — but may not add new capability of its own. A gap
-   present in all three drafts is filed as a **gap note for the Guide**, never silently patched in.
-5. **Subtractive pass** (`references/review.md`) over the composition — this is where the union
-   failure mode, if it crept in, gets caught.
-6. Assemble the round's single objective + Worker handoff. **No score, no accept/reject** anywhere in
-   this output — the panel informs the Guide's direction, exactly as the review panel does.
+
+   Where two strengths seem to collide, first **harmonize** (a structure that satisfies both); decide
+   only a genuinely irreconcilable conflict, with a stated reason: *chosen-over-rejected + why*.
+
+**Authorship bound.** The merge agent may author the connective tissue the composition needs — each glue
+element justified by the strengths it joins — but may not add new capability of its own; a gap present in
+all three implementations is filed as a **gap note for the Guide**, never silently patched in. Run a
+**subtractive pass** (`references/review.md`) over the composition — this is where a union that crept in
+gets caught. The merged result **conforms to the Guide's one shared objective**; the merge agent does not
+invent an objective. **No score, no accept/reject** — the panel informs the Guide's direction, exactly as
+the review panel does.
 
 ## Where the outputs land
 
