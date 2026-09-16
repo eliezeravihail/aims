@@ -1,6 +1,6 @@
 ---
 title: "goals"
-date: 2026-08-13
+date: 2026-09-16
 ---
 
 ## Primary goal

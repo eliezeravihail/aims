@@ -17,7 +17,10 @@ use `/aims-plan`, `/aims-build`, or `/aims-review` instead.)
   objective.
 - On the first objective of a new product, establish state and run discovery first — including the
   **day-zero foundational substrate** (SKILL step 1), filed as `base-dependencies.md` — before
-  choosing the objective. Records are filed beside the code they govern; cross-cutting ones at the root.
+  choosing the objective. That opening design round, and the opening round of any newly received
+  product change, is drafted by convening the panel-plan (`references/panel-plan.md`) rather than
+  single-pass; every later round plans single-pass. Records are filed beside the code they govern;
+  cross-cutting ones at the root.
 - Pause only at the **two legitimate human moments**: an *open product decision* you must not guess,
   and *receiving the next product change*. Do not run away — the same guardrails apply: one objective
   at a time, never mark met on the Worker's word without measuring the evidence yourself, never guess a

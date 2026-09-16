@@ -180,6 +180,8 @@ single task before you execute it.
   limited to software.
 - `/aims-plan` — choose one design objective, file the durable records it commits to, draft the Worker
   handoff; stop for review.
+- `/aims-panel-plan` — the opening-round variant: set one objective, then fan the design across three
+  axis-focused Workers and compose the best of each with a merge agent; stop for review.
 - `/aims-build` — delegate the objective to a Worker (or run it inline); stop before evaluation.
 - `/aims-review` — measure the result against the exit criteria with the review panel (also works
   standalone on any diff/branch/PR).
@@ -212,12 +214,19 @@ The pilots:
 - [`experiments/instance-seg-annotator/`](experiments/instance-seg-annotator/) — a real, container-run
   product (multi-class instance-segmentation annotator) built across a staged evolution (general
   annotator → satellite tiling + dataset export), run as a two-arm blind pilot under `PROTOCOL.md`.
-- [`experiments/aims-vs-openspec/`](experiments/aims-vs-openspec/) — **planned, not yet run**: aims against
-  a *rival method* rather than against no method, and **on the architecture only — nothing is built**.
-  Three arms (aims / OpenSpec / plain) each design a checkout pricing service across three staged reveals,
-  and the designs are compared. The primary reading is countable rather than a matter of taste: when a
-  requirement nobody stated arrives, how many named components and seams have to be **reopened**. The plain
-  arm is what distinguishes "both methods work" from "neither method is doing anything".
+- [`experiments/aims-vs-openspec/`](experiments/aims-vs-openspec/) — aims against a *rival method* rather
+  than against no method, **on the architecture only — nothing is built**. Three arms (aims / OpenSpec /
+  plain) each design a checkout pricing service across three staged reveals; the primary reading is
+  countable — when an unforeseen requirement arrives, how many named components and seams must be
+  **reopened**. **Run, and honest about the result: aims did not win.** The one clean blind run (v1) found
+  **no design advantage** for aims — it placed third of three and reopened the most, and the pre-registered
+  falsifier fired (`decisions/0007`). Later runs improved: the concept-fit pass eliminated the architectural
+  fault, and the **clean isolated re-run (v4)** ranks aims-panel first under both opposite-prior judges with
+  the pass generalizing — **but aims-panel's own v4 design ships a real, acknowledged defect** in its tax
+  mechanism (`decisions/0010`, `experiments/aims-vs-openspec/results-v4.md`). The honest current claim is
+  *"aims improved change-absorption and v4 is its strongest result, but ships a real defect — a win on this
+  pilot's measures, not yet a design to build from unmodified"* — not
+  that aims beats a spec-first method.
 
 Each README states exactly what was handed to each arm and what was measured, so a run is reproducible and
 the claims are checkable.

@@ -112,20 +112,13 @@ replaceable dependency (a specific
 model, a data loader, an augmentation library) is confined behind a boundary and is **not**
 foundational; it is adopted later.
 
-Because replacing the substrate rewrites everything, it is never guessed or deferred: **first ask the
-user whether they want to set the foundational substrate *with you* or have *you* choose it** — offer
-both. If they want to set it, ask about the language, the core framework, the foundational dependencies,
-any stack constraint or preference. If they hand it back (*"you choose"*), record that and decide.
-
-This is a **gate, not a courtesy**: asking is mandatory and you have no discretion to skip it. You may
-not choose the substrate on your own until you have actually asked and the user has handed the choice
-back. The two — and only two — legitimate paths to a fixed substrate are (a) the user set it, or (b) you
-asked and the user told you to choose. "It was obvious," "the task implied it," or "I'll just pick the
-standard one" are not substitutes for the answer. It is *not* a technical freedom the Guide quietly
-picks. Record the outcome in a substrate `decisions/` ADR at the repo root
-(the foundational substrate *only* — never the full manifest, never the confined libraries), with the
-concrete packages in the root `dependencies.md` record. The foundational set, plus the framework's own domain
-types, are the only types permitted to cross a public seam (`design-principles.md` §7).
+This section owns *what the substrate is* — the pervasiveness test above, and the confined-vs-foundational
+distinction. The **imperative** — that establishing it is a **gate, not a courtesy** (asking the user is
+mandatory, with no discretion to skip; the two and only two legitimate paths; where the outcome is filed —
+a substrate `decisions/` ADR plus the packages in root `dependencies.md`; and that the foundational set
+plus the framework's domain types are the only types permitted to cross a public seam,
+`design-principles.md` §7) — is owned by **`SKILL.md` step 1** and is not restated here. Run the gate
+there; use this section to decide what actually counts as the substrate.
 
 ## Load-bearing assumptions — prove the uncertain ones before designing on them
 

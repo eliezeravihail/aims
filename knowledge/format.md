@@ -58,8 +58,9 @@ exists; otherwise it is a system record and carries no anchor:
 - `goals.md` / `architecture.md` → `goals` / `architecture` do not exist → **no anchor** (intent, not
   tied to one file).
 
-Stamp it on filing — `python3 knowledge/anchor.py <record>` — it writes the single `hash:` line; you
-never compute a hash. A read-time hook re-hashes the sibling and, on drift, advises *"re-verify"*; it
+Stamp it on filing with the anchor tool (its invocation is owned by
+`skills/aims-guide/references/design-record.md` — `.aims/anchor.py` in an installed project) — it writes
+the single `hash:` line; you never compute a hash. A read-time hook re-hashes the sibling and, on drift, advises *"re-verify"*; it
 never blocks. Because the pairing is by name, renaming the source and its companion **together** keeps
 them in sync with nothing to update; renaming only the source flags the orphaned companion.
 

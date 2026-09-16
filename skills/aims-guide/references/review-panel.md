@@ -15,7 +15,9 @@ panel rebuilds both without a second arm.
 
 ## A task declares its kind; the measurement matches it
 
-Every objective declares a **Kind — `design` | `implementation` | `refactoring`** (see
+Every objective declares a **Kind — `design` | `implementation` | `refactoring`** (plus `experiment`,
+an aims-repo-internal kind whose deliverable is a *measurement of a method*, not a product change — see
+its lens below) (see
 `references/objective-selection.md`), and the review measures the outcome through the lens for that kind.
 This matters because *what "good" means, and what evidence would show it, differ by kind* — and applying
 the wrong lens is exactly how a review slides into proxy-checking: grading links, parsing, and file
@@ -27,19 +29,56 @@ a typed measurement has nowhere to hide from the architecture question when the 
 - **Measure:** does each truth live in exactly one place; is each invariant owned once; are boundaries
   drawn on the real change axes; has any structural assumption already been *falsified* by the product;
   is anything built for a future with no present force?
+- **Formulate the quality-requirements list for *this* design, then measure against every item.** Like
+  the judge, do not free-associate: turn the quality dimensions into a concrete list of requirements this
+  design must meet, and answer each against the design text by **quotation, or "the design does not say"**
+  (itself a finding — the design is not buildable there). The dimensions are the ones the panel's three
+  axes optimize; each is owned in full by `references/design-principles.md` — **name it and cite the
+  section, do not restate it**:
+  - **Clean code / smells** (§6, §10, §12) — feature envy, shotgun surgery, duplication that is real
+    coupling, size with no one-sentence reason; plus a lean dependency footprint.
+  - **Correct encapsulation** (§1, §7, §9) — Tell-Don't-Ask; no implementation type leaking across a
+    public seam; each stated rule enforced in exactly one place.
+  - **Correct genericity / interfaces** (§2, §3) — abstraction level calibrated floor-to-ceiling;
+    interfaces segregated; program to an interface; no decorative or speculative generality.
+  - **Concept fit** (`review.md`) — each element is the *kind* of thing it is (a decomposition not
+    modelled as a movement; no inert member forcing a wrong shape).
+  - plus **primitive obsession** (§4), **anemic model** (§5), **SRP / God object** (§8), **naming &
+    failure** (§11).
+
+  Phrase each requirement as an *answerable probe* so it cannot be hand-waved — e.g. "to add ⟨the next
+  expected variant⟩, which named components change, **and would its semantics falsify an assumption an
+  existing owner holds** (an invariant-owner's model, a value type, a seam's contract)?" (genericity —
+  a seam that exists but that a real new variant would still force open is *not* absorption; do not stop
+  at "there is a seam"), "how many places own this rule? name them" (encapsulation), "which component
+  owns this invariant?" (encapsulation), "what present force requires this type?" (clean-code /
+  subtractive) — and answer by quotation. A dimension left unprobed, or a property asserted with no
+  quotation, is not a measurement.
 - **Evidence:** design reasoning and fit-to-forces — **not** tests (a design objective may have no
   runnable code). Check that the design's *claims* match what exists, but measure the shape.
 - **Look for:** absent or split ownership, over- and under-abstraction, an unfalsified or now-false
   assumption, speculative generality. *(This is the blind design-judge lens from the pilots.)*
+- **Three standing rules** (borrowed from that judge, and the usual way a design review goes wrong):
+  **length is not a merit** — a longer design is not a better one, prose volume is the main distortion;
+  **a removable local blemish must not flip the reading** — measure the shape, not a fixable typo; **small
+  is not unearned** — a single stated rule with one owner is small *and* load-bearing, never "too thin".
 
 ### implementation — *does it correctly realize the agreed design?*
 - **Deliverable:** working code conforming to a design already agreed.
 - **Measure:** does it satisfy the behavior **and** conform to the design; does every exit criterion
   actually hold on the paths the tests don't exercise?
-- **Evidence:** adversarial probes against the exit criteria (the role that surfaces real defects) +
-  conformance to the design + the subtractive pass.
-- **Look for:** correctness defects, non-conformance, dead abstractions, missing affordances. *(The
-  pilot-#4 lens — the one that measured "win design, lose product.")*
+- **Coverage — pin every behavioral requirement to a check** (the reading OpenSpec is at home on, borrowed
+  as an instrument): formulate the list of behavioral requirements the objective carries, and for each
+  name the **test or scenario that pins it** — or record **"nothing pins it", itself a finding** (an
+  untested behavior). The count is *requirements revealed / requirements pinned*, **not** a line-coverage
+  percentage — aims measures pinned real requirements, never a coverage target.
+- **Evidence:** the coverage list above **plus** adversarial probes on the paths the pinned checks don't
+  exercise (the role that surfaces real defects) + conformance to the design + the subtractive pass.
+  Coverage catches the *missing* requirement; the adversarial probe catches the *wrong* behavior a passing
+  test still allows — neither alone is enough, and "tests pass" is never on its own the measurement
+  (`review.md`).
+- **Look for:** correctness defects, non-conformance, an unpinned requirement, dead abstractions, missing
+  affordances. *(The pilot-#4 lens — the one that measured "win design, lose product.")*
 
 ### refactoring — *did structure improve with behavior preserved?*
 - **Deliverable:** a structural change; observable behavior unchanged.
@@ -50,22 +89,42 @@ a typed measurement has nowhere to hide from the architecture question when the 
 - **Look for:** behavior drift (the cardinal sin), a half-removed smell, new coupling, tests weakened to
   make the refactor "pass."
 
+### experiment — *does the comparison discriminate?* (aims-repo-internal)
+- **Deliverable:** a *measurement of a method*, not a product change — an experiment run under
+  `experiments/PROTOCOL.md` (a controlled, two-arm, blind-judged comparison). Used inside the aims repo
+  itself; a target product rarely declares this kind.
+- **Measure:** not the code and not a design's shape, but whether the **comparison discriminates** — is
+  there a real control arm, was judging genuinely blind, was the oracle hidden, is the reading countable
+  and reproducible (a named method pin)? A single-arm demonstration is not an experiment.
+- **Evidence:** the protocol's own artifacts — the sealed mapping, the per-arm readings, the judge
+  reports — measured against `experiments/PROTOCOL.md`, not against the three product-quality lenses.
+- **Look for:** a missing control arm, a judge that saw which arm was aims, a result cited to a run whose
+  artifacts do not exist, self-contamination (an arm could read the answer).
+
 If a task's declared kind and its actual deliverable disagree — a "refactoring" that changed behavior, a
 "design" objective that quietly shipped a feature — **that mismatch is itself the first reading.** The
 roles below serve whichever lens the kind selects.
 
 ## The one rule that makes a reading real: reproduced or cited
 
-A reading is not an opinion and never a number. **Every reading carries either:**
+A reading is not an opinion and never a number. **Every reading carries one of:**
 
 - a **reproduction** — a probe/test that actually fails, or a concrete input → wrong output/state; or
 - a **precise code citation** — `file:line` of the dead abstraction, the duplicated rule, the leaked
-  boundary, the comment that overstates the code.
+  boundary, the comment that overstates the code; or
+- for a **`design` deliverable — a quotation from the design text** (`file:line` of the design artifact:
+  the boundary drawn twice, the rule with no named owner, the abstraction with no present force, the
+  falsified assumption). A design has no code to reproduce against, so a quotation *is* the admissible
+  evidence — the rule aims' own blind design-judge used: when there is no code, a quotation is the only
+  admissible evidence. **"The design does not say X" is itself a finding** when the objective required X —
+  silence measured, not excused.
 
-No scores, no percentages, no "looks solid," no "8/10." A reading without a reproduction or a citation is
-not a measurement — drop it. (Inventing quality numbers is the exact failure this whole project exists to
+No scores, no percentages, no "looks solid," no "8/10." A reading with none of the three is not a
+measurement — drop it. (Inventing quality numbers is the exact failure this whole project exists to
 avoid.) The contrast a second arm used to provide is replaced by the **exit criteria / stated intent**:
-measure the deliverable against *that* ground truth, not against taste.
+measure the deliverable against *that* ground truth, not against taste. (Blindness and X/Y relabeling from
+the experiment judge do **not** carry over — those serve a *comparative* judge across arms; a review has
+one deliverable and the exit criteria are its ground truth.)
 
 ## The roles — use what the task needs, scale to it
 

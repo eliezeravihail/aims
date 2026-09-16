@@ -1,8 +1,9 @@
 # The design record — how the method's outputs become co-located records
 
 Everything the loop produces worth having *next year* is filed as a record **in the code tree**. The
-complete format is `../../../knowledge/format.md` (short, self-contained); this file maps "what I just
-decided" to "which record". There are two homes, and the split is by *what the knowledge is about*.
+complete format is `../../../knowledge/format.md` (short, self-contained); fill-in skeletons for each
+record kind are in `assets/record-templates.md`; this file maps "what I just decided" to "which record".
+There are two homes, and the split is by *what the knowledge is about*.
 
 ## File-level → a companion beside the source file
 

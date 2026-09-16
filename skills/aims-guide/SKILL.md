@@ -378,7 +378,10 @@ Do not turn the Worker's *internal* design into a user questionnaire — the mod
 
 ### 2. Choose one current objective
 
-Use `references/objective-selection.md`.
+Use `references/objective-selection.md`. In **auto** mode, on the **opening design round** of a new
+product or of a newly received product change, convene the panel-plan (`references/panel-plan.md`)
+instead of planning single-pass; every later round plans single-pass as described below. (In stepped
+mode the panel convenes only via the explicit `panel-plan` command — `/aims-plan` stays single-pass.)
 
 Select the single objective whose completion most usefully reduces an important uncertainty, structural risk, or missing capability **now**. Keep it feature-scoped and framed around design quality, per the scope guidance above — not the whole product, and not a design-only errand.
 

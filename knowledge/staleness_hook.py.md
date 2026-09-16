@@ -1,7 +1,7 @@
 ---
 title: "staleness_hook.py"
 date: 2026-08-12
-hash: "sha256:cada8bdbb266ef6d09754a9e0023da8c164ea8a7f380e9940e724c4b608b8709"
+hash: "sha256:e7452917d0d9bea295b2bf003d102c90e7dfe64d24aa096391a3ff53bf1e058b"
 ---
 ## Insights
 - Identifying a companion needs no naming convention or path match: a record is anchored iff it carries

@@ -22,7 +22,7 @@ while read -r hit; do
     */install-on.md:*|*/design-record.md:*) continue ;;
     *) bad "shipped surface points at an aims-repo-only path: $hit" ;;
   esac
-done < <(grep -rn "knowledge/anchor\.py\|knowledge/staleness_hook\.py" skills commands templates 2>/dev/null)
+done < <(grep -rn "knowledge/anchor\.py\|knowledge/staleness_hook\.py" skills commands templates knowledge 2>/dev/null)
 
 # 3. The dogfood wiring must point at files that exist in this checkout.
 python3 - <<'PY' || fail=$((fail + 1))
