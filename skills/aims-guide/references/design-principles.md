@@ -146,6 +146,10 @@ supertype exists *only* for consumers that need the common part, while a consume
 depends on `OrientedBox` and can be served only by producers that actually have it. Nobody is distorted
 in either direction (`OrientedBox <: Box`).
 
+**The review lens turns this cram into a standing check** — for every element, *is it the kind of thing
+it is, or a different kind forced into this shape?* — run on the design before code, where a value-correct
+mismatch is cheapest to see and to move. See `references/review.md`, the concept-fit pass.
+
 ## 3. Interface Segregation
 
 **The question:** Does anything that depends on this interface actually use everything on it, or
