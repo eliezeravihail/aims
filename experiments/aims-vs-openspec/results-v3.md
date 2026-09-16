@@ -1,5 +1,18 @@
 # Results — v3 (post concept-fit pass), design-only, three-way vs OpenSpec
 
+> **⚠️ Unresolved validity threat: possible answer leakage.** The v3 aims arms (single, panel) were
+> `general-purpose` agents with unrestricted read access to the whole `aims` repo working tree, not just
+> the three method files (`SKILL.md`, `design-principles.md`, `review.md`) they were told to read.
+> `decisions/0007-aims-vs-openspec-pilot-findings.md` — present in that same working tree since before
+> these arms were dispatched — states the exact domain-specific fault to avoid, in the pricing-cart's own
+> vocabulary: *"tax folded into the explanation chain ... dissolved aims' own delta-sum invariant into
+> per-kind folds."* Nothing sandboxed the arms away from finding and reading that file (or `goals.md`,
+> which also named the finding). If either arm did, the v3 result below is **not** evidence the
+> concept-fit pass generalizes — it would be evidence the arm was handed the answer. This was not checked
+> at the time (the raw agent transcripts were not inspected) and is not ruled out. **The finding below
+> should be treated as unconfirmed until re-run with the design arms sandboxed to method files only, with
+> no access to this repo's own experiment records.**
+
 Design-only pilot re-run after adding the **concept-fit pass** to `references/review.md` (a decomposition
 modelled as a movement, or the reverse, is a latent-architectural fault to catch *in the design*). Two aims
 arms — **single** (Guide+Worker) and **panel** (ADR 0005 panel-plan) — against the existing **OpenSpec**

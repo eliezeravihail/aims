@@ -53,6 +53,13 @@ Honest current reading: aims **materially improved change-absorption** and the c
 single-mechanism spec method is a **judge-dependent split, not a clean win**. The co-located record layer's
 payoff remains narrow and real: a durable append-only trail of *why a superseded decision no longer holds*.
 
+**⚠️ v3 has an unresolved validity threat, not yet ruled out.** The v3 design arms had unrestricted read
+access to this repo, including `decisions/0007` and this very section — both of which already stated the
+exact domain-specific fault ("tax folded into the explanation chain") the arms needed to avoid. They were
+not sandboxed to the method files alone. Until re-run with that isolation, the v3 result is evidence the
+method's language is *capable of* this outcome, not confirmed evidence it *generalizes* without the answer
+present in the same working tree. See `experiments/aims-vs-openspec/results-v3.md`.
+
 ## Non-goals
 - Not a background daemon or self-maintaining store: nothing runs between turns except one advisory
   read hook.
