@@ -27,11 +27,25 @@ and builds on them instead of re-deriving.
   under `.aims/` and wires `.claude/settings.json`, touching no code and no existing record.
 
 ## Evidence status
-The primary goal above is a hypothesis under test, not an established result. Its one direct blind test so
-far — `experiments/aims-vs-openspec/` (three arms, design-only, n=1) — found **no design-quality advantage
-for aims** and had it reopen the most of its own structure across an evolution; see `decisions/0007`. The
-measured payoff of the co-located record layer on that pilot was narrow and real: a durable append-only
-trail of *why a superseded decision no longer holds*. Read the primary goal next to that.
+The primary goal above is a hypothesis under test, not an established result. The blind design-only pilot
+`experiments/aims-vs-openspec/` (vs OpenSpec, n=1) has now been run three times as the method was sharpened:
+
+- **v1** — found **no design-quality advantage for aims**, and it reopened the most of its own structure
+  across the evolution (survival 11); see `decisions/0007`. Root cause: a decomposition (tax) modelled as a
+  movement inside the explanation ledger — a value-correct cram (`design-principles.md` §2).
+- **v2** (§2 sharpened) — survival churn halved (11→5) but design quality was still a wash: §2 named the
+  fault but nothing made its check fire at design time.
+- **v3** (the **concept-fit pass** added to `references/review.md`, run on the design before code) — the
+  concept fault is **gone** from both aims arms (tax modelled as a decomposition beside the walk; no wrong
+  number on any case). Survival: aims-panel **1** (decisive best), aims-single 5, OpenSpec 5 — trajectory
+  11→5→1. Two opposite-prior substantive judges **split**: a consequence/future-cost lens ranks the aims
+  arms above OpenSpec; an accidental-complexity lens ranks OpenSpec's single-mechanism spec above them. See
+  `experiments/aims-vs-openspec/results-v3.md`.
+
+Honest current reading: aims **materially improved change-absorption** and the concept-fit pass **caused**
+(not merely measured) the elimination of the architectural fault — but overall design quality against a
+single-mechanism spec method is a **judge-dependent split, not a clean win**. The co-located record layer's
+payoff remains narrow and real: a durable append-only trail of *why a superseded decision no longer holds*.
 
 ## Non-goals
 - Not a background daemon or self-maintaining store: nothing runs between turns except one advisory

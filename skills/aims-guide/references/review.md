@@ -57,6 +57,38 @@ earns its place. This pass removes *unforced* machinery; making sure the needed 
 requirements in the first place is discovery's job (see `references/discovery.md`, "Every action implies
 its complement"), not a judgment to reconstruct here from the built design.
 
+## The concept-fit pass — is each element the kind of thing it *is*? (run on the design, before code)
+
+Where the subtractive pass asks *should this exist*, this pass asks *is this the right shape for what it
+is*. It catches the failure `design-principles.md` §2 names as the **value-correct cram**: an element that
+is arithmetically or behaviourally correct while modelled as a degenerate case of a concept it does not
+share — the axis-aligned rectangle stored as an `OrientedBox` with `angle = 0`, correct in every number
+and wrong in kind.
+
+For **every** element in the design, ask:
+
+> **Is this the kind of thing it is, or a different kind forced into this shape?** In particular: is a
+> *decomposition* (a whole partitioned into its parts) being modelled as a *movement* (a step that changes
+> a running value), or the reverse? A movement carries a **delta**; a decomposition carries **shares of a
+> total**. Forcing one into the other's structure always leaves a tell — an inert member present only to
+> make the wrong shape fit: a zero delta, a field that is `None` for every case but one, an entry that
+> moves nothing and only restates a number computed elsewhere.
+
+The reason this pass is needed at all: such an element is **correct by value and wrong by concept**. The
+numbers come out right, so no test fails and no case breaks — which is exactly why it survives an ordinary
+review, and why it is not caught by asking "is this clean?" It is caught only by asking "is this what it
+claims to be?" When you find one, the fix is to model the concept by its own nature — the decomposition
+*beside* the movement chain, joined at a single shared number, never inside it — and the tell disappears
+because the shape now matches the thing.
+
+**Run this on the design, before a line of the body is written** — this is the pass that most rewards
+being early. A concept mismatch is legible in the design's own prose (a type's fields, a seam's contract,
+an ordered list that quietly contains a non-move); buying it out there costs an edit. The same mismatch
+found after implementation costs a rewrite of everything built on the wrong shape, and — because it is
+value-correct — it is usually a *latent, architectural* fault: it passes every test today and only forces
+the rewrite when a later change leans on the concept it got wrong. Catching it in the design is the whole
+point of reviewing the design.
+
 ## Mixed-tier execution: a strong review after a cheap implementation
 
 aims already splits *direction* (the Guide) from *execution* (the Worker); that split maps cleanly
@@ -91,3 +123,7 @@ objective unmet when the Worker:
 - claims success without observable evidence;
 - diverges from a principle in `references/design-principles.md` in a way that matters for this
   objective (cite which one and why — these are understanding checks, use them the same way).
+- models a concept as a kind of thing it is not — a decomposition as a movement, or the reverse — carried
+  by an inert member (a zero delta, an always-`None` field) that is correct by value and wrong by concept
+  (the concept-fit pass above; this is `design-principles.md` §2's value-correct cram, and it is a latent
+  architectural fault, so it is worth a direction even when every number is right).
