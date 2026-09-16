@@ -1,7 +1,8 @@
 # Results — v3 (post concept-fit pass), design-only, three-way vs OpenSpec
 
 > **⚠️ Flawed experiment.** The design arms could reach `decisions/0007`, which names the exact fault being
-> tested for, in this domain's own words. Unconfirmed — superseded by the isolated re-run in `results-v4.md`.
+> tested for, in this domain's own words. Unconfirmed — an isolated re-run (`results-v4.md`) is **owed but
+> not yet produced**; see `decisions/0009`. Until it exists, v1's negative headline is the clean result.
 
 Design-only pilot re-run after adding the **concept-fit pass** to `references/review.md` (a decomposition
 modelled as a movement, or the reverse, is a latent-architectural fault to catch *in the design*). Two aims

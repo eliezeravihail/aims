@@ -1,6 +1,6 @@
 ---
 title: "goals"
-date: 2026-08-13
+date: 2026-09-16
 ---
 
 ## Primary goal
@@ -54,7 +54,9 @@ single-mechanism spec method is a **judge-dependent split, not a clean win**. Th
 payoff remains narrow and real: a durable append-only trail of *why a superseded decision no longer holds*.
 
 **⚠️ v3 is a flawed experiment** — the design arms could reach `decisions/0007`, which names the exact
-fault being tested for. Unconfirmed; superseded by the isolated re-run, `results-v4.md`.
+fault being tested for. Unconfirmed. An isolated re-run (`results-v4.md`, arms with no access to the
+fault-naming records) is **owed but not yet done**; until it exists the clean blind result remains v1's
+negative headline. See `decisions/0009` for the honest trail.
 
 ## Non-goals
 - Not a background daemon or self-maintaining store: nothing runs between turns except one advisory
