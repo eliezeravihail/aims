@@ -47,10 +47,13 @@ a typed measurement has nowhere to hide from the architecture question when the 
     failure** (§11).
 
   Phrase each requirement as an *answerable probe* so it cannot be hand-waved — e.g. "to add ⟨the next
-  expected variant⟩, which named components change?" (genericity), "how many places own this rule? name
-  them" (encapsulation), "which component owns this invariant?" (encapsulation), "what present force
-  requires this type?" (clean-code / subtractive) — and answer by quotation. A dimension left unprobed,
-  or a property asserted with no quotation, is not a measurement.
+  expected variant⟩, which named components change, **and would its semantics falsify an assumption an
+  existing owner holds** (an invariant-owner's model, a value type, a seam's contract)?" (genericity —
+  a seam that exists but that a real new variant would still force open is *not* absorption; do not stop
+  at "there is a seam"), "how many places own this rule? name them" (encapsulation), "which component
+  owns this invariant?" (encapsulation), "what present force requires this type?" (clean-code /
+  subtractive) — and answer by quotation. A dimension left unprobed, or a property asserted with no
+  quotation, is not a measurement.
 - **Evidence:** design reasoning and fit-to-forces — **not** tests (a design objective may have no
   runnable code). Check that the design's *claims* match what exists, but measure the shape.
 - **Look for:** absent or split ownership, over- and under-abstraction, an unfalsified or now-false
