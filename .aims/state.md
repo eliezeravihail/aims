@@ -41,9 +41,11 @@ quality-measurement contract are fixed — everything else conforms to them.
 - [ ] **Quality is operationally defined, not gestured at.** A spine that says "set a good objective,
       build it well, review it" without defining what quality *is* and how each phase is measured against
       it **fails** — that diffuse target is the exact failure aims exists to prevent.
-- [ ] **Measurement separates quality from performance.** Name a concrete case — a build that passes
-      every test but splits an owner or leaks a boundary — and the design must make that measurably **not
-      meeting** the objective. A measurement that only a behavior/performance check could pass fails.
+- [ ] **Performance is never a proxy for quality.** Behavior matters and is measured on its own terms
+      (the objective's constraint) — but a **performance metric must never estimate code quality**. Name a
+      concrete case — a build that passes every test yet splits an owner or leaks a boundary — and the
+      design must make that measurably **not meeting** the quality objective. "Passes the tests, therefore
+      well-designed" is the substitution the measurement must refuse.
 - [ ] **Fan-out is at the build phase, falsifiably.** A design that convenes the three axes at
       objective-setting **fails** (`0008`); one that produces the objective single-pass and fans out only
       the implementation passes.
@@ -68,7 +70,8 @@ quality-measurement contract are fixed — everything else conforms to them.
 **Do not optimize for:**
 - Preserving the panel-plan artifacts (`panel-plan.md`, `aims-panel-plan.md`, the plan-phase wiring) —
   they are superseded by `0008` and are rebuilt or removed, not patched.
-- Behavior / performance metrics as the measure of success.
+- Using performance / behavior metrics as a **proxy for code quality** (performance matters and is
+  measured as the behavior constraint — it just never stands in as the estimator of structural quality).
 - A configurable axis registry or variable advisor count.
 
 ## Worker handoff (drafted — do not execute before the build command)

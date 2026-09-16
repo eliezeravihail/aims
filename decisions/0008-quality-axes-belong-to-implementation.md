@@ -44,11 +44,14 @@ opposition between advisors" — diversity reduced at exactly the phase where it
    the named merge-failure modes, and the honest decline (the sound parts of `0005`) are preserved, but
    relocated to this phase.
 
-4. **Measurement is of code quality, matched to the abstraction level of what was produced.** The review
-   measures whether the *structure* is right for the phase's deliverable — not behavior/performance alone.
-   "It passes the tests" is a performance metric; "each truth lives in one place, each invariant is owned
-   once, the boundaries sit on the real change axes" is the quality metric this method exists to optimize.
-   The measurement is taken against the quality objective, at the objective's Kind lens.
+4. **Code quality is measured as quality, never proxied by performance.** Behavior matters — the code
+   must work, and behavior is the constraint the objective carries. What the review must refuse is using a
+   **performance metric as an estimator of code quality**: "it passes the tests, therefore it is
+   well-designed" is the forbidden substitution. Quality is measured on its own terms — does each truth
+   live in one place, is each invariant owned once, do the boundaries sit on the real change axes —
+   matched to the phase's deliverable and its Kind lens. A green test suite is evidence of behavior; it is
+   never, on its own, evidence of structure. Performance and quality are both measured; neither stands in
+   for the other.
 
 **Consequences.**
 - The plan-phase panel is retired; a build-phase axis mechanism replaces it in the clean build.
