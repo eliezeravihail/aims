@@ -30,6 +30,16 @@ just data ("give me the fields so I can decide").
 
 ## 2. Program to an interface, not an implementation — and ask whether the interface is *generic*
 
+**The bedrock, before any question of genericity.** What crosses a seam between parts is *always* an
+abstraction the exposing side owns — a domain type — and *never* a concrete implementation type. This is
+the load-bearing move of encapsulation and the first defence against coupling: a caller handed your
+concrete class, a vendor's result object, or a framework's `Model` is bound to your implementation and
+breaks the day you change it. Expose the abstraction; keep the implementation behind it. Every refinement
+below — whether that abstraction is polymorphic, how generic it should be, whether a family holds one
+altitude — sharpens this one rule and none of them replaces it. "It has only one implementation" is never a
+reason to leak the concrete type across the seam; at most it is a reason not to make the abstraction
+*polymorphic* (next paragraph), not a reason to abandon the abstraction.
+
 **The question:** If this type has an abstraction/interface, does that interface express behavior
 that would make sense for more than one genuinely different implementation — or does it just
 rename one concrete thing's methods with an `I`-prefix or an ABC that has exactly one real
@@ -69,16 +79,20 @@ underneath all of it: **minimize the knowledge you force on the other side — n
 requires, no less than it needs, and never your own implementation choice.** What follows is one worked
 example of this rule, in a single domain — do not mistake the example for the principle.
 
-**Keep sibling concepts at one level of abstraction.** When two peer concepts fill the same structural
-role — both are pluggable policies selected along the same axis — the default is to express them the same
-way. Modelling one behind an interface and its sibling as an inline `kind`-field-and-switch is a
-*non-uniform abstraction*: a reader must hold two mental models for one idea, and an extension that lands
-cleanly on the interfaced sibling forces a different, ad-hoc shape on the data-branched one. So if a
-behind-an-interface rule is the right shape for one member of a family, it is the **null hypothesis** for
-its siblings; choosing a different mechanism for the second must be argued from the *concepts genuinely
-differing in kind* (the floor/ceiling test above forcing segregation), never from one sibling merely
-*happening to have a single case today* — that is the count proxy again in different clothes. A family
-modelled at two altitudes is the smell, whichever altitude each member sits at.
+**Keep a family of concepts at one level of abstraction — uniformity in the content model itself.** The
+peers in a family must sit at the same conceptual altitude. `Rectangle`, `Triangle`, `Pentagon` is a
+coherent family; `Rectangle`, `Triangle`, and then `RhombusBuiltByReflectingTwoTriangles` is not — one
+member has dropped from *what a shape is* to *how a particular shape happens to be constructed*, an
+altitude the others do not share. The model now conflates a kind with an implementation of a kind: any
+operation over "a shape" must either special-case the misfit or is distorted by it, and a reader holds two
+altitudes for one idea. A member that breaks the family's altitude is telling you one of two things — it is
+**misclassified** (it belongs to a different family, at a different level) or it is **over-specified** (it
+has leaked how it is made into what it is, and the construction detail should move behind the abstraction,
+not sit beside its siblings as if it were one). The same smell shows up in mechanism, not just in taxonomy:
+expressing one member of a family behind an interface and its sibling as an inline `kind`-field-and-switch
+puts one idea at two altitudes. Whatever altitude a family is drawn at, hold the whole family to it; do not
+let one member sink to an implementation-shaped level because it happens to have a single case today (the
+count proxy again), and do not raise one member to a speculative abstraction its siblings do not need.
 
 **A worked example (illustration only).** `ObjectDetectionModel.detect(image) -> list[DetectedObject]` is a real
 abstraction: YOLO, DETR, and a hosted cloud API all satisfy it identically. Returning the concrete
