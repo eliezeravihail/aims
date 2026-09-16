@@ -53,13 +53,8 @@ Honest current reading: aims **materially improved change-absorption** and the c
 single-mechanism spec method is a **judge-dependent split, not a clean win**. The co-located record layer's
 payoff remains narrow and real: a durable append-only trail of *why a superseded decision no longer holds*.
 
-**⚠️ v3 has an unresolved validity threat, not yet ruled out.** `decisions/0007` and (until corrected
-above) this very section already stated the exact domain-specific fault ("tax folded into the explanation
-chain") a v3 design arm needed to avoid in the product it was designing — reachable from the same repo root
-the arm read the method files from, via this file's own "read the root records for context" instruction.
-The fix is narrow: don't leave a worked example matching an in-flight test's exact scenario reachable from
-the design arm's root while that test runs. Until re-run that way, the v3 result is not confirmed evidence
-the concept-fit pass generalizes. See `experiments/aims-vs-openspec/results-v3.md`.
+**⚠️ v3 is a flawed experiment** — the design arms could reach `decisions/0007`, which names the exact
+fault being tested for. Unconfirmed; superseded by the isolated re-run, `results-v4.md`.
 
 ## Non-goals
 - Not a background daemon or self-maintaining store: nothing runs between turns except one advisory
