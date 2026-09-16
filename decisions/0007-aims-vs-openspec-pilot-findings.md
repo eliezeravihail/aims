@@ -11,11 +11,18 @@ the pilot or trusting the method's self-description.
 
 **Finding.** On this product, judged blind against aims' own design principles:
 
-- **Design (the home reading): aims lost.** Two opposite-disposition judges both ranked OpenSpec > plain >
-  aims. The decision aims' method actively led it toward — make the explanation the single source of truth
-  — is a real strength at stage 2 and became the wrong call at stage 3 (tax as a delta *inside* the chain,
-  which broke aims' own delta-sum fold and forced a kind-filtered patch). aims lost its home reading under
-  its home rubric.
+- **Design (the home reading): no advantage for aims; it placed third of three, but there is no clear
+  winner above it.** Judged against aims' own twelve-axis `design-principles.md`, two opposite-disposition
+  judges *split* — YAGNI picked OpenSpec, encapsulation picked plain — which by PROTOCOL §6.3's own logic
+  makes the top-two ranking a taste artifact, not a structural fact. What is robust: aims was third under
+  both, and both pinned it to one decision — tax folded into the explanation chain (a stage-2 strength,
+  explanation-as-single-source-of-truth, over-applied at stage 3), which dissolved aims' own delta-sum
+  invariant into per-kind folds for a single-producer guarantee the other two arms got without the
+  coupling. aims was NOT judged broadly unclean: both judges credited it with the least primitive obsession
+  of the three and the most explicit subtractive pass. Its fault was over-abstraction (single-impl tax
+  protocols), the over-generic case §2 warns of — the opposite of dirty code. (An earlier judging pass used
+  six operator-written seam questions instead of `design-principles.md`; it was discarded and re-run
+  against the real rubric — the file that reached this conclusion.)
 - **Survival: aims reopened the most** (11 vs OpenSpec 8, plain 9). The falsifier the experiment named in
   advance ("aims reopens more than OpenSpec → the central claim fails on this product") fired.
 - **Continuity: a tie on the main question, a narrow win on a sub-question.** All three arms' fresh

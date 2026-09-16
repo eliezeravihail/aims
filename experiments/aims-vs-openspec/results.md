@@ -10,10 +10,11 @@ checkout pricing service — across three staged requirements, each later stage 
 with no memory of the earlier ones. Nothing was built. The four readings below are never merged into one
 score.
 
-**The headline, stated first and plainly: aims did not win any reading, and lost the design reading to
-OpenSpec under both judges.** The full picture is more interesting than that sentence, and the honest
-qualifications cut in aims' favour on exactly one reading — but the top line is a loss, and it is reported
-as one.
+**The headline, stated first and plainly: aims won no reading. On the design reading it placed third of
+three under both judges — but there is no clear winner above it (the two full-rubric judges split between
+OpenSpec and plain), and its third place traces to one late coupling decision, not to broadly unclean
+code.** The full picture, below, is more textured than a one-line loss, and the honest qualifications cut
+in aims' favour on more than one axis; the top line is still that aims led nothing.
 
 ## Pins
 
@@ -34,32 +35,52 @@ different rounding rule, while the first market keeps behaving to the cent.
 
 ---
 
-## Reading 1 — architecture (Q1). Verdict: **OpenSpec**, under both judges.
+## Reading 1 — architecture / code quality (Q1). Result: **no clear winner; aims third under both judges.**
 
-Two opposite-disposition judges (invariant-ownership and YAGNI) read the three final designs blind, as
-X / Y / Z. **Both returned the same verdict: X = OpenSpec.** Both placed **aims last**. Two opposite
-dispositions agreeing is the protocol's signal that a verdict is structural, not a taste artifact
-(PROTOCOL §6.3).
+This reading was run **twice**, and the correction matters. The first pass used six structural questions
+the operator wrote (rounding-place count, tax placement, ordering ownership, extensibility) — a narrow
+seam-placement probe that never touched clean-code / smells / interfaces / encapsulation / genericity, and
+that happened to concentrate on the one axis where aims made its weakest decision. It returned
+OpenSpec > plain > aims under both dispositions. Because the probe did not judge against aims' own
+`design-principles.md` as `PROTOCOL` §6.2 requires, it was re-run.
 
-Ordering, both judges: **OpenSpec > plain > aims.**
+**The corrected reading judges the three blind designs against aims' actual twelve-axis rubric**
+(`design-principles.md`: Tell-Don't-Ask, generic interfaces, interface segregation, primitive obsession,
+anemic model, cohesion/coupling, leaky abstractions, single responsibility, rule enforcement, duplication
+vs wrong abstraction, naming, size), two opposite-disposition judges, every finding carrying a `file:line`.
 
-The deciding structural fact, and it is the same in both reports: on stage 3 the arms split on how a tax
-law is expressed.
+**The two judges split:**
 
-- **aims** made tax **a delta inside the explanation chain** and expressed each market's tax as a
-  polymorphic rule *class*. Two costs followed, both in aims' own text: "sum of the deltas" stopped meaning
-  "the discount", so aims had to re-cut its own fold to filter by kind (its own documented consequence);
-  and a third market becomes a new class rather than a data row.
-- **OpenSpec** and **plain** both kept tax **out** of the delta chain, joined at a single number, and
-  expressed a tax law as one function branching on a **data profile** — so a third market is a table row.
-- **OpenSpec edged plain** because its total-computing fold names no promotion kind, no market and no tax,
-  and because plain (Z) carried an audit/`derivation` surface on its tax record that the stateless
-  calculator can never use — an over-build the YAGNI judge flagged as plain's one unearned structure.
+| Judge disposition | Verdict | aims placed |
+|---|---|---|
+| YAGNI / simplicity | **OpenSpec** | third |
+| invariant-ownership / encapsulation | **plain** | third |
 
-This is aims' home reading — the design principles the judges used are aims' own (`design-principles.md`).
-It lost it anyway, and lost it on a decision aims' method actively led it toward: making the explanation
-the single source of truth, which is a genuine aims strength at stage 2, is the very move that put tax in
-the wrong place at stage 3.
+Two opposite dispositions disagreeing on the winner means the design verdict between the top two is a
+**taste artifact, not a structural fact** (the inverse of PROTOCOL §6.3's agreement test). So there is no
+clear "best design" above aims. What is robust is that **aims placed third under both** — and both judges
+pinned that to the *same single decision*, independently:
+
+- **aims folded tax into the explanation chain** (a fourth `AdjustmentKind`, `CartLedger.assess_tax`),
+  which dissolved its own "deltas sum to what came off" invariant into per-kind folds and forced a
+  documented fold repair. Both judges note aims paid this coupling "for a single-producer guarantee X and
+  Z **both obtain without it**" — i.e. the coupling bought nothing the others didn't get for free.
+- Tellingly, the **encapsulation-maximizing** judge picked plain over aims *because* plain confines tax to
+  an import-checkable boundary while aims pulled tax into the record — so even the disposition that most
+  rewards information-hiding found aims' encapsulation weaker here, on this one decision.
+
+**aims was not broadly unclean — the opposite.** Both judges credited it with the **least primitive
+obsession** of the three (it wraps every domain type: `PromotionCode`, `Sku`, `MarketId`, `Percent`), a
+`promotions.py` genuinely untouched across the whole evolution, well-argued tax protocols, and the most
+explicit subtractive pass (it records what it removed). Its one real cleanliness fault is the *opposite* of
+dirt: **over-abstraction** — two tax protocols with a single implementation each where a data field
+sufficed, exactly the over-generic case `design-principles.md` §2 warns against. On five of six seam axes
+in the first pass, and on most cleanliness axes here, aims was level or ahead; it is third because of one
+coupling decision the other two arms declined.
+
+The uncomfortable part for aims, stated plainly: that decision — make the explanation the single source of
+truth — is a genuine aims **strength** at stage 2, and it is the very instinct that put tax in the wrong
+place at stage 3. The method's own move, over-applied.
 
 ## Reading 2 — survival (Q2), the primary reading. Result: **aims reopened the most.**
 
@@ -125,9 +146,15 @@ dominant cost is reasoning about pricing, not running a method. Notably, the pla
 On this product, judged blind:
 
 1. **Making design the explicit goal (aims) did not produce a better architecture than spec-first
-   discipline (OpenSpec), or than a capable agent told only "design it well" (plain).** It produced a
-   *worse* one on the design reading and reopened more of its own structure across the evolution. This is
-   the single most informative result for aims, and it is negative.
+   discipline (OpenSpec) or than a capable agent told only "design it well" (plain).** On the design
+   reading aims placed third under both dispositions — but the two judges disagreed on the winner, so the
+   result is "no advantage for aims", not "aims is worst-quality code". aims' third place is one late
+   coupling decision (tax folded into the explanation chain), which both judges flagged independently and
+   which the other two arms avoided; on the cleanliness axes aims was often ahead (least primitive
+   obsession, cleanest domain-type wrapping). It also reopened the most of its own structure across the
+   evolution — and roughly half of that extra churn traces to the same tax decision. The informative
+   negative for aims is real: the method showed no design advantage, and its one distinctive instinct
+   (explanation as the single source of truth) over-applied into the stage's weakest call.
 2. **The one thing aims' machinery uniquely delivered** is a durable, append-only record of *why a
    superseded decision was superseded*, kept beside the code — the plain arm reaches the same live
    conclusions but keeps no trail of the retired ones, and OpenSpec keeps none outside git. Whether that is
@@ -143,6 +170,11 @@ On this product, judged blind:
 
 ## Deviations and limitations (declared, not smoothed)
 
+0. **The Q1 design reading was judged twice.** The first pass used six seam-placement questions the
+   operator wrote, not aims' `design-principles.md`, so it never assessed smells / interfaces /
+   encapsulation / genericity and it over-weighted the one axis where aims was weakest. It was discarded
+   and re-run against the twelve-axis rubric (`run-log/judge-reports/quality-*.md`). The corrected reading
+   is the one above. Both passes are kept in the run log for audit.
 1. **The Q1 design judges ran on Opus 4.8, not Fable** — both Fable runs hit the account session limit with
    ~20h to wait, and the operator switched models rather than wait. Two opposite dispositions still guard
    against a taste artifact, but the taste is Opus's. A third model is now in the mix.

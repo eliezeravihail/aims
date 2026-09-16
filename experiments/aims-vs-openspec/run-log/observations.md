@@ -228,3 +228,42 @@ explanation chain, so "sum of deltas" stopped meaning "the discount" and its own
 kind (aims' own documented consequence). Two opposite-disposition judges agreeing is, per PROTOCOL §6.3,
 the signal that the verdict is structural rather than a taste artifact. Ordering across both design judges:
 OpenSpec > plain > aims.
+
+## Re-judged Q1 against aims' FULL twelve-axis rubric (the user caught that the first Q1 judges used my own six seam-questions, not design-principles.md)
+
+**YAGNI judge, full rubric (Opus): verdict still X = OpenSpec.** But the aims (Y) picture is textured, not
+one-sided:
+- FOR aims: least primitive obsession of the three (wraps PromotionCode/Sku/MarketId/Percent) — a direct
+  encapsulation credit; and the most explicit subtractive pass (records what it removed).
+- AGAINST aims: two tax protocols with one implementation each where a data field suffices (X and Z prove
+  it) — a design-principles §2 finding, over-earned genericity; a self-declared "unpaid" one-impl
+  `LinePromotion`; tax folded into a 4th AdjustmentKind (the fold-correction decision).
+- The judge ranked X > Z > Y, margin X-over-Z "real but narrow" (Z carries two admitted future-facing
+  profile fields + a heavy speculative catalogue), X-over-Y "clear".
+
+So aims' cleanliness weakness is OVER-abstraction (speculative one-impl interfaces), not dirty code. This
+is the opposite of "unclean" — and it is exactly the failure mode aims' own design-principles §2 warns
+against in the over-generic direction. Awaiting the ownership-disposition judge, who may weigh aims'
+primitive-wrapping and info-hiding differently.
+
+## Full-rubric ownership judge: verdict Z = plain. The two full-rubric judges SPLIT.
+
+- YAGNI (full rubric): X = OpenSpec
+- Ownership (full rubric): Z = plain
+
+aims (Y) is third under BOTH. But the winner is contested between OpenSpec and plain, so on the full
+twelve-axis rubric there is NO clear design winner above aims — my earlier "aims lost to OpenSpec under
+both judges" was an artifact of the narrow six-question rubric and is corrected.
+
+Both full-rubric judges independently pin aims' third place to the SAME decision — tax folded into the
+explanation chain — and both say aims pays that coupling "for a single-producer guarantee X and Z both
+obtain without it." The ownership judge (the disposition that most rewards info-hiding) picked plain
+specifically because plain's tax confinement is import-checkable while aims pulled tax INTO the record.
+
+aims' cleanliness credits, from both judges: least primitive obsession (wraps all domain types),
+promotions.py genuinely untouched across the evolution, well-argued tax protocols, the most explicit
+subtractive pass. So aims is NOT broadly unclean; it is over-coupled at exactly one seam, which is one
+structural decision the other two arms avoided.
+
+Net corrected Q1 reading: no clear winner (OpenSpec/plain split); aims third under both; the third place
+is one coupling decision, not broad code quality.
