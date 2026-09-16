@@ -1,3 +1,5 @@
+> **SUPERSEDED — do not read as the Q1 result.** This invariant-ownership judge answered six operator-written seam questions, not aims' `design-principles.md`, so it did not assess code smells, interface use, encapsulation or genericity, and it over-weighted the one axis (tax placement) where aims was weakest. The Q1 reading was re-run against the full rubric; see `quality-ownership.md`. Kept for audit only.
+
 # Design judgment — invariant ownership
 
 Three final architectures for a checkout pricing service. I judge by one question: is each stated

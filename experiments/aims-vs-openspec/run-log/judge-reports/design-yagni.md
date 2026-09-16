@@ -1,3 +1,5 @@
+> **SUPERSEDED — do not read as the Q1 result.** This YAGNI judge answered six operator-written seam questions, not aims' `design-principles.md`, so it did not assess code smells, interface use, encapsulation or genericity, and it over-weighted the one axis (tax placement) where aims was weakest. The Q1 reading was re-run against the full rubric; see `quality-yagni.md`. Kept for audit only.
+
 # YAGNI / simplicity judgment — three checkout pricing designs
 
 Judged only on the final stage-3 architecture texts. Disposition: is each abstraction paying for

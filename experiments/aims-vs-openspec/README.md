@@ -191,9 +191,21 @@ survival tables, and the judge reports — each claim carrying a quotation.
 ## 11. Status
 
 **Run once, 2026-09-15/16.** See [`results.md`](results.md) for the four readings and the full run under
-[`run-log/`](run-log/) (oracle logs, cost, the operator's notebook, the four judge reports, and the blind
-X/Y/Z snapshots with their sealed mapping). Headline: aims won no reading and lost the design reading to
-OpenSpec under both opposite-disposition judges; it reopened the most of its own structure across the
-evolution (the falsifier in §8 fired); all three arms navigated their prior records rather than
-re-deriving, and the plain arm matched both methods on continuity with no machinery. n = 1 — suggestive,
-not robust.
+[`run-log/`](run-log/) (oracle logs, cost, the operator's notebook, the judge reports, and the blind
+X/Y/Z snapshots with their sealed mapping).
+
+Headline: **aims won no reading, but showed no broad quality deficit either.** On the design/code-quality
+reading — judged against aims' own twelve-axis `design-principles.md` — the two opposite-disposition
+judges *split* (YAGNI → OpenSpec, encapsulation → plain), so there is **no clear design winner**; aims
+placed third under both, traced by both judges to one late coupling decision (tax folded into the
+explanation chain), while being credited with the least primitive obsession and the most explicit
+subtractive pass. On survival aims reopened the most of its own structure (the §8 falsifier fired), about
+half of it the same tax decision. On continuity all three arms navigated their prior records rather than
+re-deriving, and the plain arm matched both methods with no machinery — aims' record layer earned exactly
+one narrow thing: a durable trail of *why* a superseded decision no longer holds. Cost: aims ≈ OpenSpec,
+both ~1.3–1.5× the plain arm. n = 1 — suggestive, not robust.
+
+The design reading was **judged twice**: an initial pass on six operator-written seam questions (which
+never touched smells / interfaces / encapsulation and over-weighted aims' weakest axis) was discarded and
+re-run against `design-principles.md`. Both passes are in `run-log/judge-reports/`; the narrow ones are
+marked superseded.
