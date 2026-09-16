@@ -17,8 +17,12 @@ from pathlib import Path
 
 _OK = True
 _here = Path(__file__).resolve().parent
-for _cand in (_here, Path(os.environ.get("AIMS_HOME", ""))):
-    if _cand and (_cand / "anchor.py").is_file():
+_env = os.environ.get("AIMS_HOME", "").strip()
+# NB: Path("") is PosixPath('.') and is truthy, so an unset AIMS_HOME must be dropped explicitly —
+# otherwise the fallback silently becomes the current working directory and can import a foreign
+# anchor.py, which would make every hash disagree (and the hook fail open, i.e. never flag drift).
+for _cand in (_here, Path(_env) if _env else None):
+    if _cand is not None and (_cand / "anchor.py").is_file():
         sys.path.insert(0, str(_cand))
         break
 try:
@@ -27,7 +31,9 @@ except Exception:  # pragma: no cover
     _OK = False
 
 FENCE = "---"
-_HASH_RE = re.compile(r'^\s*hash:\s*"([^"]+)"', re.M)
+# Top-level only, matching anchor.py's write-time rule. A `hash:` nested under another key is not an
+# anchor: anchor.py would never refresh it, so reading it would flag drift forever.
+_HASH_RE = re.compile(r'^hash:\s*"([^"]+)"', re.M)
 
 
 def _frontmatter(text: str) -> str | None:

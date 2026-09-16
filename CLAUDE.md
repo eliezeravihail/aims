@@ -41,6 +41,7 @@ Markdown + bash + a little stdlib Python; no toolchain. Before declaring work co
 
 ```
 bash tests/copies-identical.sh   # distribution surfaces stay byte-identical
+bash tests/install-wiring.sh     # what a TARGET project ends up running after /install-on
 bash tests/anchor.sh             # anchor stamping + staleness detection behavior
 python3 -m py_compile knowledge/anchor.py knowledge/staleness_hook.py
 ```
@@ -57,6 +58,13 @@ aims has exactly two hooks, and neither blocks:
 The plugin's distributable hook source lives under `templates/hooks/`; the locally-installed copy under
 `.claude/hooks/` (dogfooding). Keep them byte-identical (guarded by `tests/copies-identical.sh`); refresh
 via `/install-on .`.
+
+**Dogfooding hides install bugs.** In this repo the tools really are at `knowledge/anchor.py` and
+`knowledge/staleness_hook.py`; in an installed project `/install-on` puts them at `.aims/`. A shipped
+instruction that names the `knowledge/` path therefore works here and fails everywhere else — the same
+for a hook probe that only matches this repo's file types. `tests/install-wiring.sh` reads the shipped
+surfaces against the install table rather than against this checkout, and is the guard for that whole
+class.
 
 There is no background maintenance machinery — no memory store, no consolidation, no doctor. Relevance
 is structural (navigate the co-located records), so nothing needs to be kept coherent between turns.

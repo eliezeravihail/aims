@@ -77,9 +77,12 @@ def stamp(record: Path) -> str:
 
 
 def main(argv: list[str]) -> int:
-    if not argv or argv[0] in ("-h", "--help"):
+    if not argv:
+        print(__doc__, file=sys.stderr)
+        return 2
+    if argv[0] in ("-h", "--help"):
         print(__doc__)
-        return 0 if argv else 2
+        return 0
     print(stamp(_resolve_record(argv[0])))
     return 0
 

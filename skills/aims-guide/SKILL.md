@@ -271,7 +271,7 @@ makes a plan report cheap: it is *derived* from the records you already filed.
 
 **Records are lean; anchor companions on filing.** A record is `title` + `date` + a body (a companion's
 body is the three sections; a system record's is its own). Stamp a companion's anchor with the explicit
-command `python3 knowledge/anchor.py <companion>` (never by hand): it hashes the same-named source file
+command `python3 .aims/anchor.py <companion>` (never by hand): it hashes the same-named source file
 into a single `hash:` line; a system record (no same-named source file) gets none. A read-time hook
 later re-hashes the source and, if it drifted, injects an advisory "re-verify" — it never blocks.
 
@@ -285,13 +285,14 @@ companions. See `references/design-record.md` and `../../knowledge/format.md`.
 
 When the user drives planning by hand (`plan`), don't just print the terse checkpoint — **present a
 short plan report**, compiled from what this round already produced: the objective and why now, the
-dependencies it rests on (from the substrate ADR / `dependencies/`), the decisions and their rationale
-(from `decisions/` and `insights/`, where the *why this over that* already lives), the chosen
+dependencies it rests on (from `base-dependencies.md` / `dependencies.md`), the decisions and their
+rationale (from `decisions/` and the companions' **Insights** sections, where the *why this over that*
+already lives), the chosen
 architecture (from `architecture.md`), and the exit criteria the build will be held to. It is
-an *executive summary for a technical manager* — assembled from the capsule records and the objective,
+an *executive summary for a technical manager* — assembled from the co-located records and the objective,
 so the user can read the round's reasoning and comment before anything is built. It is a
 **presentation, not a new file**: there is nothing extra to store, because the substance is already in
-the capsule. In automatic mode there is no separate report — the capsule records are the record.
+the records. In automatic mode there is no separate report — the co-located records are the record.
 
 ## Modes: run it automatically, or drive it phase by phase
 
@@ -367,8 +368,8 @@ task implied it," and "I'll just choose the standard one" are **not** substitute
 an actual reply is. Either way the substrate is *not* a "technical freedom" the Guide quietly picks or
 the Worker accretes into: the two — and *only* two — legitimate paths to a fixed substrate are (a) the
 user set it, or (b) you asked and the user explicitly told you to choose. Record the outcome in a
-substrate `decisions/` ADR at the capsule root (the foundational substrate *only* — not the manifest,
-not the confined libraries), with the concrete packages as `dependencies/` records. These foundational
+substrate `decisions/` ADR at the repo root (the foundational substrate *only* — not the manifest,
+not the confined libraries), with the concrete packages in the root `dependencies.md` record. These foundational
 dependencies, plus the framework's own domain types, are the only things
 permitted to cross a public seam (`references/design-principles.md` §7). What this heading fixes is the
 *substrate* — not the internal layering or class breakdown, which stay the Worker's.

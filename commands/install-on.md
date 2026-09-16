@@ -30,7 +30,6 @@ Group actions by class, state the rule and paths, then ask `Approve all? [yes | 
 | Anchor tool + staleness hook | Copy `knowledge/anchor.py` → `TARGET/.aims/anchor.py` and `knowledge/staleness_hook.py` → `TARGET/.aims/staleness_hook.py` (same dir, so the hook imports the tool). |
 | Settings | In `TARGET/.claude/settings.json`, set aims' two hook entries (SessionStart → `session-start.sh`; PostToolUse/Read → `python3 .aims/staleness_hook.py`); preserve every non-aims key and hook. |
 | CLAUDE.md | Never overwrite. Append a missing aims section from `templates/CLAUDE.md.tmpl`, wrapped `<!-- added by aims --> … <!-- /aims -->`; diff per existing same-named section and ask. |
-| `.gitignore` | Append `.aims/state.md` if missing (loop run-state is not committed). |
 
 If `per-class`, walk each via `AskUserQuestion`.
 
@@ -40,6 +39,11 @@ Copy from `AIMS_ROOT` into `TARGET` per the table; `chmod +x TARGET/.claude/hook
 `TARGET/src`, `TARGET/tests`, `TARGET/lib`, manifests, `TARGET/README.md`, `TARGET/LICENSE`, and every
 existing design record (`goals.md`, `architecture.md`, a companion `<file>.md`, anything under
 `decisions/`).
+
+**`.aims/state.md` is committed, not ignored.** Do not add it to `.gitignore`. It carries the current
+objective, the drafted Worker handoff and the review readings, so a teammate — or the same developer on
+another machine — who clones the project without it cannot resume the loop. aims commits its own, and a
+target project should too.
 
 ### settings.json merge
 

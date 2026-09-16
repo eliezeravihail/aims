@@ -35,7 +35,11 @@ auto
      durable design record. When it resolves, its lasting design output is filed as records in the code
      tree (root goals/architecture/decisions, and a companion beside each source file); it does not accumulate here. -->
 
-**Kind:** <!-- design | implementation | refactoring — sets the review lens. -->
+**Kind:** <!-- design | implementation | refactoring | experiment — sets the review lens.
+     `experiment` is a round whose deliverable is a *measurement*, not a product change: it is
+     reviewed against whether the comparison discriminates (`../../experiments/PROTOCOL.md`), not
+     against built code. An experiment that only produces designs is still `experiment`, not
+     `design` — `design` means designing the product, `experiment` means measuring a method. -->
 
 **Objective:**
 
@@ -49,6 +53,25 @@ auto
 
 **Do not optimize for:**
 -
+
+## Worker handoff (drafted — do not execute before the build command)
+
+<!-- Part of the schema contract. The plan phase drafts the bounded handoff HERE and stops; the build
+     command reads it from this heading. Keep the heading text intact. Sections, in order:
+     ROLE / DESIGN GOAL / BEHAVIOR IT MUST SATISFY / WHAT "GOOD" AIMS AT / RELEVANT CONTEXT,
+     PRESERVE, NON-GOALS / RETURN TO GUIDE. See references/worker-handoff.md. -->
+
+## Open assumptions (unproven — carried, not filed)
+
+<!-- Things this round is proceeding ON but has not established: an unverified fact, a guess about the
+     runtime, a premise the objective rests on. They belong here, not in a design record, precisely
+     because a record states what is known. One line each: the assumption, what would falsify it, and
+     what breaks if it is wrong. When one is settled, it leaves this list — proven, it becomes an
+     Insight in the companion of the file it concerns (or the matching root record); disproven, it
+     reopens the objective. An assumption that is still open when the round closes is named in the
+     review, never dropped silently. -->
+
+- 
 
 ## Open Guide TODO
 

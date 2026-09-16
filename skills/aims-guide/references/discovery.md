@@ -122,9 +122,9 @@ not choose the substrate on your own until you have actually asked and the user 
 back. The two — and only two — legitimate paths to a fixed substrate are (a) the user set it, or (b) you
 asked and the user told you to choose. "It was obvious," "the task implied it," or "I'll just pick the
 standard one" are not substitutes for the answer. It is *not* a technical freedom the Guide quietly
-picks. Record the outcome in a substrate `decisions/` ADR at the capsule root
+picks. Record the outcome in a substrate `decisions/` ADR at the repo root
 (the foundational substrate *only* — never the full manifest, never the confined libraries), with the
-concrete packages as `dependencies/` records. The foundational set, plus the framework's own domain
+concrete packages in the root `dependencies.md` record. The foundational set, plus the framework's own domain
 types, are the only types permitted to cross a public seam (`design-principles.md` §7).
 
 ## Load-bearing assumptions — prove the uncertain ones before designing on them

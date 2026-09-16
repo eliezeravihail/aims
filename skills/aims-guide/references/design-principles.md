@@ -30,6 +30,16 @@ just data ("give me the fields so I can decide").
 
 ## 2. Program to an interface, not an implementation — and ask whether the interface is *generic*
 
+**The bedrock, before any question of genericity.** What crosses a seam between parts is *always* an
+abstraction the exposing side owns — a domain type — and *never* a concrete implementation type. This is
+the load-bearing move of encapsulation and the first defence against coupling: a caller handed your
+concrete class, a vendor's result object, or a framework's `Model` is bound to your implementation and
+breaks the day you change it. Expose the abstraction; keep the implementation behind it. Every refinement
+below — whether that abstraction is polymorphic, how generic it should be, whether a family holds one
+altitude — sharpens this one rule and none of them replaces it. "It has only one implementation" is never a
+reason to leak the concrete type across the seam; at most it is a reason not to make the abstraction
+*polymorphic* (next paragraph), not a reason to abandon the abstraction.
+
 **The question:** If this type has an abstraction/interface, does that interface express behavior
 that would make sense for more than one genuinely different implementation — or does it just
 rename one concrete thing's methods with an `I`-prefix or an ABC that has exactly one real
@@ -43,6 +53,16 @@ implementation's specific behavior right through its name.
 
 **How to tell them apart:** ask what a second, legitimately different implementation would need to
 look like. If you can't describe one that isn't a trivial variation, the "interface" is decorative.
+
+**The bar is a *describable* second implementation — the anticipated generic continuation — not a second
+one already in the tree.** An interface earns its place the moment the domain gives you a genuinely
+different implementation you can *describe*, even if only one exists today; naming that seam is the point.
+"Only introduce an interface once you have two implementations" is a crude proxy, and it misfires in
+exactly the case the interface is *for*: it makes you write the concrete thing, then re-open it into an
+interface at the moment the foreseen second case lands — the very change the interface existed to absorb
+without a re-open. So a single implementation is not the smell; a single *conceivable* one is. (The inverse
+also holds: two implementations that differ only trivially still don't justify an interface.) The question
+is always "is a genuinely different implementation foreseeable here", never "have I already written two".
 
 **The general rule — domain-free; the example below only illustrates it, it is not the rule.** The
 type that crosses an interface should be the *most generic type that is still complete for the consumer
@@ -58,6 +78,21 @@ technically-valid but foreign field); distortion in either direction is the smel
 underneath all of it: **minimize the knowledge you force on the other side — no more than the concept
 requires, no less than it needs, and never your own implementation choice.** What follows is one worked
 example of this rule, in a single domain — do not mistake the example for the principle.
+
+**Keep a family of concepts at one level of abstraction — uniformity in the content model itself.** The
+peers in a family must sit at the same conceptual altitude. `Rectangle`, `Triangle`, `Pentagon` is a
+coherent family; `Rectangle`, `Triangle`, and then `RhombusBuiltByReflectingTwoTriangles` is not — one
+member has dropped from *what a shape is* to *how a particular shape happens to be constructed*, an
+altitude the others do not share. The model now conflates a kind with an implementation of a kind: any
+operation over "a shape" must either special-case the misfit or is distorted by it, and a reader holds two
+altitudes for one idea. A member that breaks the family's altitude is telling you one of two things — it is
+**misclassified** (it belongs to a different family, at a different level) or it is **over-specified** (it
+has leaked how it is made into what it is, and the construction detail should move behind the abstraction,
+not sit beside its siblings as if it were one). The same smell shows up in mechanism, not just in taxonomy:
+expressing one member of a family behind an interface and its sibling as an inline `kind`-field-and-switch
+puts one idea at two altitudes. Whatever altitude a family is drawn at, hold the whole family to it; do not
+let one member sink to an implementation-shaped level because it happens to have a single case today (the
+count proxy again), and do not raise one member to a speculative abstraction its siblings do not need.
 
 **A worked example (illustration only).** `ObjectDetectionModel.detect(image) -> list[DetectedObject]` is a real
 abstraction: YOLO, DETR, and a hosted cloud API all satisfy it identically. Returning the concrete

@@ -1,7 +1,8 @@
 # Record templates (co-located)
 
 Two homes. File-level knowledge → a companion beside the source file; cross-cutting → a root record.
-Anchor a companion on filing: `python3 knowledge/anchor.py <companion>` (system records take no anchor).
+Anchor a companion on filing: `python3 .aims/anchor.py <companion>` (system records take no anchor;
+see `references/design-record.md` for the invocation and the aims-repo exception).
 Dates are `YYYY-MM-DD`.
 
 ---
