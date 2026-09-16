@@ -220,10 +220,12 @@ The pilots:
   countable — when an unforeseen requirement arrives, how many named components and seams must be
   **reopened**. **Run, and honest about the result: aims did not win.** The one clean blind run (v1) found
   **no design advantage** for aims — it placed third of three and reopened the most, and the pre-registered
-  falsifier fired (`decisions/0007`). Later runs improved change-absorption and the concept-fit pass
-  eliminated the architectural fault (survival 11 → 5 → 1), **but the improving run (v3) is flawed
-  (answer-leakage) and its clean re-run is owed, not done** (`decisions/0009`). The honest current claim is
-  *"aims improved change-absorption and removed a fault; overall design advantage remains unproven"* — not
+  falsifier fired (`decisions/0007`). Later runs improved: the concept-fit pass eliminated the architectural
+  fault, and the **clean isolated re-run (v4)** ranks aims-panel first under both opposite-prior judges with
+  the pass generalizing — **but aims-panel's own v4 design ships a real, acknowledged defect** in its tax
+  mechanism (`decisions/0010`, `experiments/aims-vs-openspec/results-v4.md`). The honest current claim is
+  *"aims improved change-absorption and v4 is its strongest result, but ships a real defect — a win on this
+  pilot's measures, not yet a design to build from unmodified"* — not
   that aims beats a spec-first method.
 
 Each README states exactly what was handed to each arm and what was measured, so a run is reproducible and

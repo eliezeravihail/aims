@@ -15,7 +15,7 @@ date: 2026-09-16
   measures it; distinct from the review panel, which *measures* after. The axis trio has exactly one
   **operating** owner — `skills/aims-guide/references/panel-plan.md` §Axes, the shipping surface a target
   project actually reads. `decisions/0005` records the original decision; `decisions/0006` the ownership
-  split; `decisions/0008` the internal division (objective set once and shared; Workers fan only the
+  split; `decisions/0009` the internal division (objective set once and shared; Workers fan only the
   design; the merge agent composes and does not invent an objective). Nothing else restates the trio —
   everything else refers.
 

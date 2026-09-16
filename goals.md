@@ -48,15 +48,28 @@ The primary goal above is a hypothesis under test, not an established result. Th
   accidental-complexity lens ranks OpenSpec's single-mechanism spec above them. See
   `experiments/aims-vs-openspec/results-v3.md`.
 
-Honest current reading: aims **materially improved change-absorption** and the concept-fit pass **caused**
-(not merely measured) the elimination of the architectural fault — but overall design quality against a
-single-mechanism spec method is a **judge-dependent split, not a clean win**. The co-located record layer's
-payoff remains narrow and real: a durable append-only trail of *why a superseded decision no longer holds*.
+**⚠️ v3 was a flawed experiment** (the design arms could reach `decisions/0007`, which names the exact
+fault being tested for) and is superseded by **v4**, a full clean re-run (stages 1→2→3 from scratch, both
+aims arms rooted where `/home/user/aims` was never reachable):
 
-**⚠️ v3 is a flawed experiment** — the design arms could reach `decisions/0007`, which names the exact
-fault being tested for. Unconfirmed. An isolated re-run (`results-v4.md`, arms with no access to the
-fault-naming records) is **owed but not yet done**; until it exists the clean blind result remains v1's
-negative headline. See `decisions/0009` for the honest trail.
+- Survival: aims-panel **7** (best), OpenSpec 8, aims-single 10.
+- Both aims arms independently caught concept-fit mismatches with **zero exposure** to the tax example —
+  including aims-panel drafting the v1/v2 cram itself, mid-derivation, and reversing it unprompted. The
+  pass generalizes; this is no longer merely plausible.
+- Two opposite-prior substantive judges **both rank aims-panel first** (v3's split did not reproduce
+  clean).
+- **But** aims-panel's own design has a confirmed, real bug in its SOUTH tax mechanism (reads a per-line
+  field that its own earlier stage never populates with what tax needs) — both judges correctly call it
+  non-ranking-inverting, but it is real, and fixing it likely erases part of the survival advantage credited
+  above. See `experiments/aims-vs-openspec/results-v4.md` for the full, unhedged picture.
+
+Honest current reading: aims **materially improved change-absorption** and the concept-fit pass **causes**
+(not merely measures) avoidance of the architectural fault — demonstrated clean in v4, including the pass
+firing in real time inside a single design session. Against OpenSpec specifically, v4 is the strongest
+result either aims arm has produced — but it ships with a real, acknowledged defect, so "aims wins" is true
+of this pilot's measures, not yet of a design anyone should build from unmodified. The co-located record
+layer's payoff remains narrow and real: a durable append-only trail of *why a superseded decision no longer
+holds*.
 
 ## Non-goals
 - Not a background daemon or self-maintaining store: nothing runs between turns except one advisory

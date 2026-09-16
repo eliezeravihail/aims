@@ -4,13 +4,13 @@ This is the opening-round mechanism. The Guide sets **one** objective the ordina
 (`references/objective-selection.md`: a design outcome, adversarial exit criteria, the hard decision at
 its core). Then, instead of a single Worker, **three Workers** work that *same* objective
 **independently**, each given one added instruction — optimize one fixed axis of software quality — and a
-**merge agent** composes the good from each into one result (`decisions/0008`). It is the generate-side
+**merge agent** composes the good from each into one result (`decisions/0009`). It is the generate-side
 sibling of `references/review-panel.md`: that panel *measures* a result; this one *produces* the design
 the review will then measure. Neither gates; both inform.
 
 **Evidence.** `experiments/plan-diversity/` (blind, three judges) found three stance-seeded passes +
 merging beat a single pass for every judge, and edged plain repetition. `decisions/0005` records the
-convening decision; `decisions/0006` records who owns the axis definition below; `decisions/0008` records
+convening decision; `decisions/0006` records who owns the axis definition below; `decisions/0009` records
 the internal division (objective set once and shared; the Workers fan out only the design; the merge agent
 composes, and does not invent an objective).
 

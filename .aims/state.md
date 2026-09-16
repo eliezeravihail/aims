@@ -9,14 +9,14 @@ stepped
 
 ## Loop cursor
 
-ready-to-choose-next <refactor round delivered: panel roles corrected, measurement contract completed, machinery invariants restored, docs made honest; one larger restatement-consolidation objective remains, flagged in the TODO>
+ready-to-choose-next <self-redesign round delivered and merged to master (PR #60): panel roles corrected, measurement contract completed + probe-regression fixed, machinery invariants restored, docs made honest, restatement consolidation done; merged with master's v2/v3/v4 evidence — ADRs renumbered 0009/0010 to clear the 0008 collision>
 
 ## Current objective
 
 **Kind:** refactoring
 
 **Objective:** By refactoring — small, targeted rewrites, the rest untouched, aims working at every step
-(`decisions/0008`) — correct the plan-panel's **internal division** in `references/panel-plan.md` (and its
+(`decisions/0009`) — correct the plan-panel's **internal division** in `references/panel-plan.md` (and its
 command), and close the measurement-contract gaps. Concretely:
 1. **One shared, disciplined objective.** The conceptual objective is framed once and shared identically
    to all advisors, carrying the correct-objective discipline (adversarial exit criteria + the hard
@@ -31,7 +31,7 @@ command), and close the measurement-contract gaps. Concretely:
 The plan-panel keeps its phase and keeps working (`0005` convening rule stands). This is a refactor, not a
 rebuild and not a restart.
 
-**Why now:** `decisions/0008` fixed the hard decision (internal division, by refactoring; measure quality,
+**Why now:** `decisions/0009` fixed the hard decision (internal division, by refactoring; measure quality,
 never proxied by performance). The panel already shares everything but the axis block, so the correction is
 small and local — exactly the refactor's scope.
 
@@ -63,11 +63,11 @@ small and local — exactly the refactor's scope.
 - **Everything outside the panel's internal division and the measurement contract — untouched this round.**
 
 **Do not optimize for:**
-- A rebuild or a relocation of the panel (withdrawn — `0008`).
+- A rebuild or a relocation of the panel (withdrawn — `0009`).
 - Using performance / behavior metrics as a **proxy for code quality** (performance matters and is
   measured as the behavior constraint — it just never estimates structural quality).
-- Bundling the other self-review findings (README truth, `0008`-vs-`0007` trail, hook fail-open, stale
-  companions) into this refactor — they are separate objectives.
+- Bundling the other self-review findings (README truth, the `0010`-supersedes-`0007` trail, hook
+  fail-open, stale companions) into this refactor — they are separate objectives.
 
 ## Worker handoff (drafted — do not execute before the build command)
 
@@ -81,13 +81,13 @@ measurement contract (design artifact citable; every Kind a lens; every outcome 
 wording is yours; the single-owner constraint, the objective discipline, and the quality-vs-performance
 measurement are not.
 
-BEHAVIOR IT MUST SATISFY — `decisions/0008`; the exit criteria above; `decisions/0005` (the panel parts to
+BEHAVIOR IT MUST SATISFY — `decisions/0009`; the exit criteria above; `decisions/0005` (the panel parts to
 preserve); the self-review's Part I / Part II mechanism-2 findings.
 
 WHAT "GOOD" AIMS AT — `references/design-principles.md`. The method optimizes and measures *this*, not
 tests passing.
 
-RELEVANT CONTEXT / PRESERVE / NON-GOALS — `0008`, `0005`, `objective-selection.md`, `review-panel.md`,
+RELEVANT CONTEXT / PRESERVE / NON-GOALS — `0009`, `0005`, `objective-selection.md`, `review-panel.md`,
 the self-review. Preserve and non-goals as listed above. Keep the three tests green at every step.
 
 RETURN TO GUIDE — the refactored artifacts, a short account of each targeted rewrite (and proof the rest
@@ -108,18 +108,18 @@ is untouched — the diff scope), result status against the exit criteria, any n
 - [x] Measurement: design lens measures the full quality-requirements list by quotation; implementation
       lens adds requirement→check coverage (OpenSpec-inspired); experiment Kind has a lens; every outcome
       has a cursor home. **Done.**
-- [x] System-wide self-review findings — README truth vs. the run pilots; `decisions/0009` supersedes
-      `0007`'s finality; the v4 dangling reference; hook fail-open + repo companions re-anchored + drift
-      test; the dogfood-path leak + widened guard; `base-dependencies.md`; accept/not-accept; CLAUDE.md
-      hook claim; record-templates wired; `/aims-panel-plan` made discoverable. **Done.**
-- [ ] **Remaining — a larger, separate refactoring objective (not bundled):** the restatement the
-      self-review flagged — the substrate gate, load-bearing assumptions, "an agent optimizes the goal you
-      give it", and the subtractive pass are each stated 3–4× across `SKILL.md` / `discovery.md` /
-      `design-principles.md` / `worker-handoff.md` with no single owner. Consolidating to one owner + refs
-      touches several core files and wants its own careful pass. Flagged, not started.
+- [x] System-wide self-review findings — README truth vs. the run pilots; `decisions/0010` gives `0007`
+      its forward pointer through v4 (v4 has since been run on master — see `goals.md` / `results-v4.md`);
+      hook fail-open + repo companions re-anchored + drift test; the dogfood-path leak + widened guard;
+      `base-dependencies.md`; accept/not-accept; CLAUDE.md hook claim; record-templates wired;
+      `/aims-panel-plan` made discoverable. **Done.**
+- [x] Restatement consolidation — applied the subtractive pass to the prose: the one drift-prone
+      near-verbatim duplication (substrate gate) was split by content (SKILL owns the imperative,
+      discovery.md owns "what the substrate is"); the rest is deliberate reinforcement with a present
+      force (template-vs-explanation, near-the-action) and is kept, not flattened.
 
 ## Last evaluated result
 
 Prior round (panel-plan build) reviewed 7/7 conformance met. Its *placement* was then re-examined:
-`decisions/0008` keeps the panel in place and corrects its internal division by refactoring, rather than
-rebuilding. See the self-review and `0008`.
+`decisions/0009` keeps the panel in place and corrects its internal division by refactoring, rather than
+rebuilding. See the self-review and `0009`.

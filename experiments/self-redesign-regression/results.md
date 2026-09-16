@@ -5,7 +5,7 @@ date: 2026-09-16
 
 # Self-redesign regression check
 
-The `claude/aims-self-redesign` branch is **fixes and polish to aims, not a new method** (`decisions/0008`
+The `claude/aims-self-redesign` branch is **fixes and polish to aims, not a new method** (`decisions/0009`
 corrected an over-reaching draft; the panel already existed since `decisions/0005`). So the question this
 exercise answers is **improvement, or at least no regression** — not "new beats old". Subject product for
 every arm: a two-sided dog-sitting marketplace, design only.
