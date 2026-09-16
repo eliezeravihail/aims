@@ -40,11 +40,11 @@ a Worker subagent, because autonomous delegation and context isolation are the p
 watching.
 
 **One declared exception:** the `panel-plan` command (`references/panel-plan.md`) runs its three
-advisor planners as parallel subagents even though it is an explicit stepped-mode command — advisor
-*independence* cannot be simulated inline (a sequential pass cannot unsee the one before it), so it
-outranks the letter of this convention. The master planner that arbitrates the drafts still runs
+axis-focused **Workers** as parallel subagents even though it is an explicit stepped-mode command —
+Worker *independence* cannot be simulated inline (a sequential pass cannot unsee the one before it), so
+it outranks the letter of this convention. The **merge agent** that composes the results still runs
 inline, in this session, on the selected model. This is a declared downgrade, not an equivalence: the
-user still watches the composition happen turn by turn, but the three advisor drafts are only
+user still watches the composition happen turn by turn, but the three Worker drafts are only
 inspectable afterward (`.aims/panel/`), not while being written.
 
 ## The phases, mapped to the loop steps

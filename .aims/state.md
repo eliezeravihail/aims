@@ -22,8 +22,8 @@ command), and close the measurement-contract gaps. Concretely:
    to all advisors, carrying the correct-objective discipline (adversarial exit criteria + the hard
    decision) **by reference** to `references/objective-selection.md` — no second copy. The master emits
    the handoff **conforming to** that shared objective, not inventing an objective at step 6.
-2. **Axes fan only the design.** Make explicit that the three advisors vary only the axis-borne *design*
-   over the one shared objective — not re-derive the objective three times.
+2. **Axes fan only the design.** Make explicit that the three axis-focused Workers vary only the
+   axis-borne *design* over the one shared objective — not re-derive the objective three times.
 3. **Measurement contract** (`references/review-panel.md`) — the separate small fixes: a design artifact
    is a citable surface (so a design round is measurable); every declared Kind has a lens or is removed;
    every outcome (met / partial / invalidated / blocked) has a cursor value to park at.
