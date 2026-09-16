@@ -6,7 +6,7 @@ stepped
 
 ## Loop cursor
 
-executed:awaiting-review <panel-plan mechanism build — two new prose artifacts + three touches, per the amended design>
+reviewed:awaiting-decision <panel-plan mechanism build — 7/7 conformance criteria met; one low-significance wording reading (aims-panel-plan.md "always convenes") awaiting the human's call>
 
 ## Current objective
 
@@ -92,6 +92,59 @@ review's closing note.
       separate objective.
 
 ## Last evaluated result
+
+**panel-plan mechanism BUILD** (`implementation` lens, roles run inline per `references/modes.md`, on
+Opus 4.8). **7/7 conformance criteria met.** One low-significance reading; no scores.
+
+**1 — `aims-panel-plan.md` says "always convenes" one line after allowing an honest decline. (low)**
+`commands/aims-panel-plan.md:16` permits the command to "decline honestly … if no subagent facility
+exists", while `:18` states it "always convenes the panel — it never falls back to single-pass planning
+silently." The two coexist in one file; the word *always* is imprecise against its own line 16. The
+**substance is correct** — the reference (`references/panel-plan.md:86`) makes the no-facility decline an
+*out-loud* refusal, and the falsifier the criterion actually cares about is a **silent** single-pass
+fallback, which neither file allows. So this is a wording precision reading, not a behavior defect: a
+strict reader momentarily sees "always" contradict "decline". Suggested fix (the human's call, not
+auto-applied): soften `:18` to "always convenes when it can, and declines out loud otherwise — never a
+silent single-pass fallback." No other file repeats the imprecision (`state.md:37` already phrases it as
+"never silently falls back").
+
+**Confirmed met, each by citation:**
+- Criterion 1 (reference completeness + order): `references/panel-plan.md` sections run convening →
+  axes-as-sole-operating-definition → grounding package → isolation-per-mode (incl. declared downgrade
+  `:81-84` + honest decline `:86`) → 6-step master procedure → four output destinations with ADR carrying
+  *both* decided conflicts and harmonizations (`:110-119`) → "Not a gate, never a score". Order matches §8
+  skeleton.
+- Criterion 2 (command shape): `commands/aims-panel-plan.md` runs steps 1–3, "Do not delegate and do not
+  write implementation code", parks `planned:awaiting-build`, routes drafting through the reference —
+  mirrors `commands/aims-plan.md`.
+- Criterion 3 (SKILL wiring): `SKILL.md` step 2 adds the auto-convening sentence scoped to the opening
+  round only, points at the reference, does not restate the axes.
+- Criterion 4 (modes.md exception): `references/modes.md` adds the exception directly after "Explicit
+  commands run inline", stating the visibility trade plainly (arbitration watchable; the three drafts only
+  inspectable after the fact) — not claiming the rationale intact.
+- Criterion 5 (routing + untouched): `commands/aims-plan-and-build.md` gains the routing line;
+  `git diff origin/master...HEAD -- commands/aims-plan.md` is **empty** — untouched.
+- Criterion 6 (one operating owner): a repo-wide grep for the axis phrasing returns the operating
+  definition only in `references/panel-plan.md` among shipping surfaces; `review.md:32` is an incidental
+  "tell-don't-ask" mention, not a restatement; `decisions/0005` holds the frozen-rationale copy per
+  `decisions/0006`; the four wiring files point without restating.
+- Criterion 7 (prose only): `git diff --name-only origin/master...HEAD` shows **six `.md` files, zero
+  non-`.md`** — no hook, no runtime code.
+
+**Fidelity checks that passed (probed, not defects):** the stepped-mode advisor-subagent spawn does *not*
+silently contradict the "explicit commands run inline" rule — it routes through the reference, which owns
+the declared exception (aims' own refer-don't-restate discipline). Harmonizations are filed durably in the
+ADR (`panel-plan.md §Where the outputs land`), not left in the ephemeral plan report — the exact regression
+the design review's reading 2 fixed is not reintroduced.
+
+**Implication for direction.** The build conforms to the amended design end to end; the mechanism's core
+(isolation, composition, one owner) transcribed faithfully. The single reading is a one-word precision fix
+in a command file, safe to fold into any later touch — it blocks nothing. The design objective's own
+"Convening falsifiers" criterion (v3 pilot already demonstrated the *panel arm wins*, `experiments/aims-vs-openspec/results-v3.md`) is now backed by a shippable command, not just a manually-reproduced procedure.
+
+---
+
+*(Prior round — design — retained below for the append-only trail.)*
 
 **panel-plan mechanism design** (`design` lens, roles run inline per `references/modes.md`). Five of seven
 exit criteria met. Four readings, each cited; no scores.
