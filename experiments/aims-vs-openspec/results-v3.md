@@ -1,22 +1,13 @@
 # Results — v3 (post concept-fit pass), design-only, three-way vs OpenSpec
 
-> **⚠️ Unresolved validity threat: structural self-reference, not a permission gap.** `SKILL.md` itself
-> instructs, generically: *"Reach knowledge by navigating, not by reading everything. To understand a
-> file, open its companion; for system context, read the root records."* This is not an accidental
-> over-broad grant — the v3 design arms were told to read `SKILL.md` and were pointed at files inside
-> `/home/user/aims`, so a faithful execution of that instruction reads `/home/user/aims`'s own root
-> records. Those happen to include `decisions/0007-aims-vs-openspec-pilot-findings.md`, present in that
-> working tree before the arms were dispatched, which states the exact domain-specific fault to avoid, in
-> the pricing-cart's own vocabulary: *"tax folded into the explanation chain ... dissolved aims' own
-> delta-sum invariant into per-kind folds."* aims documents its own self-evaluation as a root record, and
-> its own navigation rule points there for "system context" — a conflict of interest baked into testing
-> the method on its own turf, not a tooling oversight. (The pricing product's *own* root records correctly
-> live elsewhere, in `/tmp/exp/arm-aims-v3-single/` — but nothing kept an arm rooted in `/home/user/aims`
-> from finding aims-the-tool's root records instead.) Whether either arm actually read `decisions/0007` was
-> never checked. If either did, the v3 result below is evidence the arm was handed the answer, not evidence
-> the concept-fit pass generalizes. **The finding below should be treated as unconfirmed until re-run with
-> the design arms working from a product root that never gives them a path to `/home/user/aims`'s own root
-> records — method-file content supplied without the surrounding repo.**
+> **⚠️ Unresolved validity threat.** `decisions/0007-aims-vs-openspec-pilot-findings.md` already documents,
+> in the pricing-cart's own vocabulary, the exact fault v3 exists to test whether the concept-fit pass
+> fixes: *"tax folded into the explanation chain ... dissolved aims' own delta-sum invariant into per-kind
+> folds."* It sat in the same repo the v3 design arms were rooted in to read the method files, and
+> `SKILL.md` itself tells them to read root records for context — so they had a path to their own answer
+> key. Whether either arm took it was never checked. **The fix is narrow: don't leave a worked example that
+> matches an in-flight test's exact scenario reachable from the design arm's root while that test runs.**
+> Until re-run that way, the finding below is unconfirmed.
 
 Design-only pilot re-run after adding the **concept-fit pass** to `references/review.md` (a decomposition
 modelled as a movement, or the reverse, is a latent-architectural fault to catch *in the design*). Two aims
