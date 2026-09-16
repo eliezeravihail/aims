@@ -19,8 +19,13 @@ the pilot or trusting the method's self-description.
   explanation-as-single-source-of-truth, over-applied at stage 3), which dissolved aims' own delta-sum
   invariant into per-kind folds for a single-producer guarantee the other two arms got without the
   coupling. aims was NOT judged broadly unclean: both judges credited it with the least primitive obsession
-  of the three and the most explicit subtractive pass. Its fault was over-abstraction (single-impl tax
-  protocols), the over-generic case §2 warns of — the opposite of dirty code. (An earlier judging pass used
+  of the three and the most explicit subtractive pass. Its one contested fault the YAGNI judge named —
+  single-impl tax protocols — does **not** survive checking against §2, whose test is a *describable*
+  second implementation (met outright: NORTH and SOUTH are two genuinely different tax laws, a third
+  market is the anticipated axis), and aims' use of one mechanism (a rule protocol) for both
+  promotions and tax is *more* uniform than X/Z's protocol-for-promotions + data-for-tax split. The
+  interface criticism is contested, not settled; what stands is the coupling — tax folded into the
+  explanation chain. (An earlier judging pass used
   six operator-written seam questions instead of `design-principles.md`; it was discarded and re-run
   against the real rubric — the file that reached this conclusion.)
 - **Survival: aims reopened the most** (11 vs OpenSpec 8, plain 9). The falsifier the experiment named in

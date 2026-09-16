@@ -69,6 +69,30 @@ pinned that to the *same single decision*, independently:
   an import-checkable boundary while aims pulled tax into the record — so even the disposition that most
   rewards information-hiding found aims' encapsulation weaker here, on this one decision.
 
+**One of the two knocks on aims is contestable on aims' own principles.** The YAGNI judge penalized aims
+for two single-implementation tax protocols (`LineTaxRule`/`CartTaxRule`), treating "one impl per class, a
+data field would do" as the fault. But `design-principles.md` §2's actual test is *"ask what a second,
+legitimately different implementation would need to look like … if you can't describe one that isn't a
+trivial variation, the interface is decorative"* — **describable second implementation, not two
+implementations already in the tree.** For tax that test is met outright: NORTH (cart-level, half-up) and
+SOUTH (per-line, half-even) are two genuinely different tax laws already, and a third market is the
+explicitly anticipated axis. By §2's own criterion aims' tax interface is earned, not decorative.
+
+Worse for the judge's reading: X and Z model *promotions* as a rule protocol (three implementations) but
+model *tax* as inline data-field branching — two different mechanisms for the same conceptual thing (a
+policy that varies by market/kind), i.e. **non-uniform abstraction levels**. aims used the *same* mechanism
+(a rule protocol) for both promotions and tax. That uniformity is a real merit the judging never weighed,
+and it cuts toward aims, not against it. The honest status of the interface criticism is therefore
+*contested*, not settled — and aims' third place on the YAGNI axis rests partly on a criterion §2 does not
+endorse.
+
+**What does stand, independently, is the other knock:** aims folded tax *into* the explanation chain (a
+fourth `AdjustmentKind`, `CartLedger.assess_tax`), which dissolved its own delta-sum invariant into
+per-kind folds and forced a documented repair — a coupling the other two arms avoided while getting the
+same single-producer guarantee. Both full-rubric judges flagged this one independently, and it is the same
+decision that drove roughly half of aims' extra survival churn. **aims' real, defensible loss on this
+pilot is that one coupling decision — not the interface count.**
+
 **aims was not broadly unclean — the opposite.** Both judges credited it with the **least primitive
 obsession** of the three (it wraps every domain type: `PromotionCode`, `Sku`, `MarketId`, `Percent`), a
 `promotions.py` genuinely untouched across the whole evolution, well-argued tax protocols, and the most
