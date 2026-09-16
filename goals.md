@@ -31,15 +31,21 @@ The primary goal above is a hypothesis under test, not an established result. Th
 `experiments/aims-vs-openspec/` (vs OpenSpec, n=1) has now been run three times as the method was sharpened:
 
 - **v1** — found **no design-quality advantage for aims**, and it reopened the most of its own structure
-  across the evolution (survival 11); see `decisions/0007`. Root cause: a decomposition (tax) modelled as a
-  movement inside the explanation ledger — a value-correct cram (`design-principles.md` §2).
-- **v2** (§2 sharpened) — survival churn halved (11→5) but design quality was still a wash: §2 named the
-  fault but nothing made its check fire at design time.
+  across the evolution (survival 11); see `decisions/0007`. Root cause: the explanation ledger's
+  `Adjustment` interface was calibrated (floor/ceiling, `design-principles.md` §2) for one kind of thing —
+  a step that changes a running value — and tax, a genuinely different concept (a decomposition: shares of
+  a total, not a delta), was crammed into that same interface as a technically-valid but foreign field
+  (`Adjustment(delta=0)`) rather than segregated into its own type. §2 already named this failure mode (the
+  value-correct cram); nothing made it fire at the interface-design moment.
+- **v2** (§2 sharpened) — survival churn halved (11→5) but design quality was still a wash: the cram
+  persisted because the check still fired only after the interface already existed, not while it was being
+  calibrated.
 - **v3** (the **concept-fit pass** added to `references/review.md`, run on the design before code) — the
-  concept fault is **gone** from both aims arms (tax modelled as a decomposition beside the walk; no wrong
-  number on any case). Survival: aims-panel **1** (decisive best), aims-single 5, OpenSpec 5 — trajectory
-  11→5→1. Two opposite-prior substantive judges **split**: a consequence/future-cost lens ranks the aims
-  arms above OpenSpec; an accidental-complexity lens ranks OpenSpec's single-mechanism spec above them. See
+  interface-cram fault is **gone** from both aims arms: tax is segregated into its own type, a decomposition
+  beside the promotion walk rather than crammed into `Adjustment`; no wrong number on any case. Survival:
+  aims-panel **1** (decisive best), aims-single 5, OpenSpec 5 — trajectory 11→5→1. Two opposite-prior
+  substantive judges **split**: a consequence/future-cost lens ranks the aims arms above OpenSpec; an
+  accidental-complexity lens ranks OpenSpec's single-mechanism spec above them. See
   `experiments/aims-vs-openspec/results-v3.md`.
 
 Honest current reading: aims **materially improved change-absorption** and the concept-fit pass **caused**
