@@ -64,10 +64,18 @@ a typed measurement has nowhere to hide from the architecture question when the 
 - **Deliverable:** working code conforming to a design already agreed.
 - **Measure:** does it satisfy the behavior **and** conform to the design; does every exit criterion
   actually hold on the paths the tests don't exercise?
-- **Evidence:** adversarial probes against the exit criteria (the role that surfaces real defects) +
-  conformance to the design + the subtractive pass.
-- **Look for:** correctness defects, non-conformance, dead abstractions, missing affordances. *(The
-  pilot-#4 lens — the one that measured "win design, lose product.")*
+- **Coverage — pin every behavioral requirement to a check** (the reading OpenSpec is at home on, borrowed
+  as an instrument): formulate the list of behavioral requirements the objective carries, and for each
+  name the **test or scenario that pins it** — or record **"nothing pins it", itself a finding** (an
+  untested behavior). The count is *requirements revealed / requirements pinned*, **not** a line-coverage
+  percentage — aims measures pinned real requirements, never a coverage target.
+- **Evidence:** the coverage list above **plus** adversarial probes on the paths the pinned checks don't
+  exercise (the role that surfaces real defects) + conformance to the design + the subtractive pass.
+  Coverage catches the *missing* requirement; the adversarial probe catches the *wrong* behavior a passing
+  test still allows — neither alone is enough, and "tests pass" is never on its own the measurement
+  (`review.md`).
+- **Look for:** correctness defects, non-conformance, an unpinned requirement, dead abstractions, missing
+  affordances. *(The pilot-#4 lens — the one that measured "win design, lose product.")*
 
 ### refactoring — *did structure improve with behavior preserved?*
 - **Deliverable:** a structural change; observable behavior unchanged.
