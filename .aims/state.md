@@ -9,7 +9,7 @@ stepped
 
 ## Loop cursor
 
-planned:awaiting-build <refactor the plan-panel's internal division: one shared disciplined objective, axes fan only the design; keep aims working>
+ready-to-choose-next <refactor round delivered: panel roles corrected, measurement contract completed, machinery invariants restored, docs made honest; one larger restatement-consolidation objective remains, flagged in the TODO>
 
 ## Current objective
 
@@ -102,11 +102,21 @@ is untouched — the diff scope), result status against the exit criteria, any n
 
 ## Open Guide TODO
 
-- [ ] Build (refactor) the panel's internal division + the measurement-contract fixes, per the exit
-      criteria; keep the three tests green throughout.
-- [ ] Separately (not this round): the system-wide self-review findings — README truth vs. the run pilots;
-      a superseding ADR for `0007`'s overturned headline; the hook fail-open guard; re-anchoring the two
-      stale companions and a test that catches repo-companion drift.
+- [x] Refactor the panel's internal division (Guide sets one objective; three axis-focused Workers fan the
+      design; merge agent takes the best *from each*) + the measurement-contract fixes. **Done** — see the
+      commit trail on `claude/aims-self-redesign`.
+- [x] Measurement: design lens measures the full quality-requirements list by quotation; implementation
+      lens adds requirement→check coverage (OpenSpec-inspired); experiment Kind has a lens; every outcome
+      has a cursor home. **Done.**
+- [x] System-wide self-review findings — README truth vs. the run pilots; `decisions/0009` supersedes
+      `0007`'s finality; the v4 dangling reference; hook fail-open + repo companions re-anchored + drift
+      test; the dogfood-path leak + widened guard; `base-dependencies.md`; accept/not-accept; CLAUDE.md
+      hook claim; record-templates wired; `/aims-panel-plan` made discoverable. **Done.**
+- [ ] **Remaining — a larger, separate refactoring objective (not bundled):** the restatement the
+      self-review flagged — the substrate gate, load-bearing assumptions, "an agent optimizes the goal you
+      give it", and the subtractive pass are each stated 3–4× across `SKILL.md` / `discovery.md` /
+      `design-principles.md` / `worker-handoff.md` with no single owner. Consolidating to one owner + refs
+      touches several core files and wants its own careful pass. Flagged, not started.
 
 ## Last evaluated result
 
