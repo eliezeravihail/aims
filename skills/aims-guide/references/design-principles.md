@@ -44,6 +44,16 @@ implementation's specific behavior right through its name.
 **How to tell them apart:** ask what a second, legitimately different implementation would need to
 look like. If you can't describe one that isn't a trivial variation, the "interface" is decorative.
 
+**The bar is a *describable* second implementation — the anticipated generic continuation — not a second
+one already in the tree.** An interface earns its place the moment the domain gives you a genuinely
+different implementation you can *describe*, even if only one exists today; naming that seam is the point.
+"Only introduce an interface once you have two implementations" is a crude proxy, and it misfires in
+exactly the case the interface is *for*: it makes you write the concrete thing, then re-open it into an
+interface at the moment the foreseen second case lands — the very change the interface existed to absorb
+without a re-open. So a single implementation is not the smell; a single *conceivable* one is. (The inverse
+also holds: two implementations that differ only trivially still don't justify an interface.) The question
+is always "is a genuinely different implementation foreseeable here", never "have I already written two".
+
 **The general rule — domain-free; the example below only illustrates it, it is not the rule.** The
 type that crosses an interface should be the *most generic type that is still complete for the consumer
 and still honestly producible by every implementation you unify*. Two independent bounds pin it: the
@@ -58,6 +68,17 @@ technically-valid but foreign field); distortion in either direction is the smel
 underneath all of it: **minimize the knowledge you force on the other side — no more than the concept
 requires, no less than it needs, and never your own implementation choice.** What follows is one worked
 example of this rule, in a single domain — do not mistake the example for the principle.
+
+**Keep sibling concepts at one level of abstraction.** When two peer concepts fill the same structural
+role — both are pluggable policies selected along the same axis — the default is to express them the same
+way. Modelling one behind an interface and its sibling as an inline `kind`-field-and-switch is a
+*non-uniform abstraction*: a reader must hold two mental models for one idea, and an extension that lands
+cleanly on the interfaced sibling forces a different, ad-hoc shape on the data-branched one. So if a
+behind-an-interface rule is the right shape for one member of a family, it is the **null hypothesis** for
+its siblings; choosing a different mechanism for the second must be argued from the *concepts genuinely
+differing in kind* (the floor/ceiling test above forcing segregation), never from one sibling merely
+*happening to have a single case today* — that is the count proxy again in different clothes. A family
+modelled at two altitudes is the smell, whichever altitude each member sits at.
 
 **A worked example (illustration only).** `ObjectDetectionModel.detect(image) -> list[DetectedObject]` is a real
 abstraction: YOLO, DETR, and a hosted cloud API all satisfy it identically. Returning the concrete

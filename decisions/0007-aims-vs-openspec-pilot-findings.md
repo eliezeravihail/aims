@@ -53,6 +53,17 @@ method yet. Specifically:
    Not fixed here; named for the next design round on the method.
 
 **Consequences.**
+- **`design-principles.md` §2 sharpened** (the method change this pilot earned). The YAGNI judge's knock on
+  aims — single-implementation tax interfaces — used a "count the implementations" proxy §2 never held.
+  §2 now says the bar is a *describable* (anticipated) second implementation, not a second one already in
+  the tree, and explicitly rejects "only introduce an interface once you have two implementations". It also
+  gains a new clause: **keep sibling concepts at one level of abstraction** — expressing one pluggable
+  policy behind an interface and its sibling as an inline kind-switch is itself a smell (non-uniform
+  abstraction), so a behind-an-interface rule is the null hypothesis for the whole family. Flawed thinking
+  in the principle produces flawed execution downstream, so the fix belongs in the core, not only in this
+  record. This does not overturn the pilot's negative headline — aims still showed no design advantage and
+  its tax-in-chain coupling still stands — it corrects the one criticism that rested on a principle aims
+  does not actually hold.
 - `goals.md` gains a use-scenario caveat pointing here, so the primary-goal claim is read next to its one
   blind test.
 - This is n=1. A second pilot on a different product, ideally allowing a build (so OpenSpec's archived spec
