@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>In practice — aims</title>
+<meta name="description" content="How aims actually runs: the operating loop, automatic vs stepped modes, the mandatory revise round, how quality is measured with the assessment form, and how knowledge is filed beside the code.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav><div class="wrap">
+  <a class="brand" href="index.html"><b>aims</b></a>
+  <a class="link" href="method.html">The method</a>
+  <a class="link active" href="practice.html">In practice</a>
+  <a class="link" href="experiments.html">Experiments</a>
+  <a class="link" href="usage.html">Use it</a>
+  <a class="link gh" href="https://github.com/eliezeravihail/aims">GitHub ↗</a>
+</div></nav>
+
+<header class="pagehero"><div class="wrap">
+  <span class="badge">02 · In practice</span>
+  <h1>How the loop actually runs</h1>
+  <p class="lede">The Guide drives one loop, round after round, until the current change is delivered. Each round chooses one objective, delegates, measures, and chooses again from the evidence — the sequence is never planned up front.</p>
+</div></header>
+
+<section><div class="wrap">
+  <div class="kicker">The operating loop</div>
+  <h2>One round, five moves</h2>
+  <ol class="steps">
+    <li><b>Ground the product by asking</b><p>Surface open product decisions, and the day-zero foundational substrate — the language, framework, base deps whose replacement would rewrite everything — which is <em>asked of the user</em>, never defaulted. If a new product rests on an unproven premise, objective one is a spike that proves it before designing on top of it.</p></li>
+    <li><b>Choose one design objective</b><p>Feature-scoped, framed around design quality, with exit criteria derived adversarially: the edge and break cases named (empty / one / many, cross-boundary, ordering, the absent-optional) so a minimal implementation cannot satisfy it on paper.</p></li>
+    <li><b>Delegate a bounded handoff</b><p>The Worker gets the design outcome, the behavior it must satisfy, the principles as the target (not a checklist), and the testing discipline — never a pre-made design. Two strong engineers given the handoff should be free to reach genuinely different, equally good designs.</p></li>
+    <li><b>Measure, then one mandatory revise round</b><p>Score against the criteria; run the subtractive pass (cut what pays for nothing) and the concept-fit pass (is each element the kind of thing it is). A <code>design</code> objective is never read as met on its first pass: hand the findings back and have the Worker revise once. Iteration is the largest quality lever the experiments found.</p></li>
+    <li><b>Choose again from the evidence</b><p>Continue an unmet criterion, implement the next capability, simplify, or deliberately accept a justified cost. There is no fixed phase order.</p></li>
+  </ol>
+</div></section>
+
+<section><div class="wrap">
+  <div class="kicker">Two ways to run it</div>
+  <h2>Automatic or stepped</h2>
+  <div class="grid g2">
+    <div class="card"><h3>Automatic</h3><p>The Guide drives the whole loop end to end and pauses only at the two legitimate human moments — an open product decision it must not guess, and receiving the next product change. A returning Worker auto-advances the loop.</p></div>
+    <div class="card"><h3>Stepped</h3><p>For hands-on supervision: the loop stops at every phase boundary (<code>plan</code> → <code>build</code> → <code>review</code>) and advances only on an explicit command, so you inspect and edit between phases. Same loop, a stricter stop-policy.</p></div>
+  </div>
+  <p class="muted">The loop's position lives in <code>.aims/state.md</code> — run-state only, reloaded at the start of every command — so the goal survives side-conversations and context compaction. Nothing runs in the background; aims is engaged only through its commands.</p>
+</div></section>
+
+<section id="measure"><div class="wrap">
+  <div class="kicker">How quality is measured</div>
+  <h2>The assessment form</h2>
+  <p class="intro">Each principle is scored <b>0–10</b>, and the score is derived from a handful of binary structural sub-checks rather than eyeballed — which is what keeps a re-run reproducible and absorbs judge noise.</p>
+  <div class="grid g3">
+    <div class="card"><span class="n">STEP 0</span><h3>Fixed inventory</h3><p>Pin the rules (R), change-axes (X), and acceptance cases (C) from the spec — never from a design. Identical for every judge and every arm.</p></div>
+    <div class="card"><span class="n">PER PRINCIPLE</span><h3>Sub-checks → score</h3><p>Decompose into binary structural checks, each cited. <code>score = 10 × passed / applicable</code>. Any score below 10 requires a cited finding.</p></div>
+    <div class="card"><span class="n">SEVERITY</span><h3>Weight &amp; cap</h3><p>The worst failed check sets the weight (×1…×8) and a ceiling. A §13 correctness or §9 ownership fault can reach S4 and caps the whole design.</p></div>
+  </div>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card"><h3>Two projections, one form</h3><p>The full scored form + aggregate profile is the <b>measurement/judging</b> layer, for comparing arms. The <b>operational review</b> in the loop is the same form's score-less projection — the sub-10 findings sorted most-severe-first, each cited, no aggregate grade — so the review stays a direction-feeding findings list, faithful to "never a score".</p></div>
+    <div class="card"><h3>Reliable, not a benchmark</h3><p>The form is a <b>reliable</b> instrument (same design → same profile), not an externally valid benchmark — none exists for design quality, and deterministic metrics measure a different construct (surface volume). aims triangulates it with change-survival and static metrics as separate signals. See <a href="experiments.html">Experiments</a>.</p></div>
+  </div>
+</div></section>
+
+<section id="records"><div class="wrap">
+  <div class="kicker">Documenting &amp; preserving</div>
+  <h2>Records co-located with the code</h2>
+  <p class="intro">The one directory structure is <em>both</em> the code graph and the knowledge tree — so knowledge is reached by navigating to the file or root record in front of you, never by reading the whole project.</p>
+  <div class="grid g2">
+    <div class="card"><h3>Companions &amp; root records</h3><p>A source file with something worth recording gets a <code>&lt;file&gt;.md</code> companion beside it (Insights / Decisions / Discussions). Cross-cutting knowledge lives at the root: <code>goals.md</code>, <code>architecture.md</code>, <code>base-dependencies.md</code>, <code>dependencies.md</code>, and <code>decisions/</code> ADRs.</p></div>
+    <div class="card"><h3>Anchored, so drift is detected</h3><p>A companion is anchored to its same-named source by a content hash. When a later session reads a companion whose source changed, one advisory hook says <em>"re-verify"</em> — it never blocks. <code>decisions/</code> are append-only: to change one you add a superseding entry, never rewrite.</p></div>
+  </div>
+  <div class="callout"><b>What aims deliberately does not have:</b> no memory tree, no consolidation/doctor/lint machinery, no write hook, no planning lock. Relevance is structural — navigate the co-located records — so nothing needs to be kept coherent between turns. The one read-time advisory is the whole of the active machinery.</div>
+  <div class="pagenav">
+    <a href="experiments.html"><div class="lab">Next</div><div class="ttl">Experiments →</div></a>
+    <a href="method.html"><div class="lab">Back to</div><div class="ttl">← The method</div></a>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <div><strong style="color:var(--ink);font-family:var(--serif);font-size:1.1rem">aims</strong> — an AI Manager System · v1.0.0 · MIT</div>
+  <a href="https://github.com/eliezeravihail/aims">github.com/eliezeravihail/aims ↗</a>
+</div></footer>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Use it — aims</title>
+<meta name="description" content="Install aims as a Claude Code plugin, set up a project with /install-on, and drive the design — autonomous, supervised, or reviewing any change on its own.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav><div class="wrap">
+  <a class="brand" href="index.html"><b>aims</b></a>
+  <a class="link" href="method.html">The method</a>
+  <a class="link" href="practice.html">In practice</a>
+  <a class="link" href="experiments.html">Experiments</a>
+  <a class="link active" href="usage.html">Use it</a>
+  <a class="link gh" href="https://github.com/eliezeravihail/aims">GitHub ↗</a>
+</div></nav>
+
+<header class="pagehero"><div class="wrap">
+  <span class="badge">04 · Use it</span>
+  <h1>Install &amp; run</h1>
+  <p class="lede">aims is a Claude Code plugin. Requirements: Python 3 (standard library only) and bash — nothing else.</p>
+</div></header>
+
+<section><div class="wrap">
+  <div class="kicker">Setup</div>
+  <h2>Two steps</h2>
+  <div class="grid g2">
+    <div class="card"><h3>1 · Install the plugin</h3>
+      <pre><span class="c">/plugin</span> marketplace add eliezeravihail/aims
+<span class="c">/plugin</span> install aims@aims</pre>
+      <p style="margin-top:12px">From within Claude Code. Makes the <code>aims-guide</code> skill and the <code>/aims-*</code> commands available in every session — including <code>/aims-sharpen-prompt</code>, which is useful on its own and needs no project setup.</p>
+    </div>
+    <div class="card"><h3>2 · Set up a project</h3>
+      <pre><span class="c">/install-on</span> .</pre>
+      <p style="margin-top:12px">In the project you want to use aims on. Idempotent. Installs the two per-project hooks (session-start, and the read-time staleness advisory) plus the anchor tool under <code>.aims/</code>, and wires them into <code>.claude/settings.json</code>. It never touches your code or existing records.</p>
+    </div>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="kicker">Drive the design</div>
+  <h2>The commands</h2>
+  <ul class="clean">
+    <li><span class="tag">auto</span><span class="body"><b><code>/aims-plan-and-build "&lt;task&gt;"</code></b> — <span>the full autonomous loop: discovery → design objective → build → review → file the records, pausing only for open product decisions.</span></span></li>
+    <li><span class="tag">plan</span><span class="body"><b><code>/aims-plan "&lt;task&gt;"</code></b> — <span>choose one design objective, file the durable records it commits to, draft the Worker handoff; stop for review with a plan report.</span></span></li>
+    <li><span class="tag">panel</span><span class="body"><b><code>/aims-panel-plan</code></b> — <span>the opening-round variant: set one objective, fan the design across three axis-focused Workers, and compose the best of each with a merge agent.</span></span></li>
+    <li><span class="tag">build</span><span class="body"><b><code>/aims-build</code></b> — <span>delegate the objective to a Worker (or run it inline); stop before evaluation.</span></span></li>
+    <li><span class="tag">review</span><span class="body"><b><code>/aims-review &lt;branch | diff | path&gt;</code></b> — <span>measure the result against the exit criteria with the review panel; also works standalone on any diff, branch, or PR.</span></span></li>
+    <li><span class="tag">solo</span><span class="body"><b><code>/aims-sharpen-prompt</code></b> — <span>the framing discipline on its own: turn a vague ask into a real brief before executing. No project setup, not limited to software.</span></span></li>
+    <li><span class="tag">setup</span><span class="body"><b><code>/install-on &lt;path&gt;</code></b> — <span>install aims' per-project pieces (the two hooks + the anchor tool) into a target project.</span></span></li>
+  </ul>
+</div></section>
+
+<section><div class="wrap">
+  <div class="kicker">As it works</div>
+  <h2>Knowledge accrues beside the code</h2>
+  <p class="intro">aims files design knowledge co-located with the code: a companion <code>&lt;file&gt;.md</code> beside each source file, and root records (<code>goals.md</code>, <code>architecture.md</code>, <code>decisions/</code>). A later fresh session reads those by navigating to the relevant file's companion — and continues instead of re-deriving. If you read a companion whose source has since changed, the staleness hook says <em>"re-verify"</em>.</p>
+  <div class="pagenav">
+    <a href="method.html"><div class="lab">Start from</div><div class="ttl">← The method</div></a>
+    <a href="https://github.com/eliezeravihail/aims"><div class="lab">Source</div><div class="ttl">GitHub ↗</div></a>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <div><strong style="color:var(--ink);font-family:var(--serif);font-size:1.1rem">aims</strong> — an AI Manager System · v1.0.0 · MIT</div>
+  <a href="https://github.com/eliezeravihail/aims">github.com/eliezeravihail/aims ↗</a>
+</div></footer>
+</body>
+</html>

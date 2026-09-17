@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Experiments — aims</title>
+<meta name="description" content="The blind-judged protocol, the pilots, the latest single-pass results, and the confounds that keep any single grade from being a verdict.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav><div class="wrap">
+  <a class="brand" href="index.html"><b>aims</b></a>
+  <a class="link" href="method.html">The method</a>
+  <a class="link" href="practice.html">In practice</a>
+  <a class="link active" href="experiments.html">Experiments</a>
+  <a class="link" href="usage.html">Use it</a>
+  <a class="link gh" href="https://github.com/eliezeravihail/aims">GitHub ↗</a>
+</div></nav>
+
+<header class="pagehero"><div class="wrap">
+  <span class="badge">03 · Experiments</span>
+  <h1>Tested, and honest about it</h1>
+  <p class="lede">Every experiment is a controlled, blind-judged comparison — an aims arm against a rival or a no-method control, graded by separate judges against the same fixed inventory. A single-arm demonstration is not an experiment.</p>
+</div></header>
+
+<section><div class="wrap">
+  <div class="kicker">The protocol</div>
+  <h2>What makes a run count</h2>
+  <div class="grid g2">
+    <div class="card"><h3>Two arms, a hidden oracle</h3><p>An aims arm and a control arm build the same product across staged reveals; only the current stage card is visible, and a passive oracle answers product questions without volunteering anything. Asking the right question is itself under test.</p></div>
+    <div class="card"><h3>Blind, separate judges</h3><p>Judges are not the Guide that built the arm and do not know which codebase is which. Design, product, and cost are three reports, never merged into one score; every load-bearing claim carries a reproduction or a <code>file:line</code>.</p></div>
+  </div>
+  <p class="muted">Full protocol: <a href="https://github.com/eliezeravihail/aims/blob/master/experiments/PROTOCOL.md">experiments/PROTOCOL.md</a>. Pilots include navigation, continued-development, a container-run instance-segmentation annotator, aims-vs-OpenSpec, marketplace change-absorption, and the ledger continuation.</p>
+</div></section>
+
+<section><div class="wrap">
+  <div class="kicker">Latest reading</div>
+  <h2>Single-pass, neutral prompts, on the assessment form</h2>
+  <p class="intro">The aims arm rebuilt single-pass under the current method (with the one revise round) and every arm graded blind on the 0–10 form, with the raw spec to the builder and no "look here" hint to the judge.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Product</th><th>aims (single-pass)</th><th>OpenSpec</th><th>plain</th></tr></thead>
+      <tbody>
+        <tr><td>Checkout pricing</td><td>8.5</td><td>8.5</td><td>8.5</td></tr>
+        <tr><td>Marketplace (furniture→cars)</td><td class="win">9.9</td><td>7.5</td><td>7.5</td></tr>
+        <tr><td>Ledger (code)</td><td class="win">10.0 / 8.5</td><td>—</td><td>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="muted">Checkout is a three-way tie at the cap — no correctness or ownership fault in any arm. Marketplace: aims absorbs the new category with zero core edits where the others reopen existing owners (§6). Ledger: a named return type vs a bare tuple — the difference deterministic metrics were blind to.</p>
+</div></section>
+
+<section><div class="wrap">
+  <div class="kicker">Read with care</div>
+  <h2>Why no single grade is a verdict</h2>
+  <div class="grid g3">
+    <div class="card"><h3>Judge noise (±0.5)</h3><p>One LLM judge per product; the same design has scored 0.5 apart with no qualitative disagreement. A 0.5 gap is inside the instrument's precision — the three checkout 8.5s are a tie.</p></div>
+    <div class="card"><h3>Maturity asymmetry</h3><p>Arms differ in artifact maturity, and it runs opposite ways per product. The marketplace margin is inflated by the aims arm being a fuller document — read it as "won the extension axis," not a quality gulf.</p></div>
+    <div class="card"><h3>n = 1, product-dependent</h3><p>One product, one judge, one build each. aims' rank depends on the product — strongest where change-absorption is the axis. The honest signal is the recurring shape, not a win tally.</p></div>
+  </div>
+  <div class="callout">
+    <b>A retraction, on the record.</b> An earlier run showed aims last on checkout. When the operator's prompt-anchoring was removed and the principles rebalanced, that result did not reproduce — aims tied checkout and led marketplace. The lesson is filed too: prompt-anchoring by the operator biases both build and judge, so runs use neutral prompts. The full record is in <a href="https://github.com/eliezeravihail/aims/blob/master/experiments/single-pass-assessment-rerun/README.md">experiments/single-pass-assessment-rerun</a>.
+  </div>
+  <div class="pagenav">
+    <a href="usage.html"><div class="lab">Next</div><div class="ttl">Use it →</div></a>
+    <a href="practice.html"><div class="lab">Back to</div><div class="ttl">← In practice</div></a>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <div><strong style="color:var(--ink);font-family:var(--serif);font-size:1.1rem">aims</strong> — an AI Manager System · v1.0.0 · MIT</div>
+  <a href="https://github.com/eliezeravihail/aims">github.com/eliezeravihail/aims ↗</a>
+</div></footer>
+</body>
+</html>

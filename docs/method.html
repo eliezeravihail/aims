@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The method — aims</title>
+<meta name="description" content="Why aims makes design the goal: the two failure modes, the Guide/Worker split, direct-and-measure without coercion, and the single source of design principles.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav><div class="wrap">
+  <a class="brand" href="index.html"><b>aims</b></a>
+  <a class="link active" href="method.html">The method</a>
+  <a class="link" href="practice.html">In practice</a>
+  <a class="link" href="experiments.html">Experiments</a>
+  <a class="link" href="usage.html">Use it</a>
+  <a class="link gh" href="https://github.com/eliezeravihail/aims">GitHub ↗</a>
+</div></nav>
+
+<header class="pagehero"><div class="wrap">
+  <span class="badge">01 · The method</span>
+  <h1>Design is the goal you give</h1>
+  <p class="lede">An implementing agent optimizes toward whatever goal it is handed. So if you want good design out, the design has to be the goal — with the feature attached as a constraint it must satisfy.</p>
+</div></header>
+
+<section><div class="wrap prose">
+  <div class="kicker">The problem</div>
+  <h2>Two things go wrong when an agent writes code</h2>
+  <div class="grid g2" style="margin-top:26px">
+    <div class="card"><h3>Quality suffers</h3><p>The agent optimizes for the goal it was given — get the feature working — so the architecture is whatever happens to fall out of that, not something anyone chose.</p></div>
+    <div class="card"><h3>Knowledge is lost</h3><p>Insights and decisions made while building do not reach the next session, so later work re-derives them from scratch, or contradicts them.</p></div>
+  </div>
+  <p style="margin-top:26px">aims answers each: <b>direct the agent</b> so the goal it optimizes <em>is</em> the design outcome, and <b>document &amp; preserve</b> what the work learned as records beside the code.</p>
+</div></section>
+
+<section><div class="wrap">
+  <div class="kicker">Two roles</div>
+  <h2>The Guide and the Worker</h2>
+  <p class="intro">Separating who decides <em>what to optimize</em> from who <em>executes</em> is what lets the design be the goal.</p>
+  <div class="grid g2">
+    <div class="card"><h3>The Guide</h3><p>Holds the product vision and decides, one at a time, the design/quality outcome the codebase most needs next — never writing implementation code. Its deliverable is the design quality across the product's whole evolution, not features shipped or code volume.</p></div>
+    <div class="card"><h3>The Worker</h3><p>A capable engineer that receives that outcome as its objective, with the behavior as a constraint the design must satisfy, and designs and builds it — returning its reasoning so the Guide can evaluate the design, not just whether it runs.</p></div>
+  </div>
+  <div class="callout"><b>Direct and measure — no coercion.</b> The method has exactly two moves: hand the right goal, and observe honestly what came back. There is no enforcement pillar — a design is made good at construction time by the goal you set; review only <em>measures</em> whether it was reached and feeds the next direction. The one thing that must be robust is that the goal keeps reaching the Worker.</div>
+</div></section>
+
+<section id="principles"><div class="wrap">
+  <div class="kicker">What "good" aims at</div>
+  <h2>One source of design principles</h2>
+  <p class="intro">A single document is used <em>both</em> to build and to grade — the principles are identical for every side, only the <em>how</em> differs. Asking for one thing and measuring another is the failure this avoids.</p>
+  <div class="pgroup">
+    <h3>Encapsulation &amp; boundaries</h3>
+    <div class="plist">
+      <span class="chip"><span class="s">§1</span> Tell-Don't-Ask / Demeter</span>
+      <span class="chip"><span class="s">§2</span> Program to an interface + genericity</span>
+      <span class="chip"><span class="s">§3</span> Interface Segregation</span>
+      <span class="chip"><span class="s">§7</span> Which details may leak</span>
+      <span class="chip"><span class="s">§9</span> One unforgeable owner per rule</span>
+    </div>
+    <h3>Modeling</h3>
+    <div class="plist">
+      <span class="chip"><span class="s">§4</span> Primitive obsession</span>
+      <span class="chip"><span class="s">§5</span> Anemic domain model</span>
+      <span class="chip"><span class="s">§8</span> Single Responsibility</span>
+      <span class="chip"><span class="s">§11</span> Naming &amp; failure</span>
+    </div>
+    <h3>Change &amp; cohesion</h3>
+    <div class="plist">
+      <span class="chip"><span class="s">§6</span> Cohesion/coupling (OCP, shotgun)</span>
+      <span class="chip"><span class="s">§10</span> DRY as knowledge, not text</span>
+      <span class="chip"><span class="s">§12</span> Size as a forcing question</span>
+    </div>
+    <h3>Correctness &amp; runtime</h3>
+    <div class="plist">
+      <span class="chip"><span class="s">§13</span> Functional correctness — the precondition</span>
+      <span class="chip"><span class="s">§14</span> State &amp; side-effect discipline</span>
+      <span class="chip"><span class="s">§15</span> Testability</span>
+      <span class="chip"><span class="s">§16</span> Performance — never a proxy</span>
+      <span class="chip"><span class="s">§17</span> Security &amp; trust boundaries</span>
+    </div>
+  </div>
+  <p class="muted">§18 names the canonical principles this set already carries under other names — Open/Closed, Liskov, Acyclic Dependencies, DRY, Least Astonishment, YAGNI. Correctness (§13) and single-owner (§9) are the ones that can cap a whole design — the precondition the rest serve.</p>
+  <div class="callout">
+    <b>Interfaces are positive; under-structuring is the graver risk.</b> The dominant failure of unguided code generation is <em>too little structure</em> — flat procedural code, inline literals, primitive obsession, anemic bags, rules owned nowhere. Over-engineering is a real but lighter, secondary fault. So every class exposes only a generic domain surface (an interface, separate class or not), and when unsure whether to name a seam you lean toward naming it — an unused seam is a light, local cost, a missing one forces a reopen. A type is judged by its <em>shape</em> — is it a domain concept, or a concrete wearing a costume — never by predicting a second implementation.
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="kicker">The other half</div>
+  <h2>Knowledge that survives the session</h2>
+  <p class="intro">A design objective's result is not narrated into the chat and lost — it is filed as a record in the code tree, next to the code it describes, so a later session inherits it. The mechanics are on the <a href="practice.html#records">In practice</a> page.</p>
+  <div class="pagenav">
+    <a href="practice.html"><div class="lab">Next</div><div class="ttl">In practice →</div></a>
+    <a href="usage.html"><div class="lab">Or jump to</div><div class="ttl">Use it →</div></a>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <div><strong style="color:var(--ink);font-family:var(--serif);font-size:1.1rem">aims</strong> — an AI Manager System · v1.0.0 · MIT</div>
+  <a href="https://github.com/eliezeravihail/aims">github.com/eliezeravihail/aims ↗</a>
+</div></footer>
+</body>
+</html>
