@@ -1,5 +1,5 @@
 ---
-title: "Quality Metrics List — a grounded, weighted rubric for judging code/design quality"
+title: "Quality Metrics List — a grounded, weighted rubric for building AND judging code/design quality"
 date: 2026-09-17
 ---
 
@@ -356,6 +356,39 @@ component run with least privilege? Are secrets and authorization handled at a s
    (S2 ≤3.5, S3 ≤3.0, S4 ≤2.0) and report which fired.
 4. Produce the per-metric scorecard **and** the profile — never a bare number, and never a verdict resting on
    one sub-S4 finding. Rank by capped grade, then `worst_metric`, then fewer S3/S4.
+
+## Using the list as build instructions (not only for judging)
+
+The list is **bidirectional**, exactly as `design-principles.md` says its principles are ("apply in both
+directions when building AND reviewing"). The same 20 metrics a judge scores, the builder builds toward — and
+the re-grade is the proof of why this matters: aims-upgraded's S4 (no cart-discount→line allocation) existed
+because the build side optimized change-locality and minimalism and **never held M11 (functional correctness
+against the whole spec) as a build target**. A builder who ran M11's trace before returning would have caught
+the missing allocation. Building to the list closes that hole.
+
+At build time the metrics become obligations, in this order (highest-leverage first, mirroring severity —
+because an S4 caps the whole design, correctness is built and checked **first**, not last):
+
+1. **Step 0, before designing.** Pin the fixed inventory from the spec: **R** (every rule/invariant), **X**
+   (every change-axis + one plausible unstated variant), **C** (every acceptance case). Then design so that
+   **every R has exactly one owner** (M7), **every X is a localized extension point, not a future reopen**
+   (M5/M1/M8), and **every C has a trace** (M11). This is discovery's output (`references/discovery.md`), now
+   used as a build contract.
+2. **The correctness trace is mandatory (M11), before "done".** Trace every C-case **and every implied
+   probe** — a change-axis × rule interaction the cases don't spell out — through the design. The canonical
+   example is the one that caught aims-upgraded: *a multi-line SOUTH cart with a cart-level discount* forces
+   per-line tax onto the discounted amount, which needs an allocation owner the literal cases never exercise.
+   A design that cannot produce a required output carries an S4, however clean it reads.
+3. **Build each remaining metric so it holds by construction**, then **self-verify with the same
+   evidence rule the judge uses**: before returning, for each metric either cite the single place it holds
+   (a 4) or record the fault, tag its severity, and fix it. **Never return a design carrying an S4, or an
+   uncapped S3, without surfacing it** — the build side gates on the same profile the judge reports.
+
+Where it plugs into aims: the review side already runs this list; at build time it becomes the **Worker's and
+merge agent's pre-return checklist** and the panel's return gate (`references/panel-plan.md`,
+`references/worker-handoff.md`), with Step 0 as the discovery deliverable. It does **not** replace
+`design-principles.md`; it adds the measurable, spec-anchored, **correctness-first** checklist the build side
+was missing — the exact gap the re-grade exposed.
 
 ## Notes
 
