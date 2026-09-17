@@ -4,6 +4,32 @@ The Guide **measures** the result against the handoff's exit criteria. A review 
 direction; it is not a gate on the Worker. What the measurement shows feeds the Guide's next-objective
 choice — never a verdict that forces compliance.
 
+## A design gets at least one revise round — measure, return findings, revise
+
+A **`design` objective is never read as met on its first returned pass.** At least one **measure → return
+the findings → revise** cycle is mandatory, and the loop repeats it until a review pass raises **no
+substantial architecture finding** (convergence). This is the single largest quality lever the experiments
+measured — one review-and-revise round rescued the worst checkout arm from an S4 correctness gap (2.0 →
+3.5), and iterating lifted a clean design more than an upfront principles brief did
+(`decisions/0011`, `../../experiments/iter-plan/README.md`). Concretely, on a returned design:
+
+1. Measure it — the exit criteria, plus the **subtractive** and **concept-fit** passes below.
+2. If any substantial finding stands (a leaked boundary, a concept mismatch, an unowned rule, unpaid
+   seam machinery, an unproven coverage claim), hand those findings back as the refined direction and have
+   the Worker revise. Do this even when the first pass already looks good — the first revise round is the
+   one that most improves a design that "looks met".
+3. Re-measure the revision. Read the design `met` only after a pass that surfaces nothing substantial.
+
+This stays **direct-and-measure, not a gate**: the findings are the next direction and the Worker revises —
+the same move the loop already makes for an unmet objective. What is mandatory is only that the Guide may
+not declare a design `met` without having exercised this lever at least once; the review still reports and
+informs, it does not stamp accept/reject or police the Worker (`SKILL.md`, "Direct and measure — do not
+coerce"). "At least one round" is the floor; "iterate to convergence" is the shape. It applies to `design`
+objectives (including the opening panel-plan round's merged result); `implementation` and `refactoring`
+objectives keep their single correctness/behavior-preservation measurement — a revise loop there only
+re-runs passing checks. Convergence is bounded by ordinary judgement: a round that would yield only
+ceremony findings (the subtractive pass would cut them) has converged.
+
 ## Review order
 
 1. Re-read the objective and exit criteria before reading the Worker's suggested follow-up.
