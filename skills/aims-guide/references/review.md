@@ -5,9 +5,9 @@ direction; it is not a gate on the Worker. What the measurement shows feeds the 
 choice — never a verdict that forces compliance.
 
 **There is one measurement instrument: the assessment form** (`references/measurement.md`) — one row per
-principle §1–§18, each scored 0–10 from binary sub-checks, every deduction cited. The in-loop review,
+chapter §0–§14 (its items are the sub-checks), each scored 0–10, every deduction cited. The in-loop review,
 `/aims-review`, and any comparison of designs all fill this same form; they differ only in the projection
-shown. The subtractive and concept-fit passes below are how you fill §12 and §2 — passes *within* the form,
+shown. The subtractive and concept-fit passes below are how you fill §7 and §4 — passes *within* the form,
 not a separate measurement.
 
 ## A design gets one mandatory revise round — measure, return findings, revise
@@ -42,7 +42,7 @@ round there only re-runs passing checks.
 
 Fill the form (`references/measurement.md`), then show the **building projection**: only the rows **below
 10**, sorted **most-severe-first**, each its principle + citation + the direction to fix it. **Do not show
-the aggregate score.** A design carrying a correctness or ownership fault (§9/§13) heads the list; cosmetic
+the aggregate score.** A design carrying a correctness or ownership fault (§1/§5) heads the list; cosmetic
 nits trail it.
 
 Not showing the score in the loop is a **practical device, not a principle** (`decisions/0014`): during
@@ -108,7 +108,7 @@ its complement"), not a judgment to reconstruct here from the built design.
 ## The concept-fit pass — is each element the kind of thing it *is*? (run on the design, before code)
 
 Where the subtractive pass asks *should this exist*, this pass asks *is this the right shape for what it
-is*. It catches the failure `design-principles.md` §2 names as the **value-correct cram**: an element that
+is*. It catches the failure `design-principles.md` §4 names as the **value-correct cram**: an element that
 is arithmetically or behaviourally correct while modelled as a degenerate case of a concept it does not
 share — the axis-aligned rectangle stored as an `OrientedBox` with `angle = 0`, correct in every number
 and wrong in kind.
@@ -173,5 +173,5 @@ objective unmet when the Worker:
   objective (cite which one and why — these are understanding checks, use them the same way).
 - models a concept as a kind of thing it is not — a decomposition as a movement, or the reverse — carried
   by an inert member (a zero delta, an always-`None` field) that is correct by value and wrong by concept
-  (the concept-fit pass above; this is `design-principles.md` §2's value-correct cram, and it is a latent
+  (the concept-fit pass above; this is `design-principles.md` §4's value-correct cram, and it is a latent
   architectural fault, so it is worth a direction even when every number is right).

@@ -30,13 +30,13 @@ a typed measurement has nowhere to hide from the architecture question when the 
   drawn on the real change axes; has any structural assumption already been *falsified* by the product;
   is anything built for a future with no present force?
 - **Fill the assessment form** (`references/measurement.md`) — do **not** free-associate a fresh
-  quality-requirements list each time; the form *is* the fixed list (§1–§17, each a row scored from binary
+  quality-requirements list each time; the form *is* the fixed list (§0–§14 chapters, each a row scored from binary
   sub-checks). Answer each sub-check against the design text by **quotation, or "the design does not say"**
   (itself a finding — the design is not buildable there). Phrase each sub-check as an *answerable probe* so
   it cannot be hand-waved — "to add ⟨the next expected variant⟩, which named components change, and would
-  its semantics falsify an assumption an existing owner holds?" (§2/§6 — a seam that a real new variant
-  still forces open is *not* absorption), "how many places own this rule? name them" (§9), "what present
-  force requires this type?" (§12/subtractive). A sub-check left unprobed, or a property asserted with no
+  its semantics falsify an assumption an existing owner holds?" (§5/§7 — a seam that a real new variant
+  still forces open is *not* absorption), "how many places own this rule? name them" (§5), "what present
+  force requires this type?" (§7/subtractive). A sub-check left unprobed, or a property asserted with no
   quotation, is not a measurement.
 - **Evidence:** design reasoning and fit-to-forces — **not** tests (a design objective may have no
   runnable code). Check that the design's *claims* match what exists, but measure the shape.

@@ -379,7 +379,7 @@ user set it, or (b) you asked and the user explicitly told you to choose. Record
 substrate `decisions/` ADR at the repo root (the foundational substrate *only* — not the manifest,
 not the confined libraries), with the concrete packages in the root `dependencies.md` record. These foundational
 dependencies, plus the framework's own domain types, are the only things
-permitted to cross a public seam (`references/design-principles.md` §7). What this heading fixes is the
+permitted to cross a public seam (`references/design-principles.md` §0/§5). What this heading fixes is the
 *substrate* — not the internal layering or class breakdown, which stay the Worker's.
 
 Do not turn the Worker's *internal* design into a user questionnaire — the module breakdown, class design, patterns, and which incidental library glues two functions are the Worker's to choose, not the user's. (The foundational substrate above is the deliberate exception you *do* ask about — language, core framework, foundational deps — because replacing it rewrites everything.) Do not propose internal architecture while the product forces that would justify it are still unclear.
@@ -494,7 +494,7 @@ foundational deps, module skeleton, concrete signatures are all pinned); an abst
 with no stack or skeleton is principles, not a plan, and is **not** met. An `implementation` objective
 is judged on correctness and conformance, a `refactoring` objective on behavior-preservation and
 whether the named smell went.
-Measurement is one instrument — **fill the assessment form** (`references/measurement.md`, §1–§18,
+Measurement is one instrument — **fill the assessment form** (`references/measurement.md`, §0–§14,
 sub-check-derived); the in-loop review, `/aims-review`, and comparing designs all fill the same form.
 Every finding is reproduced or cites `file:line`. In the loop, show the form's **fix-list** (the sub-10
 rows, most-severe-first), **not the aggregate score** — a device to keep the Worker fixing content, not

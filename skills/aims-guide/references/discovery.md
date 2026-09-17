@@ -117,7 +117,7 @@ distinction. The **imperative** — that establishing it is a **gate, not a cour
 mandatory, with no discretion to skip; the two and only two legitimate paths; where the outcome is filed —
 a substrate `decisions/` ADR plus the packages in root `dependencies.md`; and that the foundational set
 plus the framework's domain types are the only types permitted to cross a public seam,
-`design-principles.md` §7) — is owned by **`SKILL.md` step 1** and is not restated here. Run the gate
+`design-principles.md` §0/§5) — is owned by **`SKILL.md` step 1** and is not restated here. Run the gate
 there; use this section to decide what actually counts as the substrate.
 
 ## Load-bearing assumptions — prove the uncertain ones before designing on them

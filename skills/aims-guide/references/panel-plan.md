@@ -43,7 +43,7 @@ bare name is too diffuse a target) with the pointed pulls it subsumes:
    one place. Pointed pull: verifiability by construction — one enforced, unforgeable owner per rule;
    no seam leaks.
 3. **Correct genericity** — the abstraction level calibrated from both ends
-   (`references/design-principles.md` §2): generic enough to be complete for its consumers (the
+   (`references/design-principles.md` §5): generic enough to be complete for its consumers (the
    floor), no more specific than every producer can honestly supply (the ceiling); no decorative
    interfaces, no speculative generality. Pointed pull: absorb the known change axes; no more, no
    less.
