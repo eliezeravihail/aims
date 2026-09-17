@@ -96,3 +96,14 @@ from its pipeline (line stays 12.00, tax 2.00). Both judges credited R's `Market
   lines to P's 2009 / Q's 1251).
 - **This does not overturn the pilot.** The pilot stands as run. This is a separate, later, single-arm
   re-run showing the upgrade's effect on the same cards — decisive on survival, null-to-negative on Q1.
+
+## Update (2026-09-17) — a later full-quality re-grade contradicts the survival win
+
+The survival reading above is **M5 (change-locality) only**. When all quality dimensions were later scored
+under the hardened rubric ([`../judging-rubric/regrade-results.md`](../judging-rubric/regrade-results.md)),
+the upgraded-aims design placed **last of four (grade 2.0)** on an **S4 correctness gap**: it never allocates
+a cart-level discount down to the lines, so SOUTH per-line tax falls on undiscounted amounts and its own case
+C2 is unreachable. aims-old placed third (3.0). So **the upgrade won survival (1 vs 11) but lost overall
+quality** — the same lean, change-local instinct that reopened nothing at stage 3 is why it never built the
+allocation a correct SOUTH invoice needs, and survival scoring cannot see a correctness regression. Read this
+record's survival result as a *change-locality* result only, not a quality verdict.
