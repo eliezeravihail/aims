@@ -20,6 +20,13 @@ Apply every principle in both directions when building AND when reviewing:
 - **Reviewing (Judge):** for each principle, state per repository whether it holds, cite the
   specific code, and rule out the case that only looks like it holds.
 
+**What these principles guard hardest against.** The dominant failure of unguided code generation is
+**under-structuring** — flat procedural code, inline literals and magic values, primitive obsession (§4),
+anemic data-bags (§5), a rule enforced nowhere in particular (§9), no owned seams. Over-engineering — a
+speculative layer, an interface no consumer needs — is a **real but lighter, secondary** fault: a local
+cost, not a spreading rot. Calibrate every judgment accordingly: when unsure, the graver risk is **too
+little structure, not too much.**
+
 ## 1. Tell, Don't Ask / the Law of Demeter
 
 **The question:** Does calling code *tell* an object what to do and let it decide how, or does the
@@ -46,13 +53,13 @@ concrete class, a vendor's result object, or a framework's `Model` is bound to y
 breaks the day you change it. Expose the abstraction; keep the implementation behind it. Every refinement
 below — whether that abstraction is polymorphic, how generic it should be, whether a family holds one
 altitude — sharpens this one rule and none of them replaces it. "It has only one implementation" is never a
-reason to leak the concrete type across the seam; at most it is a reason not to make the abstraction
-*polymorphic* (next paragraph), not a reason to abandon the abstraction.
+reason to leak the concrete type across the seam, and — because an unused seam costs little while a missing
+one forces a reopen — not by itself a reason to withhold the abstraction either.
 
-**The question:** If this type has an abstraction/interface, does that interface express behavior
-that would make sense for more than one genuinely different implementation — or does it just
-rename one concrete thing's methods with an `I`-prefix or an ABC that has exactly one real
-implementation and no reason to expect a second?
+**The question:** If this type has an abstraction/interface, does that interface express a genuine
+*domain* behavior defined by **what a consumer needs** — or does it just rename one concrete thing's
+methods (an `I`-prefix or ABC that mirrors a single implementation and leaks its specifics through the
+interface)? The test is the **shape** of the type, not a count of implementations.
 
 The distinguishing example: `Animal.make_sound()` is a real abstraction — many different animals
 implement it differently, and calling code that only knows "this is an Animal" is meaningfully
@@ -60,18 +67,20 @@ decoupled from which one. `ICat` with a `meow()` method is not an abstraction at
 concrete thing wearing a costume; nothing is gained, and the interface leaks the concrete
 implementation's specific behavior right through its name.
 
-**How to tell them apart:** ask what a second, legitimately different implementation would need to
-look like. If you can't describe one that isn't a trivial variation, the "interface" is decorative.
+**How to tell them apart:** ask whether the type is defined by *what the consumer needs* (a domain
+concept) or by one implementation's own shape. A type that only mirrors a single concrete — its fields
+and methods renamed — is decorative; one that names a consumer-facing concept earns its place, **whether
+or not a second implementation is in sight.**
 
-**The bar is a *describable* second implementation — the anticipated generic continuation — not a second
-one already in the tree.** An interface earns its place the moment the domain gives you a genuinely
-different implementation you can *describe*, even if only one exists today; naming that seam is the point.
-"Only introduce an interface once you have two implementations" is a crude proxy, and it misfires in
-exactly the case the interface is *for*: it makes you write the concrete thing, then re-open it into an
-interface at the moment the foreseen second case lands — the very change the interface existed to absorb
-without a re-open. So a single implementation is not the smell; a single *conceivable* one is. (The inverse
-also holds: two implementations that differ only trivially still don't justify an interface.) The question
-is always "is a genuinely different implementation foreseeable here", never "have I already written two".
+**Do not gate the seam on predicting a second implementation.** "Only introduce an interface once you have
+two implementations" — and even "once you can *describe* a second" — is a **prediction requirement that
+blocks extension**: it makes you write the concrete thing, then reopen it into an interface the day a second
+case lands, the very change the seam existed to absorb without a reopen. So expose the abstraction by
+default and **lean toward naming the seam when unsure** — the cost is asymmetric: an interface provided
+where a second implementation never arrives is a **light, local** cost (a seam nobody used), while a seam
+withheld and later needed forces a **reopen** of the owner. What still does *not* earn its place is a type
+that only **mirrors one concrete** (the `ICat` costume above) — that is a leak, not an abstraction, judged
+by shape, never by count.
 
 **The general rule — domain-free; the example below only illustrates it, it is not the rule.** The
 type that crosses an interface should be the *most generic type that is still complete for the consumer
