@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Measurement — aims</title>
+<meta name="description" content="How aims measures design quality: a standardized assessment form scored 0–10 from binary structural sub-checks, severity weights and caps, two projections, and an honest account of what the instrument can and cannot claim.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav><div class="wrap">
+  <a class="brand" href="index.html"><b>aims</b></a>
+  <a class="link" href="method.html">The method</a>
+  <a class="link" href="practice.html">In practice</a>
+  <a class="link active" href="measurement.html">Measurement</a>
+  <a class="link" href="experiments.html">Experiments</a>
+  <a class="link" href="usage.html">Use it</a>
+  <a class="link gh" href="https://github.com/eliezeravihail/aims">GitHub ↗</a>
+</div></nav>
+
+<header class="pagehero"><div class="wrap">
+  <span class="badge">03 · Measurement</span>
+  <h1>Scoring design quality, reproducibly</h1>
+  <p class="lede">The same principles used to build are used to grade — only the <em>how</em> differs. Grading is a standardized assessment form: each principle scored 0–10, and the score derived from a handful of binary structural sub-checks rather than eyeballed.</p>
+</div></header>
+
+<section><div class="wrap">
+  <div class="kicker">The assessment form</div>
+  <h2>From sub-checks to a score</h2>
+  <div class="grid g3">
+    <div class="card"><span class="n">STEP 0</span><h3>Fixed inventory</h3><p>Pin the rules (R), change-axes (X), and acceptance cases (C) from the spec — never from a design. Identical for every judge and every arm, so a re-run is comparable.</p></div>
+    <div class="card"><span class="n">PER PRINCIPLE</span><h3>Sub-checks → score</h3><p>Decompose the principle into binary structural checks, each cited. <code>score = 10 × passed / applicable</code>. Any score below 10 requires a cited finding; a 10 cites where the principle holds by construction.</p></div>
+    <div class="card"><span class="n">SEVERITY</span><h3>Weight &amp; cap</h3><p>The worst failed check sets the weight (×1 / ×2 / ×4 / ×8) and a ceiling. A §13 correctness or §9 ownership fault can reach S4 and caps the whole design, however clean the rest.</p></div>
+  </div>
+  <p class="muted">The aggregate is a profile, not a bare number: a severity-weighted average, the worst principle, and the count of S3/S4 findings, with graded caps (an S2 caps ≤ 8.5, an S3 ≤ 7.5, an S4 ≤ 5.0). One structural fault cannot read as "sound."</p>
+</div></section>
+
+<section><div class="wrap">
+  <div class="kicker">One instrument, two projections</div>
+  <h2>Judging vs the operational review</h2>
+  <div class="grid g2">
+    <div class="card"><h3>Judging / measurement</h3><p>The full scored form plus the aggregate profile — the layer that legitimately produces a number, for comparing arms and benchmarking. This is what the experiments report.</p></div>
+    <div class="card"><h3>Operational review (in the loop)</h3><p>The same form's <em>score-less</em> projection: only the sub-10 rows, sorted most-severe-first, each with its principle and citation, and no aggregate grade — so the Guide's review stays a direction-feeding findings list, faithful to "never a score."</p></div>
+  </div>
+  <div class="callout"><b>"Never a score" refined, not reversed.</b> No composite verdict decides direction in the loop; the per-principle severity is only the key that orders the findings so the most material violation leads. The scored form lives in the measurement layer, never in the operational loop.</div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="kicker">Why sub-checks</div>
+  <h2>What actually absorbs judge noise</h2>
+  <p class="intro">The instrument's precision is limited by judge calibration noise — the same design has scored 0.5 apart from two judges with no qualitative disagreement. The fix is not a bigger number.</p>
+  <div class="grid g2">
+    <div class="card"><h3>Scale width does not help</h3><p>A judge cannot reliably place a design at 73 vs 76, so widening a holistic band from 0–4 to 0–100 just turns a ±0.5 wobble into ±12 — the same ~10%. The maximum is a red herring.</p></div>
+    <div class="card"><h3>Decomposition does</h3><p>A principle's score is the mean of several independent binary checks, so a single misjudged check moves it by a fraction, not a whole band. Across §1–§18 that is dozens of near-deterministic 0/1 measurements whose errors cancel — and each sharp check ("does rule R have one owner — cite it") is one two judges agree on far more often than a holistic score.</p></div>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="kicker">The honest limit</div>
+  <h2>A reliable instrument, not a benchmark</h2>
+  <p class="intro">The form buys <b>reliability</b> — the same design yields the same profile across judges and runs. It does not buy external <b>validity</b>, because there is no external ground-truth benchmark for design quality to anchor against.</p>
+  <div class="grid g2">
+    <div class="card"><h3>No external benchmark exists</h3><p>Correctness benchmarks (does it pass the tests) are ground-truthable and abundant; design quality is contextual, multi-dimensional, and needs expert judgment that disagrees — so the field has only deterministic proxies or subjective judgment, neither a benchmark. The form's validity rests on the principles being sound.</p></div>
+    <div class="card"><h3>Deterministic metrics measure something else</h3><p>Run on the two ledger arms, coupling/complexity/Halstead were <em>blind</em> to the difference the rubric penalized (a named return type vs a bare tuple) — Halstead identical, and volume metrics even favored the weaker arm. They measure surface complexity, a different construct — which is why aims triangulates the form with change-survival and static metrics as separate signals that need not agree.</p></div>
+  </div>
+  <div class="pagenav">
+    <a href="experiments.html"><div class="lab">Next — the results</div><div class="ttl">Experiments →</div></a>
+    <a href="practice.html"><div class="lab">Back to</div><div class="ttl">← In practice</div></a>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <div><strong style="color:var(--ink);font-family:var(--serif);font-size:1.1rem">aims</strong> — an AI Manager System · v1.0.0 · MIT</div>
+  <a href="https://github.com/eliezeravihail/aims">github.com/eliezeravihail/aims ↗</a>
+</div></footer>
+</body>
+</html>

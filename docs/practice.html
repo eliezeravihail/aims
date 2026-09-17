@@ -15,6 +15,7 @@
   <a class="brand" href="index.html"><b>aims</b></a>
   <a class="link" href="method.html">The method</a>
   <a class="link active" href="practice.html">In practice</a>
+  <a class="link" href="measurement.html">Measurement</a>
   <a class="link" href="experiments.html">Experiments</a>
   <a class="link" href="usage.html">Use it</a>
   <a class="link gh" href="https://github.com/eliezeravihail/aims">GitHub ↗</a>
@@ -33,7 +34,7 @@
     <li><b>Ground the product by asking</b><p>Surface open product decisions, and the day-zero foundational substrate — the language, framework, base deps whose replacement would rewrite everything — which is <em>asked of the user</em>, never defaulted. If a new product rests on an unproven premise, objective one is a spike that proves it before designing on top of it.</p></li>
     <li><b>Choose one design objective</b><p>Feature-scoped, framed around design quality, with exit criteria derived adversarially: the edge and break cases named (empty / one / many, cross-boundary, ordering, the absent-optional) so a minimal implementation cannot satisfy it on paper.</p></li>
     <li><b>Delegate a bounded handoff</b><p>The Worker gets the design outcome, the behavior it must satisfy, the principles as the target (not a checklist), and the testing discipline — never a pre-made design. Two strong engineers given the handoff should be free to reach genuinely different, equally good designs.</p></li>
-    <li><b>Measure, then one mandatory revise round</b><p>Score against the criteria; run the subtractive pass (cut what pays for nothing) and the concept-fit pass (is each element the kind of thing it is). A <code>design</code> objective is never read as met on its first pass: hand the findings back and have the Worker revise once. Iteration is the largest quality lever the experiments found.</p></li>
+    <li><b>Measure, then one mandatory revise round</b><p>Score against the criteria; run the subtractive pass (cut what pays for nothing) and the concept-fit pass (is each element the kind of thing it is). A <code>design</code> objective is never read as met on its first pass: hand the findings back and have the Worker revise once. Iteration is the largest quality lever the experiments found. How the score itself is derived is on the <a href="measurement.html">Measurement</a> page.</p></li>
     <li><b>Choose again from the evidence</b><p>Continue an unmet criterion, implement the next capability, simplify, or deliberately accept a justified cost. There is no fixed phase order.</p></li>
   </ol>
 </div></section>
@@ -48,21 +49,6 @@
   <p class="muted">The loop's position lives in <code>.aims/state.md</code> — run-state only, reloaded at the start of every command — so the goal survives side-conversations and context compaction. Nothing runs in the background; aims is engaged only through its commands.</p>
 </div></section>
 
-<section id="measure"><div class="wrap">
-  <div class="kicker">How quality is measured</div>
-  <h2>The assessment form</h2>
-  <p class="intro">Each principle is scored <b>0–10</b>, and the score is derived from a handful of binary structural sub-checks rather than eyeballed — which is what keeps a re-run reproducible and absorbs judge noise.</p>
-  <div class="grid g3">
-    <div class="card"><span class="n">STEP 0</span><h3>Fixed inventory</h3><p>Pin the rules (R), change-axes (X), and acceptance cases (C) from the spec — never from a design. Identical for every judge and every arm.</p></div>
-    <div class="card"><span class="n">PER PRINCIPLE</span><h3>Sub-checks → score</h3><p>Decompose into binary structural checks, each cited. <code>score = 10 × passed / applicable</code>. Any score below 10 requires a cited finding.</p></div>
-    <div class="card"><span class="n">SEVERITY</span><h3>Weight &amp; cap</h3><p>The worst failed check sets the weight (×1…×8) and a ceiling. A §13 correctness or §9 ownership fault can reach S4 and caps the whole design.</p></div>
-  </div>
-  <div class="grid g2" style="margin-top:16px">
-    <div class="card"><h3>Two projections, one form</h3><p>The full scored form + aggregate profile is the <b>measurement/judging</b> layer, for comparing arms. The <b>operational review</b> in the loop is the same form's score-less projection — the sub-10 findings sorted most-severe-first, each cited, no aggregate grade — so the review stays a direction-feeding findings list, faithful to "never a score".</p></div>
-    <div class="card"><h3>Reliable, not a benchmark</h3><p>The form is a <b>reliable</b> instrument (same design → same profile), not an externally valid benchmark — none exists for design quality, and deterministic metrics measure a different construct (surface volume). aims triangulates it with change-survival and static metrics as separate signals. See <a href="experiments.html">Experiments</a>.</p></div>
-  </div>
-</div></section>
-
 <section id="records"><div class="wrap">
   <div class="kicker">Documenting &amp; preserving</div>
   <h2>Records co-located with the code</h2>
@@ -73,7 +59,7 @@
   </div>
   <div class="callout"><b>What aims deliberately does not have:</b> no memory tree, no consolidation/doctor/lint machinery, no write hook, no planning lock. Relevance is structural — navigate the co-located records — so nothing needs to be kept coherent between turns. The one read-time advisory is the whole of the active machinery.</div>
   <div class="pagenav">
-    <a href="experiments.html"><div class="lab">Next</div><div class="ttl">Experiments →</div></a>
+    <a href="measurement.html"><div class="lab">Next</div><div class="ttl">Measurement →</div></a>
     <a href="method.html"><div class="lab">Back to</div><div class="ttl">← The method</div></a>
   </div>
 </div></section>
