@@ -44,6 +44,27 @@ others widened or reopened. (plain's §6 is borderline S3; scoring it S3 widens 
 Both preserve the load-bearing invariant (memoize the derivation, invalidate on post; no stored balance
 field), so they tie on §9/§13; the capsule-aware arm edges ahead only on a named return type.
 
+### Deterministic static-metric cross-check (external, non-circular)
+
+The two ledger arms are the only arms with runnable code, so they are the one place a metric independent of
+our principles can be computed. `radon` on both:
+
+| metric | capsule-aware (design grade 4.0) | blind (design grade 3.5) |
+|---|---|---|
+| Maintainability Index | 80.01 (A) | **80.50 (A)** |
+| Cyclomatic complexity (avg / max) | 2.07 / 4 | 2.07 / 4 |
+| Halstead (volume / effort / difficulty) | 36 / 48 / 1.33 | **36 / 48 / 1.33** (identical) |
+| SLOC | 36 | **27** |
+
+Every deterministic metric is **blind to the difference the design rubric penalized** (the blind arm's bare
+`tuple[list[Entry], int]` return vs the capsule-aware arm's named `Statement`): Halstead is identical, CC is
+identical, and MI/SLOC actually *favor* the blind arm because a named type costs lines. The metrics are not
+wrong — they measure **surface complexity/volume, a different construct** from concept-fit / abstraction
+quality, and the two are here anti-correlated. This is the concrete evidence that no deterministic benchmark
+can arbitrate design quality (n = 2, tiny near-identical files — a clean illustration, not a proof), and why
+the assessment form ([`assessment-form.md`](assessment-form.md)) is a standardized *judgment* instrument, not
+a metric.
+
 ## Cross-product reading
 
 aims' rank is **product-dependent**: **last** on checkout (its lean, change-local instinct left a

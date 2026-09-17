@@ -32,6 +32,19 @@ applies to `design` objectives (including the opening panel-plan round's merged 
 and `refactoring` objectives keep their single correctness/behavior-preservation measurement — a revise
 round there only re-runs passing checks.
 
+## How the review is presented — worst-first findings, no score
+
+The review's output is a **findings list, not a grade.** Where the measurement is scored against the
+principles — the standardized assessment form
+(`../../experiments/judging-rubric/assessment-form.md`) — the operational review is that form's
+**score-less projection**: take only the principles scored below a clean pass, sort them **most severe
+first** (ascending by score), and present each with its principle and a citation. Emit **no aggregate
+grade**. This is what "never a score" means here — no *composite verdict* decides direction in the loop
+(`decisions/0012`); the per-principle severity is only the key that orders the findings so the most material
+violation leads. A design carrying a correctness or ownership fault (§9/§13) therefore heads the list; the
+cosmetic nits trail it. The full scored form with its aggregate profile belongs to the measurement/judging
+layer (comparing arms), never to the operational loop.
+
 ## Review order
 
 1. Re-read the objective and exit criteria before reading the Worker's suggested follow-up.

@@ -200,3 +200,7 @@ applied on each side.
   (§12/§14), performance (§16), security (§17) — so the principle set is checkably complete, not ad hoc.
 - **This file is the scoring layer only.** If a principle is added, removed, or reworded, it changes in
   `design-principles.md`; this file only says how to score and build to it.
+- **The fillable instrument** is [`assessment-form.md`](assessment-form.md): one row per principle, the
+  0–10 score, severity, and a cited finding for any score below 10. It is *how* this procedure is recorded;
+  its two projections (the scored form for judging; the worst-first, score-less sub-10 findings for the
+  operational review) are in `decisions/0012`.
