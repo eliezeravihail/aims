@@ -76,9 +76,10 @@ the human triggers it; in auto mode the loop does it itself.
   when the objective is reached, or back toward `plan`/`build` when the readings say it isn't; this
   records the loop's position, it does not accept or reject the Worker. Do not silently repair everything
   the reviewer reports — the Guide/human decides what matters to the product now. **For a `design`
-  objective the review's first pass never parks at `ready-to-choose-next`:** at least one measure →
-  return-findings → revise round is mandatory, so a design with any substantial finding parks back toward
-  `build` for the revision, iterating until a review pass is clean (`review.md`, `decisions/0011`).
+  objective the review's first pass never parks at `ready-to-choose-next`:** one measure →
+  return-findings → revise round is mandatory, so a design parks back toward `build` for that one revision
+  and is re-measured after it (`review.md`, `decisions/0011`). The mandate is a single round, not forced
+  iteration — if it still leaves a substantial finding, the loop continues toward the objective as usual.
 
 ## Loop-cursor vocabulary (extended)
 

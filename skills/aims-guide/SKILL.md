@@ -488,13 +488,14 @@ is judged on correctness and conformance, a `refactoring` objective on behavior-
 whether the named smell went.
 Findings must be reproduced or cite `file:line`; never a score.
 
-**A design gets at least one revise round.** A `design` objective is **never read as met on its first
-returned pass**: measure it (exit criteria + the subtractive and concept-fit passes), and if any
-substantial finding stands, hand those findings back as the refined direction and have the Worker revise —
-then re-measure, iterating until a review raises no substantial architecture finding. The revise round is
-the largest quality lever the experiments measured (`references/review.md`, `decisions/0011`), so it is
-mandatory even when the first pass looks good. This is still direct-and-measure, not a gate: the findings
-are the next direction, not a verdict. `implementation`/`refactoring` objectives keep their single
+**A design gets one mandatory revise round.** A `design` objective is **never read as met on its first
+returned pass**: measure it (exit criteria + the subtractive and concept-fit passes), return the findings
+as the refined direction, have the Worker revise, then re-measure. This one round is the largest quality
+lever the experiments measured — the evidence is specifically for a single round (worst checkout arm 2.0 →
+3.5), so the mandate is **one** round, not open-ended iteration (`references/review.md`, `decisions/0011`).
+It runs even when the first pass looks good. This is still direct-and-measure, not a gate: the findings are
+the next direction, not a verdict; if the one round still leaves a substantial finding the ordinary loop
+(step 6) continues as usual. `implementation`/`refactoring` objectives keep their single
 correctness/behavior-preservation measurement.
 
 The same evidence bar applies to the design's **own claims about existing code** — that an abstraction

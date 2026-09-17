@@ -97,11 +97,12 @@ the 2×2, the sweep, and the rescue.
 ## What we changed in aims as a result
 
 The finding — *a revise round is the single biggest quality lever, and aims exercised guidance but not a
-forced revise loop* — is now built into the method: a design objective is never read as met on its first
-pass. **At least one measure → return-findings → revise cycle is mandatory**, and the loop iterates until
-a review raises no substantial architecture finding (convergence). This stays *direct-and-measure*, not a
-gate: the findings are handed back as the next direction and the Worker revises; the Guide simply refuses
-to declare "met" without having exercised the lever at least once. Recorded in
+forced revise round* — is now built into the method: a design objective is never read as met on its first
+pass. **One measure → return-findings → revise round is mandatory** (one round, which is exactly what the
+evidence covers — the worst arm's 2.0 → 3.5 came from a single round; iteration-to-convergence is not
+forced). This stays *direct-and-measure*, not a gate: the findings are handed back as the next direction
+and the Worker revises; the Guide simply refuses to declare "met" without having taken the one round.
+Recorded in
 [`../../decisions/0011-mandatory-review-revise-round.md`](../../decisions/0011-mandatory-review-revise-round.md);
 wired into [`../../skills/aims-guide/references/review.md`](../../skills/aims-guide/references/review.md)
 and `SKILL.md` step 5.
