@@ -66,6 +66,10 @@ graded caps      = any S2 ⇒ ≤ 8.5 · any S3 ⇒ ≤ 7.5 · any S4 ⇒ ≤ 5.
 
 Report the capped grade beside `worst_chapter` and the `(#S3,#S4)` counts — never a bare number.
 
+**Comparability.** Applicability is decided by Step 0 (the spec), so **all arms of one product share the
+same applicable set** and their grades are directly comparable. Grades across *different* products are not
+(different applicable sets) — and are never read as a single verdict on the method.
+
 ## Two projections — same filled form, shown two ways
 
 - **Building / in-loop (default):** the **fix-list** — only the failed items, sorted most-severe-first,

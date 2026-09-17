@@ -43,7 +43,8 @@ other. Over-engineering is a lighter, secondary fault. When unsure, the graver r
   foundational libraries that will never be replaced (e.g. a numpy tensor — a dependency fixed before the
   design). Both may cross seams.
 - **When in doubt, add an interface, don't omit it.** A missing seam later forces exposing an implementation
-  or a breaking internal change; a spare seam is a light, local cost.
+  or a breaking internal change; a spare seam is a light, local cost. (When this collides with YAGNI on the
+  same element, the tie-break in §7 decides it by the change-axes — not by taste.)
 
 ## 1. Correctness & contracts *(precondition)*
 
@@ -57,6 +58,10 @@ other. Over-engineering is a lighter, secondary fault. When unsure, the graver r
   bad value.
 - **Defensive at the edge, trusting inside** — validate untrusted input once at the boundary; the core
   assumes valid inputs.
+- **Trace the full input space (the procedure, not just the cases)** — verify every acceptance case, and
+  for each change-axis (X) crossed with each rule (R) the interaction it *implies*, over the whole input
+  space — not only the listed cases. This is the step that surfaces a required output no stated case
+  exercises; skipping it is how a clean design ships a wrong number.
 
 ## 2. Functions & control flow
 
@@ -129,6 +134,15 @@ other. Over-engineering is a lighter, secondary fault. When unsure, the graver r
   limit.
 - **Subtractive discipline** — every type/layer/abstraction answers to a present force; cut what pays for
   nothing.
+- **Schema/representation evolution has one owner** — a change to a persisted or exposed data shape (a
+  record's fields, a wire/DB schema, an explanation chain) is absorbed at one place, not threaded through
+  its consumers. The reopen usually lands exactly here; §6/§9 cover only half of it.
+- **Structure vs YAGNI — the tie-break.** When "add a seam" (§0/§5) and "cut what pays for nothing"
+  (§7/§12) disagree on the *same* element, resolve by the change-axes (X): a seam no X-item would ever use
+  is over-build — a §7 finding, **at most S1** (a light, local cost); a seam a foreseeable X-item would
+  force open is under-provision — a §6/OCP finding at **S3**. **Falsifier:** name the X-item the seam
+  serves — none → over-built; one → omitting it is the fault. (This asymmetry is the registered decision
+  rule, so the structure-vs-minimalism call is not left to a judge's taste.)
 
 ## 8. Code smells (Fowler's catalogue)
 
