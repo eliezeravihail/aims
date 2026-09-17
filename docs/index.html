@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>aims — an AI Manager System</title>
+<meta name="description" content="aims makes design the goal of coding-agent work, measures the result against a single set of principles, and files the design knowledge beside the code so a later session continues instead of re-deriving.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f7f6f3; --surface:#ffffff; --surface-2:#f1efe9; --ink:#1c1b19; --ink-soft:#514e48;
+    --line:#e2ded5; --accent:#3a6a5f; --accent-soft:#e3ede9; --accent-ink:#264a42;
+    --amber:#b3701a; --red:#a33a2e; --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+    --sans:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    --serif:'Fraunces',Georgia,'Times New Roman',serif;
+    --maxw:940px; --radius:14px;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#14150f; --surface:#1c1e17; --surface-2:#22241c; --ink:#ece9e0; --ink-soft:#a7a397;
+      --line:#33362b; --accent:#7fb8a8; --accent-soft:#20302b; --accent-ink:#bfe0d6;
+      --amber:#d69a4e; --red:#e0796b;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#14150f; --surface:#1c1e17; --surface-2:#22241c; --ink:#ece9e0; --ink-soft:#a7a397;
+    --line:#33362b; --accent:#7fb8a8; --accent-soft:#20302b; --accent-ink:#bfe0d6;
+    --amber:#d69a4e; --red:#e0796b;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 20px}
+  a{color:var(--accent-ink);text-decoration:none}
+  a:hover{text-decoration:underline}
+  h1,h2,h3{font-family:var(--serif);font-weight:600;line-height:1.15;letter-spacing:-.01em}
+  code,kbd{font-family:var(--mono);font-size:.9em}
+  /* nav */
+  nav{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 85%,transparent);
+    backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  nav .wrap{display:flex;align-items:center;gap:22px;height:58px}
+  nav .brand{font-family:var(--serif);font-weight:600;font-size:1.2rem;margin-right:auto;letter-spacing:-.02em}
+  nav .brand b{color:var(--accent)}
+  nav a.link{color:var(--ink-soft);font-size:.92rem;font-weight:500}
+  nav a.link:hover{color:var(--ink);text-decoration:none}
+  nav .gh{border:1px solid var(--line);padding:6px 13px;border-radius:99px;color:var(--ink)}
+  @media(max-width:760px){nav a.link{display:none}}
+  /* hero */
+  header.hero{padding:76px 0 54px;border-bottom:1px solid var(--line)}
+  .badge{display:inline-flex;align-items:center;gap:8px;font-size:.8rem;font-weight:600;letter-spacing:.02em;
+    color:var(--accent-ink);background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);
+    padding:5px 12px;border-radius:99px;text-transform:uppercase}
+  .hero h1{font-size:clamp(2.4rem,6vw,3.7rem);margin:22px 0 0}
+  .hero .lede{font-size:clamp(1.1rem,2.5vw,1.35rem);color:var(--ink-soft);max-width:660px;margin:18px 0 0;line-height:1.5}
+  .moves{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
+  .move{flex:1 1 260px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px}
+  .move b{font-family:var(--serif);font-size:1.15rem;color:var(--accent)}
+  .move p{margin:.4em 0 0;font-size:.96rem;color:var(--ink-soft)}
+  section{padding:60px 0;border-bottom:1px solid var(--line)}
+  section > .wrap > .kicker{font-size:.82rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+  section h2{font-size:clamp(1.7rem,4vw,2.3rem);margin:8px 0 0}
+  section .intro{color:var(--ink-soft);max-width:680px;margin:14px 0 34px;font-size:1.05rem}
+  .grid{display:grid;gap:16px}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  @media(max-width:760px){.g2,.g3{grid-template-columns:1fr}}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px 22px}
+  .card h3{font-size:1.15rem;margin:0 0 8px}
+  .card p{margin:0;color:var(--ink-soft);font-size:.96rem}
+  .card .n{font-family:var(--mono);font-size:.8rem;color:var(--accent);font-weight:500}
+  ul.clean{list-style:none;padding:0;margin:0}
+  ul.clean li{padding:10px 0;border-top:1px solid var(--line);display:flex;gap:14px;align-items:baseline}
+  ul.clean li:first-child{border-top:0}
+  ul.clean .tag{font-family:var(--mono);font-size:.78rem;color:var(--accent);white-space:nowrap;min-width:34px;font-weight:500}
+  ul.clean .body b{font-weight:600}
+  ul.clean .body span{color:var(--ink-soft)}
+  /* principle group */
+  .pgroup{margin-top:22px}
+  .pgroup > h3{font-size:1.05rem;color:var(--ink);margin:0 0 6px;font-family:var(--sans);font-weight:600;
+    letter-spacing:.02em;text-transform:uppercase;font-size:.82rem;color:var(--ink-soft)}
+  .plist{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+  .chip{display:inline-flex;gap:7px;align-items:baseline;background:var(--surface);border:1px solid var(--line);
+    border-radius:9px;padding:8px 12px;font-size:.9rem}
+  .chip .s{font-family:var(--mono);font-size:.76rem;color:var(--accent);font-weight:600}
+  .callout{background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 28%,transparent);
+    border-radius:var(--radius);padding:20px 22px;margin-top:24px}
+  .callout b{color:var(--accent-ink)}
+  /* table */
+  .tablewrap{overflow-x:auto;margin-top:8px;border:1px solid var(--line);border-radius:var(--radius)}
+  table{border-collapse:collapse;width:100%;font-size:.95rem;min-width:460px}
+  th,td{text-align:left;padding:12px 16px;border-bottom:1px solid var(--line)}
+  th{background:var(--surface-2);font-weight:600;font-size:.85rem;letter-spacing:.02em}
+  tr:last-child td{border-bottom:0}
+  td.win{color:var(--accent);font-weight:600}
+  .muted{color:var(--ink-soft);font-size:.9rem;margin-top:12px}
+  pre{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;overflow-x:auto;
+    font-family:var(--mono);font-size:.86rem;line-height:1.6;color:var(--ink)}
+  pre .c{color:var(--accent)}
+  .steps{counter-reset:s;list-style:none;padding:0;margin:26px 0 0}
+  .steps li{counter-increment:s;position:relative;padding:0 0 22px 52px;border-left:2px solid var(--line);margin-left:16px}
+  .steps li::before{content:counter(s);position:absolute;left:-17px;top:-2px;width:32px;height:32px;border-radius:99px;
+    background:var(--accent);color:#fff;display:grid;place-items:center;font-family:var(--mono);font-size:.85rem;font-weight:600}
+  .steps li:last-child{border-left-color:transparent}
+  .steps b{font-family:var(--serif);font-size:1.1rem}
+  .steps p{margin:.3em 0 0;color:var(--ink-soft);font-size:.96rem}
+  footer{padding:48px 0 60px;color:var(--ink-soft);font-size:.92rem}
+  footer .wrap{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
+  footer a{color:var(--ink)}
+  .disclaim{font-size:.86rem;color:var(--ink-soft);margin-top:10px;max-width:680px}
+</style>
+</head>
+<body>
+<nav><div class="wrap">
+  <span class="brand"><b>aims</b></span>
+  <a class="link" href="#how">How it works</a>
+  <a class="link" href="#principles">Principles</a>
+  <a class="link" href="#measure">Measuring</a>
+  <a class="link" href="#experiments">Experiments</a>
+  <a class="link" href="#use">Use it</a>
+  <a class="link gh" href="https://github.com/eliezeravihail/aims">GitHub ↗</a>
+</div></nav>
+
+<header class="hero"><div class="wrap">
+  <span class="badge">● AI Manager System · v1.0.0</span>
+  <h1>Make design the goal,<br>not what survives shipping.</h1>
+  <p class="lede">When an AI agent writes code, it optimizes the goal it is handed. Give it a feature ticket and design quality becomes whatever falls out. <b>aims</b> hands the agent the <em>design outcome</em> as the goal — with the feature as a constraint it must satisfy — measures the result against one set of principles, and files the design knowledge beside the code so the next session continues instead of re-deriving.</p>
+  <div class="moves">
+    <div class="move"><b>Direct</b><p>Hand the Guide's design objective to a capable Worker, with the behavior attached as a constraint. Quality is built at construction time.</p></div>
+    <div class="move"><b>Measure</b><p>Score the returned design against the principles, feed the findings back for one revise round — never a gate, never coercion.</p></div>
+    <div class="move"><b>Remember</b><p>File insights and decisions as records co-located with the code. A later clean session reads them by navigating, not re-deriving.</p></div>
+  </div>
+</div></header>
+
+<section id="how"><div class="wrap">
+  <div class="kicker">The method</div>
+  <h2>Two roles, one loop</h2>
+  <p class="intro">The method has exactly two moves — <b>direct</b> and <b>measure</b> — and no enforcement pillar. A design is made good by the goal you set, and review only measures whether it was reached, feeding the next direction.</p>
+  <div class="grid g2">
+    <div class="card"><h3>The Guide</h3><p>Holds the product vision and chooses, one at a time, the design/quality outcome the codebase most needs next. Never writes implementation code. Its deliverable is the design quality across the product's whole evolution.</p></div>
+    <div class="card"><h3>The Worker</h3><p>A capable engineer that receives that outcome as its objective, designs and builds it, and returns its reasoning. The Guide then measures the design and chooses again.</p></div>
+  </div>
+  <ol class="steps">
+    <li><b>Ground the product by asking</b><p>Surface open product decisions, and the day-zero foundational substrate (language, framework, base deps) — asked of the user, never defaulted. If a new product rests on an unproven premise, the first objective is a spike that proves it.</p></li>
+    <li><b>Choose one design objective</b><p>With sharp exit criteria — the edge and break cases named adversarially, so a minimal implementation cannot satisfy it on paper.</p></li>
+    <li><b>Delegate, framed as a design outcome</b><p>Bounded handoff to the Worker (or run inline), the behavior as a constraint — never a feature ticket.</p></li>
+    <li><b>Measure, then one mandatory revise round</b><p>Score against the criteria; run the subtractive and concept-fit passes; hand the findings back and have the Worker revise once before the design reads as met. Iteration is the largest quality lever the experiments found.</p></li>
+    <li><b>Choose again from the evidence</b><p>The sequence is not planned up front — direction emerges as the build proceeds. The loop's position lives in <code>.aims/state.md</code>, so the goal survives compaction and side-conversations.</p></li>
+  </ol>
+</div></section>
+
+<section id="principles"><div class="wrap">
+  <div class="kicker">What "good" aims at</div>
+  <h2>One source of design principles</h2>
+  <p class="intro">A single document — <a href="https://github.com/eliezeravihail/aims/blob/master/skills/aims-guide/references/design-principles.md">design-principles.md</a> — is used <em>both</em> to build and to grade. The principles are identical for every side; only the <em>how</em> differs. Asking for one thing and measuring another is the failure this avoids.</p>
+
+  <div class="pgroup">
+    <h3>Encapsulation &amp; boundaries</h3>
+    <div class="plist">
+      <span class="chip"><span class="s">§1</span> Tell-Don't-Ask / Demeter</span>
+      <span class="chip"><span class="s">§2</span> Program to an interface + genericity</span>
+      <span class="chip"><span class="s">§3</span> Interface Segregation</span>
+      <span class="chip"><span class="s">§7</span> Which details may leak</span>
+      <span class="chip"><span class="s">§9</span> One unforgeable owner per rule</span>
+    </div>
+    <h3>Modeling</h3>
+    <div class="plist">
+      <span class="chip"><span class="s">§4</span> Primitive obsession</span>
+      <span class="chip"><span class="s">§5</span> Anemic domain model</span>
+      <span class="chip"><span class="s">§8</span> Single Responsibility</span>
+      <span class="chip"><span class="s">§11</span> Naming &amp; failure</span>
+    </div>
+    <h3>Change &amp; cohesion</h3>
+    <div class="plist">
+      <span class="chip"><span class="s">§6</span> Cohesion/coupling (OCP, shotgun)</span>
+      <span class="chip"><span class="s">§10</span> DRY as knowledge, not text</span>
+      <span class="chip"><span class="s">§12</span> Size as a forcing question</span>
+    </div>
+    <h3>Correctness &amp; runtime</h3>
+    <div class="plist">
+      <span class="chip"><span class="s">§13</span> Functional correctness — the precondition</span>
+      <span class="chip"><span class="s">§14</span> State &amp; side-effect discipline</span>
+      <span class="chip"><span class="s">§15</span> Testability</span>
+      <span class="chip"><span class="s">§16</span> Performance — never a proxy</span>
+      <span class="chip"><span class="s">§17</span> Security &amp; trust boundaries</span>
+    </div>
+  </div>
+
+  <div class="callout">
+    <b>Interfaces are positive; under-structuring is the graver risk.</b> The dominant failure of unguided code generation is <em>too little structure</em> — flat procedural code, inline literals, primitive obsession, anemic bags, rules owned nowhere. Over-engineering is a real but lighter, secondary fault. So a class exposes only a generic domain surface (an interface, separate class or not), and when unsure whether to name a seam you lean toward naming it: an unused seam is a light, local cost, a missing one forces a reopen. Judge a type by its <em>shape</em> — is it a domain concept, or a concrete wearing a costume — never by predicting a second implementation.
+  </div>
+</div></section>
+
+<section id="measure"><div class="wrap">
+  <div class="kicker">How quality is measured</div>
+  <h2>A standardized assessment form</h2>
+  <p class="intro">Each principle is scored <b>0–10</b>, and the score is <em>derived from a handful of binary structural sub-checks</em> rather than eyeballed — which is what keeps a re-run reproducible and absorbs judge noise. Severity does the rest.</p>
+  <div class="grid g3">
+    <div class="card"><span class="n">STEP 0</span><h3>Fixed inventory</h3><p>Pin the rules (R), change-axes (X), and acceptance cases (C) from the spec — never from a design. Identical for every judge and every arm.</p></div>
+    <div class="card"><span class="n">PER PRINCIPLE</span><h3>Sub-checks → score</h3><p>Decompose into binary structural checks, each cited. <code>score = 10 × passed / applicable</code>. A score below 10 requires a cited finding.</p></div>
+    <div class="card"><span class="n">SEVERITY</span><h3>Weight &amp; cap</h3><p>The worst failed check sets the weight (×1…×8) and a ceiling. A correctness (§13) or ownership (§9) fault can reach S4 and caps the whole design.</p></div>
+  </div>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card"><h3>Two projections, one form</h3><p>The full scored form + aggregate profile is the <b>measurement/judging</b> layer (comparing arms). The <b>operational review</b> is the same form's score-less projection — the sub-10 findings sorted most-severe-first, each cited, no aggregate grade — so the loop stays a direction-feeding findings list.</p></div>
+    <div class="card"><h3>Honest about what it is</h3><p>The form is a <b>reliable</b> instrument (same design → same profile), <b>not</b> an externally valid benchmark — none exists for design quality. Deterministic metrics (coupling, complexity) measure surface volume, a different construct. So aims triangulates the form with change-survival and static metrics as separate signals that need not agree.</p></div>
+  </div>
+</div></section>
+
+<section id="experiments"><div class="wrap">
+  <div class="kicker">What was tested</div>
+  <h2>Blind, controlled experiments</h2>
+  <p class="intro">Every experiment is a controlled, <b>blind-judged</b> comparison — an aims arm against a rival or a no-method control, graded by separate judges against the same inventory — not a single-arm demonstration (<a href="https://github.com/eliezeravihail/aims/blob/master/experiments/PROTOCOL.md">PROTOCOL.md</a>). Below: the latest single-pass run, graded on the assessment form with neutral prompts.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Product</th><th>aims (single-pass)</th><th>OpenSpec</th><th>plain</th></tr></thead>
+      <tbody>
+        <tr><td>Checkout pricing</td><td>8.5</td><td>8.5</td><td>8.5</td></tr>
+        <tr><td>Marketplace (furniture→cars)</td><td class="win">9.9</td><td>7.5</td><td>7.5</td></tr>
+        <tr><td>Ledger (code)</td><td class="win">10.0 / 8.5</td><td>—</td><td>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="muted">Checkout is a three-way tie at the cap (no correctness or ownership faults in any arm). Marketplace: aims absorbs the new category with zero core edits where the others reopen existing owners. Ledger: a named return type vs a bare tuple — the difference deterministic metrics were blind to.</p>
+  <div class="callout">
+    <b>Read with the confounds — no single grade is a verdict.</b> Every reading is <b>n = 1</b> per product, judged by an LLM (±0.5 calibration noise), and the arms differ in maturity. aims' rank is <b>product-dependent</b>: strongest where change-absorption is the axis. The honest headline is the recurring shape across products and the reproducible instrument — not a win tally.
+  </div>
+</div></section>
+
+<section id="use"><div class="wrap">
+  <div class="kicker">How to use it</div>
+  <h2>Install &amp; run</h2>
+  <p class="intro">aims is a Claude Code plugin. Requirements: Python 3 (standard library only) and bash — nothing else.</p>
+  <div class="grid g2">
+    <div class="card"><h3>1 · Install the plugin</h3>
+      <pre><span class="c">/plugin</span> marketplace add eliezeravihail/aims
+<span class="c">/plugin</span> install aims@aims</pre>
+      <p style="margin-top:12px">Makes the <code>aims-guide</code> skill and the <code>/aims-*</code> commands available in every session.</p>
+    </div>
+    <div class="card"><h3>2 · Set up a project</h3>
+      <pre><span class="c">/install-on</span> .</pre>
+      <p style="margin-top:12px">Idempotent. Installs the two per-project hooks (session-start, and the read-time staleness advisory) plus the anchor tool under <code>.aims/</code>. Never touches your code.</p>
+    </div>
+  </div>
+  <h3 style="font-family:var(--serif);font-size:1.25rem;margin:34px 0 4px">Drive the design</h3>
+  <ul class="clean">
+    <li><span class="tag">auto</span><span class="body"><b><code>/aims-plan-and-build "&lt;task&gt;"</code></b> <span>— runs the whole loop: discovery → design objective → build → review → file the records, pausing only for open product decisions.</span></span></li>
+    <li><span class="tag">step</span><span class="body"><b><code>/aims-plan</code> → <code>/aims-build</code> → <code>/aims-review</code></b> <span>— supervised, phase by phase, with a plan report to read between phases.</span></span></li>
+    <li><span class="tag">any</span><span class="body"><b><code>/aims-review &lt;branch | diff | path&gt;</code></b> <span>— measure any change on its own against the principles.</span></span></li>
+    <li><span class="tag">solo</span><span class="body"><b><code>/aims-sharpen-prompt</code></b> <span>— the framing discipline on its own: turn a vague ask into a real brief before executing. Needs no project setup, not limited to software.</span></span></li>
+  </ul>
+  <div class="callout">
+    <b>Knowledge lives beside the code.</b> A companion <code>&lt;file&gt;.md</code> sits next to each source file (Insights / Decisions / Discussions); cross-cutting records — <code>goals.md</code>, <code>architecture.md</code>, <code>decisions/</code> — live at the repo root. Records are anchored to their source, so a later reader is told to <em>re-verify</em> on drift. You reach knowledge by navigating, never by reading the whole tree.
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <div>
+    <div><strong style="color:var(--ink);font-family:var(--serif);font-size:1.1rem">aims</strong> — an AI Manager System · v1.0.0 · MIT</div>
+    <div class="disclaim">A method for making design the goal of coding-agent work and keeping the design knowledge durable. Evaluation is n = 1 per product and product-dependent — see the experiments for the honest, unhedged readings.</div>
+  </div>
+  <a href="https://github.com/eliezeravihail/aims">github.com/eliezeravihail/aims ↗</a>
+</div></footer>
+</body>
+</html>
