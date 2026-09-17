@@ -62,8 +62,9 @@ the change that makes the score both finer and steadier (see "Why this absorbs n
 | **S3** high (mis-owned invariant, an implementation type leaked at a seam, a shotgun-surgery seam, a latent concept cram) | **5** | ×4 |
 | **S4** severe / correctness (wrong or unproducible result; a stated rule unenforceable or bypassable; a security hole; data corruption) | **2** | ×8 |
 
-**Length is never a merit**, and neither is a long checklist — a principle with three sharp checks all
-passing scores 10 exactly like one with eight.
+A design's length and a checklist's length do not move the score in either direction — a principle met by
+three sharp checks scores exactly like one met by eight; score only whether the principle holds, no more and
+no less (`design-principles.md` §2).
 
 ### Worked checklists (illustrative — regenerate per product)
 
