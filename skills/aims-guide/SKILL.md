@@ -43,6 +43,14 @@ simplify accidental complexity, localize a known extension, and more) — are in
 design is in `references/worker-handoff.md`. **The standard "good design" aims at** is
 `references/design-principles.md`. Read those three before you formulate your first objective.
 
+**The one hierarchy, so nothing duplicates it:** aims rests on a single assumption — *a model optimizes the
+goal it is given, not the instructions it is handed.* From it: if you want correct code, make **correctness
+the goal**; and for that you need **one list of principles that defines correctness** —
+`references/design-principles.md`, the single source. Everything else — the build instructions, the
+measurement (`references/measurement.md`), the fix-list, the code review — is a **tool** that *reads* that
+source. Tools are not fundamental rules and never define correctness on their own; there is exactly one
+source of correctness.
+
 Your objective as Guide is therefore:
 
 > Keep the engineering work aimed at the most valuable *design outcome* for the product's current

@@ -44,32 +44,19 @@ below 10 also names the R/X/C or seam item it violates. **One defect, one princi
 other rows may reference it, never re-deduct. The score reflects how materially the design violates *that*
 principle; cross-principle importance lives in the weight and the caps, never in the row score.
 
-## The 18 metrics — applicability + severity ceiling
+## Weighting a violation — the class comes from the source
 
-| § | principle (short) | applies | ceiling |
-|---|---|---|---|
-| §1 | Tell-Don't-Ask / Law of Demeter | Both | S3 |
-| §2 | Program to an interface + genericity + concept-fit (LSP) | Both | S3 |
-| §3 | Interface Segregation | Both | S2 |
-| §4 | Primitive obsession | Both | S2 |
-| §5 | Anemic domain model | Both | S2 |
-| §6 | Cohesion/coupling — Feature Envy, Shotgun (OCP) | Both | S3 |
-| §7 | Leaky abstractions — boundary vocabulary, errors | Both | S3 |
-| §8 | Single Responsibility / God Object | Both | S3 |
-| §9 | A stated rule has one unforgeable owner | Both | **S4** |
-| §10 | Duplication vs the wrong abstraction (DRY) | Both | S2 |
-| §11 | Naming and failure (least astonishment) | Both | S2 |
-| §12 | Size as a forcing question (YAGNI / subtractive) | Both | S2 |
-| §13 | **Functional correctness** — every case + implied interaction | Both | **S4** |
-| §14 | State & side-effect discipline (immutability) | Code-leaning | S3 (S4 on a race) |
-| §15 | Testability — verifiable by construction | Code-leaning | S3 |
-| §16 | Performance — on its own terms, never a proxy | Both | requirement-dependent; N/A if unstated |
-| §17 | Security & trust boundaries | Both | S4 where a boundary exists; else N/A |
-| §18 | (names OCP/LSP/ADP/DRY/least-astonishment/YAGNI — folded above) | — | not scored |
+Which principles apply, and how hard a failure bites, is **read from `design-principles.md`'s correctness
+classes** — this tool does not redefine them:
+
+- a **precondition** failing (§9, §13; §14 under concurrency; §17 with a trust boundary) is **S4** — the
+  code is wrong, not merely less clean;
+- a **quality** principle failing is **S1–S3** by pervasiveness (cosmetic → local → structural);
+- a **conditional** (§16, §17) or **code-leaning** (§14, §15) principle is **N/A** where it does not apply
+  (e.g. §14/§15 on a pure design document; §16/§17 with no stated requirement or boundary).
 
 The **subtractive pass** and the **concept-fit pass** (`references/review.md`) are how you fill §12 and §2
-respectively — passes *within* this form, not a separate measurement. §9 and §13 are the two that can reach
-S4 and cap a whole design, which is why correctness is built and checked first.
+respectively — passes *within* this form, not a separate measurement.
 
 ## Aggregation
 

@@ -13,6 +13,19 @@ carries. The **principles are identical for every side** — what differs is onl
 (`references/measurement.md` is that single scoring instrument — one row per principle, sub-check-derived,
 never a rival list). Asking for one thing and measuring another is the failure this avoids.
 
+**This document is the single source of correctness.** Everything else in the method is a *tool* derived
+from it: the build instructions, the measurement, the fix-list, and the code review all *read* these
+principles — none defines correctness on its own. (aims rests on one assumption — a model optimizes the goal
+it is given, not the instructions it is handed; so if you want correct code you make *correctness* the goal,
+and these principles are what "correct" means. See `SKILL.md`.)
+
+**Correctness classes** — what a tool reads to weight a violation, defined here, not in the tool:
+- **Preconditions** — §9 and §13 (and §14 under concurrency, §17 where a trust boundary exists): a violation
+  means the code is *wrong*, not merely less clean, and caps the result hardest.
+- **Conditional** — §16, §17: measured only where the product states the requirement; otherwise N/A.
+- **Code-leaning** — §14, §15: N/A on a pure design document unless its text gives a basis.
+- **Quality** — all the others: a violation lowers quality by its pervasiveness, never a precondition.
+
 Apply every principle in both directions when building AND when reviewing:
 - **Building (Worker):** before delegating or returning work, check the current objective's design
   against these questions — and treat §13 (correctness) as a precondition, not an afterthought.
