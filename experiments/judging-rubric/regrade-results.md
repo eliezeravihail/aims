@@ -18,7 +18,11 @@ D = aims-old**. `M19` (performance) and `M20` (security) were N/A by the spec; d
 | 1 | **A = OpenSpec** | **3.94** | 3 (M10) | (0,0) | none |
 | 2 | **B = plain** | **3.89** | 3 (M10/M16) | (0,0) | none |
 | 3 | **D = aims-old** | **3.0** | 2 (M8) | (1,0) | S3 → ≤3.0 |
-| 4 | **C = aims-upgraded** | **2.0** | 0 (M11) | (1,1) | **S4 → ≤2.0** |
+| 3 | **E = aims single-pass, corrected principles** | **3.0** | 2 (§6) | (1,0) | S3 → ≤3.0 |
+| 5 | **C = aims-upgraded (panel)** | **2.0** | 0 (M11/§13) | (1,1) | **S4 → ≤2.0** |
+
+(Designs A–D were graded under the M-numbered v2 rubric; E under the unified §-numbered rubric — same
+severity mechanics and the same fixed inventory, so the grades are comparable. M11≡§13, M7≡§9, etc.)
 
 Both aims versions land at the bottom, for **different** faults:
 
@@ -64,7 +68,25 @@ The v2 mechanism behaved as designed:
 - The **near-tie A/B** was separated only by a cosmetic S1, not inflated into a structural gap — "length is
   not a merit" held (plain is 2009 lines, OpenSpec 1251, and plain did not win on bulk).
 
-## Caveats
+## Single-pass re-run — does building to §13 prevent the S4?
+
+After `design-principles.md` was made the single source (adding §13 functional correctness) and the rubric
+became the build-side discipline too, the aims arm was re-run on the same product with **single-pass
+planning** (one designer, not the panel), building to those principles and running the §13 correctness trace
+**over the full input space** ([`../aims-single-pass-rerun`](../aims-single-pass-rerun/README.md)). Result:
+**grade 3.0, no S4** — the designer discovered, from the SOUTH per-line-tax requirement rather than from a
+stated case, that a multi-line cart carrying a cart-level discount needs the discount **allocated across the
+lines** so per-line tax lands on the discounted amount, and built that allocation (proportional to gross,
+pennies by largest remainder, line finals summing exactly to the cart net). SOUTH tax is a decomposition
+(not a delta), NORTH VAT a single appended adjustment; §9 and §13 both hold.
+
+So **building to the corrected principles moved aims from last (2.0, an S4 correctness gap) to 3.0**, on a
+single pass, with less machinery than the panel — a direct, if n = 1, demonstration that the missing
+principle (§13, treated as a build target with a full-space trace) is what would have prevented the panel's
+bug. aims still does not top the field: it is capped at 3.0 by a *different, milder* S3 — an OCP gap where
+the engine enumerates the concrete cart-promotion kinds ("all Proportional then all Fixed"), so a fourth
+cart-scoped kind would reopen the engine and its order-independence reasoning. Correctness is fixed;
+a structural extension-point ceiling remains.
 
 - **n = 1**, one product, one LLM judge. The checkout product's stress axes (tax as decomposition;
   cart-discount allocation) are ones aims stumbled on; the marketplace product (a separate probe) favored
