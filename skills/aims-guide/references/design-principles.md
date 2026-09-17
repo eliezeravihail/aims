@@ -80,7 +80,7 @@ default and **lean toward naming the seam when unsure** — the cost is asymmetr
 where a second implementation never arrives is a **light, local** cost (a seam nobody used), while a seam
 withheld and later needed forces a **reopen** of the owner. What still does *not* earn its place is a type
 that only **mirrors one concrete** (the `ICat` costume above) — that is a leak, not an abstraction, judged
-by shape, never by count.
+by shape, never by count. (`decisions/0013` records this rebalance and why the prediction gate was dropped.)
 
 **The general rule — domain-free; the example below only illustrates it, it is not the rule.** The
 type that crosses an interface should be the *most generic type that is still complete for the consumer
