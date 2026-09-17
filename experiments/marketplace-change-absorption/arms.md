@@ -149,3 +149,85 @@ Extension:
 Most-falsified assumption: **FulfillmentService**'s belief that completion = confirmed physical receipt
 of a shipped parcel — cars need legal title transfer plus transport logistics, so receipt is neither
 sufficient nor correctly shaped.
+
+---
+
+## plain arm (no method — a capable agent told only "design it well")
+
+The control arm added after the first pass, to separate "the method helps" from "a capable agent does
+this anyway". Run as a real subagent with **no** aims, **no** OpenSpec, no method file — its stage-1 design
+was produced **blind to the car requirement** (cars were introduced only in a second message), exactly as
+the other two arms' stage-1 designs were.
+
+### Stage 1 — antique-furniture marketplace (self-directed)
+
+Framing: each listing is a **unique, single-quantity physical object** (no fungible inventory) — the axis
+the whole design turns on.
+
+Components:
+- **Identity & Accounts** — identities, roles, seller payout eligibility (KYC). Owns "this seller may
+  receive money."
+- **Listing Service** — authoritative per-item record: descriptive/provenance/authenticity fields,
+  structured searchable attributes (era/style/condition/materials/dimensions), media refs, price, and the
+  listing lifecycle (`Draft→Active→Reserved→Sold→Cancelled`). System of record for whether an item is
+  still for sale.
+- **Media Service** — stores/serves photos+docs, returns opaque media IDs + signed URLs.
+- **Search/Discovery** — read-optimized denormalized index rebuilt from Listing events; owns
+  query/faceting/ranking only; never consulted to decide a sale.
+- **Order & Reservation Service** — orchestrates a purchase as a saga
+  (`reserve→hold→ship→HandoverConfirmed→captureAndSplit→payout→Completed`); owns the order state machine;
+  delegates sold-once to Listing.
+- **Payment Service** — authorization, escrow-style hold, fee split, payout; owns money + ledger; wraps
+  the PSP.
+- **Fulfillment Service** — handover method (ship or in-person), tracking, buyer's handover confirmation;
+  owns "did the buyer receive it."
+- **Reviews Service** — post-purchase reviews; owns the eligibility gate.
+
+Seams: `Listing.reserve(listingId,buyerId,ttl)→ReservationToken|Conflict` (atomic conditional
+`Active→Reserved`, single-winner, time-boxed auto-expire); `Payment.hold/captureAndSplit(feePolicy)/
+refund`; `Fulfillment.open(orderId,method)` + event `HandoverConfirmed`; `Reviews.submit` (rejects unless
+Completed); events `ListingChanged→Search`, `ReservationExpired→Order`, `HandoverConfirmed→Order→Payment`.
+
+Invariant owners: sold-once→Listing (atomic transition); no stuck reservations→Listing (TTL);
+no capture before handover→Payment (capture on `HandoverConfirmed`); fee correctness
+(`platformFee+sellerNet==captured`, payout only to KYC-eligible)→Payment; review legitimacy→Reviews;
+search-is-advisory (never authorizes a sale)→Order.
+
+### Stage 2 — add cars (self-report)
+
+Introduce one cross-cutting notion — **category** — that Listing/Search/Fulfillment/completion vary by.
+Two additive components: **NEW Title/Registration Transfer Service** (owns the legal ownership-transfer
+artifact + confirmation; invariant: title transferred before order completes; active only for
+title-bearing categories) and a **NEW small Inspection gate** (optional pre-completion;
+`InspectionPassed/Failed`; failure routes into Order's existing release+refund). The one real conceptual
+fix: stage-1 conflated *physical handover* with *completion that releases money*; capture is rewired to a
+generalized `CompletionConfirmed` = `HandoverConfirmed` (furniture) or
+`InspectionPassed(if requested) + TitleTransferConfirmed` (cars).
+
+| Component / seam | Verdict (self) | Why |
+|---|---|---|
+| Identity & Accounts | survived | Buyers/sellers/payout eligibility identical |
+| Listing Service | **extended** | Car attributes (VIN/year/mileage/registration) added at the attribute seam; small VIN-uniqueness invariant; lifecycle + sold-once untouched |
+| Media Service | survived | Title/registration scans are just more opaque media IDs |
+| Search/Discovery | extended | New facets (make/model, year, mileage) rebuilt from `ListingChanged` |
+| Order & Reservation | **reopened** | Saga inserts inspection gate; finalization/capture trigger moves off `HandoverConfirmed` |
+| Payment Service | survived | hold/captureAndSplit/refund/fee-split unchanged; only its upstream trigger differs (wiring lives in Order) |
+| Fulfillment Service | **reopened** | "handover = completion" falsified; logistics method extended but completion meaning broke |
+| Reviews Service | survived | Still gates on `Completed` |
+| `Listing.reserve` seam | survived | Reserving a car is identical |
+| `Payment.*` seams | survived | Unchanged |
+| `Fulfillment.open`/`HandoverConfirmed` seam | **reopened** | `method` extends to transport, but `HandoverConfirmed` no longer signals completion; new events + capture rewired |
+| `Reviews.submit` seam | survived | Unchanged |
+| Event streams | extended | `ListingChanged` grows facets |
+
+**Reopened + discarded = 3** (self-reported; the arm notes the Fulfillment component + its seam are one
+root falsification counted at two granularities, "deduplicated ≈ 2 root reopens").
+
+Most-falsified assumption (self): the **Fulfillment Service** — it assumed the buyer's value transfer is
+physical receipt of the object and that receipt completes the sale, whereas a car completes on legal
+*title* transfer, which possession neither implies nor requires.
+
+> Note the tell the three-way judge later caught: the plain arm scored its **Listing Service "extended"**
+> while its own stage-2 prose says it must "introduce a cross-cutting **category** that
+> Listing/Search/Fulfillment/completion vary by" — introducing a category axis it did not have, to carry a
+> disjoint attribute shape, is a **reopen**. See [`judge.md`](judge.md).

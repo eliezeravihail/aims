@@ -104,3 +104,84 @@ self-reports, and to correct any self-score it found too generous or too harsh. 
 quotation and a numbered `design-principles.md` criterion, so a reader who rejects the house rubric can
 still check each fact — but this is a suggestive probe, not a robust result. See the **Validity** section
 of [`results.md`](results.md).
+
+---
+
+# Judge #2 — guided (quality / maintainability / ease-of-change), no rubric file
+
+A second independent, blind judge, given the **same two designs** (mapping unchanged: **A = OpenSpec,
+B = aims**), told to focus on **code/design quality, maintainability, and ease of change** but **not** to
+read any external rubric file — general software-engineering judgment only. This tests whether the
+verdict survives dropping aims' house rubric.
+
+**It converged with Judge #1: aims (B) is better, A = 3 reopens, B = 2.** Same override — OrderService's
+completion-condition change on the OpenSpec arm is a reopen the arm self-scored "extended" ("too
+generous"). Verbatim highlights:
+
+> **Verdict: Design B is better on quality / maintainability / ease-of-change.** Counts: A = 3 reopens
+> (self-claimed 2), B = 2 reopens (honest)… **B pre-modeled the two variabilities that the car requirement
+> actually stresses, so they landed as extensions.** (1) "What act completes a sale" was abstracted into
+> `completion_signal` + `CompletionToken`, so buyer-optional inspection "rides the completion_signal path;
+> no new lifecycle states." (2) "What shape is fulfillment" was abstracted into an abstract `Fulfillment`
+> with `TrackedShipment <: Fulfillment`… so pickup/transport is just `Transport <: Fulfillment` at an
+> existing seam. Design A hardwired both… and therefore had to *reopen* FulfillmentService… and rewrite
+> OrderService's completion predicate. On the two heaviest parts of the car requirement, B extends where A
+> reopens.
+
+One point this judge scored **for OpenSpec (A)**, honestly:
+
+> **Where A wins: title transfer.** A's `TitleTransferService` cleanly isolates legal transfer as its own
+> authority, explicitly "distinct from money and physical handover; not provenance" — a sharp refusal to
+> conflate three concepts… B instead *reopens Sale's handover step* to absorb legal-document movement,
+> folding an unrelated legal concern into the Sale aggregate — weaker single-ownership on that axis.
+
+Net: B wins, "with A conceding only the title-transfer modelling."
+
+---
+
+# Judge #3 — three-way, blind (aims vs OpenSpec vs plain)
+
+After the **plain arm** (a capable agent with no method — see [`arms.md`](arms.md)) was added, a fresh
+independent judge scored **all three** designs, anonymized and **shuffled** so the labels do not group by
+method. Sealed mapping (kept from the judge): **X = OpenSpec, Y = plain, Z = aims.** It was told to focus
+on change-locality / maintainability / quality, to re-derive its own counts, and specifically to test
+whether any "extended" on the attribute model was really a reopen.
+
+## Ranking: Z > X > Y  →  **aims > OpenSpec > plain.** No genuine ties.
+
+Re-derived counts (self-scores it overrode in **bold**):
+
+| Design (= arm) | self-count | judge #3 count | override |
+|---|---|---|---|
+| Z = **aims** | 2 | **2** | none — "honest, and its two reopens are the two genuinely unforeseeable ones" |
+| X = **OpenSpec** | 2 | **2** (borderline 3) | OrderService flagged a borderline reopen; self-count "roughly honest" |
+| Y = **plain** | 3 (self-dedup ≈2) | **3** | Listing "extended" → **reopened**; the dedup-to-2 "masks the attribute reopen"; "least honest self-report" |
+
+Verbatim on the two decisive points:
+
+> **1. Z.** Same reopen count as X, but Z's reopens are *cushioned* and its extends are *real*. The
+> decisive contrast is logistics and inspection: where X and Y both **reopen fulfillment**, Z absorbs it
+> as "Transport <: Fulfillment beside TrackedShipment at existing Fulfillment plugin seam; Fulfillment
+> stays abstract." Inspection lands in "Sale's existing complete() guard (rides completion_signal; no new
+> lifecycle states)."
+
+> **3. Y** [plain]. Genuinely the most reopens (**3**: Order, Fulfillment, attribute model) and the
+> weakest honesty: it reports the disjoint-attribute change as "extended (car attributes added at attribute
+> seam)" while simultaneously conceding it must introduce a brand-new cross-cutting category axis — a
+> self-contradiction… the fix is explicit **saga surgery**… Keeping Payment survived is its one genuine
+> locality win, which is why it isn't disastrous — but it is clearly third on both change-absorption and
+> honesty.
+
+**Why the plain arm matters.** It is the control that separates *"the method helps"* from *"a capable
+agent does this anyway."* The plain agent, unguided, welded completion to physical handover (no reified
+completion to cushion the title change), built no fulfillment polymorphism (so logistics forced a reopen),
+and under-counted its own attribute-model reopen. aims' method produced a design that both **absorbed the
+change with fewer reopens** and **scored itself more honestly** than the unguided agent — on this one
+product. That is a data point *for* aims' central claim, and (unlike the frozen pilot's Q1 split) it is the
+method, not the model alone, doing the work here.
+
+**Cross-judge convergence.** Three independent blind judges — one on aims' own `design-principles.md`, one
+on general quality with no rubric, one three-way with shuffled labels — all rank **aims first**, all put
+its honest reopen count at **2**, and all re-classify the rival's completion/attribute "extend" as a
+**reopen**. Convergence across a rubric change and a label shuffle is the strongest thing an n = 1 probe
+can offer; it is still n = 1. See **Validity** in [`results.md`](results.md).
