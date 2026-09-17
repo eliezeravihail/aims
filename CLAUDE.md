@@ -43,6 +43,7 @@ Markdown + bash + a little stdlib Python; no toolchain. Before declaring work co
 bash tests/copies-identical.sh   # distribution surfaces stay byte-identical
 bash tests/install-wiring.sh     # what a TARGET project ends up running after /install-on
 bash tests/anchor.sh             # anchor stamping + staleness detection behavior
+bash tests/coherence.sh          # shipped surfaces cohere: no dangling ref, no dup ADR, every command listed, every Kind has a lens
 python3 -m py_compile knowledge/anchor.py knowledge/staleness_hook.py
 ```
 
