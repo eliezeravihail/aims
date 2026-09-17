@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Measurement — aims</title>
-<meta name="description" content="How aims measures design quality: a standardized assessment form scored 0–10 from binary structural sub-checks, severity weights and caps, two projections, and an honest account of what the instrument can and cannot claim.">
+<meta name="description" content="How aims scores design quality: a 0–10 assessment form derived from binary sub-checks, severity weights and caps, the 18 metrics, and a worked filled example.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -23,48 +23,98 @@
 
 <header class="pagehero"><div class="wrap">
   <span class="badge">03 · Measurement</span>
-  <h1>Scoring design quality, reproducibly</h1>
-  <p class="lede">The same principles used to build are used to grade — only the <em>how</em> differs. Grading is a standardized assessment form: each principle scored 0–10, and the score derived from a handful of binary structural sub-checks rather than eyeballed.</p>
+  <h1>Scoring design quality</h1>
+  <p class="lede">Each of 18 principles scored <b>0–10</b> from binary structural sub-checks: <code>score = 10 × passed / applicable</code>. Severity of the worst failed check sets the weight and a ceiling. Every score below 10 carries a cited finding.</p>
 </div></header>
 
 <section><div class="wrap">
-  <div class="kicker">The assessment form</div>
-  <h2>From sub-checks to a score</h2>
-  <div class="grid g3">
-    <div class="card"><span class="n">STEP 0</span><h3>Fixed inventory</h3><p>Pin the rules (R), change-axes (X), and acceptance cases (C) from the spec — never from a design. Identical for every judge and every arm, so a re-run is comparable.</p></div>
-    <div class="card"><span class="n">PER PRINCIPLE</span><h3>Sub-checks → score</h3><p>Decompose the principle into binary structural checks, each cited. <code>score = 10 × passed / applicable</code>. Any score below 10 requires a cited finding; a 10 cites where the principle holds by construction.</p></div>
-    <div class="card"><span class="n">SEVERITY</span><h3>Weight &amp; cap</h3><p>The worst failed check sets the weight (×1 / ×2 / ×4 / ×8) and a ceiling. A §13 correctness or §9 ownership fault can reach S4 and caps the whole design, however clean the rest.</p></div>
+  <div class="kicker">The scale</div>
+  <h2>Severity → score ceiling → weight</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Worst failed check</th><th>Score ceiling</th><th>Weight</th><th>Example</th></tr></thead>
+      <tbody>
+        <tr><td>none — holds by construction</td><td>10</td><td>×1</td><td>—</td></tr>
+        <tr><td><b>S1</b> cosmetic</td><td>8</td><td>×1</td><td>a naming nit</td></tr>
+        <tr><td><b>S2</b> moderate</td><td>7</td><td>×2</td><td>primitive obsession, a data clump, a dead abstraction</td></tr>
+        <tr><td><b>S3</b> high</td><td>5</td><td>×4</td><td>mis-owned invariant, a leaked type, a shotgun seam</td></tr>
+        <tr><td><b>S4</b> severe / correctness</td><td>2</td><td>×8</td><td>wrong result, an unenforceable rule, a security hole</td></tr>
+      </tbody>
+    </table>
   </div>
-  <p class="muted">The aggregate is a profile, not a bare number: a severity-weighted average, the worst principle, and the count of S3/S4 findings, with graded caps (an S2 caps ≤ 8.5, an S3 ≤ 7.5, an S4 ≤ 5.0). One structural fault cannot read as "sound."</p>
+  <p class="muted"><b>Aggregate = a profile, not a number:</b> severity-weighted average · worst principle · (#S3, #S4). <b>Graded caps:</b> any S2 ⇒ ≤ 8.5 · any S3 ⇒ ≤ 7.5 · any S4 ⇒ ≤ 5.0. <b>Step 0:</b> the rules (R) / change-axes (X) / acceptance cases (C) are pinned from the spec, never a design — identical for every arm.</p>
 </div></section>
 
 <section><div class="wrap">
-  <div class="kicker">One instrument, two projections</div>
-  <h2>Judging vs the operational review</h2>
-  <div class="grid g2">
-    <div class="card"><h3>Judging / measurement</h3><p>The full scored form plus the aggregate profile — the layer that legitimately produces a number, for comparing arms and benchmarking. This is what the experiments report.</p></div>
-    <div class="card"><h3>Operational review (in the loop)</h3><p>The same form's <em>score-less</em> projection: only the sub-10 rows, sorted most-severe-first, each with its principle and citation, and no aggregate grade — so the Guide's review stays a direction-feeding findings list, faithful to "never a score."</p></div>
+  <div class="kicker">The instrument</div>
+  <h2>The 18 metrics</h2>
+  <p class="muted" style="margin:0 0 8px">One row per principle from <a href="https://github.com/eliezeravihail/aims/blob/master/skills/aims-guide/references/design-principles.md">design-principles.md</a>; "cap" is the worst tier a failed check may carry.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>§</th><th>Principle</th><th>Applies</th><th>Cap</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Tell-Don't-Ask / Law of Demeter</td><td>Both</td><td>S3</td></tr>
+        <tr><td>2</td><td>Program to an interface + genericity + concept-fit (LSP)</td><td>Both</td><td>S3</td></tr>
+        <tr><td>3</td><td>Interface Segregation</td><td>Both</td><td>S2</td></tr>
+        <tr><td>4</td><td>Primitive obsession</td><td>Both</td><td>S2</td></tr>
+        <tr><td>5</td><td>Anemic domain model</td><td>Both</td><td>S2</td></tr>
+        <tr><td>6</td><td>Cohesion/coupling — Feature Envy, Shotgun (OCP)</td><td>Both</td><td>S3</td></tr>
+        <tr><td>7</td><td>Leaky abstractions — boundary vocab, errors</td><td>Both</td><td>S3</td></tr>
+        <tr><td>8</td><td>Single Responsibility / God Object</td><td>Both</td><td>S3</td></tr>
+        <tr><td>9</td><td>A stated rule has one unforgeable owner</td><td>Both</td><td><b>S4</b></td></tr>
+        <tr><td>10</td><td>Duplication vs the wrong abstraction (DRY)</td><td>Both</td><td>S2</td></tr>
+        <tr><td>11</td><td>Naming and failure (least astonishment)</td><td>Both</td><td>S2</td></tr>
+        <tr><td>12</td><td>Size as a forcing question (YAGNI)</td><td>Both</td><td>S2</td></tr>
+        <tr><td>13</td><td><b>Functional correctness</b> — every case + implied interaction</td><td>Both</td><td><b>S4</b></td></tr>
+        <tr><td>14</td><td>State &amp; side-effect discipline (immutability)</td><td>Code</td><td>S3 / S4 on a race</td></tr>
+        <tr><td>15</td><td>Testability — verifiable by construction</td><td>Code</td><td>S3</td></tr>
+        <tr><td>16</td><td>Performance — on its own terms, never a proxy</td><td>Both</td><td>N/A if unstated</td></tr>
+        <tr><td>17</td><td>Security &amp; trust boundaries</td><td>Both</td><td>S4 / N/A</td></tr>
+        <tr><td>18</td><td>Names OCP · LSP · ADP · DRY · YAGNI (folded above)</td><td>—</td><td>not scored</td></tr>
+      </tbody>
+    </table>
   </div>
-  <div class="callout"><b>"Never a score" refined, not reversed.</b> No composite verdict decides direction in the loop; the per-principle severity is only the key that orders the findings so the most material violation leads. The scored form lives in the measurement layer, never in the operational loop.</div>
+  <p class="muted">§9 and §13 are the two that can reach S4 and cap a whole design — the reason correctness is built and checked first.</p>
 </div></section>
 
 <section><div class="wrap">
-  <div class="kicker">Why sub-checks</div>
-  <h2>What actually absorbs judge noise</h2>
-  <p class="intro">The instrument's precision is limited by judge calibration noise — the same design has scored 0.5 apart from two judges with no qualitative disagreement. The fix is not a bigger number.</p>
-  <div class="grid g2">
-    <div class="card"><h3>Scale width does not help</h3><p>A judge cannot reliably place a design at 73 vs 76, so widening a holistic band from 0–4 to 0–100 just turns a ±0.5 wobble into ±12 — the same ~10%. The maximum is a red herring.</p></div>
-    <div class="card"><h3>Decomposition does</h3><p>A principle's score is the mean of several independent binary checks, so a single misjudged check moves it by a fraction, not a whole band. Across §1–§18 that is dozens of near-deterministic 0/1 measurements whose errors cancel — and each sharp check ("does rule R have one owner — cite it") is one two judges agree on far more often than a holistic score.</p></div>
+  <div class="kicker">A filled form</div>
+  <h2>Worked example — ledger, blind arm</h2>
+  <p class="muted" style="margin:0 0 8px">Rows not shown are 10. Full form + rules: <a href="https://github.com/eliezeravihail/aims/blob/master/experiments/judging-rubric/assessment-form.md">assessment-form.md</a>.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>§</th><th>Principle</th><th>Score</th><th>Sev</th><th>Finding + citation</th></tr></thead>
+      <tbody>
+        <tr><td>4</td><td>Primitive obsession</td><td class="win">7</td><td>S2</td><td><code>statement()</code> returns a bare <code>tuple[list[Entry], int]</code>; the closing balance is an anonymous <code>int</code>, not a named type (led-2.py:41–43).</td></tr>
+        <tr><td>7</td><td>Leaky abstractions</td><td>10</td><td>—</td><td>boundary types are domain types; one <code>ValueError</code> on the zero-delta rule (references the §4 clump, not re-deducted).</td></tr>
+        <tr><td colspan="5" style="color:var(--ink-soft)">§1–§3, §5–§6, §8–§15 all 10 (cited in the form).</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card"><h3>Blind arm → 8.5</h3><p>weighted 9.63 · worst 7 · (0,0) · capped by the S2. Operational review: one finding — §4 7/10 [S2].</p></div>
+    <div class="card"><h3>Capsule-aware arm → 10.0</h3><p>Same code, but returns a named <code>Statement{account, entries, closing_balance}</code> — §4 = 10, clean. The one difference the grade turns on.</p></div>
   </div>
 </div></section>
 
 <section><div class="wrap">
-  <div class="kicker">The honest limit</div>
-  <h2>A reliable instrument, not a benchmark</h2>
-  <p class="intro">The form buys <b>reliability</b> — the same design yields the same profile across judges and runs. It does not buy external <b>validity</b>, because there is no external ground-truth benchmark for design quality to anchor against.</p>
+  <div class="kicker">Two projections · one honest limit</div>
+  <h2>What the form is</h2>
   <div class="grid g2">
-    <div class="card"><h3>No external benchmark exists</h3><p>Correctness benchmarks (does it pass the tests) are ground-truthable and abundant; design quality is contextual, multi-dimensional, and needs expert judgment that disagrees — so the field has only deterministic proxies or subjective judgment, neither a benchmark. The form's validity rests on the principles being sound.</p></div>
-    <div class="card"><h3>Deterministic metrics measure something else</h3><p>Run on the two ledger arms, coupling/complexity/Halstead were <em>blind</em> to the difference the rubric penalized (a named return type vs a bare tuple) — Halstead identical, and volume metrics even favored the weaker arm. They measure surface complexity, a different construct — which is why aims triangulates the form with change-survival and static metrics as separate signals that need not agree.</p></div>
+    <div class="card"><h3>Judging vs the loop</h3><p><b>Judging:</b> the full scored form + profile, for comparing arms. <b>Operational review:</b> the same form's <em>score-less</em> projection — sub-10 rows, most-severe-first, cited, no aggregate — so the loop stays a findings list ("never a score").</p></div>
+    <div class="card"><h3>Reliable, not a benchmark</h3><p>Sub-checks buy <b>reproducibility</b> (a misjudged check moves a fraction, not a band). They do not buy external <b>validity</b> — no ground-truth benchmark for design quality exists, and deterministic metrics (below) measure a different construct.</p></div>
+  </div>
+  <p class="muted" style="margin-top:16px"><b>Deterministic cross-check</b> (radon, the two ledger arms) — blind to the very difference the rubric scored:</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Metric</th><th>capsule-aware (rubric 10.0)</th><th>blind (rubric 8.5)</th></tr></thead>
+      <tbody>
+        <tr><td>Maintainability Index</td><td>80.01</td><td>80.50</td></tr>
+        <tr><td>Cyclomatic (avg / max)</td><td>2.07 / 4</td><td>2.07 / 4</td></tr>
+        <tr><td>Halstead (vol / effort)</td><td>36 / 48</td><td>36 / 48 (identical)</td></tr>
+        <tr><td>SLOC</td><td>36</td><td>27</td></tr>
+      </tbody>
+    </table>
   </div>
   <div class="pagenav">
     <a href="experiments.html"><div class="lab">Next — the results</div><div class="ttl">Experiments →</div></a>
@@ -73,7 +123,7 @@
 </div></section>
 
 <footer><div class="wrap">
-  <div><strong style="color:var(--ink);font-family:var(--serif);font-size:1.1rem">aims</strong> — an AI Manager System · v1.0.0 · MIT</div>
+  <div><strong style="color:var(--ink);font-family:var(--serif);font-size:1.1rem">aims</strong> — v1.0.0 · MIT</div>
   <a href="https://github.com/eliezeravihail/aims">github.com/eliezeravihail/aims ↗</a>
 </div></footer>
 </body>

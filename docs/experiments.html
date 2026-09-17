@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Experiments — aims</title>
-<meta name="description" content="The blind-judged protocol, the pilots, the latest single-pass results, and the confounds that keep any single grade from being a verdict.">
+<meta name="description" content="Blind-judged results with scores, the test documents (spec inventories, arm designs, records), and the confounds that keep any single grade from being a verdict.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -23,48 +23,83 @@
 
 <header class="pagehero"><div class="wrap">
   <span class="badge">04 · Experiments</span>
-  <h1>Tested, and honest about it</h1>
-  <p class="lede">Every experiment is a controlled, blind-judged comparison — an aims arm against a rival or a no-method control, graded by separate judges against the same fixed inventory. A single-arm demonstration is not an experiment.</p>
+  <h1>Results &amp; test documents</h1>
+  <p class="lede">Latest single-pass run: the aims arm built under the current method (one revise round), every arm graded <b>blind</b> on the 0–10 form, raw spec to the builder, no hint to the judge.</p>
 </div></header>
 
 <section><div class="wrap">
-  <div class="kicker">The protocol</div>
-  <h2>What makes a run count</h2>
-  <div class="grid g2">
-    <div class="card"><h3>Two arms, a hidden oracle</h3><p>An aims arm and a control arm build the same product across staged reveals; only the current stage card is visible, and a passive oracle answers product questions without volunteering anything. Asking the right question is itself under test.</p></div>
-    <div class="card"><h3>Blind, separate judges</h3><p>Judges are not the Guide that built the arm and do not know which codebase is which. Design, product, and cost are three reports, never merged into one score; every load-bearing claim carries a reproduction or a <code>file:line</code>.</p></div>
-  </div>
-  <p class="muted">Full protocol: <a href="https://github.com/eliezeravihail/aims/blob/master/experiments/PROTOCOL.md">experiments/PROTOCOL.md</a>. Pilots include navigation, continued-development, a container-run instance-segmentation annotator, aims-vs-OpenSpec, marketplace change-absorption, and the ledger continuation.</p>
-</div></section>
-
-<section><div class="wrap">
-  <div class="kicker">Latest reading</div>
-  <h2>Single-pass, neutral prompts, on the assessment form</h2>
-  <p class="intro">The aims arm rebuilt single-pass under the current method (with the one revise round) and every arm graded blind on the 0–10 form, with the raw spec to the builder and no "look here" hint to the judge.</p>
+  <div class="kicker">Scores</div>
+  <h2>Blind grades, by product and arm</h2>
   <div class="tablewrap">
     <table>
-      <thead><tr><th>Product</th><th>aims (single-pass)</th><th>OpenSpec</th><th>plain</th></tr></thead>
+      <thead><tr><th>Product</th><th>Arm</th><th>Grade</th><th>Worst</th><th>#S3,#S4</th><th>Sole finding</th></tr></thead>
       <tbody>
-        <tr><td>Checkout pricing</td><td>8.5</td><td>8.5</td><td>8.5</td></tr>
-        <tr><td>Marketplace (furniture→cars)</td><td class="win">9.9</td><td>7.5</td><td>7.5</td></tr>
-        <tr><td>Ledger (code)</td><td class="win">10.0 / 8.5</td><td>—</td><td>—</td></tr>
+        <tr><td rowspan="3">Checkout pricing</td><td><b>aims</b></td><td>8.5</td><td>7</td><td>0,0</td><td>§13 S2 — non-stackable winner on pre-clamp face</td></tr>
+        <tr><td>OpenSpec</td><td>8.5</td><td>7</td><td>0,0</td><td>§4 S2 + §13 S1 (probe untraced)</td></tr>
+        <tr><td>plain</td><td>8.5</td><td>7</td><td>0,0</td><td>§4 S2 — bare <code>Decimal</code></td></tr>
+        <tr><td rowspan="3">Marketplace</td><td class="win"><b>aims</b></td><td class="win">9.9</td><td>8</td><td>0,0</td><td>§2 S1 — a read-model facet cram</td></tr>
+        <tr><td>OpenSpec</td><td>7.5</td><td>5</td><td>1,0</td><td>§6 S3 — reopens two owners</td></tr>
+        <tr><td>plain</td><td>7.5</td><td>5</td><td>1,0</td><td>§6 S3 — reopens the orchestrator</td></tr>
+        <tr><td rowspan="2">Ledger (code)</td><td class="win"><b>capsule-aware</b></td><td class="win">10.0</td><td>10</td><td>0,0</td><td>—</td></tr>
+        <tr><td>blind</td><td>8.5</td><td>7</td><td>0,0</td><td>§4 S2 — bare tuple return</td></tr>
       </tbody>
     </table>
   </div>
-  <p class="muted">Checkout is a three-way tie at the cap — no correctness or ownership fault in any arm. Marketplace: aims absorbs the new category with zero core edits where the others reopen existing owners (§6). Ledger: a named return type vs a bare tuple — the difference deterministic metrics were blind to.</p>
+  <p class="muted">Checkout: three-way tie at the cap, no correctness/ownership fault in any arm. Marketplace: aims absorbs the new category with zero core edits; the others reopen (§6). aims' rank is <b>product-dependent</b>.</p>
 </div></section>
 
 <section><div class="wrap">
-  <div class="kicker">Read with care</div>
-  <h2>Why no single grade is a verdict</h2>
-  <div class="grid g3">
-    <div class="card"><h3>Judge noise (±0.5)</h3><p>One LLM judge per product; the same design has scored 0.5 apart with no qualitative disagreement. A 0.5 gap is inside the instrument's precision — the three checkout 8.5s are a tie.</p></div>
-    <div class="card"><h3>Maturity asymmetry</h3><p>Arms differ in artifact maturity, and it runs opposite ways per product. The marketplace margin is inflated by the aims arm being a fuller document — read it as "won the extension axis," not a quality gulf.</p></div>
-    <div class="card"><h3>n = 1, product-dependent</h3><p>One product, one judge, one build each. aims' rank depends on the product — strongest where change-absorption is the axis. The honest signal is the recurring shape, not a win tally.</p></div>
+  <div class="kicker">The test documents</div>
+  <h2>Everything a run used, on GitHub</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Document</th><th>What it is</th></tr></thead>
+      <tbody>
+        <tr><td><a href="https://github.com/eliezeravihail/aims/blob/master/experiments/PROTOCOL.md">PROTOCOL.md</a></td><td>How a pilot is run — two arms, hidden oracle, staged reveals, blind judges</td></tr>
+        <tr><td><a href="https://github.com/eliezeravihail/aims/blob/master/skills/aims-guide/references/design-principles.md">design-principles.md</a></td><td>The 18 principles — the single source for building and grading</td></tr>
+        <tr><td><a href="https://github.com/eliezeravihail/aims/blob/master/experiments/judging-rubric/quality-metrics.md">quality-metrics.md</a></td><td>The scoring layer — sub-checks, severity, aggregation</td></tr>
+        <tr><td><a href="https://github.com/eliezeravihail/aims/blob/master/experiments/judging-rubric/assessment-form.md">assessment-form.md</a></td><td>The fillable form + a worked filled example</td></tr>
+        <tr><td><a href="https://github.com/eliezeravihail/aims/blob/master/experiments/judging-rubric/checkout-spec-inventory.md">checkout-spec-inventory.md</a></td><td>Step-0 inventory — checkout R / X / C</td></tr>
+        <tr><td><a href="https://github.com/eliezeravihail/aims/blob/master/experiments/judging-rubric/marketplace-spec-inventory.md">marketplace-spec-inventory.md</a></td><td>Step-0 inventory — marketplace R / X / C</td></tr>
+        <tr><td><a href="https://github.com/eliezeravihail/aims/blob/master/experiments/single-pass-assessment-rerun/README.md">single-pass-assessment-rerun</a></td><td>This run's full record — both runs, scores, confounds</td></tr>
+        <tr><td><a href="https://github.com/eliezeravihail/aims/blob/master/experiments/judging-rubric/cross-experiment-regrade.md">cross-experiment-regrade.md</a></td><td>Earlier grades + the deterministic static-metric cross-check</td></tr>
+      </tbody>
+    </table>
   </div>
-  <div class="callout">
-    <b>A retraction, on the record.</b> An earlier run showed aims last on checkout. When the operator's prompt-anchoring was removed and the principles rebalanced, that result did not reproduce — aims tied checkout and led marketplace. The lesson is filed too: prompt-anchoring by the operator biases both build and judge, so runs use neutral prompts. The full record is in <a href="https://github.com/eliezeravihail/aims/blob/master/experiments/single-pass-assessment-rerun/README.md">experiments/single-pass-assessment-rerun</a>.
+</div></section>
+
+<section><div class="wrap">
+  <div class="kicker">Example test document</div>
+  <h2>Checkout — the fixed inventory</h2>
+  <p class="muted" style="margin:0 0 8px">Pinned from the spec, identical for every arm. Full file: <a href="https://github.com/eliezeravihail/aims/blob/master/experiments/judging-rubric/checkout-spec-inventory.md">checkout-spec-inventory.md</a>.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Rules (R)</th><th></th></tr></thead>
+      <tbody>
+        <tr><td>R1</td><td>Money — one currency, 2 decimals</td></tr>
+        <tr><td>R2</td><td>Cart total never negative (a line may hit 0 via BOGO)</td></tr>
+        <tr><td>R3</td><td>Unknown/inapplicable code reported, never halts pricing</td></tr>
+        <tr><td>R4</td><td>Order-independent — same cart, same result</td></tr>
+        <tr><td>R5</td><td>Every line &amp; the cart carry an ordered explanation with exact deltas</td></tr>
+        <tr><td>R6</td><td>Deltas sum exactly to (list − final), no residue, no invented rounding line</td></tr>
+        <tr><td>R7</td><td>The amount <em>is</em> the explanation — they can't disagree</td></tr>
+        <tr><td>R8</td><td>Non-stackable: larger wins, loser shown superseded, tie → entered first</td></tr>
+        <tr><td>R9–R12</td><td>One market per cart · NORTH tax-exclusive VAT 17% half-up once · SOUTH tax-inclusive 20% per-line half-even, cart tax = Σ line tax · NORTH regression</td></tr>
+        <tr><td>R13</td><td>Promotions are editable data, not code</td></tr>
+      </tbody>
+    </table>
   </div>
+  <p class="muted"><b>Change-axes (X):</b> add/retire a code · a 4th promotion kind · a 3rd market · a hybrid tax shape. &nbsp;<b>Correctness probe:</b> a multi-line SOUTH cart with a cart-level discount must allocate the discount to lines so per-line tax lands on the discounted amount.</p>
+</div></section>
+
+<section><div class="wrap">
+  <div class="kicker">Reading the numbers</div>
+  <h2>Protocol &amp; confounds</h2>
+  <div class="grid g2">
+    <div class="card"><h3>What makes a run count</h3><p>Two arms (aims vs a control) build the same product across staged reveals with a passive oracle; separate blind judges grade against the same inventory; every claim carries a reproduction or <code>file:line</code>.</p></div>
+    <div class="card"><h3>Why no single grade is a verdict</h3><p><b>±0.5</b> judge noise (the three checkout 8.5s are a tie) · <b>maturity asymmetry</b> inflates the marketplace margin · <b>n = 1</b> per product, product-dependent.</p></div>
+  </div>
+  <div class="callout"><b>On the record:</b> an earlier run showed aims last on checkout. With operator prompt-anchoring removed and §2 rebalanced, it did not reproduce — aims tied checkout and led marketplace. Both corrections contributed; at n = 1 they don't separate.</div>
   <div class="pagenav">
     <a href="usage.html"><div class="lab">Next</div><div class="ttl">Use it →</div></a>
     <a href="measurement.html"><div class="lab">Back to</div><div class="ttl">← Measurement</div></a>
@@ -72,7 +107,7 @@
 </div></section>
 
 <footer><div class="wrap">
-  <div><strong style="color:var(--ink);font-family:var(--serif);font-size:1.1rem">aims</strong> — an AI Manager System · v1.0.0 · MIT</div>
+  <div><strong style="color:var(--ink);font-family:var(--serif);font-size:1.1rem">aims</strong> — v1.0.0 · MIT</div>
   <a href="https://github.com/eliezeravihail/aims">github.com/eliezeravihail/aims ↗</a>
 </div></footer>
 </body>

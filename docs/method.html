@@ -34,7 +34,6 @@
     <div class="card"><h3>Quality suffers</h3><p>The agent optimizes for the goal it was given — get the feature working — so the architecture is whatever happens to fall out of that, not something anyone chose.</p></div>
     <div class="card"><h3>Knowledge is lost</h3><p>Insights and decisions made while building do not reach the next session, so later work re-derives them from scratch, or contradicts them.</p></div>
   </div>
-  <p style="margin-top:26px">aims answers each: <b>direct the agent</b> so the goal it optimizes <em>is</em> the design outcome, and <b>document &amp; preserve</b> what the work learned as records beside the code.</p>
 </div></section>
 
 <section><div class="wrap">
@@ -85,14 +84,14 @@
   </div>
   <p class="muted">§18 names the canonical principles this set already carries under other names — Open/Closed, Liskov, Acyclic Dependencies, DRY, Least Astonishment, YAGNI. Correctness (§13) and single-owner (§9) are the ones that can cap a whole design — the precondition the rest serve.</p>
   <div class="callout">
-    <b>Interfaces are positive; under-structuring is the graver risk.</b> The dominant failure of unguided code generation is <em>too little structure</em> — flat procedural code, inline literals, primitive obsession, anemic bags, rules owned nowhere. Over-engineering is a real but lighter, secondary fault. So every class exposes only a generic domain surface (an interface, separate class or not), and when unsure whether to name a seam you lean toward naming it — an unused seam is a light, local cost, a missing one forces a reopen. A type is judged by its <em>shape</em> — is it a domain concept, or a concrete wearing a costume — never by predicting a second implementation.
+    <b>Interfaces are positive; under-structuring is the graver risk.</b> The dominant failure of unguided generation is <em>too little</em> structure (flat code, literals, primitive obsession, unowned rules); over-engineering is a lighter, secondary fault. So a class exposes a generic domain surface by default, and when unsure whether to name a seam you name it — an unused seam is a light cost, a missing one forces a reopen. A type is judged by its <em>shape</em>, never by predicting a second implementation.
   </div>
 </div></section>
 
 <section><div class="wrap">
   <div class="kicker">The other half</div>
   <h2>Knowledge that survives the session</h2>
-  <p class="intro">A design objective's result is not narrated into the chat and lost — it is filed as a record in the code tree, next to the code it describes, so a later session inherits it. The mechanics are on the <a href="practice.html#records">In practice</a> page.</p>
+  <p class="intro">A design result is filed as a record in the code tree, beside the code it describes, so a later session inherits it instead of re-deriving. Mechanics: <a href="practice.html#records">In practice</a>.</p>
   <div class="pagenav">
     <a href="practice.html"><div class="lab">Next</div><div class="ttl">In practice →</div></a>
     <a href="usage.html"><div class="lab">Or jump to</div><div class="ttl">Use it →</div></a>
