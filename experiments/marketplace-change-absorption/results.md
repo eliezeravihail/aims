@@ -182,10 +182,12 @@ Still n = 1.
   first). So the pair cannot be read as product-dependence — that reading silently assumed a constant
   method. The version change is a confound, and because the refactor targeted precisely the panel/
   measurement mechanisms this probe exercises, **the more plausible reading is that the upgrade moved aims
-  forward**, not that outcomes merely "depend on the product." Isolating upgrade-from-product cleanly would
-  need a same-product before/after: re-running the pilot's checkout-pricing product with upgraded aims.
-  Until that is run, this probe is n = 1 on the upgraded method, and the two probes measure two different
-  aims versions.
+  forward**, not that outcomes merely "depend on the product." Isolating upgrade-from-product cleanly needs a
+  same-product before/after: re-running the pilot's checkout-pricing product with upgraded aims. **That has
+  now been run** — see [`../aims-upgraded-rerun`](../aims-upgraded-rerun/results.md): on the same cards the
+  upgrade moved aims from **11 reopens to 1** on the pilot's primary (survival) reading, though it stayed
+  third on the design-quality (Q1) reading. So the upgrade is real and substantial on change-absorption; the
+  "product-dependent" framing was the wrong explanation for this probe's win.
 
 ## What it does and does not support
 
