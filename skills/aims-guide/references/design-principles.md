@@ -5,9 +5,18 @@ a parameter count, or a diagnostic tool. Each is a question a reader answers by 
 what the code means and does — the same way a human reviewer would, grounded in established
 software-design literature rather than invented for this project.
 
+**This is the single source for both building and grading.** §1–§12 are the design-quality
+comprehension checks. §13–§17 add the correctness, reliability, and cross-cutting properties a build
+must also satisfy and a review must also measure; §18 names the canonical principles this set already
+carries. The **principles are identical for every side** — what differs is only the *how*: when
+**building** you make each hold by construction; when **grading** you score it with evidence
+(`experiments/judging-rubric/quality-metrics.md` is that scoring layer — the mechanics of how to score
+these principles, never a rival list). Asking for one thing and measuring another is the failure this
+avoids.
+
 Apply every principle in both directions when building AND when reviewing:
 - **Building (Worker):** before delegating or returning work, check the current objective's design
-  against these questions.
+  against these questions — and treat §13 (correctness) as a precondition, not an afterthought.
 - **Reviewing (Judge):** for each principle, state per repository whether it holds, cite the
   specific code, and rule out the case that only looks like it holds.
 
@@ -303,6 +312,82 @@ is not "is it over some line count" but "can you explain, in one sentence, why t
 complexity belongs together here" — and if you can't, that's the actual smell, independent of any
 specific number.
 
+## 13. Functional correctness — the precondition quality serves
+
+**The question:** Does the design/code actually produce what the spec requires — **every** stated
+acceptance case, and the interactions the cases *imply but do not spell out* (a change-axis crossed with a
+rule)? For each declared postcondition or invariant, is there a path that guarantees it, and can every
+required output actually be produced from the described pipeline?
+
+A design can score well on §1–§12 and still be **wrong** — a clean structure that computes the wrong
+number, or that cannot produce a required output at all. Correctness is not one quality among the others;
+it is the **precondition** they serve. An elegant, well-encapsulated design that fails a required case is
+not high quality. **Trace every case, and every implied interaction, before declaring the work done** — the
+most expensive misses are the interactions no single stated case exercises (a cart-level discount that must
+still land on a per-line figure; a completion step no component owns). This is the one principle whose
+failure is a defect regardless of how the code reads.
+
+## 14. State and side-effect discipline
+
+**The question:** Is mutable and shared state minimized, and is whatever remains mutated in **one**
+localized place? Are the core computations pure — same inputs, same result, no reliance on hidden state?
+Is there global mutable data, or a side effect a reasonable caller would be surprised by? Where an
+operation can be retried, is it idempotent?
+
+Immutable-by-default, with side effects pushed to thin edges, is easier to reason about, test (§15), and
+run concurrently; scattered mutation and global data are where order-dependence, races, and
+action-at-a-distance defects live (Fowler's *Mutable Data* / *Global Data*; the functional-core idea).
+The test is not "does the language allow mutation" — it is whether the design *chooses* to confine it.
+
+## 15. Testability — verifiable by construction
+
+**The question:** Can the non-trivial decisions be exercised by a fast, isolated test **without** standing
+up the whole system? Are dependencies injected rather than hard-wired, side effects confined to a thin
+"humble" edge, and the boundaries seam-able so a unit can be driven in isolation?
+
+A design whose correctness (§13) cannot be checked cheaply is one whose correctness will not stay true.
+Testability is a property of the design, read before any test is written: deep logic reachable only through
+heavy end-to-end setup is a design smell, not merely a testing inconvenience.
+
+## 16. Performance and resource use — on its own terms, never a proxy
+
+**The question:** Against the product's **stated** performance requirements, are the algorithmic
+complexity, the allocations, and the I/O appropriate, with no avoidable blow-up (an accidental quadratic, a
+reload in a loop)?
+
+Performance is a real requirement and is judged **on its own terms**. Two hard rules: **it is never used as
+an estimator or proxy for code quality** (fast code is not thereby well-designed, and slow code is not
+thereby badly designed), and **no other principle borrows a performance number** to stand in for a design
+judgment. If the product states no performance requirement, this principle is not scored — it is not a free
+pass or a free failure.
+
+## 17. Security and trust boundaries
+
+**The question:** Where untrusted input crosses a trust boundary, is it validated and its output encoded?
+Does each component run with least privilege and secure defaults, and are secrets and authorization owned at
+one boundary rather than scattered? Scored only where the product actually has a trust boundary or sensitive
+data (OWASP secure-coding practices).
+
+## 18. Named principles this set already carries
+
+Several canonical principles are the *same* checks under other names — stated here so a reader recognizes
+them and does not think they are missing:
+
+- **Open/Closed** — §6: a foreseen change *extends* at a seam that already exists rather than *reopening* an
+  owner.
+- **Liskov Substitution** — §2: a subtype must honor its supertype's contract, and a family must hold one
+  altitude (a member that cannot stand in for the concept is misclassified).
+- **Acyclic Dependencies / stable-dependency direction** — §6 and §8: dependencies point one way, toward the
+  more stable and more abstract owner, with no cycles.
+- **DRY as knowledge, not text** — §10.
+- **Principle of Least Astonishment** — §11.
+- **YAGNI / earn every element** — §12 and the subtractive pass (`review.md`): every type, interface, and
+  layer must answer to a present force; what can be deleted without damaging a current ownership is rent
+  paid to nobody.
+
+Naming them adds no new machinery; it points at the principle a reader trained on SOLID or the component
+principles will look for.
+
 ---
 
 ### Sources these principles are drawn from (for context, not to be cited verbatim in a review)
@@ -319,3 +404,12 @@ specific number.
 - Sandi Metz's rules (including Rule 0) — *Practical Object-Oriented Design*, https://sandimetz.com/
 - Shared Kernel / Published Language (the day-zero agreed vocabulary a boundary may speak) — Eric
   Evans, *Domain-Driven Design*
+- Correctness as precondition; contracts (pre/postconditions, invariants) — Bertrand Meyer, *Design by
+  Contract*; ISO/IEC 25010 functional correctness
+- Immutability, purity, referential transparency; *Mutable Data* / *Global Data* smells — functional
+  programming; Fowler, *Refactoring*
+- Testability, seams, the Humble Object — Michael Feathers, *Working Effectively with Legacy Code*
+- Performance efficiency as a separate quality (never a proxy) — ISO/IEC 25010
+- Secure coding, trust boundaries, least privilege — OWASP Secure Coding Practices
+- Open/Closed, Liskov Substitution, Acyclic Dependencies / stable-dependency direction — Robert C.
+  Martin, SOLID and the component principles
