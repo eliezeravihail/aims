@@ -15,8 +15,8 @@ cited sub-check; `measurement.md` turns the results into a number. The scoring r
 **correctness class** from here — it does not redefine it:
 
 - **Preconditions** (a violation makes the code *wrong*, not merely less clean, and caps the result
-  hardest): all of §1; §5 "one owner per rule" and the seam-leak rules in §0.2 / §5; §11 concurrency-safety
-  under real concurrency; §14 where a trust boundary exists.
+  hardest): all of §1; §5's one-owner-per-rule and the module-seam rules of §0 and §5; §11
+  concurrency-safety under real concurrency; §14 where a trust boundary exists.
 - **Conditional** (scored only where the product states the need): §13 (performance), §14 (security).
 - **Code-leaning** (N/A on a pure design document): §12 (testability), the runtime items of §11.
 - **Quality** (a violation lowers quality by its pervasiveness): everything else.
@@ -138,7 +138,8 @@ other. Over-engineering is a lighter, secondary fault. When unsure, the graver r
   record's fields, a wire/DB schema, an explanation chain) is absorbed at one place, not threaded through
   its consumers. The reopen usually lands exactly here; §6/§9 cover only half of it.
 - **Structure vs YAGNI — the tie-break.** When "add a seam" (§0/§5) and "cut what pays for nothing"
-  (§7/§12) disagree on the *same* element, resolve by the change-axes (X): a seam no X-item would ever use
+  (YAGNI / the subtractive item above) disagree on the *same* element, resolve by the change-axes (X): a
+  seam no X-item would ever use
   is over-build — a §7 finding, **at most S1** (a light, local cost); a seam a foreseeable X-item would
   force open is under-provision — a §6/OCP finding at **S3**. **Falsifier:** name the X-item the seam
   serves — none → over-built; one → omitting it is the fault. (This asymmetry is the registered decision
