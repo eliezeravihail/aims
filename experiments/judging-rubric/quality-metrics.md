@@ -18,53 +18,86 @@ Design by Contract, DDD, APOSD, the Pragmatic Programmer, ISO/IEC 25010, OWASP, 
 Metrics are deliberately **non-overlapping**; each block ends with *Distinct from* to stop double-counting
 the same fault under two names.
 
-## How the judge scores each metric (0–4)
+## Step 0 — the fixed inventory (before any scoring; identical for every judge)
 
-| score | meaning |
-|---|---|
-| **4 Exemplary** | the property holds *by construction*; a reader verifies it in one place |
-| **3 Sound** | holds, with a minor non-structural imperfection |
-| **2 Weak** | holds but fragile, partially owned, or needs care to stay true |
-| **1 Violated** | breached in a way that matters for this product |
-| **0 Broken/absent** | the design cannot satisfy it, or it produces wrong results |
+Reproducibility requires that two judges measure the *same* thing. So before scoring, three product-level
+lists are pinned **from the fixed spec the judge is given — never from what a design says about itself**, and
+handed unchanged to every judge and applied to every design:
 
-Rules for the judge, per metric:
-- Any score **≤ 3 requires evidence** — a quotation from the design/code text — and a one-line statement of
-  what would raise it. A deduction with no citation is struck (it is exactly the "invented deduction" that
-  broke the prior judging).
-- Score the property as the design *states* it, not a defect you imagine it might have.
-- **Length is never a merit**; a concise design that holds a property by construction scores above a verbose
-  one that only asserts it.
+- **(R) the rules / invariants** the product declares it must hold;
+- **(X) the change-axes** it implies, plus one plausible unstated variant;
+- **(C) the acceptance cases** (inputs → required outputs).
 
-## How a fault's severity sets its weight (the escalating rule)
+Then, per design, the judge first **enumerates that design's seams and named elements** (its own list).
+Every deduction later must cite a specific item — an R/X/C entry or a named seam. A design that simply
+**omits** a required rule (R) or fails a case (C) is scored 0–1 on the relevant metric, **not** N/A: silence
+is a miss, not an exemption. N/A is decided only by the spec (the product genuinely has no such
+requirement), never by a design choosing not to mention one.
 
-Each deduction is tagged with a severity, and the metric's weight in the final grade scales with the **worst
-fault found on that metric**. A clean metric keeps base weight (×1).
+## Scoring a metric — one judgment (severity), not two
 
-| severity | what it is | weight |
+The judge does **not** pick a 0–4 score and a severity independently (they could contradict). Instead: find
+the **worst fault** on the metric, cite the inventory item it violates, and tag its **severity**. Severity
+then fixes *both* the score ceiling and the weight — a single choice:
+
+| worst fault on the metric | score | weight |
 |---|---|---|
-| **S1 Cosmetic** | naming, formatting, a redundant comment | ×1 |
-| **S2 Moderate** | primitive obsession, a local coupling, a dead/decorative abstraction, a data clump | ×2 |
-| **S3 High** | a mis-owned invariant, an implementation type leaked across a seam, a shotgun-surgery-prone seam, a *latent-architectural* concept cram | ×4 |
-| **S4 Severe / Correctness** | produces a wrong result; a stated rule is unenforceable or bypassable; a security hole; data corruption | ×8 **and caps the grade** |
+| **none** — property holds *by construction* | **4** | ×1 |
+| **S1** cosmetic (naming, formatting, a redundant comment) | **3** | ×1 |
+| **S2** moderate (primitive obsession, a local coupling, a dead/decorative abstraction, a data clump) | **≤ 3** (2–3 by pervasiveness) | ×2 |
+| **S3** high (mis-owned invariant, an implementation type leaked across a seam, a shotgun-surgery-prone seam, a *latent-architectural* concept cram) | **≤ 2** (1–2) | ×4 |
+| **S4** severe / correctness (wrong result; a stated rule unenforceable or bypassable; a security hole; data corruption) | **≤ 1** (0–1) | ×8 |
 
-## Aggregation
+**Every score needs a citation — including 4.** For a 4, quote *the single place the property holds by
+construction* (the one owner / the one enforcing seam); for any deduction, quote the defect **and** name the
+R/X/C or seam item it violates. A score with no citation is struck — this closes the "default everything to
+4" gap.
+**Length is never a merit**: a concise design that holds a property by construction outscores a verbose one
+that merely asserts it.
+
+## One defect, one metric
+
+A single defect is deducted under **exactly one** metric — the most specific one that applies — and the
+judge names it there. Related metrics may *reference* it ("see M4") but must **not** re-deduct. (E.g. a
+Law-of-Demeter / train-wreck violation is scored under **M4** and only referenced from M6; an
+"anemic-model-with-rules-outside-the-owner" defect is scored **once**, under M9 *or* M7, and the judge
+states which.) This stops the same fault sinking a design three times through overlapping metrics.
+
+## Aggregation — report a profile, not a single number
+
+Compute and report **all** of the following over the non-N/A metrics:
 
 ```
-grade = Σ (score_i × weight_i) / Σ (weight_i)          # weighted average over all metrics
-weight_i = base_i × severity_multiplier(worst fault on metric i)     # base_i = 1 unless noted
+weighted_average = Σ (score_i × weight_i) / Σ (weight_i)      # weight_i from the severity table above
+worst_metric     = min score_i
+counts           = (#S3 findings, #S4 findings)
 ```
 
-Two hard rules on top of the average:
-1. **An S4 finding caps the overall grade at ≤ 2.0**, however clean everything else is — a design that
-   returns wrong results, or cannot enforce a rule it declares, is not "high quality" regardless of elegance.
-2. **No single S1/S2/S3 finding decides a verdict on its own.** Only S4 is decisive by rule. A contested
-   modeling call is **S3 at most** and enters the average weighted — it never caps and never single-handedly
-   flips a ranking. (This is the precise guard the prior judging lacked: it let an S3-grade concept dispute
-   act like an S4.)
+Then apply **graded caps** to the reported grade (a single structural fault must not read as "Sound"):
 
-A judge reports, per metric: the 0–4 score, each deduction with its quotation and severity tag, then the
-weighted grade and any cap triggered.
+| any finding at | grade capped at |
+|---|---|
+| S2 | ≤ 3.5 |
+| S3 | ≤ 3.0 |
+| S4 | ≤ 2.0 |
+
+The **grade** is the capped weighted average, but it is always reported **beside** `worst_metric` and the
+S3/S4 counts — never as a bare number. Rank by capped grade, then by `worst_metric`, then by fewer S3/S4.
+This fixes the extremes Pavel flagged: one metric at 0/S3 among 19 clean 4s no longer averages to ~3.3
+"Sound" — the S3 cap pins it at ≤ 3.0 and `worst_metric = 0` is reported alongside.
+
+**No single sub-S4 finding decides a ranking on its own** — a contested modeling call is S3 at most; it caps
+at ≤ 3.0 and enters the average, but the worst-metric and counts keep it honest without letting it act like a
+correctness failure (the exact confusion that broke the prior judging).
+
+## Applicability — Design / Code / Both
+
+Score a metric only where the artifact can show it. On a **design** document, code-level metrics are marked
+`N/A (code)` and dropped from the denominator unless the design's own text gives a basis.
+
+| Both (design & code) | M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 M11 M12 M14 M15 M17 M19 M20 |
+|---|---|
+| Code-leaning (score on design only if the text supports it) | **M13** (races/immutability), **M16** (naming), **M18** (testability) |
 
 ---
 
@@ -132,11 +165,11 @@ core change is shotgun surgery.
 ## Family 3 — Encapsulation & Rule Ownership
 
 ### M6. Information hiding & Tell-Don't-Ask
-**Sources:** Parnas; Clean Code (data/object anti-symmetry, train wrecks); Law of Demeter; aims §1/§7;
-APOSD (information hiding).
+**Sources:** Parnas; Clean Code (data/object anti-symmetry); aims §1/§7; APOSD (information hiding).
 **How to measure:** Does calling code *tell* an object what to do, or *ask* for its internals and decide
 outside it? Does the module hide a real design decision, or expose it? Which details leak — only those a
-caller legitimately needs, or the on-disk/vendor shape?
+caller legitimately needs, or the on-disk/vendor shape? *(Law-of-Demeter / train-wreck reach-through is
+scored under M4, not here — reference it, do not re-deduct.)*
 **0–4:** 4 = decisions hidden behind tell-style interfaces; only necessary leaks. 2 = some ask-style access.
 0 = callers must know internal structure to use the interface.
 **Severity ceiling:** S3.
@@ -310,12 +343,19 @@ component run with least privilege? Are secrets and authorization handled at a s
 
 ## Applying the list (judge's procedure)
 
-1. Score M1–M20 independently, each with evidence for any ≤3 and a severity tag on each deduction. Mark
-   N/A metrics (e.g. M19/M20 when the product has no such requirement) and drop them from the denominator.
-2. Compute `weight_i = severity_multiplier(worst fault on metric i)` and the weighted average.
-3. Apply the caps: any S4 → grade ≤ 2.0. Report which cap fired.
-4. Produce the grade **and** the per-metric table — never a bare number, and never a verdict resting on one
-   sub-S4 finding.
+0. **Fix the inventory first** (Step 0 above): pin R (rules), X (change-axes), C (acceptance cases) from the
+   spec — identical for every judge — then enumerate each design's seams/elements. Everything scored below
+   must cite one of these items.
+1. For each metric M1–M20: find the worst fault, cite the R/X/C or seam item it violates, tag its severity,
+   and read the score off the severity table (clean = 4, with a citation of the one place it holds). Mark a
+   metric `N/A` **only** when the spec carries no such requirement (not when a design is silent), and drop it
+   from the denominator. Apply the Design/Code applicability table.
+2. Enforce **one defect, one metric** — deduct each defect once, name where; cross-reference, never
+   re-deduct.
+3. Compute the **profile**: capped weighted average, `worst_metric`, and (#S3, #S4). Apply the graded caps
+   (S2 ≤3.5, S3 ≤3.0, S4 ≤2.0) and report which fired.
+4. Produce the per-metric scorecard **and** the profile — never a bare number, and never a verdict resting on
+   one sub-S4 finding. Rank by capped grade, then `worst_metric`, then fewer S3/S4.
 
 ## Notes
 
