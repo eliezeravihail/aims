@@ -4,6 +4,12 @@ The Guide **measures** the result against the handoff's exit criteria. A review 
 direction; it is not a gate on the Worker. What the measurement shows feeds the Guide's next-objective
 choice — never a verdict that forces compliance.
 
+**There is one measurement instrument: the assessment form** (`references/measurement.md`) — one row per
+principle §1–§18, each scored 0–10 from binary sub-checks, every deduction cited. The in-loop review,
+`/aims-review`, and any comparison of designs all fill this same form; they differ only in the projection
+shown. The subtractive and concept-fit passes below are how you fill §12 and §2 — passes *within* the form,
+not a separate measurement.
+
 ## A design gets one mandatory revise round — measure, return findings, revise
 
 A **`design` objective is never read as met on its first returned pass.** **One** **measure → return the
@@ -32,18 +38,17 @@ applies to `design` objectives (including the opening panel-plan round's merged 
 and `refactoring` objectives keep their single correctness/behavior-preservation measurement — a revise
 round there only re-runs passing checks.
 
-## How the review is presented — worst-first findings, no score
+## How the review is presented — the build-time projection
 
-The review's output is a **findings list, not a grade.** Where the measurement is scored against the
-principles — the standardized assessment form
-(`../../experiments/judging-rubric/assessment-form.md`) — the operational review is that form's
-**score-less projection**: take only the principles scored below a clean pass, sort them **most severe
-first** (ascending by score), and present each with its principle and a citation. Emit **no aggregate
-grade**. This is what "never a score" means here — no *composite verdict* decides direction in the loop
-(`decisions/0012`); the per-principle severity is only the key that orders the findings so the most material
-violation leads. A design carrying a correctness or ownership fault (§9/§13) therefore heads the list; the
-cosmetic nits trail it. The full scored form with its aggregate profile belongs to the measurement/judging
-layer (comparing arms), never to the operational loop.
+Fill the form (`references/measurement.md`), then show the **building projection**: only the rows **below
+10**, sorted **most-severe-first**, each its principle + citation + the direction to fix it. **Do not show
+the aggregate score.** A design carrying a correctness or ownership fault (§9/§13) heads the list; cosmetic
+nits trail it.
+
+Not showing the score in the loop is a **practical device, not a principle** (`decisions/0014`): during
+construction the Worker should fix *content*, and a visible number invites polishing the number instead.
+The scores still exist underneath — they are simply not what the loop displays. The full scored profile is
+shown only when the point is to *compare* designs (ranking arms, tracking a design across revisions).
 
 ## Review order
 

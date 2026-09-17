@@ -10,9 +10,8 @@ comprehension checks. §13–§17 add the correctness, reliability, and cross-cu
 must also satisfy and a review must also measure; §18 names the canonical principles this set already
 carries. The **principles are identical for every side** — what differs is only the *how*: when
 **building** you make each hold by construction; when **grading** you score it with evidence
-(`experiments/judging-rubric/quality-metrics.md` is that scoring layer — the mechanics of how to score
-these principles, never a rival list). Asking for one thing and measuring another is the failure this
-avoids.
+(`references/measurement.md` is that single scoring instrument — one row per principle, sub-check-derived,
+never a rival list). Asking for one thing and measuring another is the failure this avoids.
 
 Apply every principle in both directions when building AND when reviewing:
 - **Building (Worker):** before delegating or returning work, check the current objective's design

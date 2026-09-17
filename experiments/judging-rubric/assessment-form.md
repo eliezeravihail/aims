@@ -5,11 +5,14 @@ date: 2026-09-17
 
 # Design quality assessment form
 
-A **standardized, fillable instrument** for scoring one design against the principles. It is the *output
-shape* of the scoring layer in [`quality-metrics.md`](quality-metrics.md) — that file says **how** each
-number is reached (the binary sub-checks, the severity coupling, the aggregation); this file is the **form a
-judge fills in**, one row per principle, so two judges (or two runs) produce comparable, auditable records
-rather than free prose.
+> **Canonical instrument:** the single shipped measurement is
+> [`../../skills/aims-guide/references/measurement.md`](../../skills/aims-guide/references/measurement.md)
+> (the rules, severity table, aggregation, and the two projections). This file keeps the fillable layout and
+> a worked example; the mechanics live there (`../../decisions/0014`).
+
+A **standardized, fillable instrument** for scoring one design against the principles — the *output shape*
+of `measurement.md`: one row per principle, so two judges (or two runs) produce comparable, auditable
+records rather than free prose.
 
 It is honest about what it is: a **reliable** instrument (same design → same profile across judges/runs,
 because every row is sub-check-derived and cited), **not** an externally **valid** benchmark — no external

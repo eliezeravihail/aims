@@ -486,7 +486,11 @@ foundational deps, module skeleton, concrete signatures are all pinned); an abst
 with no stack or skeleton is principles, not a plan, and is **not** met. An `implementation` objective
 is judged on correctness and conformance, a `refactoring` objective on behavior-preservation and
 whether the named smell went.
-Findings must be reproduced or cite `file:line`; never a score.
+Measurement is one instrument — **fill the assessment form** (`references/measurement.md`, §1–§18,
+sub-check-derived); the in-loop review, `/aims-review`, and comparing designs all fill the same form.
+Every finding is reproduced or cites `file:line`. In the loop, show the form's **fix-list** (the sub-10
+rows, most-severe-first), **not the aggregate score** — a device to keep the Worker fixing content, not
+polishing a number (`decisions/0014`), not a deep principle; the scores exist in the form for comparison.
 
 **A design gets one mandatory revise round.** A `design` objective is **never read as met on its first
 returned pass**: measure it (exit criteria + the subtractive and concept-fit passes), return the findings

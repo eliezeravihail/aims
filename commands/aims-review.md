@@ -1,11 +1,14 @@
 ---
-description: "aims — run the REVIEW phase: measure the result against the exit criteria with the review panel, producing reproduced readings (no scores). Also works standalone on any diff/branch/PR."
+description: "aims — run the REVIEW phase: measure the result by filling the assessment form (design-principles §1–§18), presenting a cited, most-severe-first fix-list rather than an aggregate score. Also works standalone on any diff/branch/PR."
 argument-hint: "[optional target: a diff / branch / path / PR to review standalone]"
 ---
 
 Enter the `aims-guide` skill and run the **REVIEW phase** — which *measures* the outcome against the
 objective and feeds the next direction; it is not a gate — following `references/review.md` and
-`references/review-panel.md`. **First read the objective's Kind** (`design` | `implementation` |
+`references/review-panel.md`. **Measurement is one instrument: fill the assessment form**
+(`references/measurement.md`, §1–§18, sub-check-derived). Show the form's **fix-list** — the sub-10 rows,
+most-severe-first, each cited — **not the aggregate score** (a device to keep the work on content, not on
+polishing a number; `decisions/0014`). **First read the objective's Kind** (`design` | `implementation` |
 `refactoring`) and take that kind's lens per `review-panel.md` — a `design` review measures whether the
 *structure* is right (not tests), `implementation` measures correctness and conformance, `refactoring`
 measures behavior-preservation and whether the named smell went. If the declared kind and the actual
@@ -36,9 +39,9 @@ Run the panel **inline, in this session, on the currently selected model — do 
 (this is an explicit command; the user picked this model and is supervising). Adopt each reviewer lens
 in turn, including the opposite-disposition check when the call is a judgment/taste one.
 
-In both uses, obey the panel's core rule: **every reading carries a reproduction (a failing probe /
-concrete input→wrong output) or a precise `file:line` citation — no scores, no percentages.** Before a
-decisive reading informs direction, reproduce it yourself. An empty set of readings is a valid, honest
-measurement.
+In both uses, obey the core rule: **every finding is a filled sub-check carrying a reproduction (a failing
+probe / concrete input→wrong output) or a precise `file:line` citation.** Present the fix-list, not the
+aggregate number. Before a decisive finding informs direction, reproduce it yourself. An empty fix-list is
+a valid, honest measurement.
 
 Target (if any): $ARGUMENTS

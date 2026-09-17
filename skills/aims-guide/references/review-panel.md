@@ -29,30 +29,14 @@ a typed measurement has nowhere to hide from the architecture question when the 
 - **Measure:** does each truth live in exactly one place; is each invariant owned once; are boundaries
   drawn on the real change axes; has any structural assumption already been *falsified* by the product;
   is anything built for a future with no present force?
-- **Formulate the quality-requirements list for *this* design, then measure against every item.** Like
-  the judge, do not free-associate: turn the quality dimensions into a concrete list of requirements this
-  design must meet, and answer each against the design text by **quotation, or "the design does not say"**
-  (itself a finding — the design is not buildable there). The dimensions are the ones the panel's three
-  axes optimize; each is owned in full by `references/design-principles.md` — **name it and cite the
-  section, do not restate it**:
-  - **Clean code / smells** (§6, §10, §12) — feature envy, shotgun surgery, duplication that is real
-    coupling, size with no one-sentence reason; plus a lean dependency footprint.
-  - **Correct encapsulation** (§1, §7, §9) — Tell-Don't-Ask; no implementation type leaking across a
-    public seam; each stated rule enforced in exactly one place.
-  - **Correct genericity / interfaces** (§2, §3) — abstraction level calibrated floor-to-ceiling;
-    interfaces segregated; program to an interface; no decorative or speculative generality.
-  - **Concept fit** (`review.md`) — each element is the *kind* of thing it is (a decomposition not
-    modelled as a movement; no inert member forcing a wrong shape).
-  - plus **primitive obsession** (§4), **anemic model** (§5), **SRP / God object** (§8), **naming &
-    failure** (§11).
-
-  Phrase each requirement as an *answerable probe* so it cannot be hand-waved — e.g. "to add ⟨the next
-  expected variant⟩, which named components change, **and would its semantics falsify an assumption an
-  existing owner holds** (an invariant-owner's model, a value type, a seam's contract)?" (genericity —
-  a seam that exists but that a real new variant would still force open is *not* absorption; do not stop
-  at "there is a seam"), "how many places own this rule? name them" (encapsulation), "which component
-  owns this invariant?" (encapsulation), "what present force requires this type?" (clean-code /
-  subtractive) — and answer by quotation. A dimension left unprobed, or a property asserted with no
+- **Fill the assessment form** (`references/measurement.md`) — do **not** free-associate a fresh
+  quality-requirements list each time; the form *is* the fixed list (§1–§17, each a row scored from binary
+  sub-checks). Answer each sub-check against the design text by **quotation, or "the design does not say"**
+  (itself a finding — the design is not buildable there). Phrase each sub-check as an *answerable probe* so
+  it cannot be hand-waved — "to add ⟨the next expected variant⟩, which named components change, and would
+  its semantics falsify an assumption an existing owner holds?" (§2/§6 — a seam that a real new variant
+  still forces open is *not* absorption), "how many places own this rule? name them" (§9), "what present
+  force requires this type?" (§12/subtractive). A sub-check left unprobed, or a property asserted with no
   quotation, is not a measurement.
 - **Evidence:** design reasoning and fit-to-forces — **not** tests (a design objective may have no
   runnable code). Check that the design's *claims* match what exists, but measure the shape.
@@ -107,7 +91,7 @@ roles below serve whichever lens the kind selects.
 
 ## The one rule that makes a reading real: reproduced or cited
 
-A reading is not an opinion and never a number. **Every reading carries one of:**
+A reading is not an opinion. **Every reading carries one of:**
 
 - a **reproduction** — a probe/test that actually fails, or a concrete input → wrong output/state; or
 - a **precise code citation** — `file:line` of the dead abstraction, the duplicated rule, the leaked
@@ -119,9 +103,12 @@ A reading is not an opinion and never a number. **Every reading carries one of:*
   admissible evidence. **"The design does not say X" is itself a finding** when the objective required X —
   silence measured, not excused.
 
-No scores, no percentages, no "looks solid," no "8/10." A reading with none of the three is not a
-measurement — drop it. (Inventing quality numbers is the exact failure this whole project exists to
-avoid.) The contrast a second arm used to provide is replaced by the **exit criteria / stated intent**:
+An uncited assertion — "looks solid," a bare "8/10" — is not a measurement; drop it. Each reading is a
+filled sub-check of the form with its citation. **In the loop, show the fix-list** — the sub-10 rows,
+most-severe-first — **not the aggregate number**: the per-principle scores live in the form
+(`references/measurement.md`), but a visible grade in the loop invites polishing the number instead of the
+content, so it is not shown (`decisions/0014`). The contrast a second arm used to provide is replaced by
+the **exit criteria / stated intent**:
 measure the deliverable against *that* ground truth, not against taste. (Blindness and X/Y relabeling from
 the experiment judge do **not** carry over — those serve a *comparative* judge across arms; a review has
 one deliverable and the exit criteria are its ground truth.)
@@ -200,6 +187,7 @@ Implication for direction: <what this suggests as the next objective — the Gui
                             review does not accept or reject>
 ```
 
-No summary score, no accept/reject stamp — the review measures and reports; direction is the Guide's and
-the human's call. If nothing survived reproduction, say so plainly: an empty set of readings is a valid,
-honest measurement, not a failure to find something.
+The loop shows the fix-list, not the aggregate score (it lives in the filled form); no accept/reject stamp
+— the review measures and reports, direction is the Guide's and the human's call. If nothing survived
+reproduction, say so plainly: an empty fix-list is a valid, honest measurement, not a failure to find
+something.
