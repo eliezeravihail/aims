@@ -174,10 +174,18 @@ Still n = 1.
   other two did **not** (general quality; shuffled three-way) and still ranked aims first — so the verdict
   does not depend on the house rubric. Every judge grounds claims in quotations, so a reader who rejects
   any one framing can check the facts.
-- **This result runs opposite to the frozen pilot's Q1**, where aims placed third under two judges on a
-  checkout-pricing product. One product favouring aims and one disfavouring it is exactly why n = 1 is not
-  a verdict: the honest state is "it depends on the product," and the sequence of probes is the evidence,
-  not any single one.
+- **This result is not comparable to the frozen pilot's Q1 as "same method, different product."** Between
+  the two runs **aims itself changed**: the self-redesign refactor that corrected the panel role model
+  (`panel-plan.md`: three axis-focused Workers over one shared objective, merged best-from-each) and the
+  measurement lens (`review-panel.md`) merged 2026-09-16 20:19 → 2026-09-17 00:09 (#60). The pilot ran
+  2026-09-15/16 on **pre-upgrade** aims (placed third); this probe read the **upgraded** files (placed
+  first). So the pair cannot be read as product-dependence — that reading silently assumed a constant
+  method. The version change is a confound, and because the refactor targeted precisely the panel/
+  measurement mechanisms this probe exercises, **the more plausible reading is that the upgrade moved aims
+  forward**, not that outcomes merely "depend on the product." Isolating upgrade-from-product cleanly would
+  need a same-product before/after: re-running the pilot's checkout-pricing product with upgraded aims.
+  Until that is run, this probe is n = 1 on the upgraded method, and the two probes measure two different
+  aims versions.
 
 ## What it does and does not support
 
@@ -188,8 +196,9 @@ Still n = 1.
   with the smallest honest reopen count. The plain control makes this a claim about the **method**, not the
   model — the unguided agent, given the same product, produced the least change-absorbing and least
   honestly-scored design.
-- **Does not support:** any general claim that aims dominates. This is **n = 1**, on a product whose
-  natural variation axes (fulfillment, completion) happen to be ones aims abstracted well — and it runs
-  *opposite* to the frozen `aims-vs-openspec` pilot, where aims placed third on a checkout-pricing product.
-  The honest reading is product-dependent: aims paid off *here*, on change-absorption; a robust claim needs
-  the sequence of probes, not this one.
+- **Does not support:** any general claim that upgraded aims dominates. This is **n = 1** on the upgraded
+  method, on a product whose natural variation axes (fulfillment, completion) are ones aims abstracted well.
+  It is **not** contradicted by the frozen pilot's third-place Q1 — that pilot measured a *different,
+  pre-upgrade* aims (see Validity), so the two are not a like-for-like pair. What is still open: whether the
+  upgraded method also lifts the pilot's own product (a same-product before/after would isolate upgrade from
+  product), and whether the win holds beyond n = 1.
