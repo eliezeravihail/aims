@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import json
 import os
-import re
 import sys
 from pathlib import Path
 
@@ -26,24 +25,11 @@ for _cand in (_here, Path(_env) if _env else None):
         sys.path.insert(0, str(_cand))
         break
 try:
-    from anchor import target, content_hash  # type: ignore
+    # anchor.py owns the anchor line for both writing and reading — import its reader rather than
+    # re-parsing the frontmatter here, so read-time and write-time can never disagree about the format.
+    from anchor import target, content_hash, read_hash  # type: ignore
 except Exception:  # pragma: no cover
     _OK = False
-
-FENCE = "---"
-# Top-level only, matching anchor.py's write-time rule. A `hash:` nested under another key is not an
-# anchor: anchor.py would never refresh it, so reading it would flag drift forever.
-_HASH_RE = re.compile(r'^hash:\s*"([^"]+)"', re.M)
-
-
-def _frontmatter(text: str) -> str | None:
-    lines = text.splitlines(keepends=True)
-    if not lines or lines[0].rstrip("\n") != FENCE:
-        return None
-    for i in range(1, len(lines)):
-        if lines[i].rstrip("\n") == FENCE:
-            return "".join(lines[1:i])
-    return None
 
 
 def check_record(record: Path) -> list[str]:
@@ -51,19 +37,13 @@ def check_record(record: Path) -> list[str]:
     if not _OK or record.suffix != ".md":
         return []
     try:
-        fm = _frontmatter(record.read_text(encoding="utf-8"))
-    except Exception:
-        return []
-    if fm is None:
-        return []
-    m = _HASH_RE.search(fm)
-    if not m:
-        return []                       # not an anchored companion
-    try:
+        h = read_hash(record)
+        if h is None:
+            return []                   # not an anchored companion (or unreadable — fail open)
         t = target(record)
         if t is None:
             return [f"`{record.with_suffix('').name}` is missing (possibly moved or renamed)"]
-        if content_hash(t) != m.group(1):
+        if content_hash(t) != h:
             return [f"`{t.name}` changed since this record was written"]
     except Exception:
         return []

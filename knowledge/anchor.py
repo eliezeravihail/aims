@@ -19,10 +19,14 @@ Usage:  python3 anchor.py <record.md>   (run from its own directory; installed a
 from __future__ import annotations
 
 import hashlib
+import re
 import sys
 from pathlib import Path
 
 FENCE = "---"
+# The anchor line, owned here for BOTH writing (stamp) and reading (read_hash): top-level only, matching
+# _is_top_level_key. A `hash:` nested under another key is not an anchor.
+_HASH_RE = re.compile(r'^hash:\s*"([^"]+)"', re.M)
 
 
 def target(record: Path) -> Path | None:
@@ -60,6 +64,18 @@ def _split_frontmatter(text: str) -> tuple[list[str], str]:
 def _is_top_level_key(line: str) -> bool:
     s = line.rstrip("\n")
     return bool(s) and not s[0].isspace() and not s.lstrip().startswith(("#", "-")) and ":" in s
+
+
+def read_hash(record: Path) -> str | None:
+    """The top-level `hash:` anchor value in a record's frontmatter, or None. Lenient — never raises.
+    The single reader of the anchor line (the read hook imports this), matching what stamp() writes, so
+    read-time and write-time can never disagree about what an anchor line is."""
+    try:
+        fm, _ = _split_frontmatter(record.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    m = _HASH_RE.search("".join(fm))
+    return m.group(1) if m else None
 
 
 def stamp(record: Path) -> str:
