@@ -227,7 +227,7 @@ advancement happens when a Worker returns or when the human resumes.** The Loop 
 named decision, or ready-to-choose-next) so that either trigger can pick up precisely where you left
 off.
 
-aims is engaged **explicitly**, through its commands (`/aims-plan`, `/aims-build`,
+aims is engaged **explicitly**, through its commands (`/aims-plan`, `/aims-refactor`, `/aims-build`,
 `/aims-review`, `/aims-plan-and-build`) — nothing runs in the background to put the goal in front
 of you on unrelated turns. That makes the re-read discipline the entire mechanism: **at the start of
 every aims command, reload `.aims/state.md`** and re-orient from it. And **update it the moment the
@@ -492,8 +492,11 @@ judged on whether the structure is right (not on tests) **and whether it is buil
 product's first design, that a Worker could start the first sprint from it (language, core framework,
 foundational deps, module skeleton, concrete signatures are all pinned); an abstract-boundaries design
 with no stack or skeleton is principles, not a plan, and is **not** met. An `implementation` objective
-is judged on correctness and conformance, a `refactoring` objective on behavior-preservation and
-whether the named smell went.
+is judged on correctness and conformance, a `refactoring` objective against
+`references/refactoring-principles.md` (the brownfield checklist) — behavior preserved where it is out of
+scope, the change absorbed at a seam not scattered, the implied interactions re-traced, and for a pure
+refactor the named smell gone. A change to code that already exists enters through `/aims-refactor`, which
+learns the code and characterizes its behavior before choosing that objective.
 Measurement is one instrument — **fill the assessment form** (`references/measurement.md`, §0–§14,
 sub-check-derived); the in-loop review, `/aims-review`, and comparing designs all fill the same form.
 Every finding is reproduced or cites `file:line`. In the loop, show the form's **fix-list** (the sub-10

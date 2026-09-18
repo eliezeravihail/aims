@@ -64,14 +64,28 @@ a typed measurement has nowhere to hide from the architecture question when the 
 - **Look for:** correctness defects, non-conformance, an unpinned requirement, dead abstractions, missing
   affordances. *(The pilot-#4 lens — the one that measured "win design, lose product.")*
 
-### refactoring — *did structure improve with behavior preserved?*
-- **Deliverable:** a structural change; observable behavior unchanged.
-- **Measure:** is observable behavior provably identical, **and** did the named smell actually go, with
-  no new coupling or duplication introduced?
-- **Evidence:** the pre-existing / characterization tests pass **unchanged** (not edited to pass); the
-  diff is structure-only; the target smell is demonstrably gone.
-- **Look for:** behavior drift (the cardinal sin), a half-removed smell, new coupling, tests weakened to
-  make the refactor "pass."
+### refactoring — *was the change to existing code done correctly?*
+Covers both faces of changing code that already exists: a **pure refactor** (behavior preserved) and an
+**adaptation** (a new requirement absorbed, behavior changes where the requirement asks and is preserved
+everywhere else). **Fill against [`references/refactoring-principles.md`](refactoring-principles.md)** — the
+brownfield checklist — not `design-principles.md` alone; the design form applies only to whatever *new
+structure* the change creates.
+- **Deliverable:** a change to existing code — a structural improvement, or a reshaping that takes a new
+  requirement.
+- **Measure:** is behavior **out of scope preserved bit-for-bit** (§4); was the change **absorbed at a seam**
+  rather than reopening a rule's owner or scattering it into a parallel special-case path (§3/§5); were the
+  **interactions the requirement implies re-traced** over the full input space, not just the listed cases
+  (§6 — this is where a change ships a wrong number, e.g. an unstated allocation that breaks `Σ parts ==
+  whole`); for a pure refactor, is behavior **provably identical** and the **named smell demonstrably gone**
+  (§11)?
+- **Evidence:** the characterization tests (§1) pass **unchanged** (not edited to pass); the refactor step
+  and the behavior-change step are **distinguishable** (§0); the reopened/added owners are named (the
+  survival reading); a reopen that merely *adds* an owner a new force genuinely needs is acceptable, a
+  reopen that scatters a rule is not.
+- **Look for:** behavior drift in untouched areas (the cardinal sin), a rule scattered across a normal path +
+  a special-case patch, a missing interaction/allocation (the silent wrong number), a new concept crammed as
+  a degenerate instance of an existing type (§9), a half-removed smell, tests weakened to make the change
+  "pass."
 
 ### experiment — *does the comparison discriminate?* (aims-repo-internal)
 - **Deliverable:** a *measurement of a method*, not a product change — an experiment run under
