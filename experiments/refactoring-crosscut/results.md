@@ -38,3 +38,12 @@ lose (it won the DRY point and correctly declined to over-abstract), and its one
 generalizing improvement to the document. This is the honest ceiling of a single-session experiment: the
 method's edge is structural and modest at this scale, and the correctness-forcing gap the historical S4
 represents lives at a scale (many modules, many hands, long time) beyond what one session can stage.
+
+## Re-run after the §6 fix — confirmed
+Re-running the aims arm on the **same** change, now with §6 sharpened ("an existing reader that runs on the
+change's new data shape is in scope to re-trace"), the arm **caught the exact gap it missed before**: it
+re-traced `report.statement`, found it would list entries across all currencies while returning the
+default-currency balance, and scoped it to one currency (`statement(ledger, account_id, currency="USD")`) —
+lines and balance now always the same currency, backward-compat preserved. Existing tests unchanged + oracle
+**10/10**. The one place aims lost is now handled; the doc fix does what it was written to do. (Arm output:
+`arms/aims-refactor-rerun/`.)
