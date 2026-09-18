@@ -19,6 +19,10 @@ aims answers each of these:
    code they describe, so a later session reads them and continues from there instead of starting
    over.
 
+📄 **Paper:** [*Design as the Objective*](paper/aims_paper.pdf) — the argument (a model optimizes the
+goal it is given) and a blind, adversarial evaluation, losses and null results included
+([LaTeX source](paper/aims_paper.tex)).
+
 ---
 
 # Chapter 1 — Directing the agent
