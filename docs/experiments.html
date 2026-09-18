@@ -93,6 +93,17 @@
 </div></section>
 
 <section><div class="wrap">
+  <div class="kicker">Changing existing code</div>
+  <h2>Validating the refactoring checklist</h2>
+  <p class="intro">Six experiments test <a href="https://github.com/eliezeravihail/aims/blob/master/skills/aims-guide/references/refactoring-principles.md"><code>refactoring-principles.md</code></a> and <code>/aims-refactor</code> on real adaptations — synthetic tasks, a <b>real library</b> (boltons: add TTL), a 3-step <b>rot sequence</b>, a cross-cutting <b>4-module capstone</b> (multi-currency), and a <b>continuity</b> check — each measured by runnable oracles + existing test suites + blind before/after design review. Full write-up: <a href="https://github.com/eliezeravihail/aims/blob/master/experiments/refactoring-SYNTHESIS.md">refactoring-SYNTHESIS.md</a>.</p>
+  <div class="grid g2" style="margin-top:24px">
+    <div class="card"><h3>Correctness: parity</h3><p>A capable model with <em>no method</em> got every adaptation correct and behavior-preserving — single-file or cross-cutting. On changes a strong model already handles, the method is not needed for correctness. Stated plainly, not hidden.</p></div>
+    <div class="card"><h3>The edge is structural, and it grows</h3><p>Under the before/after review, the aims arm <em>improves</em> at each step of a sequence (named single-owners, short functions) while no-method stays flat and denser. One change hides this; a sequence exposes it — the mechanism behind the historical rot.</p></div>
+  </div>
+  <div class="callout"><b>On the record:</b> in the cross-cutting capstone the plain arm edged aims on one point — aims left an existing reader (<code>statement</code>) incoherent under multi-currency. That miss produced a real fix (§6: re-trace an existing reader that now runs on the change's new data shape), and a re-run with the fix caught it. Consistency-over-dogma held throughout: on plain-style code aims did not impose value objects.</div>
+</div></section>
+
+<section><div class="wrap">
   <div class="kicker">Reading the numbers</div>
   <h2>Protocol &amp; confounds</h2>
   <div class="grid g2">
