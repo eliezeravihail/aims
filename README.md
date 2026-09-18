@@ -182,6 +182,10 @@ single task before you execute it.
   handoff; stop for review.
 - `/aims-panel-plan` — the opening-round variant: set one objective, then fan the design across three
   axis-focused Workers and compose the best of each with a merge agent; stop for review.
+- `/aims-refactor` — plan a change to code that **already exists** (a pure refactor, or an adaptation that
+  absorbs a new requirement): learns the code and characterizes its behavior first, then chooses one
+  `refactoring` objective against [`refactoring-principles.md`](skills/aims-guide/references/refactoring-principles.md);
+  stop for review. Not the greenfield design flow.
 - `/aims-build` — delegate the objective to a Worker (or run it inline); stop before evaluation.
 - `/aims-review` — measure the result against the exit criteria with the review panel (also works
   standalone on any diff/branch/PR).

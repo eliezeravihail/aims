@@ -122,6 +122,14 @@ For **every** element in the design, ask:
 > make the wrong shape fit: a zero delta, a field that is `None` for every case but one, an entry that
 > moves nothing and only restates a number computed elsewhere.
 
+The same failure recurs whenever **any** concept is forced into a neighbouring one, and the tell is always
+an inert stand-in. Watch for: a distinct concept modelled as a synthetic instance of an adjacent **entity**
+(a cleanup buffer as a `Booking` with no booker); a first-class **effect** modelled as the *absence* of
+another (an explicit `deny` as a missing `allow` — which then cannot outrank an allow); a **filter** or
+**sequence** rule modelled as a **score** (a blocked item as a `-inf` weight, a "no 3 in a row" rule as a
+penalty — neither of which actually guarantees the rule). Each is correct by value on today's cases and
+wrong by concept, so it survives review and breaks on the change that leans on the concept it got wrong.
+
 The reason this pass is needed at all: such an element is **correct by value and wrong by concept**. The
 numbers come out right, so no test fails and no case breaks — which is exactly why it survives an ordinary
 review, and why it is not caught by asking "is this clean?" It is caught only by asking "is this what it
