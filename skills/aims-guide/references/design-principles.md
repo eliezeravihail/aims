@@ -1,8 +1,8 @@
 # Design principles
 
-The single, professional checklist that defines **what correct code and architecture mean** — used both
-to build and to grade. Comprehension checks, not code metrics: none is computed from a line count or a
-tool. Organized by topic; each item is one checkable principle.
+The single checklist that defines **what correct code and architecture mean** — used both to build and to
+grade. Comprehension checks, not code metrics: none is computed from a line count or a tool. Organized by
+topic; each item is one checkable principle.
 
 **This document is the single source of correctness.** Everything else in the method is a *tool* that
 *reads* it — the build instructions, the measurement (`references/measurement.md`), the fix-list, the code
@@ -201,7 +201,6 @@ other. Over-engineering is a lighter, secondary fault. When unsure, the graver r
 - **Against stated requirements** — complexity, allocations, and I/O fit the declared need; no accidental
   quadratic or reload-in-a-loop.
 - **Measure before optimizing** — optimize the proven hot path, not a guess.
-- **Never a proxy for quality** — fast isn't thereby well-designed; slow isn't thereby badly designed.
 
 ## 14. Security & trust boundaries *(conditional — scored only where a boundary exists)*
 
