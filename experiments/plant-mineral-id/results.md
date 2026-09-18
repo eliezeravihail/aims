@@ -12,10 +12,15 @@ on `design-principles.md` §0–§14 against the frozen [`inventory.md`](invento
 
 ## Outcome — the home method lost this round
 
-| | graded | worst chapter | (#S3,#S4) | weighted |
+| | grade (weighted list) | gate | worst chapter | (#S3,#S4) |
 |---|---|---|---|---|
-| OpenSpec arm | **8.5** | §4 (S2) | (0,0) | 9.54 |
-| **aims arm** | **5.0** | **§1 (S4)** | (0,1) | 6.63 |
+| OpenSpec arm | **9.54** | CLEAR | §4 (S2) | (0,0) |
+| **aims arm** | **6.63** | **BLOCKED (1×S4)** | **§1 (S4)** | (0,1) |
+
+*(Grades are the whole-list weighted score, per `decisions/0015` — no global cap. The earlier capped
+reading was A 8.5 / B 5.0; the cap was removed because it let one easily-fixed defect bury an otherwise
+strong design and double-counted the same item. The honest reading is a near-tie in design quality, with one
+residual correctness blocker on the aims arm.)*
 
 The **aims arm lost, decisively, on the check this product is built around** — and it is worth recording
 plainly rather than explaining away.

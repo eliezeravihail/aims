@@ -45,7 +45,8 @@ A chapter's severity is the tier of its worst failed item; that tier sets the ch
 | S4 severe / correctness | 2 | ×8 |
 
 **§0 (Foundational) carries the heaviest structural weight:** a seam that leaks an implementation, a module
-reaching into another's internals, or a missing‑encapsulation failure is S3–S4 and caps — never a nit.
+reaching into another's internals, or a missing‑encapsulation failure is S3–S4 and drives the grade down
+hard through its weight — never a nit.
 
 ## Rules of filling
 
@@ -58,13 +59,23 @@ reaching into another's internals, or a missing‑encapsulation failure is S3–
 ## Aggregation
 
 ```
-weighted_average = Σ(chapter_score × weight) / Σ(weight)
-worst_chapter    = min chapter_score
-counts           = (#S3, #S4) across items
-graded caps      = any S2 ⇒ ≤ 8.5 · any S3 ⇒ ≤ 7.5 · any S4 ⇒ ≤ 5.0
+grade         = Σ(chapter_score × weight) / Σ(weight)   ← the whole-list weighted score
+worst_chapter = min chapter_score
+counts        = (#S3, #S4) across items
+gate          = any S4 ⇒ BLOCKED (a correctness precondition fails) · else CLEAR
 ```
 
-Report the capped grade beside `worst_chapter` and the `(#S3,#S4)` counts — never a bare number.
+**The grade is the weighted list — there is no global cap that overrides it.** A design score grades the
+*design*; the weighting already carries severity (a severe chapter takes a low ceiling *and* an ×8 weight,
+so one bad chapter pulls the number down hard on its own). A single local, easily-fixed correctness defect
+therefore lowers the grade through its chapter — but it never *caps* the whole design to a near-fail, which
+would double-count the same defect and let one fixable item bury an otherwise-excellent design.
+
+The **gate** is reported *beside* the grade, not folded into it: `any S4 ⇒ BLOCKED` means "not shippable
+until this precondition item is fixed" — a fact about **shippability**, not a verdict that the design is
+weak. A design can be strong (high grade) *and* blocked (one S4 to fix); the fix-list projection names
+exactly what to fix. Report the grade, `worst_chapter`, the `(#S3,#S4)` counts, and the gate together —
+never a bare number, and never a capped one.
 
 **Comparability.** Applicability is decided by Step 0 (the spec), so **all arms of one product share the
 same applicable set** and their grades are directly comparable. Grades across *different* products are not
@@ -82,4 +93,4 @@ same applicable set** and their grades are directly comparable. Grades across *d
 
 The build side runs the same chapters, preconditions first (§1 correctness, §5 one-owner, §0 seams): pin
 R/X/C, make every applicable item hold by construction, and self-fill the form before returning. Never
-return a design carrying a failed precondition (S4) or an uncapped S3 without surfacing it.
+return a design carrying a failed precondition (S4) or an S3 without surfacing it.
