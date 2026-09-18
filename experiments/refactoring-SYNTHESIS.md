@@ -13,6 +13,7 @@ Kind. Read alongside each experiment's own `results.md`.
 | 3 | `refactoring-suite-real` | **real** (mahmoud/boltons cacheutils) | add TTL (cross-path: in/get/[] + LRU override) | both 23 tests + 14-oracle; aims tighter (expiry in the node, 31 vs 53 lines) |
 | 4 | `refactoring-rot` (3-step sequence) | synthetic plain pricing | 3 successive interacting changes | both correct every step; **aims design trajectory improves, plain stays flat/denser** |
 | 5 | `refactoring-crosscut` (capstone) | 4-module ledger | multi-currency (cross-cutting) | both correct + on-grain; **essentially a tie** (aims wins DRY, plain wins one coherence point) |
+| 6 | `refactoring-continuity` | same code ± the record | a fresh session adds a refund (re-derivation trap) | both fresh sessions reused the owner and passed 14/14; the record added legibility, **not a different outcome**, at this scale |
 
 ## What holds across all five
 
@@ -47,3 +48,11 @@ on-grain adaptations, and — measured as a trajectory — a cleaner design than
 over-abstraction. It does **not** manufacture a correctness advantage on changes a strong model already
 handles; its value is structural discipline and durable records that compound across many changes and hands
 — a scale beyond a single session to stage, and the honest frontier for the next round.
+
+The **continuity** experiment (6) closes the loop on aims' second claim with the same honesty: on a small,
+readable module a fresh session reconstructs the invariant from the code itself, so the co-located record
+adds legibility and confidence but not a different outcome. The record is load-bearing only where the code is
+ambiguous or hides a rejected-alternative trap, at a scale where re-deriving is slow and error-prone —
+again a scale-and-longevity effect, not a single-session one. Across all six: **correctness parity at every
+scale tested; a real, measurable structural/legibility edge that grows with the sequence and the codebase;
+and consistency-over-dogma held throughout.**
