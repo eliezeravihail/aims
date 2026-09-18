@@ -91,8 +91,13 @@ other. Over-engineering is a lighter, secondary fault. When unsure, the graver r
   "managers." Tell-Don't-Ask: tell an object what to do, don't pull its state and decide outside it.
 - **Make illegal states unrepresentable** — model with sum types/enums so invalid combinations can't be
   built.
-- **Concept fit** — model a thing as the kind it is; don't force a decomposition into a movement (or
-  vice-versa) via inert members.
+- **Concept fit** — model a thing as the kind it *is*, not as a degenerate or synthetic instance of a
+  neighbouring type. The cram is value-correct and concept-wrong, so it passes every test and only breaks
+  under a later change; its tell is always an inert stand-in. It recurs in several shapes: a decomposition
+  forced into a movement (tax as an `Adjustment(delta=0)`), a distinct concept forced into a neighbouring
+  entity (a cleanup buffer as a synthetic `Booking`), a first-class effect modelled as the *absence* of
+  another (an explicit `deny` as a missing `allow`), a filter or sequence rule modelled as a score (a
+  blocked item as a `-inf` weight).
 - **One abstraction level per family** — peers share a conceptual altitude (LSP); no member that is really
   an implementation detail.
 - **Immutability by default** — prefer immutable values; mutation is the justified, localized exception.
@@ -110,7 +115,10 @@ other. Over-engineering is a lighter, secondary fault. When unsure, the graver r
   let an unactionable, process-fatal failure fall rather than wrap it.
 - **One owner per rule** *(precondition)* — each stated rule has one home and one path all callers use. A
   design intent, not a language-enforced guard (a dynamic language can always be tricked; the point is that
-  the intended paths funnel through one place).
+  the intended paths funnel through one place). When a rule **gains a case under a change**, absorb the new
+  case in that one owner; a parallel "special-case" path bolted on beside the normal one silently creates a
+  second owner (a cleanup buffer enforced once inside the occupancy model — not again as a separate trailing
+  filter).
 
 ## 6. Coupling, cohesion & dependencies
 
