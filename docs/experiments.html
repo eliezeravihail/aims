@@ -93,31 +93,69 @@
 </div></section>
 
 <section><div class="wrap">
-  <div class="kicker">Changing existing code</div>
-  <h2>Validating the add-feature checklist</h2>
-  <p class="intro">Six experiments test <a href="https://github.com/eliezeravihail/aims/blob/master/skills/aims-guide/references/add-feature-principles.md"><code>add-feature-principles.md</code></a> and <code>/aims-add-feature</code> on real adaptations — synthetic tasks, a <b>real library</b> (boltons: add TTL), a 3-step <b>rot sequence</b>, a cross-cutting <b>4-module capstone</b> (multi-currency), and a <b>continuity</b> check — each measured by runnable oracles + existing test suites + blind before/after design review. Full write-up: <a href="https://github.com/eliezeravihail/aims/blob/master/experiments/refactoring-SYNTHESIS.md">refactoring-SYNTHESIS.md</a>.</p>
-  <div class="grid g2" style="margin-top:24px">
-    <div class="card"><h3>Correctness: parity</h3><p>A capable model with <em>no method</em> got every adaptation correct and behavior-preserving — single-file or cross-cutting. On changes a strong model already handles, the method is not needed for correctness. Stated plainly, not hidden.</p></div>
-    <div class="card"><h3>The edge is structural, and it grows</h3><p>Under the before/after review, the aims arm <em>improves</em> at each step of a sequence (named single-owners, short functions) while no-method stays flat and denser. One change hides this; a sequence exposes it — the mechanism behind the historical rot.</p></div>
-  </div>
-  <div class="callout"><b>On the record:</b> in the cross-cutting capstone the plain arm edged aims on one point — aims left an existing reader (<code>statement</code>) incoherent under multi-currency. That miss produced a real fix (§6: re-trace an existing reader that now runs on the change's new data shape), and a re-run with the fix caught it. Consistency-over-dogma held throughout: on plain-style code aims did not impose value objects.</div>
-</div></section>
+  <div class="kicker">Experiments as series</div>
+  <h2>Each sequence, and what it changed</h2>
+  <p class="intro">The experiments run in four series. Each is a chain: a run produces a reading, the reading forces a specific change to the method, and the next run tests under the change. The record below reads the chain forward — <b>experiment → what changed</b> — with every change linked to the decision that carries it.</p>
 
-<section><div class="wrap">
-  <div class="kicker">Latest round</div>
-  <h2>A loss, kept honest</h2>
-  <p class="intro">The newest experiments are a case aims <b>lost</b> and the review discipline applied to it — recorded here rather than buried. A blind pilot found a real correctness defect in the home method; the fix to the grading rule was applied so it <em>sharpens</em> the loss, not softens it; and a candidate wording change was made to prove itself on an <b>unseen</b> product before entering the method.</p>
+  <h3 style="margin-top:32px">Series 1 · The greenfield design contest — aims vs OpenSpec / plain</h3>
   <div class="tablewrap">
     <table>
-      <thead><tr><th>Experiment</th><th>What was measured</th><th>Reading</th></tr></thead>
+      <thead><tr><th>Experiment</th><th>Reading</th></tr></thead>
       <tbody>
-        <tr><td><a href="https://github.com/eliezeravihail/aims/tree/master/experiments/plant-mineral-id">plant-mineral-id</a></td><td>plants → minerals, two reveals, blind-judged</td><td><b>aims lost decisively</b> — 6.63 (BLOCKED) vs 9.54 (CLEAR); an <b>S4 §4/§1 design defect</b> (a type model that can't represent an observed "6.5–7"). The blind instrument caught it in the home method.</td></tr>
-        <tr><td><a href="https://github.com/eliezeravihail/aims/blob/master/experiments/grade-rule-regrade.md">grade-rule-regrade</a></td><td>New grade rule (weighted list + gate) applied retroactively to every prior experiment</td><td>Under the gate, aims' plant→mineral arm is the <b>only BLOCKED arm</b> across the whole set — the rule change <b>sharpens</b> the loss, not softens it. Both readings kept side by side.</td></tr>
-        <tr><td><a href="https://github.com/eliezeravihail/aims/tree/master/experiments/s7-yagni-stated-capability">s7-yagni-stated-capability</a></td><td>A/B of a candidate §7 wording on a fresh, <b>unseen</b> product</td><td><b>Null</b> — both arms kept the capability, so the over-cut did not reproduce and the wording was <b>not</b> folded into the method. A loss-prompted fix that doesn't prove itself stays out.</td></tr>
+        <tr><td><a href="https://github.com/eliezeravihail/aims/tree/master/experiments/aims-vs-openspec">aims-vs-openspec</a></td><td><b>aims lost</b> — third on design quality, reopened the most on survival. No design advantage found.</td></tr>
+        <tr><td><a href="https://github.com/eliezeravihail/aims/tree/master/experiments/aims-upgraded-rerun">aims-upgraded-rerun</a></td><td>Decisive survival win; quality still third, but now the two judges <em>agree</em> why (not a taste split).</td></tr>
+        <tr><td><a href="https://github.com/eliezeravihail/aims/tree/master/experiments/single-pass-assessment-rerun">single-pass-assessment-rerun</a></td><td class="win">Under neutral measurement, aims ties checkout and leads marketplace — no longer last.</td></tr>
+        <tr><td><a href="https://github.com/eliezeravihail/aims/tree/master/experiments/principles-polish-vs-openspec">principles-polish-vs-openspec</a> (3 products)</td><td class="win">D1 first-round quality: aims wins all three on the same axis. D2 absorption: wins the rubric all three.</td></tr>
+        <tr><td><a href="https://github.com/eliezeravihail/aims/tree/master/experiments/marketplace-change-absorption">marketplace-change-absorption</a></td><td>Self-score tie; the blind judge tips a slight edge to OpenSpec (one reopen too generous).</td></tr>
       </tbody>
     </table>
   </div>
-  <p class="muted">The grade rule and the reported gate: <a href="https://github.com/eliezeravihail/aims/blob/master/decisions/0018-grade-is-the-weighted-list-severity-is-a-gate.md">decisions/0018</a>.</p>
+  <div class="callout"><b>→ What changed:</b> the first pilot's no-advantage result was recorded honestly (<a href="https://github.com/eliezeravihail/aims/blob/master/decisions/0007-aims-vs-openspec-pilot-findings.md">0007</a>, trail through <a href="https://github.com/eliezeravihail/aims/blob/master/decisions/0010-openspec-pilot-trail-through-v4.md">0010</a>) and established the <b>blind two-arm protocol</b>. Judges splitting the verdict = a taste artifact → a single <b>assessment form</b> became the one measurement instrument (<a href="https://github.com/eliezeravihail/aims/blob/master/decisions/0012-assessment-form-instrument-and-review-projection.md">0012</a>, <a href="https://github.com/eliezeravihail/aims/blob/master/decisions/0014-one-measurement-instrument-the-form.md">0014</a>). §2 was rebalanced — the "describable second implementation" prediction-gate dropped, under-structuring ranked the primary failure (<a href="https://github.com/eliezeravihail/aims/blob/master/decisions/0013-interfaces-are-positive-drop-second-implementation-bar.md">0013</a>) — and operator prompt-anchoring removed. Under those, aims stopped placing last.</div>
+
+  <h3 style="margin-top:32px">Series 2 · Method-internal probes — where should quality come from?</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Experiment</th><th>Reading</th></tr></thead>
+      <tbody>
+        <tr><td><a href="https://github.com/eliezeravihail/aims/tree/master/experiments/iter-plan">iter-plan</a></td><td>One grade→correct→revise round was the <b>strongest quality lever of all</b> — bigger than any upfront guidance.</td></tr>
+        <tr><td><a href="https://github.com/eliezeravihail/aims/tree/master/experiments/plan-diversity">plan-diversity</a></td><td>No diversity source (sampling / models / stances) beat a single pass cleanly; shared ceiling, a confound blocks crediting inter-model.</td></tr>
+        <tr><td><a href="https://github.com/eliezeravihail/aims/tree/master/experiments/continued-development">continued-development</a> · <a href="https://github.com/eliezeravihail/aims/tree/master/experiments/instance-seg-annotator">instance-seg-annotator</a></td><td>A fresh session read the co-located record and built on it — continuity, blind-corroborated (on the one-shot code, a tie).</td></tr>
+        <tr><td><a href="https://github.com/eliezeravihail/aims/tree/master/experiments/navigation">navigation</a></td><td class="win">The agent found the knowledge it needed by <b>navigating</b> to the relevant companion / root records — not reading the whole tree.</td></tr>
+        <tr><td><a href="https://github.com/eliezeravihail/aims/tree/master/experiments/self-redesign-regression">self-redesign-regression</a></td><td>The polish did not regress; near-parity, and one probe fix caught blind.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout"><b>→ What changed:</b> iter-plan made one <b>review-and-revise round mandatory</b> before a design objective can read as met (<a href="https://github.com/eliezeravihail/aims/blob/master/decisions/0011-mandatory-review-revise-round.md">0011</a>). plan-diversity found no gain worth the cost → the PLAN pass was left single, not forced to fan out. The continuity + navigation runs <b>validated the second thesis</b> — durable records that compound across sessions, reached by navigation — confirming co-location (<a href="https://github.com/eliezeravihail/aims/blob/master/decisions/0002-knowledge-co-located-with-code.md">0002</a>) and the SessionStart reading rule rather than forcing any new machinery.</div>
+
+  <h3 style="margin-top:32px">Series 3 · Changing existing code — the add-feature series</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Experiment</th><th>Reading</th></tr></thead>
+      <tbody>
+        <tr><td><a href="https://github.com/eliezeravihail/aims/tree/master/experiments/refactoring-principles-validation">refactoring-principles-validation</a></td><td>Both arms oracle-correct; the card over-specified the trap.</td></tr>
+        <tr><td><a href="https://github.com/eliezeravihail/aims/tree/master/experiments/refactoring-suite">refactoring-suite</a> (3) · <a href="https://github.com/eliezeravihail/aims/tree/master/experiments/refactoring-suite-real">…-real</a> (boltons)</td><td class="win">Both correct; aims cleaner — one owner vs a scattered set (real library: 31 vs 53 lines).</td></tr>
+        <tr><td><a href="https://github.com/eliezeravihail/aims/tree/master/experiments/refactoring-rot">refactoring-rot</a> (3 steps)</td><td class="win">Both correct each step, but <b>aims' design trajectory improves</b> while no-method stays flat and denser.</td></tr>
+        <tr><td><a href="https://github.com/eliezeravihail/aims/tree/master/experiments/refactoring-crosscut">refactoring-crosscut</a> (4-module capstone)</td><td>Essentially a tie — and aims left an existing reader (<code>statement</code>) incoherent under multi-currency.</td></tr>
+        <tr><td><a href="https://github.com/eliezeravihail/aims/tree/master/experiments/refactoring-continuity">refactoring-continuity</a></td><td>Both fresh sessions passed 14/14; the record added legibility, not a different outcome at this scale.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout"><b>→ What changed:</b> adapting existing code is a different task → a dedicated <code><a href="https://github.com/eliezeravihail/aims/blob/master/skills/aims-guide/references/add-feature-principles.md">add-feature-principles.md</a></code> + Kind (<a href="https://github.com/eliezeravihail/aims/blob/master/decisions/0015-refactoring-principles-and-the-adaptation-face.md">0015</a>). Grading a change against an absolute checklist was wrong → a review became a <b>before/after delta on the target's own grain</b>, consistency-over-dogma overriding the checklist (<a href="https://github.com/eliezeravihail/aims/blob/master/decisions/0016-refactoring-review-is-a-before-after-delta-on-the-targets-grain.md">0016</a>). The capstone miss produced the <b>§6 fix</b> — re-trace an existing reader that now runs on the change's new data shape — and a re-run caught it. Finally the name was corrected: <b>refactoring → add-feature</b> (<a href="https://github.com/eliezeravihail/aims/blob/master/decisions/0017-rename-refactoring-to-add-feature.md">0017</a>), pure refactoring kept as the behavior-preserving sub-case.</div>
+
+  <h3 style="margin-top:32px">Series 4 · After a loss — review discipline</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Experiment</th><th>Reading</th></tr></thead>
+      <tbody>
+        <tr><td><a href="https://github.com/eliezeravihail/aims/tree/master/experiments/plant-mineral-id">plant-mineral-id</a></td><td><b>aims lost decisively</b> — 6.63 (BLOCKED) vs 9.54 (CLEAR); an <b>S4 §4/§1 design defect</b> (a type model that can't represent an observed "6.5–7"), caught blind in the home method.</td></tr>
+        <tr><td><a href="https://github.com/eliezeravihail/aims/blob/master/experiments/grade-rule-regrade.md">grade-rule-regrade</a></td><td>The new grade rule applied retroactively to every prior experiment: aims' plant→mineral arm is the <b>only BLOCKED arm</b> in the set.</td></tr>
+        <tr><td><a href="https://github.com/eliezeravihail/aims/tree/master/experiments/s7-yagni-stated-capability">s7-yagni-stated-capability</a></td><td><b>Null</b> — a candidate §7 wording, A/B'd on an <b>unseen</b> product, did not change the outcome; both arms kept the capability.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout"><b>→ What changed:</b> the loss exposed that the old global cap <b>double-counted one defect three times</b> → the grade is now the weighted list; severity is a <b>reported gate</b> (<code>any S4 ⇒ BLOCKED</code>) beside it, not a cap on it (<a href="https://github.com/eliezeravihail/aims/blob/master/decisions/0018-grade-is-the-weighted-list-severity-is-a-gate.md">0018</a>). To keep the instrument credible after a loss it produced, it was adopted <em>only</em> with two guardrails: applied <b>retroactively to the whole set</b> (grade-rule-regrade) and both readings kept — so the rule <b>sharpens</b> the loss, not softens it. And the wording change the loss suggested was <b>not trusted on its own round</b>: A/B'd on an unseen product, it came back null, so it was <b>not folded in</b>. A loss-prompted fix that doesn't prove itself stays out.</div>
+
+  <p class="muted">Full add-feature write-up: <a href="https://github.com/eliezeravihail/aims/blob/master/experiments/refactoring-SYNTHESIS.md">refactoring-SYNTHESIS.md</a>. The 18 decisions in order: <a href="https://github.com/eliezeravihail/aims/tree/master/decisions">decisions/</a>.</p>
 </div></section>
 
 <section><div class="wrap">
