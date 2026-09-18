@@ -3,7 +3,7 @@ title: "a refactoring review is a before/after delta on the target's grain — c
 date: 2026-09-18
 ---
 
-**Context.** `refactoring-principles.md` (0015) graded a change against its own checklist, like a design
+**Context.** `add-feature-principles.md` (0015) graded a change against its own checklist, like a design
 review. Two things that reading missed, both surfaced while validating the document on real and synthetic
 adaptations:
 
@@ -20,10 +20,10 @@ adaptations:
 **Decision.**
 1. **The refactoring measure is an explicit before/after review** on the **target's own terms**: read design
    quality before and after; the bar is **no regression, ideally a small improvement**; across successive
-   changes, watch the **trajectory**. Recorded at the top of `refactoring-principles.md` and in the
+   changes, watch the **trajectory**. Recorded at the top of `add-feature-principles.md` and in the
    `### refactoring` lens of `review-panel.md`.
 2. **Match the target's grain — consistency over dogma.** Adapt to the existing code's style and abstraction
-   *even where it contradicts a principle in `refactoring-principles.md` or `design-principles.md`*; when the
+   *even where it contradicts a principle in `add-feature-principles.md` or `design-principles.md`*; when the
    two disagree on the same change, the grain wins and the deviation is recorded as deliberate. The goal is
    **no new mess**, not conformance to the list.
 

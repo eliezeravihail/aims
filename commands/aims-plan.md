@@ -10,7 +10,7 @@ Enter the `aims-guide` skill and run **only the PLAN phase** (operating-loop ste
 - Establish current state, run discovery, and resolve any **open product decisions** by asking the
   user one concrete question at a time — planning is where those questions belong.
 - Choose the single most valuable **design/quality objective** now, **declare its Kind** (`design` |
-  `implementation` | `refactoring` — see `references/objective-selection.md`; it sets the review lens),
+  `implementation` | `add-feature` — see `references/objective-selection.md`; it sets the review lens),
   and draft a bounded Worker handoff per `references/worker-handoff.md`. Write both into `state.md`; set
   the Loop cursor to `planned:awaiting-build`.
 - **File the round's durable design as records in the code tree** (`references/design-record.md`): the

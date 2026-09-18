@@ -17,6 +17,7 @@
   <a class="link" href="practice.html">In practice</a>
   <a class="link" href="measurement.html">Measurement</a>
   <a class="link" href="experiments.html">Experiments</a>
+  <a class="link" href="paper.html">Paper</a>
   <a class="link active" href="usage.html">Use it</a>
   <a class="link gh" href="https://github.com/eliezeravihail/aims">GitHub ↗</a>
 </div></nav>
@@ -50,6 +51,7 @@
     <li><span class="tag">auto</span><span class="body"><b><code>/aims-plan-and-build "&lt;task&gt;"</code></b> — <span>the full autonomous loop: discovery → design objective → build → review → file the records, pausing only for open product decisions.</span></span></li>
     <li><span class="tag">plan</span><span class="body"><b><code>/aims-plan "&lt;task&gt;"</code></b> — <span>choose one design objective, file the durable records it commits to, draft the Worker handoff; stop for review with a plan report.</span></span></li>
     <li><span class="tag">panel</span><span class="body"><b><code>/aims-panel-plan</code></b> — <span>the opening-round variant: set one objective, fan the design across three axis-focused Workers, and compose the best of each with a merge agent.</span></span></li>
+    <li><span class="tag">adapt</span><span class="body"><b><code>/aims-add-feature "&lt;change&gt;"</code></b> — <span>plan a change to code that <b>already exists</b> — a pure refactor, or an adaptation that absorbs a new requirement. Learns the code and characterizes its behavior first (not the greenfield flow), then picks one <code>add-feature</code> objective against <a href="method.html#refactoring">add-feature-principles</a>; stop for review.</span></span></li>
     <li><span class="tag">build</span><span class="body"><b><code>/aims-build</code></b> — <span>delegate the objective to a Worker (or run it inline); stop before evaluation.</span></span></li>
     <li><span class="tag">review</span><span class="body"><b><code>/aims-review &lt;branch | diff | path&gt;</code></b> — <span>measure the result against the exit criteria with the review panel; also works standalone on any diff, branch, or PR.</span></span></li>
     <li><span class="tag">solo</span><span class="body"><b><code>/aims-sharpen-prompt</code></b> — <span>the framing discipline on its own: turn a vague ask into a real brief before executing. No project setup, not limited to software.</span></span></li>

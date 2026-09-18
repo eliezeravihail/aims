@@ -42,7 +42,7 @@ ADRs are append-only — to change one, add a new ADR that supersedes it, naming
 Do not put a file-level insight at the root, and do not scatter a system-wide decision across file
 companions. If a would-be file-level insight actually concerns *several* files at once, that is usually a
 system-level fact (→ `architecture.md` or an ADR) or a signal the files share a responsibility that
-wants its own home (a refactoring objective) — not a note copied into many companions.
+wants its own home (a add-feature objective) — not a note copied into many companions.
 
 ## Who files, and when
 

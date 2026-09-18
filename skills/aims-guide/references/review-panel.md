@@ -15,7 +15,7 @@ panel rebuilds both without a second arm.
 
 ## A task declares its kind; the measurement matches it
 
-Every objective declares a **Kind — `design` | `implementation` | `refactoring`** (plus `experiment`,
+Every objective declares a **Kind — `design` | `implementation` | `add-feature`** (plus `experiment`,
 an aims-repo-internal kind whose deliverable is a *measurement of a method*, not a product change — see
 its lens below) (see
 `references/objective-selection.md`), and the review measures the outcome through the lens for that kind.
@@ -64,15 +64,15 @@ a typed measurement has nowhere to hide from the architecture question when the 
 - **Look for:** correctness defects, non-conformance, an unpinned requirement, dead abstractions, missing
   affordances. *(The pilot-#4 lens — the one that measured "win design, lose product.")*
 
-### refactoring — *was the change to existing code done correctly?*
+### add-feature — *was the change to existing code done correctly?*
 Covers both faces of changing code that already exists: a **pure refactor** (behavior preserved) and an
 **adaptation** (a new requirement absorbed, behavior changes where the requirement asks and is preserved
-everywhere else). **Fill against [`references/refactoring-principles.md`](refactoring-principles.md)** — the
+everywhere else). **Fill against [`references/add-feature-principles.md`](add-feature-principles.md)** — the
 brownfield checklist — not `design-principles.md` alone; the design form applies only to whatever *new
 structure* the change creates.
 - **Deliverable:** a change to existing code — a structural improvement, or a reshaping that takes a new
   requirement.
-- **Measure — as a before/after delta on the target's own terms** (`refactoring-principles.md`: "the measure
+- **Measure — as a before/after delta on the target's own terms** (`add-feature-principles.md`: "the measure
   is a before-and-after review"): read the module's design quality **before** and **after**; the bar is **no
   regression, ideally a small improvement**, and across a sequence the **trajectory** (rot is cumulative). Is
   behavior **out of scope preserved bit-for-bit** (§4); was the change **absorbed at a seam** rather than
@@ -105,7 +105,7 @@ structure* the change creates.
 - **Look for:** a missing control arm, a judge that saw which arm was aims, a result cited to a run whose
   artifacts do not exist, self-contamination (an arm could read the answer).
 
-If a task's declared kind and its actual deliverable disagree — a "refactoring" that changed behavior, a
+If a task's declared kind and its actual deliverable disagree — an "add-feature" change that silently broke existing behavior, a
 "design" objective that quietly shipped a feature — **that mismatch is itself the first reading.** The
 roles below serve whichever lens the kind selects.
 
@@ -180,7 +180,7 @@ review measure the wrong thing.
 **Step 0 — classify before you review (a required gate, not a formality).** Before producing a single
 reading, commit *in writing* to two things, as the first output of the review:
 
-1. **The kind** — `design` | `implementation` | `refactoring` — inferred from the target and its stated
+1. **The kind** — `design` | `implementation` | `add-feature` — inferred from the target and its stated
    intent. A change is not always one kind: if the diff genuinely spans kinds (a refactor that also adds
    behavior), name the **dominant** one and apply the extra lens where it applies, rather than forcing
    one. If the kind is unclear *and* which kind you pick would change what you measure, **ask the user

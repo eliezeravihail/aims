@@ -9,8 +9,8 @@ objective and feeds the next direction; it is not a gate — following `referenc
 (`references/measurement.md`, §1–§18, sub-check-derived). Show the form's **fix-list** — the sub-10 rows,
 most-severe-first, each cited — **not the aggregate score** (a device to keep the work on content, not on
 polishing a number; `decisions/0014`). **First read the objective's Kind** (`design` | `implementation` |
-`refactoring`) and take that kind's lens per `review-panel.md` — a `design` review measures whether the
-*structure* is right (not tests), `implementation` measures correctness and conformance, `refactoring`
+`add-feature`) and take that kind's lens per `review-panel.md` — a `design` review measures whether the
+*structure* is right (not tests), `implementation` measures correctness and conformance, `add-feature`
 measures behavior-preservation and whether the named smell went. If the declared kind and the actual
 deliverable disagree, that mismatch is the first reading. Two uses, decided by whether a target is given:
 
@@ -28,7 +28,7 @@ Anchor each. Do not silently repair everything reported — the Guide/human deci
 **Standalone review (a target is given in the arguments).** Review the target change without requiring
 a `.aims/state.md`. Here nothing has told you the kind or the criteria, so **classify first — a required
 gate, not a formality** (see `references/review-panel.md`, "Standalone use"). Before any reading, commit
-in writing to: (1) the review **kind** — `design`, `implementation`, or `refactoring` — from the target
+in writing to: (1) the review **kind** — `design`, `implementation`, or `add-feature` — from the target
 and stated intent; if the change spans kinds, name the dominant one and add the other lens where it
 applies; if the kind is unclear *and* would change what you measure, ask one concrete question first;
 and (2) the ground truth to measure against — the change's stated intent / acceptance criteria, asking

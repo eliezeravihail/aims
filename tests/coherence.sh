@@ -47,7 +47,7 @@ done
 #    The template's Kind comment is the single source of the Kind list.
 tmpl="skills/aims-guide/assets/state-template.md"
 lens="skills/aims-guide/references/review-panel.md"
-kind_line="$(grep -m1 -oE '(design \| implementation \| refactoring[^>]*)' "$tmpl" 2>/dev/null | head -1)"
+kind_line="$(grep -m1 -oE '(design \| implementation \| add-feature[^>]*)' "$tmpl" 2>/dev/null | head -1)"
 if [ -z "$kind_line" ]; then
   bad "could not find the Kind list in $tmpl"
 else

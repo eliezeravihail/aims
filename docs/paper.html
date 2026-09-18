@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The paper — aims</title>
+<meta name="description" content="Design as the Objective: a model optimizes the goal it is given, so structure must be made the goal — with a blind evaluation, losses included.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav><div class="wrap">
+  <a class="brand" href="index.html"><b>aims</b></a>
+  <a class="link" href="method.html">The method</a>
+  <a class="link" href="practice.html">In practice</a>
+  <a class="link" href="measurement.html">Measurement</a>
+  <a class="link" href="experiments.html">Experiments</a>
+  <a class="link active" href="paper.html">Paper</a>
+  <a class="link" href="usage.html">Use it</a>
+  <a class="link gh" href="https://github.com/eliezeravihail/aims">GitHub ↗</a>
+</div></nav>
+
+<header class="pagehero"><div class="wrap">
+  <span class="badge">06 · Paper</span>
+  <h1>Design as the objective</h1>
+  <p class="lede">A model optimizes the goal it is <em>given</em>. Agent loops score correctness, so structure is never the goal — unless you make it one.</p>
+  <p class="muted">Eliezer Avihail · September 2026 · <a href="https://github.com/eliezeravihail/aims/blob/master/paper/aims_paper.tex">full paper (LaTeX)</a></p>
+</div></header>
+
+<section><div class="wrap">
+  <div class="kicker">The idea</div>
+  <h2>One assumption, three requirements</h2>
+  <p class="intro">A language model maximizes the likelihood of the next token given its context, and preference training rewards answers that <em>look</em> right. Under a loop that ends on "it works," good structure is never being optimized — the model's default is ordinary, flat code. Getting structure out requires three things, and aims is just those three:</p>
+  <div class="grid g3" style="margin-top:24px">
+    <div class="card"><h3>1 · Make it checkable</h3><p>An adjective ("clean code") is not a goal. Structure becomes real only as a list of yes/no items applied to the output — a document that says what "correct" means.</p></div>
+    <div class="card"><h3>2 · Check at the decision</h3><p>Once an interface is written, the model defends it. So the check runs <em>inside the design step</em>, before any code — where a fix costs a paragraph, not a refactor.</p></div>
+    <div class="card"><h3>3 · Write down the why</h3><p>No memory between sessions. File the reasons for each boundary <em>beside the code</em>, and flag the record stale when the code moves — because a stale record gets followed.</p></div>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="kicker">The evaluation</div>
+  <h2>What the experiments show — honestly</h2>
+  <p class="intro">Blind, adversarial protocol: staged requirement cards that never hint at later stages, a passive oracle, method-anonymized artifacts, judges who built nothing, a reproduction for every claim. The results, wins and non-wins together:</p>
+  <ul class="clean">
+    <li><span class="tag">win</span> <b>First-round design quality:</b> against a spec-driven baseline on three products, aims wins all three on the same axis — value objects and one-owner-per-rule.</li>
+    <li><span class="tag">even</span> <b>Change absorption:</b> tie / win / tie on the rubric-free survival count; both arms pass every correctness trap.</li>
+    <li><span class="tag">even</span> <b>Six adaptation tasks</b> (one on a real open-source module): a no-method control is correct <em>every</em> time. On a change one session can hold, the method is not needed for correctness.</li>
+    <li><span class="tag">win</span> <b>The real edge is a trajectory:</b> across successive changes aims' design improves while the control flattens and densifies — rot that a single-change benchmark cannot see.</li>
+    <li><span class="tag">loss</span> <b>A product it lost:</b> on plant→mineral the aims arm shipped a type that could not represent an observed range ("6.5–7") — a correctness (S4) design defect, caught blind, in the home method. The instrument is not a home referee.</li>
+    <li><span class="tag">cost</span> <b>2.5–3×</b> the baseline in tokens and time — spent on reading the principles, filing records, and the mandatory revise round.</li>
+  </ul>
+  <div class="callout"><b>Two of the best-looking numbers are reported as instrument failures, not results:</b> a perfect first-round score on all three products (a ceiling that can no longer register the next regression), and all three judges noting the designs speak the rubric's own vocabulary (the judge shares the method's rubric). A candidate fix prompted by the loss was withheld and A/B-tested on an unseen product; it did not prove necessary, so it was <em>not</em> adopted.</div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="kicker">The honest bottom line</div>
+  <h2>Why this is judgement, not measurement</h2>
+  <p class="intro">On the one pair of runnable arms differing in a single design decision, <b>every deterministic metric was blind to the difference a judge penalized — and two (Maintainability Index, SLOC) pointed the wrong way</b>, because a named concept costs lines and adds no branches. There is no off-the-shelf benchmark for what this work improves; the metrics that resemble one measure something else. So architectural evaluation is an instrument of <b>procedure</b> — spec-pinned inventory, evidence per score, sealed blinding, adversarial by construction — and its soundness rests there. The method's value is structural discipline and durable records that compound across many changes; the frontier is scale, which is a measurement problem before it is a method one.</p>
+  <p class="muted">Full argument, tables, protocol and references: <a href="https://github.com/eliezeravihail/aims/blob/master/paper/aims_paper.tex">paper/aims_paper.tex</a>. Frozen experiment packages, run logs, judge reports and sealed mappings: <a href="https://github.com/eliezeravihail/aims">the repository</a>.</p>
+  <div class="pagenav">
+    <a href="usage.html"><div class="lab">Next</div><div class="ttl">Use it →</div></a>
+    <a href="experiments.html"><div class="lab">Back to</div><div class="ttl">← Experiments</div></a>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <div><strong style="color:var(--ink);font-family:var(--serif);font-size:1.1rem">aims</strong> — v1.0.0 · MIT</div>
+  <a href="https://github.com/eliezeravihail/aims">github.com/eliezeravihail/aims ↗</a>
+</div></footer>
+</body>
+</html>

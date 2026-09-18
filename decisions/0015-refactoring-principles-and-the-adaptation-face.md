@@ -1,5 +1,5 @@
 ---
-title: "a refactoring-principles document and the refactoring Kind's adaptation face"
+title: "a add-feature-principles document and the refactoring Kind's adaptation face"
 date: 2026-09-18
 ---
 
@@ -17,7 +17,7 @@ regrade-results.md`, the cart-discount→line-allocation S4) is a *change-time* 
 survival reading.
 
 **Decision.**
-1. **Ship `references/refactoring-principles.md`** — the brownfield companion to `design-principles.md`, the
+1. **Ship `references/add-feature-principles.md`** — the brownfield companion to `design-principles.md`, the
    professional checklist for changing code that already exists. Its preconditions are change-specific:
    characterize-before-touch (§1), behavior preserved out of scope (§4), one owner survives the change (§5),
    and re-trace the full input space the change implies (§6). Its organizing move is Beck's *make the change
@@ -26,10 +26,10 @@ survival reading.
    structure the change creates rather than repeating it.
 2. **The `refactoring` Kind now covers both faces of changing existing code** — a pure refactor (behavior
    preserved) and an **adaptation** (a new requirement absorbed). Its lens in `review-panel.md` fills against
-   `refactoring-principles.md`, and `objective-selection.md` gains the *Adapt existing code to a new
+   `add-feature-principles.md`, and `objective-selection.md` gains the *Adapt existing code to a new
    requirement* pattern. No fourth Kind is added: the state-template Kind list and the coherence lens-check
    stay as they are (the lens header remains `### refactoring`).
-3. **A dedicated command, `/aims-refactor`**, is the front door for a change to existing code: it learns the
+3. **A dedicated command, `/aims-add-feature`**, is the front door for a change to existing code: it learns the
    code and characterizes its behavior first (not the greenfield usage-scenario/substrate flow), chooses one
    `refactoring` objective, files the records (superseding decisions in place), and stops for review. `/aims-build`
    and `/aims-review` then apply the refactoring lens by Kind.
