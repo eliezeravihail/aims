@@ -1,8 +1,9 @@
-# Synthesis — validating `refactoring-principles.md`
+# Synthesis — validating `add-feature-principles.md`
 
-The refactoring/adaptation experiments, and what they establish about the shipped
-[`refactoring-principles.md`](../skills/aims-guide/references/refactoring-principles.md) and the `/aims-refactor`
-Kind. Read alongside each experiment's own `results.md`.
+The add-feature/adaptation experiments (historically "refactoring"; the Kind and doc were renamed per
+`../decisions/0017-rename-refactoring-to-add-feature.md`), and what they establish about the shipped
+[`add-feature-principles.md`](../skills/aims-guide/references/add-feature-principles.md) and the
+`/aims-add-feature` Kind. Read alongside each experiment's own `results.md`.
 
 ## The experiments
 
@@ -17,10 +18,20 @@ Kind. Read alongside each experiment's own `results.md`.
 
 ## What holds across all five
 
-1. **Correctness parity.** On every task — synthetic or real, single-file or cross-cutting — a capable model
-   with **no method** produced a correct adaptation that preserved existing behavior. The method never
-   *caught a bug the plain arm shipped* at this scale. The user's read is right: **on an elementary or
-   single-session-tractable change, aims is not needed for correctness.**
+1. **Correctness parity — with a caveat that matters.** On every task *in this refactoring set* — synthetic
+   or real, single-file or cross-cutting — a capable model with **no method** produced a correct adaptation
+   that preserved existing behavior. But "parity" is **contingent on no correctness defect appearing**, and
+   it is not general: the separate plant→mineral design pilot (`../plant-mineral-id/`) is a case where the
+   aims arm shipped a real **S4** — a type model that could not represent a value the spec named ("6.5–7").
+   That is a **§4/§1 *design* defect, not an execution slip** (a corrected framing, per review): when a
+   design's types cannot represent a required case, calling the result "near parity" is too generous. So the
+   honest claim is narrower: **where no correctness defect appears, a strong model is correct without the
+   method; the instrument's job is to catch the defect when it does appear — and, judged blind, it caught
+   one in the home method.** The tempting follow-up — reword §7 so a stated capability can never be
+   YAGNI-cut — was **tested on an unseen product and did not prove necessary** (both arms kept the
+   capability; `../s7-yagni-stated-capability/`), so it was **not** folded in: the plant→mineral S4 reads as
+   a builder miss under adequate wording, not a documented gap, and the document is left unchanged rather
+   than padded off one loss.
 2. **The method's measurable edge is structural, and it grows with the sequence.** The clearest signal is
    experiment 4: under the correct measurement — a **before/after design review on the target's grain across
    successive changes** — aims *improves* each step (named single-owners, short functions) while the plain
@@ -43,7 +54,7 @@ The validation was not a rubber stamp — three sharpenings came out of it, each
 
 ## Honest bottom line
 
-`refactoring-principles.md` is **validated and improved**: following it yields correct, behavior-preserving,
+`add-feature-principles.md` is **validated and improved**: following it yields correct, behavior-preserving,
 on-grain adaptations, and — measured as a trajectory — a cleaner design than no method, without
 over-abstraction. It does **not** manufacture a correctness advantage on changes a strong model already
 handles; its value is structural discipline and durable records that compound across many changes and hands
