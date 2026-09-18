@@ -131,9 +131,10 @@ other. Over-engineering is a lighter, secondary fault. When unsure, the graver r
 - **DRY as knowledge** — one authoritative home per fact — yet duplication is cheaper than the wrong
   abstraction (Metz).
 - **YAGNI** — build for present forces; no speculative generality. Size is a forcing question, not a line
-  limit.
-- **Subtractive discipline** — every type/layer/abstraction answers to a present force; cut what pays for
-  nothing.
+  limit. **YAGNI cuts only the *unstated*:** a capability a spec names — any R/X/C inventory item — is a
+  present force by definition, so declining to build it is never a YAGNI cut but a §1 correctness gap.
+- **Subtractive discipline** — every type/layer/abstraction answers to a present force (a stated R/X/C item
+  is always one); cut what pays for nothing.
 - **Schema/representation evolution has one owner** — a change to a persisted or exposed data shape (a
   record's fields, a wire/DB schema, an explanation chain) is absorbed at one place, not threaded through
   its consumers. The reopen usually lands exactly here; §6/§9 cover only half of it.
