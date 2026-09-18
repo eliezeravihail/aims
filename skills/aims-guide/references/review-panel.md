@@ -72,12 +72,18 @@ brownfield checklist — not `design-principles.md` alone; the design form appli
 structure* the change creates.
 - **Deliverable:** a change to existing code — a structural improvement, or a reshaping that takes a new
   requirement.
-- **Measure:** is behavior **out of scope preserved bit-for-bit** (§4); was the change **absorbed at a seam**
-  rather than reopening a rule's owner or scattering it into a parallel special-case path (§3/§5); were the
-  **interactions the requirement implies re-traced** over the full input space, not just the listed cases
-  (§6 — this is where a change ships a wrong number, e.g. an unstated allocation that breaks `Σ parts ==
-  whole`); for a pure refactor, is behavior **provably identical** and the **named smell demonstrably gone**
-  (§11)?
+- **Measure — as a before/after delta on the target's own terms** (`refactoring-principles.md`: "the measure
+  is a before-and-after review"): read the module's design quality **before** and **after**; the bar is **no
+  regression, ideally a small improvement**, and across a sequence the **trajectory** (rot is cumulative). Is
+  behavior **out of scope preserved bit-for-bit** (§4); was the change **absorbed at a seam** rather than
+  reopening a rule's owner or scattering it into a parallel special-case path (§3/§5); were the **interactions
+  the requirement implies re-traced** over the full input space, not just the listed cases (§6 — where a
+  change ships a wrong number, e.g. an unstated allocation that breaks `Σ parts == whole`); for a pure
+  refactor, is behavior **provably identical** and the **named smell demonstrably gone** (§11)? **Consistency
+  with the target overrides the checklist:** a change that imposes a foreign style or abstraction the module
+  never used (value objects onto bare-int code, a hierarchy onto a flat module) is **itself a regression**
+  (inconsistency) even if it scores better against `design-principles.md` in the abstract — grade the grain,
+  not the ideal.
 - **Evidence:** the characterization tests (§1) pass **unchanged** (not edited to pass); the refactor step
   and the behavior-change step are **distinguishable** (§0); the reopened/added owners are named (the
   survival reading); a reopen that merely *adds* an owner a new force genuinely needs is acceptable, a

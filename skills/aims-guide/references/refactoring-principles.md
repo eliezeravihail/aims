@@ -33,6 +33,23 @@ disciplines on top; it does not replace them.
 per-line total that no longer sums, the market that used to work and now rounds differently. That failure is
 invisible to a "did structure improve / did it reopen little?" reading, which is exactly why it survives one.
 
+**The measure is a before-and-after review, on the target's own terms.** Grade the module's design quality
+**before** the change and **after** it; the bar is **no regression — and ideally a small improvement**. A
+change is not judged against this document's ideal in the abstract, but against *the codebase it landed in*:
+the question is whether *this* module got worse. Rot is cumulative, so what matters most is the **trajectory
+across successive changes** — a design that degrades a little on every adaptation is failing even while each
+step "works".
+
+**The overriding constraint — match the target's grain (consistency over dogma).** Adapt to the **existing
+code's style and level of abstraction**, *even where that contradicts a principle in this document or in
+`design-principles.md`*. A plain-functional module gets a plain-functional change; a module that models with
+value objects gets a value-object change. Importing a foreign style — wrapping bare-int code in new value
+objects, adding a class hierarchy a flat module never needed — is itself a regression: it makes the module
+**inconsistent**, which is a worse mess than the local "impurity" it was meant to fix. The goal is **no new
+mess**, not conformance to this list. When a principle here and the target's established grain disagree on the
+same change, the grain wins (record the deviation as deliberate). This is what keeps the review a *delta on
+the target*, not a rewrite toward an ideal.
+
 ---
 
 ## 0. The two moves, never blurred (refactor, then change)
