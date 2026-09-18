@@ -87,10 +87,10 @@
 <section id="refactoring"><div class="wrap">
   <div class="kicker">Two kinds of task</div>
   <h2>Designing, and changing what exists</h2>
-  <p class="intro">Building from nothing and changing code that already works are <em>different tasks</em>, with different risks — so aims has a checklist for each. The 18 principles above are for the blank file; a companion, <a href="https://github.com/eliezeravihail/aims/blob/master/skills/aims-guide/references/refactoring-principles.md"><code>refactoring-principles.md</code></a>, is for the change.</p>
+  <p class="intro">Building from nothing and changing code that already works are <em>different tasks</em>, with different risks — so aims has a checklist for each. The 18 principles above are for the blank file; a companion, <a href="https://github.com/eliezeravihail/aims/blob/master/skills/aims-guide/references/add-feature-principles.md"><code>add-feature-principles.md</code></a>, is for the change.</p>
   <div class="grid g2" style="margin-top:24px">
     <div class="card"><h3>Greenfield design</h3><p>The danger is <b>too little structure</b>. Reach for a seam by default; name the owners; make each principle hold by construction. Front door: <code>/aims-plan</code>.</p></div>
-    <div class="card"><h3>Changing existing code</h3><p>The dangers are <b>silent behavior drift</b>, <b>scattering a rule while patching it</b>, and bolting the requirement on instead of absorbing it. Characterize the behavior first, then <em>make the change easy, then make the easy change</em>. Front door: <code>/aims-refactor</code>.</p></div>
+    <div class="card"><h3>Changing existing code</h3><p>The dangers are <b>silent behavior drift</b>, <b>scattering a rule while patching it</b>, and bolting the requirement on instead of absorbing it. Characterize the behavior first, then <em>make the change easy, then make the easy change</em>. Front door: <code>/aims-add-feature</code>.</p></div>
   </div>
   <div class="callout"><b>The measure is a before/after review on the target's own grain</b> — no design regression, ideally a small improvement, and across successive changes the <em>trajectory</em> (rot is cumulative). And <b>consistency beats dogma</b>: match the code's existing style and abstraction even against a principle — importing a foreign style (value objects onto bare-int code) is itself a regression. The goal is no new mess, not conformance to the list.</div>
 </div></section>

@@ -64,7 +64,7 @@ Use when an actual upcoming variation currently requires coordinated edits in un
 Use when a structural cost is real but evidence shows that removing it would make the product worse or more complex. The correct objective can be to document the trade-off and move on.
 
 ### Adapt existing code to a new requirement
-Use when a working system must absorb a requirement it was not built for — the change touches code with behavior users already depend on. The objective is to reshape the existing structure so the new behavior lands at a seam while everything out of scope is preserved exactly. Reviewed against `references/refactoring-principles.md` (characterize first; make the change easy, then make the easy change; re-trace the interactions the requirement implies). This is the `refactoring` Kind's adaptation face — the most common change request, and the one a greenfield design pass handles badly.
+Use when a working system must absorb a requirement it was not built for — the change touches code with behavior users already depend on. The objective is to reshape the existing structure so the new behavior lands at a seam while everything out of scope is preserved exactly. Reviewed against `references/add-feature-principles.md` (characterize first; make the change easy, then make the easy change; re-trace the interactions the requirement implies). This is the `add-feature` Kind's primary face — the most common change request, and the one a greenfield design pass handles badly.
 
 ## Declare the objective's kind
 
@@ -76,12 +76,12 @@ Every objective declares a **Kind**, because it decides how the result is review
   working feature. Reviewed for whether the structure is right.
 - **`implementation`** — *Build a vertical slice, Strengthen a failure boundary.* The deliverable is
   working code conforming to a design already agreed. Reviewed for correctness and conformance.
-- **`refactoring`** — *Simplify accidental complexity, Localize a known extension, Preserve a justified
+- **`add-feature`** — *Simplify accidental complexity, Localize a known extension, Preserve a justified
   cost, **Adapt existing code to a new requirement**.* The deliverable is a **change to code that already
   exists** — either a structural change with observable behavior preserved (a pure refactor), or the
   absorption of a new requirement into existing code (an adaptation, where behavior does change and the
   structure is reshaped to take it). Reviewed against
-  [`references/refactoring-principles.md`](refactoring-principles.md) — behavior preserved where it is out of
+  [`references/add-feature-principles.md`](add-feature-principles.md) — behavior preserved where it is out of
   scope, the change absorbed at a seam rather than reopening an owner, the implied interactions re-traced —
   **not** against `design-principles.md` alone, because changing existing code is a different task from
   first-time design (its risks are behavior drift and scattered rules, not too little structure).

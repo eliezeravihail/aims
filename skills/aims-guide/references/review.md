@@ -35,7 +35,7 @@ the same move the loop already makes for an unmet objective. What is mandatory i
 not declare a design `met` without having taken the one revise round; the review still reports and informs,
 it does not stamp accept/reject or police the Worker (`SKILL.md`, "Direct and measure — do not coerce"). It
 applies to `design` objectives (including the opening panel-plan round's merged result); `implementation`
-and `refactoring` objectives keep their single correctness/behavior-preservation measurement — a revise
+and `add-feature` objectives keep their single correctness/behavior-preservation measurement — a revise
 round there only re-runs passing checks.
 
 ## How the review is presented — the build-time projection

@@ -227,7 +227,7 @@ advancement happens when a Worker returns or when the human resumes.** The Loop 
 named decision, or ready-to-choose-next) so that either trigger can pick up precisely where you left
 off.
 
-aims is engaged **explicitly**, through its commands (`/aims-plan`, `/aims-refactor`, `/aims-build`,
+aims is engaged **explicitly**, through its commands (`/aims-plan`, `/aims-add-feature`, `/aims-build`,
 `/aims-review`, `/aims-plan-and-build`) — nothing runs in the background to put the goal in front
 of you on unrelated turns. That makes the re-read discipline the entire mechanism: **at the start of
 every aims command, reload `.aims/state.md`** and re-orient from it. And **update it the moment the
@@ -286,7 +286,7 @@ later re-hashes the source and, if it drifted, injects an advisory "re-verify" �
 **Reach knowledge by navigating, not by reading everything.** To understand a file, open its companion;
 for system context, read the root records. A would-be file-level insight that actually concerns *several*
 files is usually a system fact (→ `architecture.md` or an ADR) or a signal those files share a
-responsibility wanting its own home — a **refactoring objective**, not a note copied into many
+responsibility wanting its own home — an **`add-feature` objective**, not a note copied into many
 companions. See `references/design-record.md` and `../../knowledge/format.md`.
 
 ### Presenting the plan report (manual plan)
@@ -394,7 +394,7 @@ mode the panel convenes only via the explicit `panel-plan` command — `/aims-pl
 Select the single objective whose completion most usefully reduces an important uncertainty, structural risk, or missing capability **now**. Keep it feature-scoped and framed around design quality, per the scope guidance above — not the whole product, and not a design-only errand.
 
 An objective must contain:
-- **Kind** — `design` | `implementation` | `refactoring` (see `references/objective-selection.md`); it
+- **Kind** — `design` | `implementation` | `add-feature` (see `references/objective-selection.md`); it
   determines the review lens applied to the result;
 - **Objective** — the outcome to optimize for;
 - **Why now** — evidence from the product/repository explaining its priority;
@@ -492,10 +492,10 @@ judged on whether the structure is right (not on tests) **and whether it is buil
 product's first design, that a Worker could start the first sprint from it (language, core framework,
 foundational deps, module skeleton, concrete signatures are all pinned); an abstract-boundaries design
 with no stack or skeleton is principles, not a plan, and is **not** met. An `implementation` objective
-is judged on correctness and conformance, a `refactoring` objective against
-`references/refactoring-principles.md` (the brownfield checklist) — behavior preserved where it is out of
+is judged on correctness and conformance, an `add-feature` objective against
+`references/add-feature-principles.md` (the brownfield checklist) — behavior preserved where it is out of
 scope, the change absorbed at a seam not scattered, the implied interactions re-traced, and for a pure
-refactor the named smell gone. A change to code that already exists enters through `/aims-refactor`, which
+refactor the named smell gone. A change to code that already exists enters through `/aims-add-feature`, which
 learns the code and characterizes its behavior before choosing that objective.
 Measurement is one instrument — **fill the assessment form** (`references/measurement.md`, §0–§14,
 sub-check-derived); the in-loop review, `/aims-review`, and comparing designs all fill the same form.
@@ -510,7 +510,7 @@ lever the experiments measured — the evidence is specifically for a single rou
 3.5), so the mandate is **one** round, not open-ended iteration (`references/review.md`, `decisions/0011`).
 It runs even when the first pass looks good. This is still direct-and-measure, not a gate: the findings are
 the next direction, not a verdict; if the one round still leaves a substantial finding the ordinary loop
-(step 6) continues as usual. `implementation`/`refactoring` objectives keep their single
+(step 6) continues as usual. `implementation`/`add-feature` objectives keep their single
 correctness/behavior-preservation measurement.
 
 The same evidence bar applies to the design's **own claims about existing code** — that an abstraction
@@ -559,7 +559,7 @@ When you can safely proceed from grounded facts and prior decisions, proceed wit
 Keep Guide checkpoints compact. Show:
 
 ```text
-Current objective (Kind: design | implementation | refactoring):
+Current objective (Kind: design | implementation | add-feature):
 Why now:
 Exit criteria:
 Preserve:

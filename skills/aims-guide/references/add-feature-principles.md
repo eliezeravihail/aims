@@ -1,9 +1,12 @@
-# Refactoring principles
+# Add-feature principles — changing existing code
 
-The professional checklist for **changing code that already exists** — used both to do the change and to
-grade it. It is the brownfield companion to [`design-principles.md`](design-principles.md): that document
-says what a *correct structure* is when you build from nothing; this one says what a *correct change* is
-when a working system, its behavior, and its recorded decisions are already there. Comprehension checks, not
+The professional checklist for **changing code that already exists** — the `add-feature` Kind — used both to
+do the change and to grade it. The name is deliberate: the common task here is *adding a feature to*, or
+*adapting*, a working system — which **changes behavior**, and so is a different thing from *refactoring*
+(behavior-preserving clean-up), even though a good add-feature change often does a refactor first to make
+room. It is the brownfield companion to [`design-principles.md`](design-principles.md): that document says
+what a *correct structure* is when you build from nothing; this one says what a *correct change* is when a
+working system, its behavior, and its recorded decisions are already there. Comprehension checks, not
 metrics — none is computed from a diff size or a tool.
 
 **Why a separate document.** Adapting existing code is a different kind of task from first-time design, and
@@ -13,10 +16,12 @@ and **bolting the new requirement on instead of reshaping to absorb it**. A chec
 does not catch these — it assumes the freedom to shape everything, which you do not have here.
 
 **Two kinds of change this covers** (name which one the task is):
-- **Refactoring** — improve structure with **observable behavior preserved** (remove a named smell, create a
-  seam). No behavior changes.
-- **Adaptation** — absorb a **new requirement** into existing code: behavior *does* change, and the existing
-  structure must be reshaped to take the change cleanly. Most "change requests" are this.
+- **Add-feature / adaptation** *(the common case)* — absorb a **new requirement** into existing code:
+  behavior *does* change, and the existing structure must be reshaped to take the change cleanly. Most
+  "change requests" are this — hence the Kind's name.
+- **Pure refactoring** *(a sub-case)* — improve structure with **observable behavior preserved** (remove a
+  named smell, create a seam). No behavior changes; it is often the first move of an add-feature change (§0),
+  and §11 grades it on its own terms.
 
 **How it is used.** Doing the change: make each item hold. Grading it: score each as a binary, cited
 sub-check, worst-first — the same severity mechanics as the design form (`measurement.md`), with the
