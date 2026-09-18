@@ -117,6 +117,13 @@ the target*, not a rewrite toward an ideal.
   distributed down to lines so per-line tax lands on the discounted amount, line finals summing exactly to
   the total). A lean change that reopens nothing is exactly the one that never builds the allocation and
   ships `Σ parts ≠ whole` — invisible to a survival reading, caught only by tracing the interaction.
+- **An existing reader that now runs on the change's new data shape is in scope — even if the card never
+  named it.** A change to the data model (a balance that becomes per-currency, a field that becomes a list)
+  can leave an untouched consumer silently *incoherent*: a statement that lists entries across every currency
+  while reporting one currency's balance, a report that sums what used to be a single thing. "Preserve
+  out-of-scope" (§4) covers a function the change does **not** reach; a reader that now sees the new shape is
+  reached, so it is a §6 interaction to re-trace, not §4 behavior to leave alone. Enumerate every function
+  that reads the changed shape and check it still reconciles.
 - **Adaptation surfaces latent concept-crams.** A concept that was value-correct as a degenerate shape breaks
   when the change leans on the concept it got wrong (`design-principles.md` §4). See §9.
 
