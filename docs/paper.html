@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The paper — aims</title>
-<meta name="description" content="Design as the Objective: why an LLM must be given the structure it should produce, and a blind evaluation of a method that does.">
+<meta name="description" content="Design as the Objective: a model optimizes the goal it is given, so structure must be made the goal — with a blind evaluation, losses included.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -25,121 +25,41 @@
 <header class="pagehero"><div class="wrap">
   <span class="badge">06 · Paper</span>
   <h1>Design as the objective</h1>
-  <p class="lede">Why an LLM must be <em>given</em> the structure it should produce — and a blind, adversarial evaluation of a method that does, losses and null results included.</p>
-  <p class="muted">Eliezer Avihail · September 2026 · <a href="https://github.com/eliezeravihail/aims/blob/master/paper/aims_paper.tex">LaTeX source</a></p>
+  <p class="lede">A model optimizes the goal it is <em>given</em>. Agent loops score correctness, so structure is never the goal — unless you make it one.</p>
+  <p class="muted">Eliezer Avihail · September 2026 · <a href="https://github.com/eliezeravihail/aims/blob/master/paper/aims_paper.tex">full paper (LaTeX)</a></p>
 </div></header>
 
 <section><div class="wrap">
-  <div class="kicker">Abstract</div>
-  <h2>The argument in one paragraph</h2>
-  <p class="intro">A language model optimizes the objective it is <em>given</em>, not the instructions it is handed. Coding agents are scored — in training, in benchmarks, and in the closing condition of every agent loop — on functional correctness. Architectural quality is therefore never an objective; it is at best a stylistic prior, and it loses to the immediate task. From the mechanics of autoregressive generation and preference optimization, three consequences follow: a quality goal must be stated as a <b>checkable predicate</b>, not an adjective; it must be checked <b>at the moment a structural decision is made</b>, because a model conditioned on an interface it has already written will rationalize rather than revise it; and the rationale must be <b>externalized into durable artifacts</b>, because the model is stateless across sessions.</p>
-  <div class="callout"><b>What the evaluation found — stated up front, wins and non-wins together.</b> Against a spec-driven baseline on three fresh products, aims wins first-round design quality on all three on one recurring axis (value objects, one-owner-per-rule); change absorption is tie / win / tie on the rubric-free count, and both arms pass every correctness trap. Across six adaptation experiments — one on a real open-source module — a no-method control is correct every time; the method's measurable edge is a design <em>trajectory</em> that improves across successive changes while the control flattens and densifies. Costs are 2.5–3× the baseline. Two results are reported as instrument failures rather than wins (a perfect score everywhere = a ceiling effect; the designs speak the rubric's own vocabulary), and a fourth product is one aims <b>lost</b> decisively — caught blind, in the home method.</div>
-</div></section>
-
-<section><div class="wrap">
-  <div class="kicker">§2 · Mechanism</div>
-  <h2>Why a model produces the structure it produces</h2>
-  <p class="intro">At inference there is no search over programs and no objective over the finished artifact — only the likelihood of the next token given everything already in context. Preference training rewards outputs that <em>appear</em> to satisfy the request. Under a loop whose terminal condition is <em>it works</em>, structure is never the thing being optimized. Three requirements follow.</p>
+  <div class="kicker">The idea</div>
+  <h2>One assumption, three requirements</h2>
+  <p class="intro">A language model maximizes the likelihood of the next token given its context, and preference training rewards answers that <em>look</em> right. Under a loop that ends on "it works," good structure is never being optimized — the model's default is ordinary, flat code. Getting structure out requires three things, and aims is just those three:</p>
   <div class="grid g3" style="margin-top:24px">
-    <div class="card"><h3>1 · An adjective is not an objective</h3><p>"Write clean code" adds tokens <em>about</em> good structure without adding a predicate the generation can fail. Structure becomes real only as an enumerable list of yes/no items applied to the output.</p></div>
-    <div class="card"><h3>2 · Check at the decision</h3><p>Once the model has emitted an interface, every later token is conditioned on it; asking "is this right?" afterwards invites a defence. The check belongs inside the design step, before the artifact conditions the rest of generation.</p></div>
-    <div class="card"><h3>3 · Externalize the rationale</h3><p>No memory between sessions; attention decays within one. The <em>reasons</em> for a boundary die with the context. File them beside the code — and, because a stale record is followed, flag it stale.</p></div>
+    <div class="card"><h3>1 · Make it checkable</h3><p>An adjective ("clean code") is not a goal. Structure becomes real only as a list of yes/no items applied to the output — a document that says what "correct" means.</p></div>
+    <div class="card"><h3>2 · Check at the decision</h3><p>Once an interface is written, the model defends it. So the check runs <em>inside the design step</em>, before any code — where a fix costs a paragraph, not a refactor.</p></div>
+    <div class="card"><h3>3 · Write down the why</h3><p>No memory between sessions. File the reasons for each boundary <em>beside the code</em>, and flag the record stale when the code moves — because a stale record gets followed.</p></div>
   </div>
-  <p class="muted">The default attractor is <b>under-structuring</b>: the training median is flat, working code, and under a correctness-terminated loop nothing pulls away from it. Over-engineering is a local cost; under-structuring spreads, because every later change routes around the missing seam.</p>
 </div></section>
 
 <section><div class="wrap">
-  <div class="kicker">§4 · The method</div>
-  <h2>Roles, two documents, one instrument</h2>
-  <p class="intro">A <b>Guide</b> sets one design objective per round and delegates to <b>Workers</b>; an opening round may fan out a panel of axis-focused Workers merged best-from-each, and every planning round ends with one mandatory review-and-revise cycle. Two principle documents define what "correct" means — <b>Design principles</b> (fifteen chapters, §0–§14) for building from nothing, and <b>Add-feature principles</b> (12 chapters) for changing existing code — and one measurement instrument reads them.</p>
-  <div class="tablewrap">
-    <table>
-      <caption class="muted" style="text-align:left;padding:8px">Severity mechanics — the tier of a chapter's worst failed item sets its ceiling and its weight.</caption>
-      <thead><tr><th>Worst failed item in the chapter</th><th>Ceiling</th><th>Weight</th></tr></thead>
-      <tbody>
-        <tr><td>none</td><td>10</td><td>×1</td></tr>
-        <tr><td>cosmetic (S1)</td><td>8</td><td>×1</td></tr>
-        <tr><td>moderate (S2)</td><td>7</td><td>×2</td></tr>
-        <tr><td>structural (S3)</td><td>5</td><td>×4</td></tr>
-        <tr><td>precondition / correctness (S4)</td><td>2</td><td>×8</td></tr>
-      </tbody>
-    </table>
-  </div>
-  <div class="callout"><b>Grade = the weighted list; severity = a reported gate, not a cap.</b> The grade is <code>Σ(chapter × weight) / Σweight</code>; beside it, <code>any S4 ⇒ BLOCKED</code> is reported, with the worst chapter and the <code>(#S3,#S4)</code> counts — never a bare number. Applicability is fixed at <b>step 0</b> from the specification (rules R, change-axes X, cases C), so all arms of one product share the same applicable set and are comparable, while grades across different products are never read as one verdict. <span class="muted">(An earlier form of the instrument also applied a global graded cap by <code>min</code>; it was removed because it double-counted one defect three times, replaced by the gate above, and applied retroactively to every prior experiment with both readings kept.)</span></div>
+  <div class="kicker">The evaluation</div>
+  <h2>What the experiments show — honestly</h2>
+  <p class="intro">Blind, adversarial protocol: staged requirement cards that never hint at later stages, a passive oracle, method-anonymized artifacts, judges who built nothing, a reproduction for every claim. The results, wins and non-wins together:</p>
+  <ul class="clean">
+    <li><span class="tag">win</span> <b>First-round design quality:</b> against a spec-driven baseline on three products, aims wins all three on the same axis — value objects and one-owner-per-rule.</li>
+    <li><span class="tag">even</span> <b>Change absorption:</b> tie / win / tie on the rubric-free survival count; both arms pass every correctness trap.</li>
+    <li><span class="tag">even</span> <b>Six adaptation tasks</b> (one on a real open-source module): a no-method control is correct <em>every</em> time. On a change one session can hold, the method is not needed for correctness.</li>
+    <li><span class="tag">win</span> <b>The real edge is a trajectory:</b> across successive changes aims' design improves while the control flattens and densifies — rot that a single-change benchmark cannot see.</li>
+    <li><span class="tag">loss</span> <b>A product it lost:</b> on plant→mineral the aims arm shipped a type that could not represent an observed range ("6.5–7") — a correctness (S4) design defect, caught blind, in the home method. The instrument is not a home referee.</li>
+    <li><span class="tag">cost</span> <b>2.5–3×</b> the baseline in tokens and time — spent on reading the principles, filing records, and the mandatory revise round.</li>
+  </ul>
+  <div class="callout"><b>Two of the best-looking numbers are reported as instrument failures, not results:</b> a perfect first-round score on all three products (a ceiling that can no longer register the next regression), and all three judges noting the designs speak the rubric's own vocabulary (the judge shares the method's rubric). A candidate fix prompted by the loss was withheld and A/B-tested on an unseen product; it did not prove necessary, so it was <em>not</em> adopted.</div>
 </div></section>
 
 <section><div class="wrap">
-  <div class="kicker">§5 · Results — Study 1</div>
-  <h2>Three products against a spec-driven baseline</h2>
-  <p class="intro">Two arms — the shipped aims skill run as-is, and OpenSpec's spec-first workflow — on three products, design only. <b>D1</b>: first-round design quality. <b>D2</b>: change absorption after an unforeseen stage-2 requirement, read through the instrument <em>and</em> the rubric-free survival count (components reopened or discarded; lower is better).</p>
-  <div class="tablewrap">
-    <table>
-      <thead><tr><th>Product</th><th>D1 aims</th><th>D1 OpenSpec</th><th>D2 aims</th><th>D2 OpenSpec</th><th>Survival (aims/OS)</th><th>Traps</th></tr></thead>
-      <tbody>
-        <tr><td>feed-ranking</td><td class="win">10</td><td>8.5</td><td>9.9</td><td>8.5</td><td>0 / 0 (tie)</td><td>both passed all</td></tr>
-        <tr><td>booking-availability</td><td class="win">10</td><td>7.5</td><td class="win">10</td><td>7.5</td><td>≈1 / ≈2</td><td>both passed all</td></tr>
-        <tr><td>entitlements</td><td class="win">10</td><td>8.5</td><td>9.9</td><td>8.5</td><td>≈2 / ≈2 (tie)</td><td>both passed all</td></tr>
-      </tbody>
-    </table>
-  </div>
-  <p class="muted">The gap is the <b>same gap three times</b>: value objects and one-owner-per-rule, exactly the axis the principle document declares dominant. The one trap that discriminated (booking) was a concept-cram the baseline absorbed by giving one rule a second owner; aims kept it to one owner after its concept-fit pass — Consequence 2 firing on a real case, in the design, where it costs a paragraph.</p>
-  <div class="grid g2" style="margin-top:8px">
-    <div class="card"><h3>Two readings that are not wins</h3><p>Both arms passed <em>every</em> correctness trap on all three — the traps discriminated on structure, not raw correctness. And aims scored a perfect first-round grade on all three, with all three judges noting its designs speak the rubric's own vocabulary — a ceiling effect and a capture risk, reported in Threats.</p></div>
-    <div class="card"><h3>Cost</h3><p>aims averaged ~140k tokens, 30–40 tool calls, 12 min per product; the baseline ~55k, 4 calls, 3 min — <b>2.5–3×</b>. Final design length was not proportional to quality; the extra spend buys structure, not volume.</p></div>
-  </div>
-  <div class="callout"><b>A product the method lost.</b> On a fourth product outside this set — a feature-based identifier carried from plants to minerals across two staged reveals, judged blind by the same protocol — the aims arm <b>lost decisively</b>. Its type model (<code>Term | Quantity</code>, a single point) could not represent an observed range the stage-2 card named ("6.5–7"): a precondition (S4) failure on exactly the full-input-space trap the method champions. The blind instrument scored the home arm below the baseline and marked it <b>BLOCKED</b>. It is the cleanest evidence the instrument is not a home referee — and the defect is a <em>design</em> fault caught at review rather than prevented at design, the asymmetry Consequence 2 names. A wording change to the subtractive tie-break, prompted by the loss, was <b>withheld</b> and A/B-tested first on a further unseen product; it did not reproduce the over-cut and was <b>not adopted</b> — a loss-prompted change must prove itself on a product it has not seen.</div>
-</div></section>
-
-<section><div class="wrap">
-  <div class="kicker">§5 · Results — Study 2</div>
-  <h2>Changing code that already exists</h2>
-  <p class="intro">Six experiments against a no-method control, using the brownfield principle set and its before-and-after measure — one on a real open-source module. "Parity" means both arms produced a correct, behaviour-preserving change.</p>
-  <div class="tablewrap">
-    <table>
-      <thead><tr><th>#</th><th>Codebase</th><th>Change</th><th>Reading</th></tr></thead>
-      <tbody>
-        <tr><td>1</td><td>synthetic pricing</td><td>per-line tax + allocation, spelled out</td><td>parity; the card over-specified the trap</td></tr>
-        <tr><td>2</td><td>synthetic ×3</td><td>add operator / cancel event / discover allocation</td><td>parity; aims cleaner (one owner vs. a scattered set)</td></tr>
-        <tr><td>3</td><td><b>real</b> open-source cache</td><td>add TTL across three entry paths + LRU override</td><td>parity (23 tests, 14-case oracle); aims tighter — 31 vs. 53 lines</td></tr>
-        <tr><td>4</td><td>synthetic pricing</td><td>three successive interacting changes</td><td class="win">parity each step; aims trajectory improves, control flat and denser</td></tr>
-        <tr><td>5</td><td>four-module ledger</td><td>multi-currency (cross-cutting)</td><td>parity, both on-grain; essentially a tie</td></tr>
-        <tr><td>6</td><td>same code ± the record</td><td>fresh session adds a refund</td><td>both reused the owner, 14/14; record added legibility, not a different outcome</td></tr>
-      </tbody>
-    </table>
-  </div>
-  <p class="muted"><b>Correctness parity, everywhere</b> — on a change a strong model can hold in one session, the method is not needed for correctness, stated plainly because it bounds the claim. <b>The edge is a trajectory, and only a trajectory shows it</b> (experiment 4): aims improves at each step while the control densifies — rot accumulating while every step works, which is why a single-change benchmark cannot see it. <b>Consistency over dogma held</b>: on a plain-style base aims did not impose value objects. <b>Continuity is a partial null</b>: on code small enough to re-derive, the record adds legibility, not a different outcome.</p>
-</div></section>
-
-<section><div class="wrap">
-  <div class="kicker">§6 · Measurement</div>
-  <h2>Why there is no deterministic benchmark</h2>
-  <p class="intro">The only pair of runnable arms differing in one design decision — a named return type vs. a bare positional tuple, which a blind judge penalized as a data clump — put every deterministic metric against that judgement.</p>
-  <div class="tablewrap">
-    <table>
-      <thead><tr><th></th><th>named type</th><th>bare tuple</th></tr></thead>
-      <tbody>
-        <tr><td>Blind design grade (0–4)</td><td class="win">4.0</td><td>3.5</td></tr>
-        <tr><td>Maintainability Index</td><td>80.01 (A)</td><td class="win">80.50 (A)</td></tr>
-        <tr><td>Cyclomatic complexity (avg / max)</td><td>2.07 / 4</td><td>2.07 / 4</td></tr>
-        <tr><td>Halstead (vol / effort / diff)</td><td>36 / 48 / 1.33</td><td>36 / 48 / 1.33</td></tr>
-        <tr><td>SLOC</td><td>36</td><td class="win">27</td></tr>
-      </tbody>
-    </table>
-  </div>
-  <p class="muted">Halstead and cyclomatic complexity are identical; Maintainability Index and SLOC <em>favour</em> the design the judge graded lower, because a named type costs lines and adds no branches. The metrics are not wrong — they measure surface volume, a different construct from concept fit, and here the two are anti-correlated. Nearly every property that makes a design absorb the next requirement registers in a volume metric as <em>cost</em>. Architectural evaluation is therefore an instrument of <b>procedure</b>, not of measurement.</p>
-</div></section>
-
-<section><div class="wrap">
-  <div class="kicker">§7 · Threats & honest bottom line</div>
-  <h2>What the evaluation does not support</h2>
-  <div class="grid g2">
-    <div class="card"><h3>The judge shares the method's rubric</h3><p>The primary threat. Mitigated but not removed: applicability and evidence are pinned to the spec, a reproduction is required per claim (which surfaced defects <em>against</em> the method, including the lost product above), and the rubric-free survival count is reported separately — where the reading is materially weaker (tie / win / tie).</p></div>
-    <div class="card"><h3>Vocabulary capture &amp; ceiling</h3><p>All three judges noted the designs recite the rubric's vocabulary. And a perfect score on every product is an instrument that has lost the resolution to register the next regression — read as a rubric needing a harder product, not as a result.</p></div>
-    <div class="card"><h3>No correctness advantage on one-session changes</h3><p>Six experiments say the opposite, plainly. The method's value is structural discipline and durable records that compound across a sequence — not a one-shot correctness edge.</p></div>
-    <div class="card"><h3>The record layer, in outcomes</h3><p>Supported only in process and legibility so far, because every codebase tested was small enough to re-derive — exactly the regime where the record is predicted <em>not</em> to matter. The open frontier is scale, and it is a measurement problem before it is a method problem.</p></div>
-  </div>
-  <div class="callout"><b>The finding held most firmly is the least flattering:</b> there is no deterministic benchmark for what this work tries to improve, the classical metrics that resemble one are anti-correlated with it on the only data where a comparison was possible, and the judged instruments that replace them are only as sound as the adversarial procedure around them. The protocol, principle documents, sealed mappings and run logs are published — and a well-run refutation would be a good outcome.</div>
-  <p class="muted">Full text (LaTeX source): <a href="https://github.com/eliezeravihail/aims/blob/master/paper/aims_paper.tex">paper/aims_paper.tex</a>. Method, frozen experiment packages, run logs, judge reports and sealed blind mappings: <a href="https://github.com/eliezeravihail/aims">the repository</a>.</p>
+  <div class="kicker">The honest bottom line</div>
+  <h2>Why this is judgement, not measurement</h2>
+  <p class="intro">On the one pair of runnable arms differing in a single design decision, <b>every deterministic metric was blind to the difference a judge penalized — and two (Maintainability Index, SLOC) pointed the wrong way</b>, because a named concept costs lines and adds no branches. There is no off-the-shelf benchmark for what this work improves; the metrics that resemble one measure something else. So architectural evaluation is an instrument of <b>procedure</b> — spec-pinned inventory, evidence per score, sealed blinding, adversarial by construction — and its soundness rests there. The method's value is structural discipline and durable records that compound across many changes; the frontier is scale, which is a measurement problem before it is a method one.</p>
+  <p class="muted">Full argument, tables, protocol and references: <a href="https://github.com/eliezeravihail/aims/blob/master/paper/aims_paper.tex">paper/aims_paper.tex</a>. Frozen experiment packages, run logs, judge reports and sealed mappings: <a href="https://github.com/eliezeravihail/aims">the repository</a>.</p>
   <div class="pagenav">
     <a href="usage.html"><div class="lab">Next</div><div class="ttl">Use it →</div></a>
     <a href="experiments.html"><div class="lab">Back to</div><div class="ttl">← Experiments</div></a>
