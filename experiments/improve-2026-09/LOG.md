@@ -80,3 +80,10 @@ Append-only. Each entry: timestamp · what happened · next.
   shipped makes the instrument harder on aims, not softer. Remaining real weaknesses (cost, record layer at
   non-visible scale) need a dedicated build-pilot run. Deliverable: branch claude/aims-improve-blind-outcomes,
   draft PR #65.
+
+- **2026-09-20 13:20 UTC — RUN RESUMED (user: keep going ~24h while credits last).** Design-only additions
+  exhausted (robust nulls). Pivoting to the higher-value work they can't reach: BP1, a real 3-stage build
+  pilot (inventory reservation service) measuring aims' core TRAJECTORY claim with running code + hidden
+  tests, scored outcome-first (correctness gate + reopened-owner/edit-locality + cost). Frozen package:
+  cards/stage-{1,2,3}.md, hidden/test_stage{1,2,3}.py. Stage-1 arms launched (aims w/ records vs plain).
+  Next: score stage 1 on hidden tests, reveal stage 2, repeat; then judge the trajectory blind.
