@@ -236,6 +236,22 @@ cannot, catching the shortcut on weak-model output (BP9, 4/4). aims' irreducible
 **output inspection by a competent Guide**, exactly the mixed-tier configuration the paper argues for: cheap
 Worker builds, competent review catches what the Worker (and any ignored prompt line) missed.
 
+# Round 12: BP10 — the correctness claim has no target on clean specs (0/12 bugs, even on haiku)
+
+BP10 (`bp10-correctness-baserate/`) went looking for the one thing every prior pilot lacked — a **correctness**
+difference, aims' headline claim. Two determinate, classically error-prone corners, each built 6× by plain
+haiku: a half-open interval boundary (touching bookings must not overlap) and a remainder allocation
+(`split(n,k)` must sum exactly to n). **Bug rate 0/12** — every build used the strict overlap predicate and
+distributed the remainder. With no bug to catch, the "does aims' review catch it?" arm correctly did not run.
+
+The null is the finding, and it is the third confirmation (with I1 and I4) of a robust boundary: **on
+clearly-specified corners a capable model — even the cheap one — does not lose correctness, so aims has no
+correctness deficit to repair.** aims cannot win a correctness contest that has no loser. The plant→mineral loss
+that motivated the correctness thread was a **slip under specific conditions**, not a systematic failure a small
+blind A/B reproduces. This locks in the campaign's honest shape: on tractable, clearly-specified work aims'
+benefit is **structural/trajectory** (variance reduction on the early design choice), **not correctness**;
+correctness ties because the base is already right.
+
 # Honest limits / future work
 
 - **A concrete, motivated improvement candidate surfaced by BP9 (not yet shipped, by discipline):** the
