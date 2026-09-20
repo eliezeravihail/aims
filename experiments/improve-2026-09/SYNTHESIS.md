@@ -135,6 +135,24 @@ reopen was *clean*, followed by a clean stage-3 extension. So across **two produ
 edge is the **same single avoided reopen**, non-compounding. Compounding rot (the paper's frontier) still
 needs a stickier shortcut, a longer sequence, or a genuinely non-refactoring executor — none reached here.
 
+# Round 8: BP6 — the shortcut base rate that sizes the whole edge
+
+BP6 (`bp6-baserate/`) closes the loop opened by BP1–BP5. If aims' trajectory edge is **variance reduction on
+the stage-1 derive-vs-store choice** (BP5's finding), then its expected per-product size is simply *how often
+a plain builder takes the stored-aggregate shortcut*. BP6 measures that directly: **6 independent plain haiku
+builds** of the identical BP1 stage-1 card, classified STORE vs DERIVE. Result: **1 of 6 stored** (run-5 kept
+a `_reserved` running total in sync alongside the ledger — the exact drift-risk design aims' §5 review
+rejects); the other **5 derived** availability from the reservation ledger on read. So on this axis the
+shortcut base rate is **≈17%** (wide CI, n=6, one card/model).
+
+This gives the campaign's central finding a number: aims' trajectory edge is a **reliability premium on a
+minority of products** — it converts the plain builder's *sometimes-derive* into *always-derive*, buying the
+avoided reopen only on the ~1/6 of builds that would have stored. It explains BP5's both-arms-derived null
+(BP5 drew from the ~5/6 that derive anyway) and BP1/BP2's single reopen (those plain arms drew the ~1/6 that
+stored). The edge is real, mechanistic, and now *sized*: proportional to the shortcut rate, which is low for a
+capable model on a clean card and rises with weaker builders, baited cards, or longer sequences where one
+early store compounds.
+
 # Honest limits / future work
 
 - The input-space-table question is closed (null on 3 products); the record-layer question is **not** cleanly
