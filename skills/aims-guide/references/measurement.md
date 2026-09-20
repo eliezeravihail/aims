@@ -86,8 +86,32 @@ same applicable set** and their grades are directly comparable. Grades across *d
 - **Building / in-loop (default):** the **fix-list** — only the failed items, sorted most-severe-first,
   each with its citation and the direction to fix it. **No aggregate score shown** — a device so the Worker
   fixes content, not a number (`decisions/0014`), not a principle. The scores exist underneath.
-- **Comparing designs:** the full scored form + the aggregate profile — for ranking arms or tracking a
-  design across revisions.
+- **Comparing designs (ranking arms):** lead with the **outcome profile**, then the rubric grade second.
+  - **Outcome profile (primary, rubric-free).** After the unforeseen change the comparison stresses:
+    (1) a **correctness-trap gate** — did the arm ship a wrong number on any hidden probe? (any fail ⇒ that
+    arm is BLOCKED, and no rubric grade outranks a failed trap); (2) **reopened-owner count** — how many
+    existing rule-owners the change forced open (lower is better); (3) **edit locality** — files/lines to
+    absorb the change. These are facts about what the design *did*, computable without the rubric's
+    vocabulary.
+  - **Rubric grade (secondary).** The weighted-list grade + gate (above) — reported **beside** the outcome
+    profile and labelled as scored against `design-principles.md`, whose vocabulary a rubric-sharing judge
+    can be pulled toward. It never outranks the outcome gate.
+
+  Why this order: the rubric grade **ceiling'd** on the recorded pilots (a perfect score on every arm loses
+  the resolution to catch the next regression) and is **captured by vocabulary** (a design that recites the
+  rubric scores well). The outcome profile did neither on the record
+  (`../../experiments/improve-2026-09/i3-outcome-first/`), so it leads; the rubric grade stays as the second
+  reading. This changes only *which reading leads a comparison* — not how a design is built, and not the
+  in-loop fix-list.
+
+### The disjoint-vocabulary judge (for a design comparison)
+
+Alongside the two opposite-disposition rubric judges (`../../experiments/PROTOCOL.md` §6), run one
+**disjoint-vocabulary judge**: given only the two anonymized designs and the unforeseen change, it scores a
+**single** question — *did this design absorb the change with fewer edits and no reopened rule-owner?* — and
+is **forbidden from crediting rubric language** ("subtractive pass", "concept-fit", "value object"); it may
+cite only an observable edit/ownership fact. It is the tie-breaker when the rubric judges split, because it
+cannot be captured by a design that merely recites the checklist.
 
 ## Building with the same form
 
