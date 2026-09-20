@@ -180,6 +180,24 @@ datapoint for lite, not a win. Across three axes (derive · ledger · concept-fi
 constant holds: **correctness ties; aims' benefit is avoided-reopen variance reduction, sized by the shortcut
 base rate on each axis×model (~0–17% strong, ~33% weak here).**
 
+# Round 10: BP8 — aims-lite (principle injection) does NOT transfer to a weak model; the review is the load-bearing part
+
+BP8 (`bp8-lite-baserate/`) put the campaign's most attractive improvement candidate — **aims-lite**, a
+lightweight principle injection (BP3 showed the derive-don't-store sentence transferred on opus) — to its
+critical test: does prepending the concept-fit principle *lower* the shortcut rate on the weak model where the
+edge is largest? Six haiku plain builds branched **2/6** (BP7); six haiku builds **with the explicit
+concept-fit principle** branched **2/6** as well. **No effect — 2/6 → 2/6, zero signal of reduction.**
+
+This flips the earlier optimism into a sharp, honest boundary. The principle transfers on a **strong** model
+(BP3, opus) and does **nothing** on a **weak** one (BP8, haiku) — i.e. aims-lite helps only where the executor
+is already good enough that the base shortcut rate is ~0, and fails on the tier where the shortcut rate (33%)
+and thus the potential edge is highest. A principle a model can ignore is not a substitute for a step that
+**inspects the artifact**. That step is aims' **mandatory review**, which reads the built code and rejects the
+type-branch — the part a prompt line cannot replicate on a model that doesn't self-apply advice. So the
+method's irreducible value, on weak executors, is the review, not the advice; BP9 tests that directly by
+running a review pass over the two branched haiku builds. (n=6 per arm, one card/model/axis; null is real but
+small-sample.)
+
 # Honest limits / future work
 
 - The input-space-table question is closed (null on 3 products); the record-layer question is **not** cleanly
