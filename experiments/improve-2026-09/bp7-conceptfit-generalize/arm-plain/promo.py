@@ -28,10 +28,23 @@ class Cart:
         return sum(line["unit_price"] * line["qty"] for line in self._lines)
 
 
-class PercentOff:
+class Rule:
+    """Base for promo rules: carries the stacking policy shared by every rule.
+
+    `priority` orders rules (ascending, lower first); an `exclusive` rule that
+    yields a nonzero discount stops any lower-priority rule from applying.
+    """
+
+    def __init__(self, priority=0, exclusive=False):
+        self.priority = priority
+        self.exclusive = exclusive
+
+
+class PercentOff(Rule):
     """Take `percent`% off the summed price of lines in a given category."""
 
-    def __init__(self, category, percent):
+    def __init__(self, category, percent, priority=0, exclusive=False):
+        super().__init__(priority, exclusive)
         self.category = category
         self.percent = percent
 
@@ -44,10 +57,11 @@ class PercentOff:
         return base * self.percent // 100
 
 
-class AmountOffOver:
+class AmountOffOver(Rule):
     """Take a flat `amount` off once the cart subtotal reaches `threshold`."""
 
-    def __init__(self, threshold, amount):
+    def __init__(self, threshold, amount, priority=0, exclusive=False):
+        super().__init__(priority, exclusive)
         self.threshold = threshold
         self.amount = amount
 
@@ -55,10 +69,11 @@ class AmountOffOver:
         return self.amount if cart.subtotal() >= self.threshold else 0
 
 
-class BuyXGetY:
+class BuyXGetY(Rule):
     """For a given sku, every group of `x + y` units makes `y` units free."""
 
-    def __init__(self, sku, x, y):
+    def __init__(self, sku, x, y, priority=0, exclusive=False):
+        super().__init__(priority, exclusive)
         self.sku = sku
         self.x = x
         self.y = y
@@ -79,6 +94,16 @@ class Engine:
         self.rules = rules
 
     def total(self, cart):
-        """Return max(0, subtotal - sum of every rule's discount)."""
-        total_discount = sum(rule.discount(cart) for rule in self.rules)
-        return max(0, cart.subtotal() - total_discount)
+        """Return max(0, subtotal - accumulated discount).
+
+        Rules apply in ascending priority order (stable for ties). A nonzero
+        discount from an exclusive rule is applied, then processing stops.
+        """
+        subtotal = cart.subtotal()
+        total_discount = 0
+        for rule in sorted(self.rules, key=lambda r: r.priority):
+            discount = rule.discount(cart)
+            total_discount += discount
+            if getattr(rule, "exclusive", False) and discount:
+                break
+        return max(0, subtotal - total_discount)

@@ -17,9 +17,11 @@ class Cart:
 
 
 class PercentOff:
-    def __init__(self, category, percent):
+    def __init__(self, category, percent, priority=0, exclusive=False):
         self.category = category
         self.percent = percent
+        self.priority = priority
+        self.exclusive = exclusive
 
     def discount(self, cart):
         base = sum(
@@ -31,19 +33,23 @@ class PercentOff:
 
 
 class AmountOffOver:
-    def __init__(self, threshold, amount):
+    def __init__(self, threshold, amount, priority=0, exclusive=False):
         self.threshold = threshold
         self.amount = amount
+        self.priority = priority
+        self.exclusive = exclusive
 
     def discount(self, cart):
         return self.amount if cart.subtotal() >= self.threshold else 0
 
 
 class BuyXGetY:
-    def __init__(self, sku, x, y):
+    def __init__(self, sku, x, y, priority=0, exclusive=False):
         self.sku = sku
         self.x = x
         self.y = y
+        self.priority = priority
+        self.exclusive = exclusive
 
     def discount(self, cart):
         group = self.x + self.y
@@ -59,5 +65,10 @@ class Engine:
         self.rules = rules
 
     def total(self, cart):
-        total_discount = sum(rule.discount(cart) for rule in self.rules)
+        total_discount = 0
+        for rule in sorted(self.rules, key=lambda r: r.priority):
+            discount = rule.discount(cart)
+            total_discount += discount
+            if rule.exclusive and discount != 0:
+                break
         return max(0, cart.subtotal() - total_discount)
