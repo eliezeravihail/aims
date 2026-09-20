@@ -68,3 +68,15 @@ Append-only. Each entry: timestamp · what happened · next.
   aims add-feature arms, identical but for the record's presence. Metric: split_shipping(1000,[1,1,1]) must
   sum to 1000 (pass iff it reuses largest-remainder, fail iff a fresh independent-rounding split). n=1
   suggestive. Pre-registered in i5-.../plan.md.
+
+- **2026-09-20 — I5 resolved: NULL (confounded).** Both arms delegated split_shipping to allocate and
+  preserved sum==total (scored mechanically). The record confirmed but didn't change the outcome — the
+  no-record arm reused allocate from a visible in-code precedent (allocate_discount). Limitation recorded:
+  the test didn't isolate the record because the code carried the pattern; isolating it needs a codebase
+  where the pattern is not visible (the paper's frontier). Recorded in i5-.../results.md; SYNTHESIS updated.
+- **2026-09-20 — RUN CONCLUDED.** Five candidates tested honestly, blind, aims-as-is, pre-registered:
+  I1/I2/I4 (design & review additions) null; I5 (record layer) null (confounded); I3 (outcome-first
+  measurement) ADOPTED and shipped. Headline: the shipped design method is robust; the one change that
+  shipped makes the instrument harder on aims, not softer. Remaining real weaknesses (cost, record layer at
+  non-visible scale) need a dedicated build-pilot run. Deliverable: branch claude/aims-improve-blind-outcomes,
+  draft PR #65.

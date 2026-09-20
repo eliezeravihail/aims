@@ -60,12 +60,26 @@ strict `s<d ∧ c<e` overlap predicate and handled all four hidden corners (**4/
 the shipped §1 trace, without the table. So across **three** unseen products the table never beat base. The
 input-space table is decisively a null; the plant→mineral loss it targeted was a builder slip, not a doc gap.
 
+# Round 3: I5 probed the record layer — null, with a sharp limitation
+
+I5 (`i5-record-trap/`) tested aims' **second core claim** at the load-bearing scale the paper names: does a
+co-located record of a *rejected-alternative trap* (a penny-losing money allocation) stop a fresh session
+re-introducing it? Two fresh add-feature arms added `split_shipping` to a largest-remainder allocator,
+identical but for the record's presence. **Both passed** — both delegated to the existing `allocate` and
+preserved `sum == total`. **Null.** The honest reason is the limitation: the target carried a **visible
+in-code precedent** (`allocate_discount` already delegating to `allocate`), so the no-record arm reused the
+owner from the *code*, not the record. The record confirmed the choice; it did not change the outcome. This
+is exactly the paper's position — the record layer is unproven in *outcomes* because every tractable test
+codebase carries its own signal. Isolating the record's outcome value needs a codebase large or opaque
+enough that the pattern is **not** visible in the code — which a small-module A/B cannot reach.
+
 # Honest limits / future work
 
-- The input-space-table question is now closed (null on 3 products). What is **not** yet addressed by this
-  run: aims' **cost** (2.5–3× the baseline — the paper's main downside) and the **record layer at scale**
-  (unproven in outcomes because tested codebases were re-derivable). Both need multi-stage **build pilots**,
-  not design-only A/Bs, to measure fairly — a heavier setup worth a dedicated run rather than a rushed one.
+- The input-space-table question is closed (null on 3 products); the record-layer question is **not** cleanly
+  answered (I5's null is confounded by an in-code precedent). What remains, and needs a heavier **build-pilot**
+  setup rather than a design-only or single-module A/B: aims' **cost** (2.5–3× — the paper's main downside),
+  and the **record layer at a scale where the pattern is not visible in the code** (the paper's stated
+  frontier). These are a dedicated run, not a rushed appendix to this one.
 - I2 is n=1 on one seed; a second seeded product could still surface value, but on the evidence it is a null.
 - I3 changes measurement *policy* from the record; it is validated by discrimination, not by a fresh blind
   run, and keeps both readings so it is fully reversible.
