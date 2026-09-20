@@ -1,15 +1,24 @@
 ---
 title: "promo.py"
 date: 2026-09-20
-hash: "sha256:bf134f2f1d12bec45b2243724ab2d6a8ce26d8d653de06b56fd47e6596a27521"
+hash: "sha256:fa26f39070ef42ddf4cda6b640ba3d652537f56ee214544cd81c7533971a4ad0"
 ---
 ## Insights
 - Every computation stays in integer cents; `PercentOff` floors with
   `base * percent // 100` (verified: base 149, 10% -> 14). No float ever enters,
   so there is no rounding drift to reason about.
-- `discount(cart)` is a pure query on every rule, so `Engine.total` may apply the
-  rules in any order and simply sum them; re-running the engine leaves the cart
-  unchanged (verified).
+- `discount(cart)` is a pure query on every rule, so `Engine.total` may *evaluate*
+  the rules independently and re-running the engine leaves the cart unchanged
+  (verified). The *combination* is no longer a plain sum: since stacking, the
+  engine walks rules in ascending `priority` (stable for ties) and an `exclusive`
+  rule's nonzero discount stops the rest — so combination order is significant even
+  though each rule's own evaluation is not (verified).
+- Stacking metadata (`priority`, `exclusive`) is declared once on the `Rule`
+  abstraction as keyword-only fields (`field(kw_only=True)`), so each concrete
+  kind's positional fields are unaffected and the engine reads the policy off the
+  abstraction, not off a concrete class. Defaults (`0` / `False`) reproduce the
+  pre-stacking additive behavior exactly (verified: all-default stack == old sum,
+  order-independent).
 
 ## Decisions
 - `Engine.total` dispatches over rule kinds polymorphically via `Rule.discount`,
@@ -25,6 +34,16 @@ hash: "sha256:bf134f2f1d12bec45b2243724ab2d6a8ce26d8d653de06b56fd47e6596a27521"
 - `AmountOffOver` uses `>=` (threshold inclusive); the total is floored with
   `max(0, subtotal - discount)` so a stack of rules can never yield negative money
   (verified: two 80-off rules on a 100 cart -> 0).
+- SUPERSEDES the earlier "apply in any order and simply sum" combination: since
+  stacking, `Engine.total` walks rules in ascending `priority` (stable sort),
+  accumulates each discount, and breaks after an `exclusive` rule that produced a
+  nonzero discount (a zero-discount exclusive does not break). The floor is
+  unchanged. Combination policy has one owner (`Engine.total`); per-rule discount
+  math was untouched. See `decisions/0002-stacking-policy.md`.
+- Stacking attributes are plain `int` (`priority`) and `bool` (`exclusive`) fields,
+  not a bundled `StackPolicy` value object: the spec fixes the interface as two
+  optional keyword arguments per constructor, and both are genuine primitive policy
+  attributes (an ordering key, a flag) — no concept-cram (§4/§9).
 
 ## Discussions
 - `BuyXGetY.discount` divides by `group = x + y`; a rule with `x + y == 0` would
