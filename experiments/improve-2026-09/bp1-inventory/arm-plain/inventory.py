@@ -79,6 +79,42 @@ class Inventory:
         self._reservations[reservation_id] = (sku, qty, expiry)
         return reservation_id
 
+    def reserve_up_to(
+        self,
+        sku: str,
+        qty: int,
+        *,
+        now: float = 0.0,
+    ) -> tuple[str, int]:
+        """Reserve as many units of ``sku`` as are available at ``now``, up to
+        ``qty``.
+
+        Returns ``(reservation_id, reserved_qty)`` where ``reserved_qty`` is
+        ``min(qty, available(sku, now))`` and ``0 <= reserved_qty <= qty``. When
+        nothing is available, ``reserved_qty`` is 0 and the reservation holds no
+        units. The reservation never expires (no ttl).
+
+        Raises ``ValueError`` if ``qty <= 0``.
+        """
+        if qty <= 0:
+            raise ValueError("qty must be > 0")
+        reserved_qty = min(qty, self.available(sku, now=now))
+        reservation_id = uuid.uuid4().hex
+        self._reservations[reservation_id] = (sku, reserved_qty, None)
+        return reservation_id, reserved_qty
+
+    def confirm(self, reservation_id: str) -> None:
+        """Confirm a reservation so it holds its units permanently.
+
+        A confirmed reservation never expires thereafter, even if it carried a
+        ttl and even past that ttl. No-op for an unknown or already-released id.
+        """
+        entry = self._reservations.get(reservation_id)
+        if entry is None:
+            return
+        sku, qty, _expiry = entry
+        self._reservations[reservation_id] = (sku, qty, None)
+
     def release(self, reservation_id: str) -> None:
         """Drop a reservation so its units are no longer held. Idempotent no-op
         for an unknown or already-released id.

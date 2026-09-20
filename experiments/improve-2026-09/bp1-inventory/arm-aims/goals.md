@@ -13,8 +13,11 @@ stock added minus units currently held by outstanding reservations.
 - Reserve exactly the available quantity (down to 0); a further reserve of even 1 unit is rejected
   with `InsufficientStock`, and nothing changes.
 - Release an unknown or already-released id — a harmless no-op (idempotent), so a caller can retry.
+- (stage 2) Reserve 4 with `ttl_seconds=5` at `now=0`: 6 available while the hold is live, and 10
+  available at `now>=5` — the units return automatically at the injected expiry, with no release call.
 
 ## Non-goals
 - No persistence, no concurrency/threading guarantees, no networking — purely in-memory, single-threaded.
-- No expiry, confirmation, or partial reservation semantics in this stage (only add/available/reserve/release).
+- No confirmation or partial reservation semantics (only add/available/reserve/release, plus stage-2
+  expiry). Time is **injected** (`now`), not read from a real clock — no background timer sweeps expiries.
 - No removal or decrement of added stock; `add_stock` only increases the total for a sku.

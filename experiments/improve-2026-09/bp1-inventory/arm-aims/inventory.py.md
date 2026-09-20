@@ -1,7 +1,7 @@
 ---
 title: "inventory.py"
 date: 2026-09-20
-hash: "sha256:c6a8556a729d6226d3b62732ba841996237cbc6f6887662589c19c7f169cd4e9"
+hash: "sha256:edceb7ba54973e3a91a0f12195be3886ba54af5ac3d99a23a59575c88d8fd690"
 ---
 ## Insights
 - The load-bearing invariant is the availability rule, and its single owner is `Inventory.available`.
