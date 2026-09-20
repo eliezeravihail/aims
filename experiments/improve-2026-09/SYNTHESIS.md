@@ -198,7 +198,38 @@ method's irreducible value, on weak executors, is the review, not the advice; BP
 running a review pass over the two branched haiku builds. (n=6 per arm, one card/model/axis; null is real but
 small-sample.)
 
+# Round 11: BP9 — the review catches (4/4) what the principle missed (0/6); output inspection is aims' irreducible value
+
+BP9 (`bp9-review-vs-principle/`) closes the BP6–BP9 arc. It ran the real aims review instrument
+(`references/review.md`), applied by a competent Guide (opus) as the mixed-tier architecture intends, over the
+**4 branched builds** the weak model (haiku) produced — the very outputs the aims-lite principle failed to
+prevent. **The review flagged the type-switch as a structural finding on all four (detection 4/4)** — naming
+the anemic-rules / type-code-switch / OCP-reopen defect and the exact repair seam (polymorphic
+`rule.discount(cart)`), by section — where the principle-in-prompt scored **0/6**. Applying the recommendation
+to one build (b1) yielded a polymorphic module passing the hidden suite **12/12** with zero `isinstance`
+(repair validated). The review also caught representation-leak defects the metric never looked at, including a
+genuine cross-boundary violation in b2 that gates (S4).
+
+Two honest qualifications: the type-switch itself rates **S3 (structural, non-gating)** — so the review
+reliably *surfaces and names* the shortcut and its fix, but at the gate it informs rather than forces (only b2
+BLOCKS, on a separate S4). And n=4, one axis/card.
+
+The arc resolves against the convenient answer: **aims cannot be compressed to a prompt of principles for a
+weak executor** — the principles don't stick (BP8, 2/6 → 2/6) — but its **review** does the job that advice
+cannot, catching the shortcut on weak-model output (BP9, 4/4). aims' irreducible, non-transferable value is
+**output inspection by a competent Guide**, exactly the mixed-tier configuration the paper argues for: cheap
+Worker builds, competent review catches what the Worker (and any ignored prompt line) missed.
+
 # Honest limits / future work
+
+- **A concrete, motivated improvement candidate surfaced by BP9 (not yet shipped, by discipline):** the
+  type-code-switch / OCP-reopen finding currently rates **S3 (non-gating)** even when the reopened change-axis
+  is **explicitly named by the spec/goals** and served by a foreseeable near-term item. One could argue that
+  *spec-named-change-axis + forced reopen* should gate (S4). This is exactly the kind of weakness-prompted
+  tweak the campaign's discipline (Pavel's rule) says must **beat base on an unseen product before entering the
+  method** — it is recorded here as a candidate to test, not a change to ship reflexively (raising a gate risks
+  over-blocking correct-but-simple code; it needs a blind A/B showing it catches real reopens without false
+  positives).
 
 - The input-space-table question is closed (null on 3 products); the record-layer question is **not** cleanly
   answered (I5's null is confounded by an in-code precedent). What remains, and needs a heavier **build-pilot**
