@@ -115,3 +115,9 @@ Append-only. Each entry: timestamp · what happened · next.
   "aims-lite" (inject the few high-yield principles as short prompts). Method's real candidate value —
   records at scale + across many hands — remains untested. Recorded in bp3-hint-transfer/results.md;
   SYNTHESIS updated.
+
+- **2026-09-20 — BP4 resolved: NULL (concept-fit).** Playlist builder, hard "no-3-in-a-row" rule. Both arms
+  (aims, plain) modeled H as a hard feasibility filter (gate+guard, same M<=2(T-M)+2 predicate), NOT the
+  filter-as-score cram. aims' concept-fit review confirmed the design but caught nothing plain missed. The
+  strong no-method model avoided the cram unaided. Consistent with the whole run: on tractable single
+  artifacts the method confirms rather than rescues. Recorded in bp4-conceptfit-probe/results.md.
