@@ -35,3 +35,12 @@ def allocate_discount(total_discount_cents: int, line_totals: list[int]) -> list
     Delegates to `allocate` so the sum-preservation invariant holds here too.
     """
     return allocate(total_discount_cents, line_totals)
+
+
+def split_shipping(fee_cents: int, line_totals: list[int]) -> list[int]:
+    """Split a flat shipping fee across order lines in proportion to line totals.
+
+    Delegates to `allocate` so the sum-preservation invariant (R-sum) holds here
+    too: the per-line shipping charges sum EXACTLY to `fee_cents`.
+    """
+    return allocate(fee_cents, line_totals)
