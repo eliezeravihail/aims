@@ -73,6 +73,28 @@ is exactly the paper's position — the record layer is unproven in *outcomes* b
 codebase carries its own signal. Isolating the record's outcome value needs a codebase large or opaque
 enough that the pattern is **not** visible in the code — which a small-module A/B cannot reach.
 
+# Round 4: BP1 — the first running-code test of the trajectory claim
+
+BP1 (`bp1-inventory/`) is the first experiment here to reach what design-only A/Bs cannot: aims' **core
+trajectory claim**, under a real 3-stage build (reserve → expiry → confirm+partial) with running Python and
+hidden pytest per stage, two arms, later stages by fresh sessions, scored outcome-first.
+
+- **Correctness: a tie** — both arms 21/21 at every stage.
+- **Trajectory: a real, blind-confirmed edge for aims — 0 reopened owners vs 1** (a blind judge, blind to
+  method, agreed and picked the aims arm on final structure too, judging code not vocabulary). It traces to
+  one stage-1 decision: aims made availability **derived, not stored** (its review rejected the stored-counter
+  shortcut on §5 one-owner), which made expiry and confirm purely additive; the plain arm's stored-counter
+  shortcut forced a model **reopen** when time-dependent expiry arrived.
+- **But it did not compound** — after its stage-2 reopen the plain arm converged to the same derived design
+  and absorbed stage 3 cleanly. A strong no-method model refactored to parity (the paper's own caveat).
+- **Q2 continuity: a positive signal (n=1)** — the fresh aims session was steered to the extension seam by
+  its co-located record.
+- **Cost: aims ≈1.85× tokens, ≈3.7× wall** — the premium bought one avoided reopen + records, not correctness.
+
+The honest shape: the method's edge is a **small, real, measured** trajectory benefit at a real cost premium
+— the paper's claim reproduced in direction and modest in magnitude, now observed rather than asserted. BP2
+tests where it should be larger: a **weaker executor** that will not refactor to parity.
+
 # Honest limits / future work
 
 - The input-space-table question is closed (null on 3 products); the record-layer question is **not** cleanly

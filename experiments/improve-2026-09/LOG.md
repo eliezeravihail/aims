@@ -87,3 +87,14 @@ Append-only. Each entry: timestamp · what happened · next.
   tests, scored outcome-first (correctness gate + reopened-owner/edit-locality + cost). Frozen package:
   cards/stage-{1,2,3}.md, hidden/test_stage{1,2,3}.py. Stage-1 arms launched (aims w/ records vs plain).
   Next: score stage 1 on hidden tests, reveal stage 2, repeat; then judge the trajectory blind.
+
+- **2026-09-20 — BP1 COMPLETE (round 4, the trajectory claim under running code).** 3-stage inventory
+  service, aims vs plain, later stages fresh sessions, hidden pytest per stage. Result: correctness TIE
+  (both 21/21 all stages); trajectory edge for aims — **0 reopened owners vs 1**, blind-confirmed by a
+  method-blind judge that also picked the aims arm on final structure. Root cause: aims' stage-1 derive-
+  don't-store (§5) made both later changes additive; plain's stored counter forced a stage-2 model reopen.
+  Did NOT compound (plain refactored to parity). Q2 signal: the record steered the fresh aims session to
+  the seam. Cost aims ~1.85x tokens / ~3.7x wall. Honest: real, small, measured edge at a real premium —
+  the paper's claim reproduced in direction, modest in magnitude. Recorded in bp1-inventory/results.md.
+  Next: BP2 — same sequence on a CHEAPER executor model, where the plain arm should NOT refactor to parity
+  and rot may compound (the paper's mixed-tier condition).
