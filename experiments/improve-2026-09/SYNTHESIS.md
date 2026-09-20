@@ -1,5 +1,5 @@
 ---
-title: "Synthesis — the 24h improvement run: two nulls, one adopted, the discipline held"
+title: "Synthesis — the 24h improvement run: 1 change shipped, the rest measured honestly, and aims' edge pinned down"
 date: 2026-09-20
 ---
 
@@ -7,7 +7,21 @@ date: 2026-09-20
 
 Improve aims for **correctness in the result** — not for a higher score on its own rubric — and prove each
 change **blind, on unseen products, with a rubric-free outcome metric fixed before the run** (`plan.md`).
-Three candidates, each targeting a weakness the paper names.
+It ran in two phases: first three method-change candidates (I1–I5), each targeting a weakness the paper names;
+then a build-pilot campaign (BP1–BP9) that stopped asking *"what can we add?"* and instead **measured what
+aims' edge actually is** under running-code tests, across three structural axes and two model tiers.
+
+**The one-paragraph result.** Only **I3** shipped (outcome-first measurement + a disjoint-vocabulary judge —
+the change that makes the instrument *harder*, not the method look better). Every other addition was rejected
+by measurement. The build pilots then pinned aims' benefit precisely: **correctness ties everywhere**; aims'
+real edge is **avoided-reopen variance reduction on an early structural choice**, sized by the **shortcut base
+rate** on each axis×model (≈0% for a strong model, ≈17–33% for a weak one). That edge **transfers as a one-line
+principle on a strong model** (BP3) but **not on a weak one** (BP8); what survives compression is the
+**review** — output inspection by a competent Guide caught the shortcut **4/4** on weak-model output where the
+prompt-principle scored 0/6 (BP9). Net: aims earns its cost as a **mixed-tier** method (cheap Worker + competent
+review), not as a prompt of principles.
+
+The first phase (three method-change candidates) follows; the build-pilot campaign (rounds 4–11) follows that.
 
 # The three candidates and their measured outcomes
 
