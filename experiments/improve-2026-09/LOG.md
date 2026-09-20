@@ -171,3 +171,9 @@ Append-only. Each entry: timestamp · what happened · next.
   specific-allow-under-broad-deny corner engineered to bait "deny always wins", tested on OPUS. Result 0/6 —
   even a designed interaction corner did not slip a strong model. Fourth correctness null (I1/I4/BP10/BP11);
   the correctness claim has no pilot-scale target and needs a genuinely large/noisy task. bp11-interaction-corner/results.md.
+
+- **2026-09-20 — BP12 COMPLETE (round 14, cost).** Second clean cost datapoint: full-aims vs plain on the
+  calendar card. aims 98.7k tokens / ~254s / 23 tools; plain 42.1k / ~21s / 3 tools; both 11/11 correct.
+  Ratio 2.34x tokens, ~12x wall. With BP1 (1.85x tokens, 3.7x wall) the premium is ~1.85-2.34x tokens (a bit
+  below the paper's 2.5-3x); the wall ratio is task-size-dependent (aims' fixed ceremony dominates a small
+  task, amortizes on a larger one). Correctness tie #5. bp12-cost/results.md.

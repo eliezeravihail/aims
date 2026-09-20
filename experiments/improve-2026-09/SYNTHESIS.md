@@ -269,6 +269,18 @@ multi-concern task beyond pilot scale, where attention divides and a builder act
 record layer at code-opaque scale, and cost at larger scope are what a **dedicated non-pilot evaluation** must
 carry — not this campaign's small blind A/Bs.
 
+# Round 14: BP12 — a second cost datapoint (≈2.3× tokens, ≈12× wall on a small task)
+
+BP12 (`bp12-cost/`) ran full-aims vs plain on one design+build task (the calendar card) and read cost from the
+handbacks: aims **98.7k tokens / ~254 s / 23 tools**, plain **42.1k / ~21 s / 3 tools**, both **11/11**. That is
+**2.34× tokens** and **≈12× wall**. Beside BP1's 1.85× tokens / 3.7× wall, the cost premium is now two
+datapoints: **≈1.85–2.34× tokens** (real, a little below the paper's 2.5–3×), and wall **3.7–12×** —
+**task-size-dependent**: aims' ceremony (sharpen/design/review/records) is a largely fixed overhead, so on a
+small task the plain arm's one-shot finish makes the wall ratio balloon, while a larger/multi-stage task
+amortizes it (BP1's 3.7×). Correctness tied again (the fifth tie). The honest cost/benefit: aims charges ~2×
+tokens on **every** build to buy an avoided reopen on the **minority** where the shortcut would be taken (plus
+durable records) — the mixed-tier calculus the method already frames. n=2 on cost; reported as a range.
+
 # Honest limits / future work
 
 - **A concrete, motivated improvement candidate surfaced by BP9 (not yet shipped, by discipline):** the
