@@ -252,6 +252,23 @@ blind A/B reproduces. This locks in the campaign's honest shape: on tractable, c
 benefit is **structural/trajectory** (variance reduction on the early design choice), **not correctness**;
 correctness ties because the base is already right.
 
+# Round 13: BP11 — a designed interaction corner still doesn't slip a strong model; the correctness thread closes at pilot scale
+
+BP11 (`bp11-interaction-corner/`) built the high-context case BP10 named: a layered access evaluator with two
+stated principles that **conflict** on a corner (most-specific-wins vs deny-wins-at-tie), engineered so the
+common "deny always wins" simplification silently returns the wrong answer on a specific-ALLOW-under-broad-DENY
+path — with the card baiting that simplification. Tested on **opus**. Result: **0/6** — every build implemented
+"most specific wins, DENY only as the equal-specificity tie-break" and passed the corner. No bug → Part B
+correctly did not run.
+
+This is the fourth and strongest correctness null (I1, I4, BP10, BP11), and it was *engineered* to slip a
+builder. The thread closes cleanly at pilot scale: **there is no correctness deficit for aims to repair that a
+blind small-module A/B can produce — even a deliberately conflicting interaction is resolved correctly by a
+capable model.** aims' correctness claim is not disproven; it plausibly lives only in a genuinely large, noisy,
+multi-concern task beyond pilot scale, where attention divides and a builder actually slips. That regime, the
+record layer at code-opaque scale, and cost at larger scope are what a **dedicated non-pilot evaluation** must
+carry — not this campaign's small blind A/Bs.
+
 # Honest limits / future work
 
 - **A concrete, motivated improvement candidate surfaced by BP9 (not yet shipped, by discipline):** the

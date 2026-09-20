@@ -152,3 +152,22 @@ Append-only. Each entry: timestamp · what happened · next.
   type-switch rates S3 (non-gating), so the review surfaces-and-names rather than forces. Recorded a
   motivated-but-untested improvement candidate (gate the spec-named-change-axis reopen as S4).
   bp9-review-vs-principle/results.md. SYNTHESIS retitled + summary paragraph; PR #65 body updated.
+
+- **2026-09-20 — BP10 COMPLETE (round 12, correctness null).** Went hunting for a CORRECTNESS difference
+  (all prior BPs tied). Two determinate error-prone corners: half-open interval boundary (touch points) and
+  remainder allocation (split summing exactly to n), 6 plain haiku builds each. Bug rate 0/12 — every build
+  got the corner right. No correctness deficit to repair on clear specs even on the weak tier; Part B (review
+  catches it) correctly not run. Third confirmation (with I1/I4) that on clear small specs aims' benefit is
+  trajectory, not correctness. bp10-correctness-baserate/results.md.
+
+- **2026-09-20 — I6 SHIPPED (second adopted change).** review.md's mixed-tier section already existed; BP7-BP9
+  add one specific observed weak-executor gap — the anemic-model/type-switch dispatch. Added it to the
+  mixed-tier hunt-list with the measured evidence (BP7 base rate, BP8 principle-fails, BP9 review-catches-4/4).
+  No new gate. decisions/0020. Full test suite green. Also recorded a motivated-but-untested candidate (gate
+  the spec-named-change-axis reopen as S4) held to the beat-base bar.
+
+- **2026-09-20 — BP11 COMPLETE (round 13, closes the correctness thread).** The high-context test BP10 named:
+  a layered access evaluator with two conflicting principles (most-specific-wins vs deny-wins-at-tie), a
+  specific-allow-under-broad-deny corner engineered to bait "deny always wins", tested on OPUS. Result 0/6 —
+  even a designed interaction corner did not slip a strong model. Fourth correctness null (I1/I4/BP10/BP11);
+  the correctness claim has no pilot-scale target and needs a genuinely large/noisy task. bp11-interaction-corner/results.md.
