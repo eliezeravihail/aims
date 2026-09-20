@@ -153,6 +153,33 @@ stored). The edge is real, mechanistic, and now *sized*: proportional to the sho
 capable model on a clean card and rises with weaker builders, baited cards, or longer sequences where one
 early store compounds.
 
+# Round 9: BP7 — the edge generalizes to a second axis (concept-fit), as the SAME variance-reduction mechanism, and is model-dependent
+
+BP7 (`bp7-conceptfit-generalize/`) asked whether the trajectory edge is specific to derive-don't-store or a
+general property, and tested it on an unrelated axis — **concept-fit** (model each promo rule as a first-class
+object vs an `isinstance` type-branch inside the engine) — with a 2-stage build (rules → priority+exclusivity
+stacking) across three arms: **plain**, **aims-lite** (a 4-principle prompt block, no method), and **full aims**.
+
+- **Opus 3-arm result: a three-way tie, 0 reopens for all.** Every opus arm — including the un-prompted plain
+  arm — modeled rules as first-class objects at stage 1, so the stacking change was a pure seam extension for
+  everyone (`total()`'s sum → a sorted walk + exclusivity break; per-rule `discount()` untouched). Correctness
+  tied 19/19. On opus the shortcut simply isn't taken, so aims' review had nothing to save. The aims records
+  did name the seam and the fresh session used it (Q2 continuity, n=1), but bought no avoided reopen.
+- **Base-rate probe: the shortcut IS taken on a weaker model.** 6 haiku plain builds of the stage-1 card:
+  **2/6 wrote the `isinstance` type-branch** (the reopen-inducing shortcut), 4/6 polymorphic — vs **0/3 on
+  opus**. So the concept-fit shortcut base rate is **~0% opus / ~33% haiku**.
+
+The reading sharpens the whole campaign rather than repeating it. **The edge generalizes off derive-don't-store
+onto a second, unrelated axis — but as the identical mechanism (variance reduction on an early structural
+choice), and it is model-dependent.** aims' concept-fit edge is *invisible on opus* (a strong model already
+picks the good design — the 3-arm null is a **ceiling null, not an absence**) and *real on haiku* (2/6
+shortcut → 2/6 avoided reopens). This is the cleanest demonstration yet of the paper's mixed-tier prediction:
+the review's value scales inversely with how good the raw executor already is. **aims-lite tied** here only
+because the opus environment couldn't discriminate any delivery (all arms derived) — a weak, inconclusive
+datapoint for lite, not a win. Across three axes (derive · ledger · concept-fit) and two tiers, the honest
+constant holds: **correctness ties; aims' benefit is avoided-reopen variance reduction, sized by the shortcut
+base rate on each axis×model (~0–17% strong, ~33% weak here).**
+
 # Honest limits / future work
 
 - The input-space-table question is closed (null on 3 products); the record-layer question is **not** cleanly
