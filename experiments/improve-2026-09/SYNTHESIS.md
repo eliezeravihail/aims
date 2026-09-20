@@ -94,6 +94,22 @@ hidden pytest per stage, two arms, later stages by fresh sessions, scored outcom
 The honest shape: the method's edge is a **small, real, measured** trajectory benefit at a real cost premium
 — the paper's claim reproduced in direction and modest in magnitude, now observed rather than asserted.
 
+# Round 7: BP5 — no compounding over 4 breaks; the edge is VARIANCE REDUCTION
+
+BP5 (`bp5-ledger-compounding/`) built a 4-stage money-ledger (single → multi-currency → as-of-time → void)
+designed so a stored-running-balance shortcut would reopen at each break — the fairest test yet of the
+paper's "edge grows with the sequence." Result: **both arms absorbed all four breaks with 0 reopens**,
+correctness tied (13/13), because **both** chose a derive-by-scanning posting journal at stage 1, which makes
+every break a single filter clause. **No compounding, no divergence.**
+
+Read against BP1/BP2 (where the plain arm *stored* a counter and paid 1 reopen), BP5 pins down what aims'
+trajectory edge actually is: **variance reduction on the early structural choice.** aims' one-owner /
+derive-don't-store review *reliably* picks the extensible design; a capable plain builder picks it *sometimes*
+(stored in BP1/BP2, derived in BP5). So the per-product edge is **probabilistic** — proportional to how often
+a plain builder would take the shortcut — and vanishes on a product where the plain builder chooses well.
+Compounding rot stayed unobserved even at 4 breaks. (Q2 continuity signal seen again: the aims records named
+each extension seam and the fresh sessions used them.)
+
 # Round 6: BP3 — the trajectory edge is ONE transferable principle, not the method
 
 BP3 (`bp3-hint-transfer/`) is the run's sharpest finding. It traced aims' entire measured trajectory edge to
