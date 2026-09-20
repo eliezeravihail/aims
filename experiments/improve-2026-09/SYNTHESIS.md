@@ -92,8 +92,17 @@ hidden pytest per stage, two arms, later stages by fresh sessions, scored outcom
 - **Cost: aims ≈1.85× tokens, ≈3.7× wall** — the premium bought one avoided reopen + records, not correctness.
 
 The honest shape: the method's edge is a **small, real, measured** trajectory benefit at a real cost premium
-— the paper's claim reproduced in direction and modest in magnitude, now observed rather than asserted. BP2
-tests where it should be larger: a **weaker executor** that will not refactor to parity.
+— the paper's claim reproduced in direction and modest in magnitude, now observed rather than asserted.
+
+# Round 5: BP2 — the same build on a cheaper executor (n=2 on the trajectory)
+
+BP2 (`bp2-inventory-haiku/`) reran BP1's identical 3-stage sequence with **both arms on haiku**, to test the
+mixed-tier prediction that a weaker executor would let rot compound. Result: **the trajectory pattern
+reproduced (aims 0 reopens, plain 1), correctness stayed a tie (both 21/21 all stages) — but the mixed-tier
+compounding did NOT appear.** The cheaper model handled every stage correctly, and even the plain arm's one
+reopen was *clean*, followed by a clean stage-3 extension. So across **two products × two model tiers**, the
+edge is the **same single avoided reopen**, non-compounding. Compounding rot (the paper's frontier) still
+needs a stickier shortcut, a longer sequence, or a genuinely non-refactoring executor — none reached here.
 
 # Honest limits / future work
 

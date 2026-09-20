@@ -98,3 +98,11 @@ Append-only. Each entry: timestamp · what happened · next.
   the paper's claim reproduced in direction, modest in magnitude. Recorded in bp1-inventory/results.md.
   Next: BP2 — same sequence on a CHEAPER executor model, where the plain arm should NOT refactor to parity
   and rot may compound (the paper's mixed-tier condition).
+
+- **2026-09-20 — BP2 COMPLETE (round 5, cheaper executor, n=2).** Same 3-stage inventory sequence on haiku
+  both arms. Result: correctness TIE (both 21/21 all stages — the weak executor did NOT break); trajectory
+  reproduced (aims 0 reopens, plain 1 at stage 2); NO mixed-tier compounding (haiku refactored its reopen
+  cleanly). So across 2 products × 2 model tiers the edge is the same single avoided reopen, non-compounding.
+  Recorded in bp2-inventory-haiku/results.md. Next: BP3 — a sharp cheap probe: give the PLAIN arm a one-line
+  "derive-don't-store / one-owner" hint at stage 1 and see if it then also gets 0 reopens (does the edge need
+  the METHOD or just the PRINCIPLE?).
