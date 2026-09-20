@@ -1,7 +1,7 @@
 ---
 title: "ledger.py"
 date: 2026-09-20
-hash: "sha256:2826cd19a689171661d5bf4abf404b22ca936d94a6e6c1b4ed5725b33858f8ae"
+hash: "sha256:6201b99faf72828ac204250d988a1ad28e0d7688a9eeddbd37f431f5141b0397"
 ---
 ## Insights
 - `ledger.py` is the whole stage-1 product: `Ledger` plus its internal `Posting` value type. The file's
@@ -21,6 +21,13 @@ hash: "sha256:2826cd19a689171661d5bf4abf404b22ca936d94a6e6c1b4ed5725b33858f8ae"
   the revise-round fix for primitive obsession on the core unit of record.
 - **Ids: `uuid.uuid4().hex`.** Satisfies R2 (unique + opaque). Chosen over a monotonic counter, which is
   unique but transparent (leaks order/count) and so fails "opaque" — the revise-round fix for id opacity.
+- **Currency is a tag on the posting; balance is per (account, currency).** `Posting` gained a
+  `currency` field (extended at the one type, exactly the seam `architecture.md` anticipated — no new
+  parallel structure, no reopen of a rule's owner). `balance` still owns R1/R4 in one place: it sums the
+  postings matching *both* account and currency, so currencies never mix (R4) by the same by-construction
+  derivation. `post`/`balance` default `currency="USD"`, so every stage-1 single-currency call is
+  unchanged (a USD posting summed by a USD balance). A currency is an attribute of the money movement, not
+  a synthetic entity — modelling it as a field keeps it concept-correct.
 
 ## Discussions
 - **uuid4 uniqueness is statistical.** Collision probability (~2^-122) is negligible for an in-memory

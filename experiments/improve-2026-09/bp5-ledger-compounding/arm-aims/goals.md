@@ -19,10 +19,16 @@ date: 2026-09-20
   - R2 — every `post` returns an id that is unique across the ledger and opaque (callers treat it as a
     handle and must not depend on its structure).
   - R3 — amounts and balances may be negative (no non-negativity constraint).
+  - R4 — every posting is tagged with a currency (default "USD"); a balance is per (account, currency)
+    and currencies never mix. A single-currency (stage-1) caller, using the "USD" default throughout,
+    sees exactly the stage-1 balance.
 
 ## Discussions
-- **Out of scope for stage 1** (do not build now; later stages may introduce): persistence/durability,
-  thread-safety/concurrency, double-entry balancing or validation across accounts, currencies/units
-  beyond integer cents, deletion/reversal of a posting, statements/history queries, lookup of a posting
-  by id. These are deliberately excluded — see the architecture record for why the stage-1 representation
-  (an append-only journal of postings) is chosen so these can be added later without disturbing the core.
+- **Out of scope** (do not build now; later stages may introduce): persistence/durability,
+  thread-safety/concurrency, double-entry balancing or validation across accounts, deletion/reversal of a
+  posting, statements/history queries, lookup of a posting by id, cross-currency conversion/FX (currencies
+  are tracked separately and never converted). These are deliberately excluded — see the architecture
+  record for why the append-only journal is chosen so these can be added later without disturbing the core.
+- **Multi-currency is now in scope (R4)** — this lifts the former stage-1 "currencies/units beyond integer
+  cents" exclusion, and it was absorbed exactly as the architecture record predicted: by extending the
+  `Posting` value at one type, not by reworking the core. Amounts remain integer minor units per currency.
