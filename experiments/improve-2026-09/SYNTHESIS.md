@@ -50,11 +50,22 @@ threats section demands. A method that only ever adopts its own proposals is gam
 adopted the change that makes the instrument harder and rejected the two that would merely have added
 surface. `arm-table-design-principles.md` and `arm-attack-review.md` remain as recorded negatives.
 
+# Round 2: I4 closed the input-space-table question — still null
+
+The one open thread from round 1 — does the table help on an *implied-but-unstated* corner? — was tested
+directly (`i4-table-unstated-corner/`): an appointment-slot checker whose card states the half-open rule but
+gives only clearly-overlapping / clearly-disjoint cases, leaving the touch-point (the classic half-open
+off-by-one) and the zero-length request implied but unstated. **Both** arms, base and table, pinned the
+strict `s<d ∧ c<e` overlap predicate and handled all four hidden corners (**4/4 each**) — the base arm via
+the shipped §1 trace, without the table. So across **three** unseen products the table never beat base. The
+input-space table is decisively a null; the plant→mineral loss it targeted was a builder slip, not a doc gap.
+
 # Honest limits / future work
 
-- I1's null tested **stated** change-axes. The sharper hypothesis — does a mechanical table catch a corner
-  that is *implied but unstated*, where a prose trace might skip it? — is **not** settled here, and was
-  deliberately **not** pursued by manufacturing an easier product to force a win.
+- The input-space-table question is now closed (null on 3 products). What is **not** yet addressed by this
+  run: aims' **cost** (2.5–3× the baseline — the paper's main downside) and the **record layer at scale**
+  (unproven in outcomes because tested codebases were re-derivable). Both need multi-stage **build pilots**,
+  not design-only A/Bs, to measure fairly — a heavier setup worth a dedicated run rather than a rushed one.
 - I2 is n=1 on one seed; a second seeded product could still surface value, but on the evidence it is a null.
 - I3 changes measurement *policy* from the record; it is validated by discrimination, not by a fresh blind
   run, and keeps both readings so it is fully reversible.

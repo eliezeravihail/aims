@@ -51,3 +51,12 @@ Append-only. Each entry: timestamp · what happened · next.
   clearly-disjoint cases, so the touch-point (adjacency) and zero-length corners are IMPLIED but UNSTATED.
   Two arms (base vs table), aims-as-is, design-only. Pre-registered as a distinct hypothesis in
   i4-.../plan.md; one shot; a win is suggestive-only (n=1) and does not overturn the I1 n=2 null.
+
+- **2026-09-20 — I4 resolved: NULL.** Both arms (base, table) pinned the strict half-open overlap predicate
+  and handled all 4 unstated corners (adjacency free, zero-length rejected, identical = conflict): 4/4 each.
+  The base arm reached it via the shipped §1 trace, without the table. Input-space table decisively closed
+  as a null across 3 unseen products. Recorded in i4-.../results.md; SYNTHESIS updated.
+- **2026-09-20 — run conclusion.** Shipped: I3 (outcome-first measurement). Null and not shipped: I1, I2,
+  I4. Meta-result: the shipped design method (esp. §1 "trace the full input space") is robust; motivated
+  additions did not beat it and were rejected by measurement. Remaining real weaknesses (cost, record layer
+  at scale) need build pilots — flagged as a future dedicated run, not rushed here.
