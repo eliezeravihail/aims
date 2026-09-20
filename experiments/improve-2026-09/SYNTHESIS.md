@@ -11,9 +11,11 @@ It ran in two phases: first three method-change candidates (I1–I5), each targe
 then a build-pilot campaign (BP1–BP9) that stopped asking *"what can we add?"* and instead **measured what
 aims' edge actually is** under running-code tests, across three structural axes and two model tiers.
 
-**The one-paragraph result.** Only **I3** shipped (outcome-first measurement + a disjoint-vocabulary judge —
-the change that makes the instrument *harder*, not the method look better). Every other addition was rejected
-by measurement. The build pilots then pinned aims' benefit precisely: **correctness ties everywhere**; aims'
+**The one-paragraph result.** **Two** changes shipped, both hardening the instrument rather than flattering the
+method: **I3** (outcome-first measurement + a disjoint-vocabulary judge) and **I6** (naming the observed
+anemic-model / type-switch as a specific mixed-tier review gap — `decisions/0020`, backed by BP7–BP9 on unseen
+builds, no new gate). Every *additive* candidate (I1/I2/I4/I5, aims-lite) was rejected by measurement. The
+build pilots pinned aims' benefit precisely: **correctness ties everywhere**; aims'
 real edge is **avoided-reopen variance reduction on an early structural choice**, sized by the **shortcut base
 rate** on each axis×model (≈0% for a strong model, ≈17–33% for a weak one). That edge **transfers as a one-line
 principle on a strong model** (BP3) but **not on a weak one** (BP8); what survives compression is the
