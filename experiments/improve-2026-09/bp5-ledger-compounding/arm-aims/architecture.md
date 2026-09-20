@@ -21,6 +21,14 @@ date: 2026-09-20
   filter and no reopen. **Point-in-time balance (R5) was absorbed the same way**: `balance` gained an
   `as_of` bound as one more predicate clause in the same sum (account AND currency AND `at <= as_of`), so
   the as-of cut is derived by construction inside the one owner — again no trailing filter, no reopen.
+  **Void (R6) was absorbed the same way — as a derivation exclusion, not by adding a posting.** The earlier
+  note here ("later operations that change balances add postings rather than adjusting a total") holds for a
+  *reversal* (a movement / counter-posting stamped at its own time); a **void** is a different concept — a
+  retroactive nullification that must erase a posting's effect at *every* as-of instant — so it is owned as
+  one more predicate clause in `balance` (`p.id not in self._voided`), keeping R1 derived by construction.
+  The voided posting stays in the append-only journal; `self._voided` is a `set` of skipped ids, not a
+  second balance store. See `ledger.py.md` for why a counter-posting would be value-wrong for intermediate
+  as-of queries.
 - **The posting is a first-class value object, not a raw tuple.** The journal holds `Posting` values
   (an immutable record of `id`, `account`, `amount_cents`, `currency`), so the journal is self-describing
   and later stages can extend a posting (e.g. a timestamp, a reversal link) at one type rather than
