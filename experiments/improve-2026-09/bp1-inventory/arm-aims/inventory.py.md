@@ -1,7 +1,7 @@
 ---
 title: "inventory.py"
 date: 2026-09-20
-hash: "sha256:edceb7ba54973e3a91a0f12195be3886ba54af5ac3d99a23a59575c88d8fd690"
+hash: "sha256:c5af6be3be800783fa509cdeb8e195babffda23f2ada660be4d188ba0cb8a0be"
 ---
 ## Insights
 - The load-bearing invariant is the availability rule, and its single owner is `Inventory.available`.
@@ -44,6 +44,28 @@ hash: "sha256:edceb7ba54973e3a91a0f12195be3886ba54af5ac3d99a23a59575c88d8fd690"
 - **[stage 2]** Expiry is modelled as a **lifetime on the reservation** (an instant from which the hold
   ceases), not as a synthetic ledger entry or a stored expired-state. The "expired" condition is a
   derived predicate on `(expiry, now)`, matching how availability is derived — no inert stand-in.
+- **[stage 3]** `confirm(id)` makes a hold **permanent by reusing the `expiry is None` representation**
+  — it `_replace`s the ledger entry's `expiry` with `None`, adding no new state. "Confirmed" *is*
+  "permanent", and "permanent" already meant `expiry is None`, so a separate `confirmed` flag would be
+  a second, redundant representation of permanence that `_reserved` would have to consult — a concept
+  cram (an inert stand-in) and a second owner of the expiry rule. Setting expiry to None keeps the one
+  owner: `_reserved` already counts an `expiry is None` hold at every `now`, so R8 is structural, not a
+  new branch. Confirm reads via `dict.get`, so an unknown/released id is a no-op and cannot resurrect a
+  released hold.
+- **[stage 3]** `reserve_up_to(sku, qty, *, now)` is a **best-effort sibling** of `reserve`, not a flag
+  on it: it validates `qty > 0`, then records `min(qty, available(sku, now))` units. It reads the
+  availability owner (`available`) and takes the min rather than re-deriving or adding a parallel
+  path — so R9 (`reserved_qty == min(qty, available)`) and R1 (the hold always fits) are structural.
+  It never raises InsufficientStock; the requirement to return a real id even when 0 units are
+  available means a **0-unit hold is a genuine ledger entry** (releasable/confirmable, counted as 0 by
+  `_reserved`), uniform with any other hold — a degenerate qty, not an inert concept stand-in. The hold
+  is permanent (`expiry=None`); `reserve_up_to` takes no ttl.
+- **[stage 3]** Extracted `_record(sku, qty, expiry) -> str` as the **single ledger-write seam**
+  (behavior-preserving refactor first, per "make the change easy, then make the easy change"): id
+  generation + the `self._reservations[id] = _Reservation(...)` write now live in one owner, and both
+  `reserve` (after its availability check) and `reserve_up_to` (with an already-fitted qty) commit
+  through it. `reserve`'s validate-before-record order (R4 all-or-nothing) is unchanged — validation
+  still runs before `_record` is called.
 - `reserve` validates (qty > 0, then qty <= available) **before** any mutation, then records — giving
   R4 all-or-nothing on both the ValueError and the InsufficientStock path.
 - `add_stock` and `reserve` reject qty <= 0 at the boundary with `ValueError` (fail fast); the card
