@@ -45,3 +45,9 @@ Append-only. Each entry: timestamp · what happened · next.
   "trace the full input space" already does the work the two null additions proposed. The one adopted change
   makes aims *less* flattering (removes the ceiling, defeats vocabulary capture). Discipline held: motivated
   additions rejected by measurement; only the honesty-increasing change shipped.
+
+- **2026-09-20 — Round 2: I4 launched (fair, one-shot).** The sharper test of the input-space table: an
+  appointment-slot checker whose card states the half-open rule but gives only clearly-overlapping /
+  clearly-disjoint cases, so the touch-point (adjacency) and zero-length corners are IMPLIED but UNSTATED.
+  Two arms (base vs table), aims-as-is, design-only. Pre-registered as a distinct hypothesis in
+  i4-.../plan.md; one shot; a win is suggestive-only (n=1) and does not overturn the I1 n=2 null.
