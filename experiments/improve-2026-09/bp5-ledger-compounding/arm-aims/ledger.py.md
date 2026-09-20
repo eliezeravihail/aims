@@ -1,7 +1,7 @@
 ---
 title: "ledger.py"
 date: 2026-09-20
-hash: "sha256:6201b99faf72828ac204250d988a1ad28e0d7688a9eeddbd37f431f5141b0397"
+hash: "sha256:f4a51c64115bed57aeb5f70e34b1736df1e196c17250fb0bacd8a890db02acb1"
 ---
 ## Insights
 - `ledger.py` is the whole stage-1 product: `Ledger` plus its internal `Posting` value type. The file's
@@ -28,6 +28,17 @@ hash: "sha256:6201b99faf72828ac204250d988a1ad28e0d7688a9eeddbd37f431f5141b0397"
   derivation. `post`/`balance` default `currency="USD"`, so every stage-1 single-currency call is
   unchanged (a USD posting summed by a USD balance). A currency is an attribute of the money movement, not
   a synthetic entity — modelling it as a field keeps it concept-correct.
+- **Time is a stamp on the posting; balance is bounded per as-of instant (R5).** `Posting` gained an
+  `at: int` field — the second realization of the extension seam, added exactly like `currency` (widen the
+  one value type, no new parallel structure, no reopen). `post` gains keyword-only `at: int = 0`; `balance`
+  gains keyword-only `as_of: int | None = None` and adds one predicate clause `(as_of is None or p.at <=
+  as_of)` inside the *same* comprehension that already owns R1/R4. So `balance` still owns R1/R4/R5 in one
+  place, summing postings matching account AND currency AND (when bounded) time — currencies never mix and
+  the as-of cut is by the same by-construction derivation, not a trailing filter. Defaults (`at=0`,
+  `as_of=None`) leave every stage-1/stage-2 call bit-for-bit unchanged. `at` is an attribute of the money
+  movement (an opaque integer ordering, not a clock), modelled as a field — concept-correct, like currency,
+  not a synthetic entity. This is an EXTEND at the seam `architecture.md` named ("a timestamp"), not a
+  reopen of an owner.
 
 ## Discussions
 - **uuid4 uniqueness is statistical.** Collision probability (~2^-122) is negligible for an in-memory

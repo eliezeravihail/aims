@@ -22,6 +22,10 @@ date: 2026-09-20
   - R4 — every posting is tagged with a currency (default "USD"); a balance is per (account, currency)
     and currencies never mix. A single-currency (stage-1) caller, using the "USD" default throughout,
     sees exactly the stage-1 balance.
+  - R5 — every posting is stamped with an integer time `at` (default 0); a balance may be asked `as_of`
+    a point in time and then sums only the account+currency postings with `at <= as_of`. `as_of=None`
+    sums all of them. A caller that tracks no time (omitting `at`/`as_of`) sees exactly the prior
+    balance.
 
 ## Discussions
 - **Out of scope** (do not build now; later stages may introduce): persistence/durability,
@@ -32,3 +36,8 @@ date: 2026-09-20
 - **Multi-currency is now in scope (R4)** — this lifts the former stage-1 "currencies/units beyond integer
   cents" exclusion, and it was absorbed exactly as the architecture record predicted: by extending the
   `Posting` value at one type, not by reworking the core. Amounts remain integer minor units per currency.
+- **Point-in-time balance is now in scope (R5)** — this lifts the former "statements/history queries"
+  exclusion for the specific case of an as-of-time balance. It was absorbed the same way as currency: by
+  stamping each `Posting` with an integer `at` at the one value type, and adding a time predicate inside
+  the existing `balance` owner — no reversal/deletion, no lookup-by-id, no full statement listing (those
+  remain out of scope). Time is an opaque integer ordering, not a calendar/clock concept.

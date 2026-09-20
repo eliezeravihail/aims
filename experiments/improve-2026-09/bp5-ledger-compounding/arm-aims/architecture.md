@@ -18,14 +18,18 @@ date: 2026-09-20
   adjusting a stored total, so R1 keeps its one owner. **Multi-currency (R4) was absorbed inside this
   owner**, not beside it: `balance` sums postings matching *both* account and currency, so "currencies
   never mix" is guaranteed by the same by-construction derivation — no second, trailing per-currency
-  filter and no reopen.
+  filter and no reopen. **Point-in-time balance (R5) was absorbed the same way**: `balance` gained an
+  `as_of` bound as one more predicate clause in the same sum (account AND currency AND `at <= as_of`), so
+  the as-of cut is derived by construction inside the one owner — again no trailing filter, no reopen.
 - **The posting is a first-class value object, not a raw tuple.** The journal holds `Posting` values
   (an immutable record of `id`, `account`, `amount_cents`, `currency`), so the journal is self-describing
   and later stages can extend a posting (e.g. a timestamp, a reversal link) at one type rather than
   threading a wider tuple through call sites. This is the domain's core unit of record; it earns its
   place. **The `currency` field is the first realization of this extension seam** — multi-currency was
   added by widening the one value type, exactly as anticipated, with no change to the journal's shape or
-  the derived-balance model.
+  the derived-balance model. **The `at` field is the second realization of the same seam** — the integer
+  posting time was added by widening the one value type again (exactly the "timestamp" this record
+  anticipated), with no change to the journal's shape or the derived-balance model.
 - **Ids are opaque and unique (R2), sourced independently of ordering.** `post` mints each id with
   `uuid.uuid4().hex`. It is opaque (a caller cannot parse ordering or count out of it) and unique across
   the ledger. This is preferred over a monotonic counter, which would be unique but *transparent* —
