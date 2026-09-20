@@ -60,3 +60,11 @@ Append-only. Each entry: timestamp · what happened · next.
   I4. Meta-result: the shipped design method (esp. §1 "trace the full input space") is robust; motivated
   additions did not beat it and were rejected by measurement. Remaining real weaknesses (cost, record layer
   at scale) need build pilots — flagged as a future dedicated run, not rushed here.
+
+- **2026-09-20 — Round 3: I5 launched (the record-layer frontier).** Does a co-located record of a
+  rejected-alternative trap stop a fresh session re-introducing it? Target: a largest-remainder money
+  allocator (preserves sum==total); the companion records the REJECTED independent-rounding alternative and
+  "any new split must go through allocate". Change: add split_shipping (a new money split). Two fresh
+  aims add-feature arms, identical but for the record's presence. Metric: split_shipping(1000,[1,1,1]) must
+  sum to 1000 (pass iff it reuses largest-remainder, fail iff a fresh independent-rounding split). n=1
+  suggestive. Pre-registered in i5-.../plan.md.
