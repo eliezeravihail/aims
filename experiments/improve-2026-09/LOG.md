@@ -121,3 +121,34 @@ Append-only. Each entry: timestamp · what happened · next.
   filter-as-score cram. aims' concept-fit review confirmed the design but caught nothing plain missed. The
   strong no-method model avoided the cram unaided. Consistent with the whole run: on tractable single
   artifacts the method confirms rather than rescues. Recorded in bp4-conceptfit-probe/results.md.
+
+- **2026-09-20 — BP5 COMPLETE (round 7).** 4-stage money-ledger (single→multi-currency→as-of-time→void),
+  built to make a stored-running-balance shortcut reopen at every break. Both arms chose a derive-by-scanning
+  posting journal at stage 1 → both absorbed all 4 breaks with 0 reopens, 13/13. NO compounding, no
+  divergence. Pins the edge as VARIANCE REDUCTION on the early structural choice: aims reliably derives, a
+  plain builder derives only sometimes; the per-product edge is probabilistic and vanishes when the plain
+  builder chooses well. bp5-ledger-compounding/results.md.
+
+- **2026-09-20 — BP6 COMPLETE (round 8).** Shortcut base-rate probe: 6 haiku plain builds of the BP1
+  inventory stage-1 card, classified STORE vs DERIVE. Result: 1/6 stored (run-5 kept a _reserved running
+  total in sync alongside the ledger), 5/6 derived. So the derive-axis shortcut base rate ≈17% — the size of
+  aims' expected per-product trajectory edge on this axis. bp6-baserate/results.md.
+
+- **2026-09-20 — BP7 COMPLETE (round 9).** Generalization to a CONCEPT-FIT axis (first-class rules vs
+  isinstance type-branch), 2-stage promo engine, arms plain/lite/aims. All 3 opus arms modeled rules
+  polymorphically → 19/19, 0 reopens each (ceiling null). Base-rate probe: shortcut 0/3 opus, 2/6 haiku. The
+  edge generalizes as the SAME variance-reduction mechanism and is model-dependent (invisible on a strong
+  model, real on a weak one). bp7-conceptfit-generalize/results.md.
+
+- **2026-09-20 — BP8 COMPLETE (round 10).** Does aims-lite (principle-in-prompt) lower the shortcut rate on
+  a weak model? 6 haiku builds with the concept-fit principle block → 2/6 branch, IDENTICAL to plain's 2/6.
+  No effect. The principle transfers on opus (BP3) but not haiku. aims-lite helps only where the executor is
+  already capable; the method's value on weak executors is the review, not the advice. bp8-lite-baserate/results.md.
+
+- **2026-09-20 — BP9 COMPLETE (round 11, closes the arc).** The real aims review, run by a competent Guide
+  over the 4 branched haiku builds, flagged the type-switch structurally on ALL 4 (detection 4/4) and named
+  the fix (repair validated: b1 → polymorphic, 12/12, 0 isinstance) — where the prompt-principle scored 0/6.
+  aims' irreducible value is output inspection (mixed-tier: cheap Worker + competent review). Caveat: the
+  type-switch rates S3 (non-gating), so the review surfaces-and-names rather than forces. Recorded a
+  motivated-but-untested improvement candidate (gate the spec-named-change-axis reopen as S4).
+  bp9-review-vs-principle/results.md. SYNTHESIS retitled + summary paragraph; PR #65 body updated.
