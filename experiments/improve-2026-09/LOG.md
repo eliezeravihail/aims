@@ -106,3 +106,12 @@ Append-only. Each entry: timestamp · what happened · next.
   Recorded in bp2-inventory-haiku/results.md. Next: BP3 — a sharp cheap probe: give the PLAIN arm a one-line
   "derive-don't-store / one-owner" hint at stage 1 and see if it then also gets 0 reopens (does the edge need
   the METHOD or just the PRINCIPLE?).
+
+- **2026-09-20 — BP3 COMPLETE (round 6, the sharpest finding).** A plain arm (opus, no method) given ONE
+  "derive-don't-store" sentence at stage 1 reproduced aims' full trajectory edge: derived availability →
+  0 reopened owners across all 3 stages, 21/21 correctness, clean seam extensions — at plain cost. The
+  model reopen the un-hinted plain arm paid did NOT happen. So on this axis aims' edge is one transferable
+  principle, not the method's machinery; the ~1.85x premium did not buy it. Argues for a lightweight
+  "aims-lite" (inject the few high-yield principles as short prompts). Method's real candidate value —
+  records at scale + across many hands — remains untested. Recorded in bp3-hint-transfer/results.md;
+  SYNTHESIS updated.

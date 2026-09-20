@@ -21,10 +21,11 @@ Later stages got **no** hint and no method — just "build it well," fresh sessi
 |---|---|---|---|
 | BP1 plain (no hint) | **stored** `_available` counter | **1** (stage-2 rewrite) | 21/21 |
 | BP1 aims (full method) | derived from ledger | **0** | 21/21 |
-| **BP3 plain + one-line hint** | **derived** `_added − Σ reservations` | **0** | 14/14 (s1–s2)†, extending cleanly |
+| **BP3 plain + one-line hint** | **derived** `_added − Σ reservations` | **0** | **21/21** (all 3 stages) |
 
-† stage-3 in progress at time of writing; stages 1–2 (where the only reopen difference lived) are green and
-the arm extended cleanly. Update on stage-3 completion.
+The hint arm matched aims on **every** measure: 0 reopened owners across the sequence, 21/21 correctness,
+each later change a clean seam extension (stage-2 +34/−12, stage-3 +35/−0) — at plain-arm cost, with no
+skill, records, or review.
 
 The one sentence made the plain builder **derive** availability at stage 1 — the exact design aims produced —
 so the stage-2 expiry change landed as a clean seam extension (+34/−12, `available`'s `_added − Σ` shape

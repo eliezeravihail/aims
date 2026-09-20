@@ -94,6 +94,21 @@ hidden pytest per stage, two arms, later stages by fresh sessions, scored outcom
 The honest shape: the method's edge is a **small, real, measured** trajectory benefit at a real cost premium
 — the paper's claim reproduced in direction and modest in magnitude, now observed rather than asserted.
 
+# Round 6: BP3 — the trajectory edge is ONE transferable principle, not the method
+
+BP3 (`bp3-hint-transfer/`) is the run's sharpest finding. It traced aims' entire measured trajectory edge to
+one stage-1 decision (derive-don't-store / one-owner) and tested whether that needs the *method* or just the
+*principle*: a plain arm (opus, **no** skill, records, or review) whose stage-1 prompt appended **one
+sentence** — "prefer deriving values from ground-truth state over storing them as fields you must keep in
+sync." Later stages got no hint at all. Result: the hint arm **derived** availability at stage 1 and then
+matched aims exactly — **0 reopened owners, 21/21 correctness, clean seam extensions**, at **plain cost**.
+The reopen the un-hinted plain arm paid did not happen. So on this axis the method's machinery (panel,
+records, mandatory review) did **not** buy the edge — one transferable principle did, at ~half the cost.
+Honest and deflating for "you need the method"; it argues for a **lightweight delivery** (an "aims-lite" that
+injects the few high-yield principles as short prompts may capture most of the benefit without the ~1.85×
+premium). What the sentence does *not* give: durable records at scale and across many hands — the method's
+real candidate value, still unproven here.
+
 # Round 5: BP2 — the same build on a cheaper executor (n=2 on the trajectory)
 
 BP2 (`bp2-inventory-haiku/`) reran BP1's identical 3-stage sequence with **both arms on haiku**, to test the
