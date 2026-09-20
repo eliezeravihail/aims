@@ -12,3 +12,16 @@ Append-only. Each entry: timestamp · what happened · next.
   seeded first-draft (rate limiter, fixed-window burst seed), differing only by the falsification-pass
   variant of review.md. Hidden probe sets frozen before launch; arms told not to read them. Next: while
   arms run, draft I3 (outcome-first measurement) and prepare blind scoring for I1/I2.
+
+- **2026-09-20 — I2 resolved: NULL.** Both review arms caught the seeded fixed-window burst (S4) with a
+  concrete reproducible failing input; the BASE arm additionally caught both secondary seeds (clock,
+  memory) while the ATTACK arm tunneled on the primary and caught fewer. Pre-registered rule (attack must
+  catch where base misses) not met → falsification pass **not adopted**. The shipped §1 "trace the full
+  input space" already is a falsification step. Recorded in i2-.../results.md.
+- **2026-09-20 — I3 drafted + validated from the record.** Outcome-first comparison discriminates where the
+  rubric ceiling'd (Study-1 rubric 10/10/10 vs survival tie/win/tie; plant→mineral caught by the gate).
+  Proposed measurement.md addition + disjoint-vocabulary judge drafted; adopt in synthesis.
+- **2026-09-20 — I1 first arm back:** P1 shipping TABLE arm's review caught a scalar-weight S4 via the
+  input-space table and fixed it (ScaleReading sum type). Awaiting P1 BASE + both P2 arms before blind
+  scoring. Open question: the card states X1 explicitly, so BASE may also handle the headline range — the
+  subtler corners (boundary inclusivity, degenerate-range unification, composition) may still discriminate.
