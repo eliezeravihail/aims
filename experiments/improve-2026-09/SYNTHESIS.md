@@ -297,6 +297,28 @@ amortizes it (BP1's 3.7×). Correctness tied again (the fifth tie). The honest c
 tokens on **every** build to buy an avoided reopen on the **minority** where the shortcut would be taken (plus
 durable records) — the mixed-tier calculus the method already frames. n=2 on cost; reported as a range.
 
+# Round 15: BP13 — design quality is real, invisible to tests, and the review names its axis in advance
+
+BP13 (`bp13-design-under-surprise/`) is the campaign's correction made concrete. It took 4 builds that **pass
+every test but are badly designed** (the type-switch builds BP9's review flagged) and measured **design shape**
+under a surprise change, not test-pass.
+
+- **Part 1 (the wrong surprise):** add the stacking policy. Prediction: type-switch forced to reopen. **Wrong**
+  — all 4 extended at a seam (0 reopens, 19/19) via a before/after accumulator-delta hack wrapped around the
+  untouched `isinstance` chain. So test-pass **and** reopened-owner both tied. A coarse "does it extend" proxy
+  is **gameable by a capable model** on the wrong change axis. (The code got *more* convoluted, though — the
+  metric missed that.)
+- **Part 2 (the right surprise):** add a new **rule kind** — the axis the review named (§7 OCP / §8
+  type-code-switch). Decisive: **type-switch 4/4 reopen `Engine.total`; polymorphic 0/2 (class only) — at
+  identical 22/22 test-pass.**
+
+The point, corrected: **test-pass is a floor and never separated the builds; the design-quality difference is
+real but only surfaces on a change that hits the design's weak axis; and aims' review is the instrument that
+names that axis in advance** — in BP9 it flagged these exact builds from the code alone, tests green, and BP13
+Part 2 confirms the verdict predicted real future cost (the reopen when a new rule kind arrives). aims' value is
+a **design-quality edge the review surfaces and functional tests are structurally blind to** — flexibility to
+the foreseeable change — not a test-pass edge (there is none to have).
+
 # Honest limits / future work
 
 - **A concrete, motivated improvement candidate surfaced by BP9 (not yet shipped, by discipline):** the

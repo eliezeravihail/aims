@@ -39,6 +39,13 @@ class BuyXGetY:
         self.exclusive = exclusive
 
 
+class PercentOffOrder:
+    def __init__(self, percent, priority=0, exclusive=False):
+        self.percent = percent
+        self.priority = priority
+        self.exclusive = exclusive
+
+
 class Engine:
     def __init__(self, rules):
         self.rules = rules
@@ -60,6 +67,9 @@ class Engine:
             elif isinstance(rule, AmountOffOver):
                 if subtotal >= rule.threshold:
                     total_discount += rule.amount
+
+            elif isinstance(rule, PercentOffOrder):
+                total_discount += subtotal * rule.percent // 100
 
             elif isinstance(rule, BuyXGetY):
                 for item in cart.items:

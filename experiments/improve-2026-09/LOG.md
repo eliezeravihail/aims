@@ -177,3 +177,13 @@ Append-only. Each entry: timestamp · what happened · next.
   Ratio 2.34x tokens, ~12x wall. With BP1 (1.85x tokens, 3.7x wall) the premium is ~1.85-2.34x tokens (a bit
   below the paper's 2.5-3x); the wall ratio is task-size-dependent (aims' fixed ceremony dominates a small
   task, amortizes on a larger one). Correctness tie #5. bp12-cost/results.md.
+
+- **2026-09-21 — BP13 COMPLETE (round 15, the correction made concrete).** Measured DESIGN QUALITY, not
+  test-pass, on 4 green-but-rigid (type-switch) builds. Part 1 (add stacking): prediction FAILED — all 4
+  extended at a seam via an accumulator-delta hack (0 reopens, 19/19); test-pass AND reopen both tied (a coarse
+  proxy is gameable on the wrong change axis). Part 2 (add a new RULE KIND — the axis BP9's review named):
+  DECISIVE — type-switch 4/4 reopened Engine.total, polymorphic 0/2 (class only), all at identical 22/22
+  test-pass. Establishes: test-pass is a floor that never separates; the design difference is real but only
+  surfaces on the design's weak axis; and aims' review names that axis in advance (BP9 flagged these exact
+  builds from code alone, tests green). bp13-design-under-surprise/results.md. Also reframed SYNTHESIS: test-pass
+  demoted to a gate; design-shape + review verdict are the outcome.
