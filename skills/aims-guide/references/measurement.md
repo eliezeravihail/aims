@@ -86,32 +86,41 @@ same applicable set** and their grades are directly comparable. Grades across *d
 - **Building / in-loop (default):** the **fix-list** — only the failed items, sorted most-severe-first,
   each with its citation and the direction to fix it. **No aggregate score shown** — a device so the Worker
   fixes content, not a number (`decisions/0014`), not a principle. The scores exist underneath.
-- **Comparing designs (ranking arms):** lead with the **outcome profile**, then the rubric grade second.
-  - **Outcome profile (primary, rubric-free).** After the unforeseen change the comparison stresses:
-    (1) a **correctness-trap gate** — did the arm ship a wrong number on any hidden probe? (any fail ⇒ that
-    arm is BLOCKED, and no rubric grade outranks a failed trap); (2) **reopened-owner count** — how many
-    existing rule-owners the change forced open (lower is better); (3) **edit locality** — files/lines to
-    absorb the change. These are facts about what the design *did*, computable without the rubric's
-    vocabulary.
-  - **Rubric grade (secondary).** The weighted-list grade + gate (above) — reported **beside** the outcome
-    profile and labelled as scored against `design-principles.md`, whose vocabulary a rubric-sharing judge
-    can be pulled toward. It never outranks the outcome gate.
+- **Comparing designs (ranking arms):** lead with the **§0–§14 rubric grade**, scored from the **code** —
+  the design's actual structure, never what it says about itself. The weighted-list grade + S-gate (above) is
+  the design measure and the lead; a design is good to the degree it holds §0–§14, and nothing else ranks it.
+  - **A correctness gate is a floor, not a ranking signal.** Did the arm ship a wrong number on a hidden
+    probe? Any fail BLOCKS that arm — but *passing earns nothing*. Tests are behavior, and behavior is
+    achievable by any design: a type-switch and a polymorphic engine pass the **identical** suite while
+    scoring **16 vs 43** on the rubric (`../../experiments/improve-2026-09/bp14-design-rubric/`). Never let
+    test-pass stand in for design quality.
+  - **Behavioral facts are weak corroboration, never the lead.** Reopened-owner count and edit locality
+    describe what a design *did* under one change; they are **gameable** — a strong model absorbed a change
+    with a 3-line seam edit and 0 reopens while leaving a textbook type-switch in place
+    (`../../experiments/improve-2026-09/bp13-design-under-surprise/`, part 1). Cite them only to corroborate a
+    rubric reading, never to outrank it.
 
-  Why this order: the rubric grade **ceiling'd** on the recorded pilots (a perfect score on every arm loses
-  the resolution to catch the next regression) and is **captured by vocabulary** (a design that recites the
-  rubric scores well). The outcome profile did neither on the record
-  (`../../experiments/improve-2026-09/i3-outcome-first/`), so it leads; the rubric grade stays as the second
-  reading. This changes only *which reading leads a comparison* — not how a design is built, and not the
-  in-loop fix-list.
+  **The two real risks, handled without leaving the rubric.** The rubric grade can (a) be **captured by
+  vocabulary** — a judge sharing the rubric is pulled toward a design that *recites* it — and (b) **ceiling**
+  (every arm at the maximum loses resolution). Neither is a reason to demote the rubric; both are fixed inside
+  it: (a) score from **code properties** via the disjoint-vocabulary judge below (structure, not
+  self-description), and (b) when arms tie at the ceiling, apply the unforeseen change and **re-score the
+  design on §0–§14** — a rigid design's §7/§8/§4 scores fall the moment a new variant is added (a type-switch
+  must reopen the engine; a polymorphic one adds a class — `bp13-design-under-surprise/part2`) — rather than
+  counting edits. This **supersedes** the earlier "lead with the outcome profile" projection
+  (`decisions/0019` → `decisions/0021`). It changes only *which reading leads a comparison* — not how a design
+  is built, and not the in-loop fix-list.
 
 ### The disjoint-vocabulary judge (for a design comparison)
 
 Alongside the two opposite-disposition rubric judges (`../../experiments/PROTOCOL.md` §6), run one
-**disjoint-vocabulary judge**: given only the two anonymized designs and the unforeseen change, it scores a
-**single** question — *did this design absorb the change with fewer edits and no reopened rule-owner?* — and
-is **forbidden from crediting rubric language** ("subtractive pass", "concept-fit", "value object"); it may
-cite only an observable edit/ownership fact. It is the tie-breaker when the rubric judges split, because it
-cannot be captured by a design that merely recites the checklist.
+**disjoint-vocabulary judge**: given only the anonymized designs, it scores each **against §0–§14 from the
+code** — the observable structure that decides the rubric (type-dispatch vs polymorphism, one owner vs
+scattered logic, a rich object vs an anemic data-bag, a seam vs a reopen) — and is **forbidden from crediting
+the design's recited language** ("subtractive pass", "concept-fit", "value object"). Because it reads the
+code, not the self-description, it cannot be captured by a design that merely recites the checklist — it is
+**the rubric measured honestly**, and it is what separated two identical-passing designs **43 vs 16** in
+`../../experiments/improve-2026-09/bp14-design-rubric/`. It breaks ties when the two rubric judges split.
 
 ## Building with the same form
 

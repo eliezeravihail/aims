@@ -115,12 +115,13 @@ either product.
      [`../skills/aims-guide/references/design-principles.md`](../skills/aims-guide/references/design-principles.md)
      and [`review.md`](../skills/aims-guide/references/review.md). Use **two opposite-disposition judges**
      (invariant-ownership vs. YAGNI/simplicity) reading the *same* two codebases — this catches a verdict
-     that is a taste artifact. Lead the reading with the **rubric-free outcome** (the trap gate, the
-     reopened-owner count, the edit locality), and add a **disjoint-vocabulary judge** — scores only "did
-     this design absorb the change with fewer edits and no reopened owner?", forbidden from crediting rubric
-     language — as the tie-breaker when the two rubric judges split (`decisions/0019`,
-     `../skills/aims-guide/references/measurement.md`). The rubric grade ceiling'd and is vocabulary-captured
-     on the record, so it is the *second* reading, not the lead.
+     that is a taste artifact. **Lead with the §0–§14 rubric grade, scored from the code**, and add a
+     **disjoint-vocabulary judge** — it scores each design **against §0–§14 from code properties** (type-dispatch
+     vs polymorphism, one owner vs scattered, rich vs anemic, seam vs reopen), forbidden from crediting the
+     design's *recited* language — as the tie-breaker when the two rubric judges split. A **correctness gate is
+     a floor only** (a wrong number BLOCKS; passing earns nothing), and behavioral facts (reopened-owner, edit
+     locality) are weak corroboration, never the lead — they are gameable (`decisions/0021` supersedes `0019`;
+     `../skills/aims-guide/references/measurement.md`; `improve-2026-09/bp13-…`, `bp14-…`).
    - **Product** — a black-box judge given only the product cards (not the method label), checking
      acceptance / probes / an exact UI or API path.
    - **Cost** — a recorder (tokens, time, rounds, model calls, deps); no quality verdict.

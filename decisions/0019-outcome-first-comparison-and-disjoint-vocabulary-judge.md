@@ -1,7 +1,14 @@
 ---
 title: "comparing designs leads with the rubric-free outcome; a disjoint-vocabulary judge breaks ties"
 date: 2026-09-20
+status: SUPERSEDED by 0021 — the primacy inversion here (lead with the outcome profile, demote the §0–§14
+  rubric) was wrong; this run's own later data (bp13 shows the outcome profile is gameable; bp14 shows the
+  rubric separates identical-passing designs 43 vs 16) put the code-grounded §0–§14 rubric back as the lead.
+  The disjoint-vocabulary judge is kept, re-pointed to score the design against §0–§14 from code properties.
 ---
+
+> **Superseded by `0021`.** Read that ADR for the current rule. What follows is the original (now-corrected)
+> reasoning, kept for the record.
 
 **Context.** The measurement instrument (`references/measurement.md`, `decisions/0012`/`0014`/`0018`) scored
 a *design comparison* by leading with the rubric grade. Two recorded facts make that primacy unsound as a
