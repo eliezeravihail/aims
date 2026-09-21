@@ -1,29 +1,45 @@
 ---
-title: "Synthesis — the 24h improvement run: 1 change shipped, the rest measured honestly, and aims' edge pinned down"
+title: "Synthesis — the 24h improvement run: 2 changes shipped, and aims' real edge (design quality, not test-pass) pinned down"
 date: 2026-09-20
 ---
 
+# A correction up front: what was actually being measured
+
+An early framing of this run leaned on **hidden functional tests** as the "correctness" outcome and reported
+**test-pass ties** as if they were a finding. They are not. **Passing tests is a floor, not the target.** A
+capable model makes the tests pass with *any* design — good or bad — so a test-pass tie says nothing about
+whether the design is correct, flexible, and good, which is the *entire* thing aims exists to produce. Read
+strictly, "aims has no correctness edge on clear specs" is close to tautological: on a clear, closed spec the
+right answer is cheap for any capable model, and the target aims optimizes — **design quality** — isn't on the
+scoreboard at all. So test-pass is demoted here to a **gate** (did it work), never an outcome, and the real
+signal is the measurements that read *design*: whether the design **extends at a seam or must be rewritten**
+under change (reopened-owner), and the **structural review verdict** on code the tests pass over. The sharpest
+result of the whole run is exactly the one that escapes the test — **BP9**: four builds all green on tests, all
+badly designed (type-switch / anemic model), and only the review caught it (4/4). That, not the ties, is the
+finding.
+
 # What the run set out to do
 
-Improve aims for **correctness in the result** — not for a higher score on its own rubric — and prove each
-change **blind, on unseen products, with a rubric-free outcome metric fixed before the run** (`plan.md`).
-It ran in two phases: first three method-change candidates (I1–I5), each targeting a weakness the paper names;
-then a build-pilot campaign (BP1–BP9) that stopped asking *"what can we add?"* and instead **measured what
-aims' edge actually is** under running-code tests, across three structural axes and two model tiers.
+Improve aims for **design quality in the result** — clear, correct, *flexible*, good design, not a higher score
+on its own rubric — and prove each change **blind, on unseen products, with a rubric-free outcome metric fixed
+before the run** (`plan.md`). Two phases: method-change candidates (I1–I6), each targeting a weakness the paper
+names; then a build-pilot campaign (BP1–BP13) that stopped asking *"what can we add?"* and instead **measured
+what aims' edge actually is** under running-code tests — using tests only as a floor and design-shape as the
+outcome.
 
 **The one-paragraph result.** **Two** changes shipped, both hardening the instrument rather than flattering the
 method: **I3** (outcome-first measurement + a disjoint-vocabulary judge) and **I6** (naming the observed
-anemic-model / type-switch as a specific mixed-tier review gap — `decisions/0020`, backed by BP7–BP9 on unseen
-builds, no new gate). Every *additive* candidate (I1/I2/I4/I5, aims-lite) was rejected by measurement. The
-build pilots pinned aims' benefit precisely: **correctness ties everywhere**; aims'
-real edge is **avoided-reopen variance reduction on an early structural choice**, sized by the **shortcut base
-rate** on each axis×model (≈0% for a strong model, ≈17–33% for a weak one). That edge **transfers as a one-line
-principle on a strong model** (BP3) but **not on a weak one** (BP8); what survives compression is the
-**review** — output inspection by a competent Guide caught the shortcut **4/4** on weak-model output where the
-prompt-principle scored 0/6 (BP9). Net: aims earns its cost as a **mixed-tier** method (cheap Worker + competent
-review), not as a prompt of principles.
+anemic-model / type-switch as a specific mixed-tier review gap — `decisions/0020`, backed by BP7–BP9). Every
+*additive* candidate (I1/I2/I4/I5, aims-lite) was rejected by measurement. Where the run measured **test-pass**
+it found ties — the expected floor, not a finding. Where it measured **design quality**, aims showed a real
+edge: its §5/§8 discipline reliably picks the design that **extends at a seam instead of being rewritten**
+(reopened-owner variance reduction, sized by the shortcut base rate — ≈0% strong model, ≈17–33% weak), and its
+**review catches structurally-rigid-but-green code the tests are blind to** (BP9: 4/4; BP13 confirms that
+rigidity is real — the flagged builds break under a surprise change). That edge **doesn't compress to a prompt
+of principles on a weak model** (BP8); the **review** is the load-bearing part. Net: aims earns its cost as a
+**mixed-tier** method (cheap Worker + competent review), for the design quality that functional tests never see.
 
-The first phase (three method-change candidates) follows; the build-pilot campaign (rounds 4–11) follows that.
+The method-change phase follows; the build-pilot campaign follows that.
 
 # The three candidates and their measured outcomes
 
