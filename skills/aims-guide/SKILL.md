@@ -257,14 +257,15 @@ second, drifting source of truth:
   `assets/state-template.md` once there is enough context to fill it meaningfully.
 
 - **Records co-located with the code — the durable design record.** The design knowledge lives *in the
-  product's code tree*, in two homes (full mapping in `references/design-record.md`):
-  - **File-level** — knowledge about one source file goes in its **companion**, a same-named `<file>.md`
-    beside it (`src/render.py` → `src/render.py.md`), under three sections: **Insights**, **Decisions**,
-    **Discussions**. You read the whole companion when you touch the file, because it is all about that
-    file. Anchor it on filing (below).
-  - **System-level** — cross-cutting knowledge goes to the matching root record: `goals.md` (product
-    intent), `base-dependencies.md` (foundational substrate), `dependencies.md` (confined deps),
-    `architecture.md` (boundaries/seams/invariants), and `decisions/NNNN.md` (system-wide **ADRs**).
+  product's code tree*, next to what it is about (full mapping in `references/design-record.md`):
+  - **About one file** → its **companion**, a same-named `<file>.md` beside it (`src/render.py` →
+    `src/render.py.md`), under three sections: **Insights**, **Decisions**, **Discussions**. You read the
+    whole companion when you touch the file, because it is all about that file. Anchor it on filing (below).
+  - **About a folder** → `<dir>.md` beside it (`src/parsers/` → `src/parsers.md`), same sections, no anchor.
+  - **About the project** → the root record it concerns: `goals.md` (product intent),
+    `base-dependencies.md` (foundational substrate), `dependencies.md` (dependencies and what a caller must
+    respect about them), `architecture.md` (boundaries/seams/invariants), and `decisions/NNNN.md`
+    (system-wide **ADRs**).
 
   The rule: **a record holds discussions and decisions that are not evident from the code itself, and sits
   next to what they are about.** Anything the code can carry — a name, a docstring, a comment, a signature,

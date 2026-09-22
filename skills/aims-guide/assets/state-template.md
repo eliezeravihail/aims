@@ -32,8 +32,8 @@ auto
 ## Current objective
 
 <!-- The single unit of work in flight. Transient loop state — it is replaced each objective, not a
-     durable design record. When it resolves, its lasting design output is filed as records in the code
-     tree (root goals/architecture/decisions, and a companion beside each source file); it does not accumulate here. -->
+     durable design record. When it resolves, whatever it decided that the code cannot say is filed as a
+     record next to what it is about (beside a file, beside a folder, or at the root); it does not accumulate here. -->
 
 **Kind:** <!-- design | implementation | add-feature | experiment — sets the review lens.
      `experiment` is a round whose deliverable is a *measurement*, not a product change: it is

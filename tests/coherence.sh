@@ -61,4 +61,26 @@ else
   rm -f /tmp/aims_coh_lens
 fi
 
+# 7. No shipped surface restates a claim a decision has retired. A copy of a rule drifts when the rule
+#    changes — the docs site went two instrument generations stale this way, and the installed-project
+#    template kept the per-file companion model after it was corrected. Each entry: pattern | what retired it.
+#    Scope is the INSTRUCTING surfaces, including docs/ and templates/ (which checks 1–6 do not cover).
+#    Excluded: decisions/ (the history of what was retired lives there by design) and companions
+#    (`<file>.<ext>.md` — a companion's Insights may quote a retired wording as history).
+RETIRED=(
+  'beside each source file|per-file companions: most files never get one (design-record.md)'
+  'two homes|records sit beside a file, beside a folder, or at the root (design-record.md, format.md)'
+  '[Gg]raded caps?|the global graded cap was removed — the grade is the weighted list (decisions/0018)'
+  '18 principles|design-principles.md has 15 chapters, §0–§14'
+  '18 metrics|the instrument has one row per chapter — 15, §0–§14 (measurement.md)'
+  'leads? with the rubric-free outcome|a comparison leads with the §0–§14 rubric (decisions/0021)'
+)
+RSCOPE=(skills commands knowledge templates docs goals.md architecture.md base-dependencies.md README.md CLAUDE.md)
+for entry in "${RETIRED[@]}"; do
+  pat="${entry%%|*}"; why="${entry#*|}"
+  hits="$(grep -rnE --include='*.md' --include='*.html' --include='*.sh' -- "$pat" "${RSCOPE[@]}" 2>/dev/null \
+          | grep -vE '^[^:]*/[^/:]+\.[a-z]+\.md:' )"
+  [ -z "$hits" ] || while IFS= read -r h; do bad "retired claim \"$pat\" — $why: ${h%%:*}:$(echo "$h" | cut -d: -f2)"; done <<< "$hits"
+done
+
 if [ "$fail" -eq 0 ]; then echo "[PASS] shipped surfaces are coherent"; else echo "[FAIL] $fail coherence problem(s)"; exit 1; fi

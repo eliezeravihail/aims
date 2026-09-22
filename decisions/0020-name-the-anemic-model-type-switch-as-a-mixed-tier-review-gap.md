@@ -1,7 +1,8 @@
-# 0020 — Name the anemic-model / type-switch as a mixed-tier review gap
+---
+title: "name the anemic-model / type-switch as a mixed-tier review gap"
+date: 2026-09-20
+---
 
-- Status: accepted
-- Date: 2026-09-20
 - Context: the improvement run's build-pilot campaign (`experiments/improve-2026-09/`, rounds BP7–BP9)
 
 ## Decision

@@ -76,16 +76,16 @@ code tree, next to the code it describes**, so the next session inherits it. Thi
 one-session method into long-term development: months later, a fresh session at some part of the code
 reads the conclusions in force there and continues, instead of starting over.
 
-**The idea — the structure carries both the code and the knowledge.** There are two homes. A source
-file that has something worth recording gets a **companion** with the same name plus `.md`, right
-beside it (`src/render.py` → `src/render.py.md`), holding what is known about *that file* under three
-sections — **Insights**, **Decisions**, **Discussions**. Most files never need one; a companion appears
-only where there is a real insight, decision, or discussion to keep. Cross-cutting knowledge lives at
-the repo root: `goals.md`,
-`architecture.md`, `base-dependencies.md`, `dependencies.md`, and `decisions/` (system-wide ADRs). The
-one directory structure is *both* the code graph and the knowledge tree, so knowledge is reached by
-**navigating** to the file or the root record — you never read the whole project to find what bears on
-the file in front of you.
+**The rule.** Discussions and decisions that are **not evident from the code itself** go in a `.md`
+file next to what they are about: beside the relevant file (`src/render.py` → `src/render.py.md`), in
+the relevant module's folder (`src/parsers/` → `src/parsers.md`), or at the project root if they concern
+the whole project (`goals.md`, `architecture.md`, `dependencies.md`, `decisions/`). **Everything else
+belongs in the code's own documentation** — names, docstrings, comments, tests. If the code can say it,
+no record is written, so most files never get one.
+
+The one directory structure is then *both* the code graph and the knowledge tree: knowledge is reached by
+**navigating** to what you are working on, never by reading the whole project. A record holds what the
+code cannot — a road not taken, a deliberate non-goal, a failed attempt, an unproved assumption:
 
 ```yaml
 ---
@@ -93,12 +93,15 @@ title: "render.py"
 date: 2026-08-12
 ---
 ## Insights
-- SVG was chosen over canvas because the pages are static.
+- Canvas was tried first and dropped: its text nodes rasterise, so a zoomed page lost the labels.
 ## Decisions
-- render must not know how the maze was generated.
+- render never generates — it takes a finished maze. This rules out the "render(seed)" convenience
+  overload that has now been asked for twice.
 ## Discussions
-- Considered PNG; dropped — not crisp when zoomed.
+- PNG output was weighed and dropped: not crisp when zoomed. Worth revisiting only if pages go to print.
 ```
+
+Nothing there restates the code — that `render` takes a maze and returns SVG is what its signature is for.
 
 **Knowledge is anchored, so drift is detected — not trusted.** The rule is one derivation: a record
 `X.md` anchors to a sibling file named `X` (its name with `.md` removed) if it exists — so
@@ -111,8 +114,8 @@ in sync with nothing to update.
 **`decisions/` are append-only** — to change a decision you add a new entry that supersedes it, so the
 history of what once bound the code is never rewritten.
 
-The format is [`knowledge/format.md`](knowledge/format.md); the mapping from method output to record is
-[`design-record.md`](skills/aims-guide/references/design-record.md).
+Where things go is [`design-record.md`](skills/aims-guide/references/design-record.md); what a record
+looks like is [`knowledge/format.md`](knowledge/format.md).
 
 ---
 
@@ -147,9 +150,9 @@ Drive the design from within a session in your project:
   `/aims-review`.
 - **Review any change on its own** — `/aims-review <branch | diff | path>`.
 
-As it works, aims files design knowledge **co-located with the code**: a companion `<file>.md` beside
-each source file, and root records (`goals.md`, `architecture.md`, …). A later fresh session reads those
-by navigating to the relevant file's companion — and continues instead of re-deriving. If you read a
+As it works, aims files what the code cannot say **next to what it is about** — a companion beside a file
+that earned one, a record beside a folder, root records for the whole project. A later fresh session
+reads those by navigating to what it is working on, and continues instead of re-deriving. If you read a
 companion whose source has since changed, the staleness hook says *"re-verify"*.
 
 ## Sharpening any task — `/aims-sharpen-prompt`

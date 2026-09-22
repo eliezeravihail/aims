@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Measurement — aims</title>
-<meta name="description" content="How aims scores design quality: a 0–10 assessment form derived from binary sub-checks, severity weights and caps, the 18 metrics, and a worked filled example.">
+<meta name="description" content="How aims scores design quality: one row per chapter of the design principles, each 0–10 from binary cited sub-checks, severity weights, a reported gate, and a worked filled example.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -25,7 +25,7 @@
 <header class="pagehero"><div class="wrap">
   <span class="badge">03 · Measurement</span>
   <h1>Scoring design quality</h1>
-  <p class="lede">Each of 18 principles scored <b>0–10</b> from binary structural sub-checks: <code>score = 10 × passed / applicable</code>. Severity of the worst failed check sets the weight and a ceiling. Every score below 10 carries a cited finding.</p>
+  <p class="lede">Each chapter of the <a href="https://github.com/eliezeravihail/aims/blob/master/skills/aims-guide/references/design-principles.md">design principles</a> scored <b>0–10</b> from its items, each a binary cited sub-check: <code>score = 10 × passed / applicable</code>. Severity of the worst failed item sets the chapter's weight and ceiling. Every score below 10 carries a cited finding.</p>
 </div></header>
 
 <section><div class="wrap">
@@ -43,45 +43,20 @@
       </tbody>
     </table>
   </div>
-  <p class="muted"><b>Aggregate = a profile, not a number:</b> severity-weighted average · worst principle · (#S3, #S4). <b>Graded caps:</b> any S2 ⇒ ≤ 8.5 · any S3 ⇒ ≤ 7.5 · any S4 ⇒ ≤ 5.0. <b>Step 0:</b> the rules (R) / change-axes (X) / acceptance cases (C) are pinned from the spec, never a design — identical for every arm.</p>
+  <p class="muted"><b>Reported as a profile, never a bare number:</b> the grade (the severity-weighted average over chapters) · the worst chapter · (#S3, #S4) · and a <b>gate</b> beside them — any S4 ⇒ <b>BLOCKED</b>, meaning not shippable until that item is fixed. The gate is a fact about shippability, not a verdict on the design; there is <b>no global cap</b> folded into the grade, because a cap counted one defect three times (<a href="https://github.com/eliezeravihail/aims/blob/master/decisions/0018-grade-is-the-weighted-list-severity-is-a-gate.md">decisions/0018</a>). <b>Step 0:</b> the rules (R) / change-axes (X) / acceptance cases (C) are pinned from the spec, never a design — identical for every arm.</p>
 </div></section>
 
 <section><div class="wrap">
   <div class="kicker">The instrument</div>
-  <h2>The 18 metrics</h2>
-  <p class="muted" style="margin:0 0 8px">One row per principle from <a href="https://github.com/eliezeravihail/aims/blob/master/skills/aims-guide/references/design-principles.md">design-principles.md</a>; "cap" is the worst tier a failed check may carry.</p>
-  <div class="tablewrap">
-    <table>
-      <thead><tr><th>§</th><th>Principle</th><th>Applies</th><th>Cap</th></tr></thead>
-      <tbody>
-        <tr><td>1</td><td>Tell-Don't-Ask / Law of Demeter</td><td>Both</td><td>S3</td></tr>
-        <tr><td>2</td><td>Program to an interface + genericity + concept-fit (LSP)</td><td>Both</td><td>S3</td></tr>
-        <tr><td>3</td><td>Interface Segregation</td><td>Both</td><td>S2</td></tr>
-        <tr><td>4</td><td>Primitive obsession</td><td>Both</td><td>S2</td></tr>
-        <tr><td>5</td><td>Anemic domain model</td><td>Both</td><td>S2</td></tr>
-        <tr><td>6</td><td>Cohesion/coupling — Feature Envy, Shotgun (OCP)</td><td>Both</td><td>S3</td></tr>
-        <tr><td>7</td><td>Leaky abstractions — boundary vocab, errors</td><td>Both</td><td>S3</td></tr>
-        <tr><td>8</td><td>Single Responsibility / God Object</td><td>Both</td><td>S3</td></tr>
-        <tr><td>9</td><td>A stated rule has one unforgeable owner</td><td>Both</td><td><b>S4</b></td></tr>
-        <tr><td>10</td><td>Duplication vs the wrong abstraction (DRY)</td><td>Both</td><td>S2</td></tr>
-        <tr><td>11</td><td>Naming and failure (least astonishment)</td><td>Both</td><td>S2</td></tr>
-        <tr><td>12</td><td>Size as a forcing question (YAGNI)</td><td>Both</td><td>S2</td></tr>
-        <tr><td>13</td><td><b>Functional correctness</b> — every case + implied interaction</td><td>Both</td><td><b>S4</b></td></tr>
-        <tr><td>14</td><td>State &amp; side-effect discipline (immutability)</td><td>Code</td><td>S3 / S4 on a race</td></tr>
-        <tr><td>15</td><td>Testability — verifiable by construction</td><td>Code</td><td>S3</td></tr>
-        <tr><td>16</td><td>Performance — on its own terms, never a proxy</td><td>Both</td><td>N/A if unstated</td></tr>
-        <tr><td>17</td><td>Security &amp; trust boundaries</td><td>Both</td><td>S4 / N/A</td></tr>
-        <tr><td>18</td><td>Names OCP · LSP · ADP · DRY · YAGNI (folded above)</td><td>—</td><td>not scored</td></tr>
-      </tbody>
-    </table>
-  </div>
-  <p class="muted">§9 and §13 are the two that can reach S4 and cap a whole design — the reason correctness is built and checked first.</p>
+  <h2>The rows</h2>
+  <p class="muted">One row per chapter of <a href="https://github.com/eliezeravihail/aims/blob/master/skills/aims-guide/references/design-principles.md">design-principles.md</a>; a chapter's items are its sub-checks. Most items are N/A for a given artifact and leave the denominator, so a typical review scores 15–25 applicable items across the chapters. The chapters and their items are deliberately <b>not copied here</b> — a copy of the list drifts the moment the list changes, which is how this page once described an instrument two generations out of date. The rules of filling the form are in <a href="https://github.com/eliezeravihail/aims/blob/master/skills/aims-guide/references/measurement.md">measurement.md</a>.</p>
+  <p class="muted">An item's severity follows its <b>correctness class</b>: a <em>precondition</em> failing — functional correctness, one owner per rule, a leaked seam, concurrency safety, security at a boundary — is S4, because the code is wrong rather than untidy. Everything else is S1–S3 by how far it spreads.</p>
 </div></section>
 
 <section><div class="wrap">
   <div class="kicker">A filled form</div>
   <h2>Worked example — ledger, blind arm</h2>
-  <p class="muted" style="margin:0 0 8px">Rows not shown are 10. Full form + rules: <a href="https://github.com/eliezeravihail/aims/blob/master/experiments/judging-rubric/assessment-form.md">assessment-form.md</a>.</p>
+  <p class="muted" style="margin:0 0 8px">Rows not shown are 10. This form was filed under the earlier 18-row layout, before the chapters were regrouped; the finding and its citation are unchanged. Form as filed: <a href="https://github.com/eliezeravihail/aims/blob/master/experiments/judging-rubric/assessment-form.md">assessment-form.md</a>.</p>
   <div class="tablewrap">
     <table>
       <thead><tr><th>§</th><th>Principle</th><th>Score</th><th>Sev</th><th>Finding + citation</th></tr></thead>
@@ -93,7 +68,7 @@
     </table>
   </div>
   <div class="grid g2" style="margin-top:14px">
-    <div class="card"><h3>Blind arm → 8.5</h3><p>weighted 9.63 · worst 7 · (0,0) · capped by the S2. Operational review: one finding — §4 7/10 [S2].</p></div>
+    <div class="card"><h3>Blind arm → 9.63</h3><p>worst 7 · (0,0) · gate CLEAR. Operational review: one finding — §4 7/10 [S2]. (Reported as 8.5 at the time, under the global cap since removed.)</p></div>
     <div class="card"><h3>Capsule-aware arm → 10.0</h3><p>Same code, but returns a named <code>Statement{account, entries, closing_balance}</code> — §4 = 10, clean. The one difference the grade turns on.</p></div>
   </div>
 </div></section>
@@ -102,7 +77,7 @@
   <div class="kicker">Two projections · one honest limit</div>
   <h2>What the form is</h2>
   <div class="grid g2">
-    <div class="card"><h3>One form, two views</h3><p><b>Building:</b> the <em>fix-list</em> — sub-10 rows, most-severe-first, cited, no aggregate shown, so the Worker fixes content not a number. <b>Comparing designs:</b> the full scored form + profile. Same measurement, different view — not two instruments.</p></div>
+    <div class="card"><h3>One form, two views</h3><p><b>Building:</b> the <em>fix-list</em> — sub-10 rows, most-severe-first, cited, no aggregate shown, so the Worker fixes content not a number. <b>Comparing designs:</b> the full scored form + profile, scored from the <b>code</b>, never from what a design says about itself. Passing the tests is a floor that earns nothing — two designs passing an identical suite scored 43 vs 16 (<a href="https://github.com/eliezeravihail/aims/blob/master/decisions/0021-design-rubric-leads-a-comparison-not-behavioral-proxies.md">decisions/0021</a>). Same measurement, different view — not two instruments.</p></div>
     <div class="card"><h3>Reliable, not a benchmark</h3><p>Sub-checks buy <b>reproducibility</b> (a misjudged check moves a fraction, not a band). They do not buy external <b>validity</b> — no ground-truth benchmark for design quality exists, and deterministic metrics (below) measure a different construct.</p></div>
   </div>
   <p class="muted" style="margin-top:16px"><b>Deterministic cross-check</b> (radon, the two ledger arms) — blind to the very difference the rubric scored:</p>
