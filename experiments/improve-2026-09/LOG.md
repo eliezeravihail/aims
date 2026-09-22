@@ -232,3 +232,18 @@ Append-only. Each entry: timestamp · what happened · next.
   "records produce better designs" is now **evidence against** on this task, not merely unproven. Mechanism
   for the earlier nulls: at this scale a strong model **converges**, so only what is absent from the code
   (a non-goal) is unrecoverable. The design question is a question about **scale**.
+
+- **2026-09-22 — FRAMING CORRECTION: aims has TWO goals, measured separately.** I had merged them. aims
+  pursues (1) **correct design** — served by the design method (Guide/Worker, §0–§14, the review), measured
+  by the **§0–§14 rubric scored from the code**; and (2) **knowledge that does not belong to the code** —
+  served by the **record layer**, measured by whether that knowledge **survives and is acted on**. They fail
+  in opposite directions: a design can score full marks while breaking a declared intent the rubric cannot
+  see, and a record can do its whole job without moving a line of code. `PROTOCOL.md` already required this
+  (Q1/Q2 "judged separately, never merged into one score"); `goals.md` did not — it joined both goals in one
+  sentence with "and" and gave them a single Evidence status, which is where the mixing started.
+  **Fixed `goals.md`** (two goals, each with its own instrument and its own evidence status), added a
+  two-goal prologue to SYNTHESIS, and **de-mixed BP19**: it varies only the records, so it tests **goal 2
+  only**; its rubric comparison was a category error and is now reported as a property of the task, not a
+  verdict. The 6/6 convergence is **not** evidence against the record layer — a record that preserves an
+  intent perfectly changes no structure, which is the record doing its job. Goal 2's finding (3/3 vs 0/3)
+  stands undiminished; goal 1's evidence is BP9/BP13/BP14 and the aims-vs-openspec pilots, not BP19.

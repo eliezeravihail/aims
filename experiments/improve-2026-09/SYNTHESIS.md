@@ -3,6 +3,24 @@ title: "Synthesis — the 24h improvement run: 2 changes shipped, and aims' real
 date: 2026-09-20
 ---
 
+# Read this first: aims has TWO goals, and they are never measured together
+
+`../../goals.md` states them, and this run had to learn the hard way that they must be kept apart:
+
+| | **goal 1 — correct design** | **goal 2 — knowledge that is not in the code** |
+|---|---|---|
+| what it is | code and architecture as an explicit objective at the design stage | durable design knowledge kept beside the code, so what the code *cannot* say stays said |
+| served by | the design method — Guide/Worker, §0–§14, the review lens | the record layer — companions, root records, anchor, staleness hook |
+| measured by | the **§0–§14 rubric scored from the code**, with the S-gate | does the knowledge **survive and get acted on** — continuation without re-deriving; a contradiction of declared intent caught |
+| evidence here | BP9, BP13, BP14, `aims-vs-openspec` v1–v4 | BP19 |
+
+They fail in **opposite** directions: a design can score full marks on §0–§14 while quietly breaking what the
+project declared it would not do (the rubric cannot see that), and a record can do its whole job without
+moving a single line of code. **Any measurement that reads one goal's instrument as a verdict on the other
+reports a false result.** `PROTOCOL.md` said so from the start — Q1 and Q2 are "judged separately, never
+merged into one score" — and this run still made the mistake in both directions before catching it. Every
+result below is therefore labelled with the goal it belongs to.
+
 # A correction up front: what was actually being measured
 
 An early framing of this run leaned on **hidden functional tests** as the "correctness" outcome and reported
@@ -377,27 +395,32 @@ records and n = 3 without, made the same non-elementary change (a `ScheduledRoll
   the rollout percentage, never as a targeting condition" — and all three amended the companion and re-stamped
   its anchor. **Zero of three blind arms did, and none could**: the non-goal exists nowhere but the record.
 
-- **Follow-up, and it is a null: the declared intent changed the record, not the code.** Predicate fixed
-  before inspecting the blind arms — does `ScheduledRollout` hand a percentage to the **same bucket and
-  comparison `Percentage` uses** (time moves the *share*, never membership), and does `Resolver` gain a
-  branch? **6/6 pass, 0/6 type-dispatch.** All six arms independently produced the *same* hierarchy,
+- **Follow-up — a fact about the task.** Predicate fixed before inspecting the blind arms: does
+  `ScheduledRollout` hand a percentage to the **same bucket and comparison `Percentage` uses**, and does
+  `Resolver` gain a branch? **6/6 pass, 0/6 type-dispatch.** All six arms produced the *same* hierarchy,
   differing only in a private base class's name; `r1`'s and `n1`'s `Resolver.is_enabled` are near-identical
-  line for line. This also explains the rubric cluster: there was no structural difference to separate, and
-  `n3`'s 29 is a **local** defect (the clock resolved at three sites), not an architectural one.
+  line for line. The task is **convergent** — which is why the rubric scores cluster with no group
+  difference, and why `n3`'s 29 is a **local** defect (the clock resolved at three sites), not an
+  architectural one.
 
-**What this is, precisely.** Not "records produce better code" — on this task that came back **null**, not
-merely unproven. It is that a record holds a **declared intent the code cannot**, so a change contradicting
-the project's stated intent is *visible* and gets reconciled instead of drifting silently. **Neither the tests
-nor the §0–§14 rubric can see it**: a design can score full marks while quietly breaking what the project said
-it would not do. The demonstrated value is **record fidelity, not better code** — a category distinct from
-design quality, and the campaign's first non-null.
+**What this is, precisely — and the framing error to avoid.** aims has **two goals** (`../../goals.md`),
+served by different machinery and judged by **different instruments**: **goal 1**, correct design (the
+Guide/Worker loop and the review; measured by §0–§14 from the code), and **goal 2**, knowledge that does not
+belong to the code (the record layer; measured by whether that knowledge survives and is acted on).
 
-It also **corroborates** the earlier nulls instead of overturning them, now with a mechanism: on a
-well-formed codebase at this scale a strong model **converges** — six arms, one design — so a *rule or
-convention* is recoverable and the record adds nothing the code was not going to say anyway. A **non-goal**
-is exactly what is not: it is the absence of code, and absence leaves no trace to recover. Whether the
-record earns its keep on **design** is therefore a question about **scale**, untouched by a ~300-line
-module, and it remains the standing frontier.
+**BP19 varies only the records, so it tests goal 2 and nothing else.** Reading its rubric comparison as a
+goal-1 result is a category error — one this file made before catching it. The goal-2 finding is a clean
+positive: a record holds a **declared intent the code cannot**, and that intent is acted on. The 6/6
+convergence is **not** evidence against it — a record that preserves an intent perfectly changes no
+structure, and that is the record doing its job. **Neither the tests nor the §0–§14 rubric can see this**: a
+design can score full marks while quietly breaking what the project said it would not do, which is exactly
+why goal 2 needs its own instrument.
+
+It **corroborates** the earlier goal-2 nulls instead of overturning them, now with a mechanism: at this
+scale a strong model **converges** — six arms, one design — so a *rule or convention* is recoverable from the
+code and the record adds nothing the code was not going to say anyway. A **non-goal** is exactly what is not:
+the absence of code leaves no trace to recover. What stays open on goal 2 is its other half — does a record
+stop a fresh session **re-deriving** — which a ~300-line module cannot test and which needs real scale.
 
 # Honest limits / future work
 
@@ -410,14 +433,18 @@ module, and it remains the standing frontier.
   over-blocking correct-but-simple code; it needs a blind A/B showing it catches real reopens without false
   positives).
 
-- The input-space-table question is closed (null on 3 products). The record layer is **partly** answered:
-  BP19 establishes the **declared-intent** value (3/3 vs 0/3 on a non-goal the change contradicted) and leaves
-  the **design-quality** claim unproven (n = 3, one outlier, no mechanism). Everything I5/BP15–BP18 appeared
-  to say about it is **withdrawn** — those records were hand-written by me, not filed by aims
-  (`AUDIT-record-layer-claims.md`). What remains needs a heavier **build-pilot** setup: aims' **cost**
-  (2.5–3× — the paper's main downside), and the record layer **at a scale where the pattern is not visible in
-  the code** (the paper's stated frontier). BP19 wants replication with the control it lacks — an arm given
-  117 lines of *irrelevant* prose — before "records raise the design floor" may be said again.
+- **Goal 2 (the record layer) — partly answered.** BP19 establishes the **declared-intent** half: a record
+  holds what the code cannot, and a contradiction of it is caught (3/3 vs 0/3). The **other half is still
+  open** — does a record stop a fresh session **re-deriving**, at a scale where the pattern is not visible in
+  the code (the paper's stated frontier). Everything I5/BP15–BP18 appeared to say is **withdrawn**: those
+  records were hand-written by me, not filed by aims (`AUDIT-record-layer-claims.md`). BP19 wants replication,
+  more *kinds* of declared intent (a rejected alternative, a convention with no code trace), and the control
+  it lacks — an arm given 117 lines of *irrelevant* prose.
+- **Goal 1 (correct design) — the open work is scale, not the record layer.** No record-layer experiment is
+  evidence here, in either direction; BP19 in particular varies only the records and is additionally
+  convergent (6/6 identical structure), so it cannot discriminate on design. What goal 1 still needs is a
+  task large enough that the right design is *not* recoverable unaided — every pilot-scale probe converged —
+  plus aims' **cost** (≈1.85–2.34× tokens measured, vs the paper's 2.5–3×).
 - I2 is n=1 on one seed; a second seeded product could still surface value, but on the evidence it is a null.
 - **I3 is retracted, not merely qualified.** It changed measurement *policy* from the record, and the policy
   it chose was wrong: it demoted the §0–§14 rubric beneath behavioral proxies that this run's own later data
