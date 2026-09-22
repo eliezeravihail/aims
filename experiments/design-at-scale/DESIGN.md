@@ -201,4 +201,6 @@ whether the design survives change.
 - [ ] the Phase 1 aims-arm prompt and the two opposite-disposition judge prompts — before Phase 1
 - [x] leak-word check on the drafts (`PROTOCOL.md` §4.5) — two found in the oracle's answers and removed; repeat on the frozen versions
 - [x] a read-through that no card hints at a later stage (`PROTOCOL.md` §1.2) — stage 1 names only its own
-      behaviour; nothing about rebuilds, exports, or a next stage
+      behaviour. **Correction before any arm ran:** the card's heading read "Stage 1 — …", which itself says later
+      stages exist; the read-through missed it and rendering the prompts caught it. The heading is now the feature's
+      name only.

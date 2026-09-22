@@ -1,4 +1,4 @@
-# Stage 1 — multi-language documentation sites
+# Multi-language documentation sites
 
 The codebase is mkdocs. Add support for documentation written in several languages.
 
