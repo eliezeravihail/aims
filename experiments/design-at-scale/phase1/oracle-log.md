@@ -23,3 +23,4 @@ object" get no reply: the product owner volunteers nothing.
 | w3 (aims) | Q2. "An explicit `nav:` in `mkdocs.yml` on a multi-language site" — one nav, or per-language overrides? | "I don't know — choose a simple, sensible technical approach." |
 
 *w3 also said it would treat right-to-left as out of scope "unless you say otherwise" — a stated decision, not a question: no reply, per the rule.*
+| w5 (unaided) | *(at hand-back, after finishing — not a stop to ask)* "Decisions for the product owner to confirm": pages only in a non-default language left out; nav section headings untranslated; labels need Babel; right-to-left | none given — raised after the arm had chosen and finished |
