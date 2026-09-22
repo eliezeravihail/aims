@@ -100,3 +100,12 @@ C each in ≤ 1 of 3; **falsified if A's count ≤ B's**; otherwise no clear adv
 ## Cost
 
 About 7 M tokens (`../DESIGN.md` §8): 18 arm sessions, the stage-2 judge, the stage-3 panel.
+
+## Recorded before stage 3 ran (not a change to the protocol)
+
+- **B's residual pointers.** Stripping b2's stage-2 records leaves three docstring mentions of `decisions/0001`–`0003`
+  in its own code (the rule keeps docstrings). b2's stage-2 session already noticed the stage-1 one. Disclosed.
+- **Where the no-detection non-goal lives as stage 3 starts.** All three A trees carry it in their records, with the
+  reason: a1 and a3 in `decisions/0001` ("a legal requirement in one market"), a2 in `goals.md`. In B and C trees the
+  product's own user documentation mentions it in b1, c1 and c2 ("MkDocs never detects the reader's language"),
+  without the reason. The stage-3 card states the conflicting line; the oracle answers only if asked.

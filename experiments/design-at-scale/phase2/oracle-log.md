@@ -63,3 +63,5 @@ same slower-but-correct question)*
 - b1 (B): the switcher unchanged; a record of the previous build in `.cache/mkdocs/` beside `mkdocs.yml` makes separate
   `build --dirty` runs incremental; sites with any plugin other than `search` or a non-built-in Markdown extension get
   full builds; `pyproject.toml` changed to keep `*.py.md` design notes out of the wheel. None given.
+- c2 (C): the switcher unchanged; a record in `.cache/mkdocs/` beside the site directory makes separate
+  `build --dirty` runs incremental; sites with a plugin that does not declare support get full rebuilds. None given.
