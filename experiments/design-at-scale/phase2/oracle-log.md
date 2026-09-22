@@ -60,3 +60,6 @@ same slower-but-correct question)*
 - a1 (A): "My calls": the switcher unchanged; single-language sites get the same mechanism (their `--dirty` is now exact
   too); a record file `.site.mkdocs-build.json` beside `site/` makes separate `build --dirty` runs incremental;
   converted Markdown is reused where it can be proven safe. None given.
+- b1 (B): the switcher unchanged; a record of the previous build in `.cache/mkdocs/` beside `mkdocs.yml` makes separate
+  `build --dirty` runs incremental; sites with any plugin other than `search` or a non-built-in Markdown extension get
+  full builds; `pyproject.toml` changed to keep `*.py.md` design notes out of the wheel. None given.
