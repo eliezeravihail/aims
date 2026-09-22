@@ -76,6 +76,7 @@ Synthesis of the add-feature runs: [`refactoring-SYNTHESIS.md`](refactoring-SYNT
 
 | experiment | goal | asks | status |
 |---|---|---|---|
+| [`single-root-file`](single-root-file/DESIGN.md) | 2 | one root file of design notes, or records beside the code? The same aims-filed records in both layouts, converted by a script that changes no word | **designed** — needs records from a real aims build |
 | [`design-at-scale`](design-at-scale/DESIGN.md) | 1, and 2 separately | does aims produce better design on a real codebase (mkdocs, 7k lines) with changes that cut across it — and only after a gate proves unaided agents sometimes get that design wrong? | **designed** — Phase 0 (the gate) first |
 
 ## The measurement instrument

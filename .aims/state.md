@@ -10,8 +10,8 @@ stepped
 
 ## Loop cursor
 
-in-progress <cleanup round: bring every shipped surface into line with the current method, then design the
-two experiments that decide what is still open>
+ready-to-choose-next <cleanup round delivered; both open questions have a designed experiment — next is
+design-at-scale Phase 0, the difficulty gate>
 
 ## Current objective
 
@@ -29,10 +29,11 @@ in 573 lines. A new experiment run against guidance that contradicts itself woul
 - [x] No shipped surface states a retired claim — enforced by `tests/coherence.sh` check 7, which failed on
       13 sites before the fixes and passes after.
 - [x] The docs site describes and links the instrument rather than copying it.
-- [ ] `SKILL.md` leads with its idea; every operative instruction survives; all suites green.
-- [ ] The paper carries the campaign's findings beside its own, and recompiles.
-- [ ] One index states, per experiment, what it asked, what it found, and whether it stands.
-- [ ] `improve-2026-09/SYNTHESIS.md` states current conclusions only; history stays in `LOG.md`.
+- [x] `SKILL.md` leads with its idea; every operative instruction survives; all suites green (574 → 336 lines,
+      77 instructions checked).
+- [x] The paper carries the campaign's findings beside its own (Study 3), and recompiles.
+- [x] One index states, per experiment, what it asked, what it found, and whether it stands.
+- [x] `improve-2026-09/SYNTHESIS.md` states current conclusions only; history stays in `LOG.md`.
 
 **Preserve:** every rule's content; `decisions/` append-only; the two tools; the four test suites.
 
@@ -48,8 +49,9 @@ in 573 lines. A new experiment run against guidance that contradicts itself woul
 
 ## Open Guide TODO
 
-- [ ] Design the scale experiment (goal 1).
-- [ ] Design the single-root-file experiment (goal 2).
+- [x] Design the scale experiment (goal 1) — `experiments/design-at-scale/`.
+- [x] Design the single-root-file experiment (goal 2) — `experiments/single-root-file/`.
+- [ ] Run design-at-scale Phase 0 — the difficulty gate decides whether the rest is worth running.
 - [ ] Update PR #65's description; merging or splitting it is the owner's decision.
 
 ## Last evaluated result
