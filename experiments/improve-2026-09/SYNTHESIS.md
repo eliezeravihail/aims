@@ -1,454 +1,120 @@
 ---
-title: "Synthesis — the 24h improvement run: 2 changes shipped, and aims' real edge (design quality, not test-pass) pinned down"
-date: 2026-09-20
+title: "Synthesis — what the 2026-09 improvement campaign established"
+date: 2026-09-22
 ---
 
-# Read this first: aims has TWO goals, and they are never measured together
-
-`../../goals.md` states them, and this run had to learn the hard way that they must be kept apart:
-
-| | **goal 1 — correct design** | **goal 2 — knowledge that is not in the code** |
-|---|---|---|
-| what it is | code and architecture as an explicit objective at the design stage | durable design knowledge kept beside the code, so what the code *cannot* say stays said |
-| served by | the design method — Guide/Worker, §0–§14, the review lens | the record layer — companions, root records, anchor, staleness hook |
-| measured by | the **§0–§14 rubric scored from the code**, with the S-gate | does the knowledge **survive and get acted on** — continuation without re-deriving; a contradiction of declared intent caught |
-| evidence here | BP9, BP13, BP14, `aims-vs-openspec` v1–v4 | BP19 |
-
-They fail in **opposite** directions: a design can score full marks on §0–§14 while quietly breaking what the
-project declared it would not do (the rubric cannot see that), and a record can do its whole job without
-moving a single line of code. **Any measurement that reads one goal's instrument as a verdict on the other
-reports a false result.** `PROTOCOL.md` said so from the start — Q1 and Q2 are "judged separately, never
-merged into one score" — and this run still made the mistake in both directions before catching it. Every
-result below is therefore labelled with the goal it belongs to.
-
-# A correction up front: what was actually being measured
-
-An early framing of this run leaned on **hidden functional tests** as the "correctness" outcome and reported
-**test-pass ties** as if they were a finding. They are not. **Passing tests is a floor, not the target.** A
-capable model makes the tests pass with *any* design — good or bad — so a test-pass tie says nothing about
-whether the design is correct, flexible, and good, which is the *entire* thing aims exists to produce. Read
-strictly, "aims has no correctness edge on clear specs" is close to tautological: on a clear, closed spec the
-right answer is cheap for any capable model, and the target aims optimizes — **design quality** — isn't on the
-scoreboard at all. So test-pass is demoted here to a **gate** (did it work), never an outcome, and the real
-signal is the measurements that read *design*: whether the design **extends at a seam or must be rewritten**
-under change (reopened-owner), and the **structural review verdict** on code the tests pass over. The sharpest
-result of the whole run is exactly the one that escapes the test — **BP9**: four builds all green on tests, all
-badly designed (type-switch / anemic model), and only the review caught it (4/4). That, not the ties, is the
-finding.
-
-# What the run set out to do
-
-Improve aims for **design quality in the result** — clear, correct, *flexible*, good design, not a higher score
-on its own rubric — and prove each change **blind, on unseen products, with a rubric-free outcome metric fixed
-before the run** (`plan.md`). Two phases: method-change candidates (I1–I6), each targeting a weakness the paper
-names; then a build-pilot campaign (BP1–BP13) that stopped asking *"what can we add?"* and instead **measured
-what aims' edge actually is** under running-code tests — using tests only as a floor and design-shape as the
-outcome.
-
-**The one-paragraph result.** **Two** changes shipped, both hardening the instrument rather than flattering the
-method: **I3** (outcome-first measurement + a disjoint-vocabulary judge) and **I6** (naming the observed
-anemic-model / type-switch as a specific mixed-tier review gap — `decisions/0020`, backed by BP7–BP9). Every
-*additive* candidate (I1/I2/I4/I5, aims-lite) was rejected by measurement. Where the run measured **test-pass**
-it found ties — the expected floor, not a finding. Where it measured **design quality**, aims showed a real
-edge: its §5/§8 discipline reliably picks the design that **extends at a seam instead of being rewritten**
-(reopened-owner variance reduction, sized by the shortcut base rate — ≈0% strong model, ≈17–33% weak), and its
-**review catches structurally-rigid-but-green code the tests are blind to** (BP9: 4/4; BP13 confirms that
-rigidity is real — the flagged builds break under a surprise change). That edge **doesn't compress to a prompt
-of principles on a weak model** (BP8); the **review** is the load-bearing part. Net: aims earns its cost as a
-**mixed-tier** method (cheap Worker + competent review), for the design quality that functional tests never see.
-
-The method-change phase follows; the build-pilot campaign follows that.
-
-# The three candidates and their measured outcomes
-
-| # | candidate (targets) | test | outcome | shipped? |
-|---|---|---|---|---|
-| **I1** | a design-time **input-space table** — a mechanical §1 artifact (targets the plant→mineral correctness loss) | blind A/B on **2 unseen** design products (shipping-rate, discount-applicability); metric = hidden corner-probe representability | **null** — every arm, base and table, represented **6/6** probes on **both** products | **no** |
-| **I2** | an **adversarial falsification review** — attack before item-check (targets "self-critique defends") | A/B on a seeded first-draft (fixed-window rate limiter); metric = does the review surface the seeded corner base misses | **null** — both reviews caught the seeded S4 with a concrete failing input; base caught **more** secondary corners | **no** |
-| **I3** | **outcome-first comparison** + a **disjoint-vocabulary judge** (targets the rubric ceiling + vocabulary capture) | validated against the **recorded** Study-1 runs (no new blind run needed for a measurement-policy change) | **adopt** — the outcome reading retains resolution where the rubric ceiling'd (10/10/10 vs survival tie/win/tie) and is vocabulary-independent | **yes** (`decisions/0019`) |
-
-# The meta-finding: the shipped method is already strong
-
-Both I1 and I2 are nulls for the **same reason**, and it is a result worth stating plainly: the shipped
-method already does the work the additions proposed to add.
-
-- The shipped **§1 "trace the full input space (the procedure, not just the cases)"** plus the concept-fit
-  pass already drove both *base* arms to the exact load-bearing types the corners require — an interval
-  weight with `worst_case` (P1), a first-class boolean expression tree with a structured reason (P2),
-  including the subtle empty-combination corner — with no mechanical table (I1 null).
-- The same §1 pass already *is* a falsification step: on the seeded rate limiter the base review constructed
-  the boundary-straddling burst and marked it BLOCKED, unprompted by any new attack wording (I2 null).
-
-This is consistent with the earlier §7 null (`../plant-mineral-id/` → `../s7-yagni-stated-capability/`): the
-plant→mineral loss was a **builder slip under adequate wording**, not a documented gap, and additions
-inspired by it do not reproduce a base failure to beat. Two more weakness-prompted additions, tested
-honestly, stayed out.
-
-# The one change that survived makes aims look *less* flattering
-
-I3 is the opposite of a reactive softening. It removes aims' perfect-score headline and leads a design
-comparison with the harder, rubric-free reading (trap gate · reopened-owner count · edit locality), demoting
-the vocabulary-captured rubric grade to second, and adds a judge that cannot be captured by a design that
-recites the checklist. It is adopted because it is **more adversarial**, validated against the existing
-record, and conservative (the rubric stays as the second reading).
-
-# The discipline, stated as the result
-
-Three candidates, one survivor. The value of the run is not the survivor alone but that **two plausible,
-motivated additions were rejected by measurement** — the exact behavior the method preaches and the paper's
-threats section demands. A method that only ever adopts its own proposals is gaming its rubric; this run
-adopted the change that makes the instrument harder and rejected the two that would merely have added
-surface. `arm-table-design-principles.md` and `arm-attack-review.md` remain as recorded negatives.
-
-# Round 2: I4 closed the input-space-table question — still null
-
-The one open thread from round 1 — does the table help on an *implied-but-unstated* corner? — was tested
-directly (`i4-table-unstated-corner/`): an appointment-slot checker whose card states the half-open rule but
-gives only clearly-overlapping / clearly-disjoint cases, leaving the touch-point (the classic half-open
-off-by-one) and the zero-length request implied but unstated. **Both** arms, base and table, pinned the
-strict `s<d ∧ c<e` overlap predicate and handled all four hidden corners (**4/4 each**) — the base arm via
-the shipped §1 trace, without the table. So across **three** unseen products the table never beat base. The
-input-space table is decisively a null; the plant→mineral loss it targeted was a builder slip, not a doc gap.
-
-# Round 3: I5 probed the record layer — null, with a sharp limitation
-
-I5 (`i5-record-trap/`) tested aims' **second core claim** at the load-bearing scale the paper names: does a
-co-located record of a *rejected-alternative trap* (a penny-losing money allocation) stop a fresh session
-re-introducing it? Two fresh add-feature arms added `split_shipping` to a largest-remainder allocator,
-identical but for the record's presence. **Both passed** — both delegated to the existing `allocate` and
-preserved `sum == total`. **Null.** The honest reason is the limitation: the target carried a **visible
-in-code precedent** (`allocate_discount` already delegating to `allocate`), so the no-record arm reused the
-owner from the *code*, not the record. The record confirmed the choice; it did not change the outcome. This
-is exactly the paper's position — the record layer is unproven in *outcomes* because every tractable test
-codebase carries its own signal. Isolating the record's outcome value needs a codebase large or opaque
-enough that the pattern is **not** visible in the code — which a small-module A/B cannot reach.
-
-# Round 4: BP1 — the first running-code test of the trajectory claim
-
-BP1 (`bp1-inventory/`) is the first experiment here to reach what design-only A/Bs cannot: aims' **core
-trajectory claim**, under a real 3-stage build (reserve → expiry → confirm+partial) with running Python and
-hidden pytest per stage, two arms, later stages by fresh sessions, scored outcome-first.
-
-- **Correctness: a tie** — both arms 21/21 at every stage.
-- **Trajectory: a real, blind-confirmed edge for aims — 0 reopened owners vs 1** (a blind judge, blind to
-  method, agreed and picked the aims arm on final structure too, judging code not vocabulary). It traces to
-  one stage-1 decision: aims made availability **derived, not stored** (its review rejected the stored-counter
-  shortcut on §5 one-owner), which made expiry and confirm purely additive; the plain arm's stored-counter
-  shortcut forced a model **reopen** when time-dependent expiry arrived.
-- **But it did not compound** — after its stage-2 reopen the plain arm converged to the same derived design
-  and absorbed stage 3 cleanly. A strong no-method model refactored to parity (the paper's own caveat).
-- **Q2 continuity: a positive signal (n=1)** — the fresh aims session was steered to the extension seam by
-  its co-located record.
-- **Cost: aims ≈1.85× tokens, ≈3.7× wall** — the premium bought one avoided reopen + records, not correctness.
-
-The honest shape: the method's edge is a **small, real, measured** trajectory benefit at a real cost premium
-— the paper's claim reproduced in direction and modest in magnitude, now observed rather than asserted.
-
-# Round 7: BP5 — no compounding over 4 breaks; the edge is VARIANCE REDUCTION
-
-BP5 (`bp5-ledger-compounding/`) built a 4-stage money-ledger (single → multi-currency → as-of-time → void)
-designed so a stored-running-balance shortcut would reopen at each break — the fairest test yet of the
-paper's "edge grows with the sequence." Result: **both arms absorbed all four breaks with 0 reopens**,
-correctness tied (13/13), because **both** chose a derive-by-scanning posting journal at stage 1, which makes
-every break a single filter clause. **No compounding, no divergence.**
-
-Read against BP1/BP2 (where the plain arm *stored* a counter and paid 1 reopen), BP5 pins down what aims'
-trajectory edge actually is: **variance reduction on the early structural choice.** aims' one-owner /
-derive-don't-store review *reliably* picks the extensible design; a capable plain builder picks it *sometimes*
-(stored in BP1/BP2, derived in BP5). So the per-product edge is **probabilistic** — proportional to how often
-a plain builder would take the shortcut — and vanishes on a product where the plain builder chooses well.
-Compounding rot stayed unobserved even at 4 breaks. (Q2 continuity signal seen again: the aims records named
-each extension seam and the fresh sessions used them.)
-
-# Round 6: BP3 — the trajectory edge is ONE transferable principle, not the method
-
-BP3 (`bp3-hint-transfer/`) is the run's sharpest finding. It traced aims' entire measured trajectory edge to
-one stage-1 decision (derive-don't-store / one-owner) and tested whether that needs the *method* or just the
-*principle*: a plain arm (opus, **no** skill, records, or review) whose stage-1 prompt appended **one
-sentence** — "prefer deriving values from ground-truth state over storing them as fields you must keep in
-sync." Later stages got no hint at all. Result: the hint arm **derived** availability at stage 1 and then
-matched aims exactly — **0 reopened owners, 21/21 correctness, clean seam extensions**, at **plain cost**.
-The reopen the un-hinted plain arm paid did not happen. So on this axis the method's machinery (panel,
-records, mandatory review) did **not** buy the edge — one transferable principle did, at ~half the cost.
-Honest and deflating for "you need the method"; it argues for a **lightweight delivery** (an "aims-lite" that
-injects the few high-yield principles as short prompts may capture most of the benefit without the ~1.85×
-premium). What the sentence does *not* give: durable records at scale and across many hands — the method's
-real candidate value, still unproven here.
-
-# Round 5: BP2 — the same build on a cheaper executor (n=2 on the trajectory)
-
-BP2 (`bp2-inventory-haiku/`) reran BP1's identical 3-stage sequence with **both arms on haiku**, to test the
-mixed-tier prediction that a weaker executor would let rot compound. Result: **the trajectory pattern
-reproduced (aims 0 reopens, plain 1), correctness stayed a tie (both 21/21 all stages) — but the mixed-tier
-compounding did NOT appear.** The cheaper model handled every stage correctly, and even the plain arm's one
-reopen was *clean*, followed by a clean stage-3 extension. So across **two products × two model tiers**, the
-edge is the **same single avoided reopen**, non-compounding. Compounding rot (the paper's frontier) still
-needs a stickier shortcut, a longer sequence, or a genuinely non-refactoring executor — none reached here.
-
-# Round 8: BP6 — the shortcut base rate that sizes the whole edge
-
-BP6 (`bp6-baserate/`) closes the loop opened by BP1–BP5. If aims' trajectory edge is **variance reduction on
-the stage-1 derive-vs-store choice** (BP5's finding), then its expected per-product size is simply *how often
-a plain builder takes the stored-aggregate shortcut*. BP6 measures that directly: **6 independent plain haiku
-builds** of the identical BP1 stage-1 card, classified STORE vs DERIVE. Result: **1 of 6 stored** (run-5 kept
-a `_reserved` running total in sync alongside the ledger — the exact drift-risk design aims' §5 review
-rejects); the other **5 derived** availability from the reservation ledger on read. So on this axis the
-shortcut base rate is **≈17%** (wide CI, n=6, one card/model).
-
-This gives the campaign's central finding a number: aims' trajectory edge is a **reliability premium on a
-minority of products** — it converts the plain builder's *sometimes-derive* into *always-derive*, buying the
-avoided reopen only on the ~1/6 of builds that would have stored. It explains BP5's both-arms-derived null
-(BP5 drew from the ~5/6 that derive anyway) and BP1/BP2's single reopen (those plain arms drew the ~1/6 that
-stored). The edge is real, mechanistic, and now *sized*: proportional to the shortcut rate, which is low for a
-capable model on a clean card and rises with weaker builders, baited cards, or longer sequences where one
-early store compounds.
-
-# Round 9: BP7 — the edge generalizes to a second axis (concept-fit), as the SAME variance-reduction mechanism, and is model-dependent
-
-BP7 (`bp7-conceptfit-generalize/`) asked whether the trajectory edge is specific to derive-don't-store or a
-general property, and tested it on an unrelated axis — **concept-fit** (model each promo rule as a first-class
-object vs an `isinstance` type-branch inside the engine) — with a 2-stage build (rules → priority+exclusivity
-stacking) across three arms: **plain**, **aims-lite** (a 4-principle prompt block, no method), and **full aims**.
-
-- **Opus 3-arm result: a three-way tie, 0 reopens for all.** Every opus arm — including the un-prompted plain
-  arm — modeled rules as first-class objects at stage 1, so the stacking change was a pure seam extension for
-  everyone (`total()`'s sum → a sorted walk + exclusivity break; per-rule `discount()` untouched). Correctness
-  tied 19/19. On opus the shortcut simply isn't taken, so aims' review had nothing to save. The aims records
-  did name the seam and the fresh session used it (Q2 continuity, n=1), but bought no avoided reopen.
-- **Base-rate probe: the shortcut IS taken on a weaker model.** 6 haiku plain builds of the stage-1 card:
-  **2/6 wrote the `isinstance` type-branch** (the reopen-inducing shortcut), 4/6 polymorphic — vs **0/3 on
-  opus**. So the concept-fit shortcut base rate is **~0% opus / ~33% haiku**.
-
-The reading sharpens the whole campaign rather than repeating it. **The edge generalizes off derive-don't-store
-onto a second, unrelated axis — but as the identical mechanism (variance reduction on an early structural
-choice), and it is model-dependent.** aims' concept-fit edge is *invisible on opus* (a strong model already
-picks the good design — the 3-arm null is a **ceiling null, not an absence**) and *real on haiku* (2/6
-shortcut → 2/6 avoided reopens). This is the cleanest demonstration yet of the paper's mixed-tier prediction:
-the review's value scales inversely with how good the raw executor already is. **aims-lite tied** here only
-because the opus environment couldn't discriminate any delivery (all arms derived) — a weak, inconclusive
-datapoint for lite, not a win. Across three axes (derive · ledger · concept-fit) and two tiers, the honest
-constant holds: **correctness ties; aims' benefit is avoided-reopen variance reduction, sized by the shortcut
-base rate on each axis×model (~0–17% strong, ~33% weak here).**
-
-# Round 10: BP8 — aims-lite (principle injection) does NOT transfer to a weak model; the review is the load-bearing part
-
-BP8 (`bp8-lite-baserate/`) put the campaign's most attractive improvement candidate — **aims-lite**, a
-lightweight principle injection (BP3 showed the derive-don't-store sentence transferred on opus) — to its
-critical test: does prepending the concept-fit principle *lower* the shortcut rate on the weak model where the
-edge is largest? Six haiku plain builds branched **2/6** (BP7); six haiku builds **with the explicit
-concept-fit principle** branched **2/6** as well. **No effect — 2/6 → 2/6, zero signal of reduction.**
-
-This flips the earlier optimism into a sharp, honest boundary. The principle transfers on a **strong** model
-(BP3, opus) and does **nothing** on a **weak** one (BP8, haiku) — i.e. aims-lite helps only where the executor
-is already good enough that the base shortcut rate is ~0, and fails on the tier where the shortcut rate (33%)
-and thus the potential edge is highest. A principle a model can ignore is not a substitute for a step that
-**inspects the artifact**. That step is aims' **mandatory review**, which reads the built code and rejects the
-type-branch — the part a prompt line cannot replicate on a model that doesn't self-apply advice. So the
-method's irreducible value, on weak executors, is the review, not the advice; BP9 tests that directly by
-running a review pass over the two branched haiku builds. (n=6 per arm, one card/model/axis; null is real but
-small-sample.)
-
-# Round 11: BP9 — the review catches (4/4) what the principle missed (0/6); output inspection is aims' irreducible value
-
-BP9 (`bp9-review-vs-principle/`) closes the BP6–BP9 arc. It ran the real aims review instrument
-(`references/review.md`), applied by a competent Guide (opus) as the mixed-tier architecture intends, over the
-**4 branched builds** the weak model (haiku) produced — the very outputs the aims-lite principle failed to
-prevent. **The review flagged the type-switch as a structural finding on all four (detection 4/4)** — naming
-the anemic-rules / type-code-switch / OCP-reopen defect and the exact repair seam (polymorphic
-`rule.discount(cart)`), by section — where the principle-in-prompt scored **0/6**. Applying the recommendation
-to one build (b1) yielded a polymorphic module passing the hidden suite **12/12** with zero `isinstance`
-(repair validated). The review also caught representation-leak defects the metric never looked at, including a
-genuine cross-boundary violation in b2 that gates (S4).
-
-Two honest qualifications: the type-switch itself rates **S3 (structural, non-gating)** — so the review
-reliably *surfaces and names* the shortcut and its fix, but at the gate it informs rather than forces (only b2
-BLOCKS, on a separate S4). And n=4, one axis/card.
-
-The arc resolves against the convenient answer: **aims cannot be compressed to a prompt of principles for a
-weak executor** — the principles don't stick (BP8, 2/6 → 2/6) — but its **review** does the job that advice
-cannot, catching the shortcut on weak-model output (BP9, 4/4). aims' irreducible, non-transferable value is
-**output inspection by a competent Guide**, exactly the mixed-tier configuration the paper argues for: cheap
-Worker builds, competent review catches what the Worker (and any ignored prompt line) missed.
-
-# Round 12: BP10 — the correctness claim has no target on clean specs (0/12 bugs, even on haiku)
-
-BP10 (`bp10-correctness-baserate/`) went looking for the one thing every prior pilot lacked — a **correctness**
-difference, aims' headline claim. Two determinate, classically error-prone corners, each built 6× by plain
-haiku: a half-open interval boundary (touching bookings must not overlap) and a remainder allocation
-(`split(n,k)` must sum exactly to n). **Bug rate 0/12** — every build used the strict overlap predicate and
-distributed the remainder. With no bug to catch, the "does aims' review catch it?" arm correctly did not run.
-
-The null is the finding, and it is the third confirmation (with I1 and I4) of a robust boundary: **on
-clearly-specified corners a capable model — even the cheap one — does not lose correctness, so aims has no
-correctness deficit to repair.** aims cannot win a correctness contest that has no loser. The plant→mineral loss
-that motivated the correctness thread was a **slip under specific conditions**, not a systematic failure a small
-blind A/B reproduces. This locks in the campaign's honest shape: on tractable, clearly-specified work aims'
-benefit is **structural/trajectory** (variance reduction on the early design choice), **not correctness**;
-correctness ties because the base is already right.
-
-# Round 13: BP11 — a designed interaction corner still doesn't slip a strong model; the correctness thread closes at pilot scale
-
-BP11 (`bp11-interaction-corner/`) built the high-context case BP10 named: a layered access evaluator with two
-stated principles that **conflict** on a corner (most-specific-wins vs deny-wins-at-tie), engineered so the
-common "deny always wins" simplification silently returns the wrong answer on a specific-ALLOW-under-broad-DENY
-path — with the card baiting that simplification. Tested on **opus**. Result: **0/6** — every build implemented
-"most specific wins, DENY only as the equal-specificity tie-break" and passed the corner. No bug → Part B
-correctly did not run.
-
-This is the fourth and strongest correctness null (I1, I4, BP10, BP11), and it was *engineered* to slip a
-builder. The thread closes cleanly at pilot scale: **there is no correctness deficit for aims to repair that a
-blind small-module A/B can produce — even a deliberately conflicting interaction is resolved correctly by a
-capable model.** aims' correctness claim is not disproven; it plausibly lives only in a genuinely large, noisy,
-multi-concern task beyond pilot scale, where attention divides and a builder actually slips. That regime, the
-record layer at code-opaque scale, and cost at larger scope are what a **dedicated non-pilot evaluation** must
-carry — not this campaign's small blind A/Bs.
-
-# Round 14: BP12 — a second cost datapoint (≈2.3× tokens, ≈12× wall on a small task)
-
-BP12 (`bp12-cost/`) ran full-aims vs plain on one design+build task (the calendar card) and read cost from the
-handbacks: aims **98.7k tokens / ~254 s / 23 tools**, plain **42.1k / ~21 s / 3 tools**, both **11/11**. That is
-**2.34× tokens** and **≈12× wall**. Beside BP1's 1.85× tokens / 3.7× wall, the cost premium is now two
-datapoints: **≈1.85–2.34× tokens** (real, a little below the paper's 2.5–3×), and wall **3.7–12×** —
-**task-size-dependent**: aims' ceremony (sharpen/design/review/records) is a largely fixed overhead, so on a
-small task the plain arm's one-shot finish makes the wall ratio balloon, while a larger/multi-stage task
-amortizes it (BP1's 3.7×). Correctness tied again (the fifth tie). The honest cost/benefit: aims charges ~2×
-tokens on **every** build to buy an avoided reopen on the **minority** where the shortcut would be taken (plus
-durable records) — the mixed-tier calculus the method already frames. n=2 on cost; reported as a range.
-
-# Round 15: BP13 — design quality is real, invisible to tests, and the review names its axis in advance
-
-BP13 (`bp13-design-under-surprise/`) is the campaign's correction made concrete. It took 4 builds that **pass
-every test but are badly designed** (the type-switch builds BP9's review flagged) and measured **design shape**
-under a surprise change, not test-pass.
-
-- **Part 1 (the wrong surprise):** add the stacking policy. Prediction: type-switch forced to reopen. **Wrong**
-  — all 4 extended at a seam (0 reopens, 19/19) via a before/after accumulator-delta hack wrapped around the
-  untouched `isinstance` chain. So test-pass **and** reopened-owner both tied. A coarse "does it extend" proxy
-  is **gameable by a capable model** on the wrong change axis. (The code got *more* convoluted, though — the
-  metric missed that.)
-- **Part 2 (the right surprise):** add a new **rule kind** — the axis the review named (§7 OCP / §8
-  type-code-switch). Decisive: **type-switch 4/4 reopen `Engine.total`; polymorphic 0/2 (class only) — at
-  identical 22/22 test-pass.**
-
-The point, corrected: **test-pass is a floor and never separated the builds; the design-quality difference is
-real but only surfaces on a change that hits the design's weak axis; and aims' review is the instrument that
-names that axis in advance** — in BP9 it flagged these exact builds from the code alone, tests green, and BP13
-Part 2 confirms the verdict predicted real future cost (the reopen when a new rule kind arrives). aims' value is
-a **design-quality edge the review surfaces and functional tests are structurally blind to** — flexibility to
-the foreseeable change — not a test-pass edge (there is none to have).
-
-# Round 16: BP14 — the correct instrument, demonstrated; and the measurement correction (I3 → `decisions/0021`)
-
-The campaign had drifted into measuring **test-pass and behavioral change-proxies**. That is the wrong
-currency: any capable model makes the tests pass, whatever the design, and tests can be worked around.
-**Design quality is scored against the §0–§14 rubric, from the code.** aims *is* that rubric — it was the
-instrument from the project's first experiments — and the drift lost it.
-
-- **BP14 (`bp14-design-rubric/`)** put the number on it: two designs passing the **identical** test suite
-  scored **43 vs 16** blind on a code-grounded §0–§14 scoring. Tests never separated them; the rubric did,
-  decisively.
-- **BP13 part 1** had already shown the proxy side is **gameable** (a 3-line seam edit, 0 reopened owners,
-  textbook `isinstance` chain left in place — fewer edits *and* worse design).
-
-So **I3 (`decisions/0019`) was itself a regression**: it demoted §0–§14 beneath a correctness-trap gate,
-reopened-owner count, and edit locality. `decisions/0021` supersedes it — a comparison leads with the
-code-grounded §0–§14 grade; **a correctness gate is a floor only (passing earns nothing)**; behavioral
-facts are weak corroboration. The one good idea in I3, the **disjoint-vocabulary judge**, is kept and
-re-pointed: it scores the design **against §0–§14 from code properties**, which is what produced the 43-vs-16
-separation. Every prior attempt of value is re-checked against the correct measure in
-[`REEVALUATION.md`](REEVALUATION.md) — I6 holds; BP9 was always a rubric measurement; BP6/BP7 re-read as a
-**distribution of design-rubric scores**, which is the same variance-reduction finding stated in the right
-currency; the design-only nulls stay null.
-
-# Round 17: the record-layer retraction — six experiments tested my construction, not aims
-
-[`AUDIT-record-layer-claims.md`](AUDIT-record-layer-claims.md) splits every record-layer conclusion by **who
-authored the records**. In I5, BP15, BP15b, BP16, BP16b, BP17 **I wrote the records by hand**, having never
-read [`design-record.md`](../../skills/aims-guide/references/design-record.md) — and I wrote them wrong,
-inventing a per-file record model the method never had. Those six tested my invention.
-
-- Agent-filed record work (BP1, BP2, BP5, BP7, BP12) stands.
-- **"Records raise the design floor" is withdrawn**; the BP18 conclusion is withdrawn in place.
-- "The record layer is unproven" is restated as **UNTESTED** — a different and worse status.
-
-The root cause was in the shipped documentation, not only in me: `format.md`'s heading read "a companion
-beside **each source file**" with "most files never need one" buried in a parenthetical, `design-record.md`
-kept its qualifier in the last section, and `CLAUDE.md` dropped it entirely. All three are fixed, and the
-filing decision now has **one owner** (`design-record.md` decides *which home*; `format.md` owns only the
-*shape*), with a **"count the files it binds"** discriminator for the file-vs-system call.
-
-# Round 18: BP19 — the first properly-constructed record-layer test, and the campaign's first non-null
-
-[`bp19-aims-filed-records/`](bp19-aims-filed-records/) is the first test in which **aims filed the records**
-(the real skill, on a real build, 117 lines across `goals.md` / `base-dependencies.md` / one ADR / one earned
-companion — and an explicit, cited decision *not* to create `architecture.md`). Six blind arms, n = 3 with
-records and n = 3 without, made the same non-elementary change (a `ScheduledRollout` rule kind + an explicit
-`now` parameter). All six clear the floor (29/29 on the original suite); per `0021` that earns nothing.
-
-- **Design rubric — directional, not evidence.** Blind totals: records **40 / 38 / 36** (mean 38.0) vs no
-  records **36 / 36 / 29** (mean 33.7). The whole gap is one arm; drop it and the groups are
-  indistinguishable at n = 3. Consistent with the **floor-raising / variance-cutting** shape BP6/BP7 found,
-  but it does not establish it, and no mechanism ties it to the records.
-- **The clean finding — 3/3 vs 0/3.** The filed `goals.md` carried the non-goal *"no targeting on … time
-  window"*, which the change request **contradicts**. **All three records arms detected the contradiction and
-  amended the record**, each in its own words, narrowing the non-goal to "time enters only as a schedule of
-  the rollout percentage, never as a targeting condition" — and all three amended the companion and re-stamped
-  its anchor. **Zero of three blind arms did, and none could**: the non-goal exists nowhere but the record.
-
-- **Follow-up — a fact about the task.** Predicate fixed before inspecting the blind arms: does
-  `ScheduledRollout` hand a percentage to the **same bucket and comparison `Percentage` uses**, and does
-  `Resolver` gain a branch? **6/6 pass, 0/6 type-dispatch.** All six arms produced the *same* hierarchy,
-  differing only in a private base class's name; `r1`'s and `n1`'s `Resolver.is_enabled` are near-identical
-  line for line. The task is **convergent** — which is why the rubric scores cluster with no group
-  difference, and why `n3`'s 29 is a **local** defect (the clock resolved at three sites), not an
-  architectural one.
-
-**What this is, precisely — and the framing error to avoid.** aims has **two goals** (`../../goals.md`),
-served by different machinery and judged by **different instruments**: **goal 1**, correct design (the
-Guide/Worker loop and the review; measured by §0–§14 from the code), and **goal 2**, knowledge that does not
-belong to the code (the record layer; measured by whether that knowledge survives and is acted on).
-
-**BP19 varies only the records, so it tests goal 2 and nothing else.** Reading its rubric comparison as a
-goal-1 result is a category error — one this file made before catching it. The goal-2 finding is a clean
-positive: a record holds a **declared intent the code cannot**, and that intent is acted on. The 6/6
-convergence is **not** evidence against it — a record that preserves an intent perfectly changes no
-structure, and that is the record doing its job. **Neither the tests nor the §0–§14 rubric can see this**: a
-design can score full marks while quietly breaking what the project said it would not do, which is exactly
-why goal 2 needs its own instrument.
-
-It **corroborates** the earlier goal-2 nulls instead of overturning them, now with a mechanism: at this
-scale a strong model **converges** — six arms, one design — so a *rule or convention* is recoverable from the
-code and the record adds nothing the code was not going to say anyway. A **non-goal** is exactly what is not:
-the absence of code leaves no trace to recover. What stays open on goal 2 is its other half — does a record
-stop a fresh session **re-deriving** — which a ~300-line module cannot test and which needs real scale.
-
-# Honest limits / future work
-
-- **A concrete, motivated improvement candidate surfaced by BP9 (not yet shipped, by discipline):** the
-  type-code-switch / OCP-reopen finding currently rates **S3 (non-gating)** even when the reopened change-axis
-  is **explicitly named by the spec/goals** and served by a foreseeable near-term item. One could argue that
-  *spec-named-change-axis + forced reopen* should gate (S4). This is exactly the kind of weakness-prompted
-  tweak the campaign's discipline (Pavel's rule) says must **beat base on an unseen product before entering the
-  method** — it is recorded here as a candidate to test, not a change to ship reflexively (raising a gate risks
-  over-blocking correct-but-simple code; it needs a blind A/B showing it catches real reopens without false
-  positives).
-
-- **Goal 2 (the record layer) — partly answered.** BP19 establishes the **declared-intent** half: a record
-  holds what the code cannot, and a contradiction of it is caught (3/3 vs 0/3). The **other half is still
-  open** — does a record stop a fresh session **re-deriving**, at a scale where the pattern is not visible in
-  the code (the paper's stated frontier). Everything I5/BP15–BP18 appeared to say is **withdrawn**: those
-  records were hand-written by me, not filed by aims (`AUDIT-record-layer-claims.md`). BP19 wants replication,
-  more *kinds* of declared intent (a rejected alternative, a convention with no code trace), and the control
-  it lacks — an arm given 117 lines of *irrelevant* prose.
-- **Goal 1 (correct design) — the open work is scale, not the record layer.** No record-layer experiment is
-  evidence here, in either direction; BP19 in particular varies only the records and is additionally
-  convergent (6/6 identical structure), so it cannot discriminate on design. What goal 1 still needs is a
-  task large enough that the right design is *not* recoverable unaided — every pilot-scale probe converged —
-  plus aims' **cost** (≈1.85–2.34× tokens measured, vs the paper's 2.5–3×).
-- I2 is n=1 on one seed; a second seeded product could still surface value, but on the evidence it is a null.
-- **I3 is retracted, not merely qualified.** It changed measurement *policy* from the record, and the policy
-  it chose was wrong: it demoted the §0–§14 rubric beneath behavioral proxies that this run's own later data
-  (BP13 part 1) proved gameable. `decisions/0021` supersedes `0019` and restores the code-grounded rubric as
-  the lead. The lesson generalizes past I3 — **a measurement change is a method change and needs the same
-  evidential bar as any other**, and "the instrument ceilings" is a reason to score it more honestly, never a
-  licence to leave it.
+**Current conclusions only.** The round-by-round history, including every correction, is in
+[`LOG.md`](LOG.md); each run's own result is linked from [`../README.md`](../README.md). Where a conclusion was
+revised during the campaign, only the revised one appears here.
+
+# The two goals, and how each is measured
+
+aims pursues two goals, and the campaign learned the hard way that they must be measured separately
+([`../../goals.md`](../../goals.md)):
+
+- **Goal 1 — correct design**, served by the design method (the Guide/Worker loop, the principles, the review)
+  and measured by the **§0–§14 rubric scored from the code**.
+- **Goal 2 — knowledge that is not in the code**, served by the record layer and measured by whether that
+  knowledge **survives and is acted on**.
+
+They fail in opposite directions: a design can score full marks while breaking a declared intent the rubric
+cannot see, and a record can do its whole job without moving a line of code. Reading one goal's instrument as
+a verdict on the other gives a false result. This campaign made that mistake in both directions before
+catching it.
+
+# Goal 1 — correct design
+
+**Tests do not measure design.** Passing is a floor that earns nothing. Two designs passing an identical suite
+scored **43 vs 16** on the rubric, blind and from the code ([`bp14`](bp14-design-rubric/results.md)). Behavioural
+proxies — reopened owners, edit locality — are gameable too: a capable model absorbed a change with a
+three-line seam edit and zero reopens while leaving a textbook type-switch in place
+([`bp13`](bp13-design-under-surprise/results.md), part 1). → `decisions/0021`.
+
+**Design quality is real, and it shows on the right change.** Builds that pass every test but dispatch on type
+reopen their engine when a new rule kind arrives (4/4); polymorphic builds add a class (0/2), at identical
+test results ([`bp13`](bp13-design-under-surprise/results.md), part 2).
+
+**The review is the part of aims that carries its weight.** It flagged all four green-but-badly-built designs
+from the code alone (4/4, [`bp9`](bp9-review-vs-principle/results.md)), where the same principle written into
+the Worker's prompt had not prevented them. On a weak model the principle-in-prompt did nothing (2/6 either
+way, [`bp8`](bp8-lite-baserate/results.md)); on a strong model one sentence of it made a plain arm match aims
+([`bp3`](bp3-hint-transfer/results.md)). What does not compress into a prompt is the **inspection of the
+output**. → `decisions/0020` names the type-switch / anemic-model pattern as a review gap.
+
+**The edge is floor-raising, not ceiling-lifting.** How often a plain build takes the structural shortcut is
+model-dependent: about 1 in 6 on one axis ([`bp6`](bp6-baserate/results.md)); 0/3 on a strong model and 2/6 on a
+weak one on another ([`bp7`](bp7-conceptfit-generalize/results.md)). aims' measured benefit is avoiding that
+minority — it raises the floor and narrows the spread of design quality. It did **not** compound over
+successive changes ([`bp5`](bp5-ledger-compounding/results.md), [`bp2`](bp2-inventory-haiku/results.md)).
+*(These runs counted reopens; read under the corrected measure they describe a spread of design scores, the
+same finding in the right currency — [`REEVALUATION.md`](REEVALUATION.md).)*
+
+**There is no correctness gap to close at pilot scale.** No-method builds made no errors on clear specs (0/12,
+[`bp10`](bp10-correctness-baserate/results.md)), nor on a deliberately designed interaction corner (0/6,
+[`bp11`](bp11-interaction-corner/results.md)).
+
+**Method changes tested and not adopted:** an input-space table ([`i1`](i1-input-space-table/results.md),
+[`i4`](i4-table-unstated-corner/results.md)) and a falsification review pass
+([`i2`](i2-falsification-review/results.md)) — the shipped method already did what each added. A change to
+measurement policy ([`i3`](i3-outcome-first/validation.md)) was shipped and then retracted — see below.
+
+# Goal 2 — knowledge that is not in the code
+
+**A record holds a declared intent the code cannot, and that intent is acted on.** A change request
+contradicted a non-goal filed by aims ("no targeting on a time window"). All three agents holding the records
+caught the contradiction and reconciled it; none of the three with the code alone did, or could — the non-goal
+existed nowhere but the record ([`bp19`](bp19-aims-filed-records/results.md)). The 3/3 is partly
+instruction-following; the **0/3** is the half no instruction explains.
+
+**On small code a record does not change the design.** In the same run all six agents built the same class
+hierarchy, with records or without. At that scale a strong model recovers a rule or convention from the code
+itself; what it cannot recover is what is *absent* from the code, which is exactly what a non-goal is.
+
+**Most of what a design session learns belongs in the code, not in a record.** 62% of a companion aims filed
+before the rule existed restated its own docstrings. With the code-first gate an agent dropped 8/8 items the
+code already carried and kept 6/6 it could not, matching a prediction registered before the run
+([`bp21`](bp21-code-first-gate/results.md)). → `decisions/0022`.
+
+**The rule, stated plainly.** Discussions and decisions not evident from the code itself go in a `.md` file next
+to what they are about — beside the file, in the module's folder, or at the project root if they concern the
+whole project; everything else belongs in the code's own documentation. → `decisions/0026`. Running that rule on
+the campaign's own work declined 10 of 14 items as already carried and found four real defects in the guidance
+([`bp22`](bp22-gate-on-itself/results.md)).
+
+# What changed in the method
+
+| change | why |
+|---|---|
+| `0020` — the type-switch / anemic-model pattern named as a review gap | the review caught it 4/4 where the prompt did not |
+| `0021` — a design comparison leads with the rubric scored from the code; tests are a floor | tests and proxies both failed to separate designs the rubric separated |
+| `0022` — a record holds only what the code cannot | 62% restatement before; 0% with the gate, nothing valuable lost |
+| `0023` — the single-root-file alternative is open, not rejected | the run that seemed to decide it was invalid |
+| `0025` — cross-cutting learning goes in the root record it concerns | supersedes `0024`, which claimed a gap that does not exist |
+| `0026` — a record sits beside a file, a folder, or at the root | knowledge true of one folder had no home |
+
+# Retracted during the campaign
+
+- **`0019` / `i3`** — leading a design comparison with behavioural proxies. It demoted the rubric beneath
+  measures that `bp13` then showed to be gameable. Superseded by `0021`.
+- **Six record-layer runs** (`i5`, `bp15`, `bp15b`, `bp16`, `bp16b`, `bp17`) and **`bp18`**'s conclusion. The
+  records in them were written by hand to a model aims never had, so they tested that construction, not aims
+  ([`AUDIT-record-layer-claims.md`](AUDIT-record-layer-claims.md)).
+- **`0024`** — a claimed gap in the record format. There was none.
+
+# Cost
+
+≈**1.85–2.34× tokens** against a no-method build across the campaign's two measurements
+([`bp1`](bp1-inventory/results.md), [`bp12`](bp12-cost/results.md)); wall-clock 3.7–12×, worst on small tasks,
+where aims' fixed overhead dominates. The paper's own study measured 2.5–3×. aims pays that on every build to
+avoid a structural shortcut on the minority where one would be taken — the mixed-tier trade the method is
+built around: a cheap Worker plus a competent review.
+
+# What is still open
+
+1. **Does aims produce better design at a scale where the right design is not obvious?** Every task here was
+   small enough for a strong model to converge unaided. This is aims' central claim, and it is untested.
+2. **Does a record stop a fresh session re-deriving**, on code large enough that the pattern is not visible?
+   `bp19` showed a contradiction being *caught*; this other half is untested.
+3. **Are per-file companions worth their cost over one root file?** Given that most knowledge now belongs in
+   the code, what remains for records is rare — which is the premise of the single-root-file proposal
+   (`0023`).
