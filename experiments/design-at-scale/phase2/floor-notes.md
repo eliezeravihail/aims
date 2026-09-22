@@ -52,3 +52,28 @@ after a plain build. D7 (single-language `--dirty`, INFO): unchanged in eight; a
 single-language sites by choice, so it changed there.
 
 **By condition:** A 2 of 3 CLEAR; B 0 of 3; C 1 of 3. The floor enters no verdict.
+
+## Stage 3 — `stage1_probe.py` (regression) and `stage3_probe.py`, all nine arms
+
+**A correction to `stage3_probe.py`, made after the first stage-3 results — disclosed.** E3 allows a link to another
+language's exported file (the reader chooses the file), but it compared the file name after dropping only a `#`
+fragment, not a `?` query. b2 and c2 link to sibling files with a query (`fr.html?chosen-language#…`,
+`probe.en.html?lang=en`) — exactly the links the allowance meant to admit — and failed E3 on them alone. The name is
+now compared without the query. The change only widens the allowance, so it cannot turn a passing arm into a failing
+one; it turns b2 and c2 from BLOCKED to CLEAR, and changes no other arm.
+
+| arm | condition | stage-1 regression | stage-3 probes | floor | before the correction | browser-language detection in the export (INFO) | network resources in the export (INFO) |
+|---|---|---|---|---|---|---|---|
+| a1 | A | 12/12 | 7/7 | CLEAR | same | none | none |
+| a2 | A | 12/12 | 7/7 | CLEAR | same | none | none |
+| a3 | A | 12/12 | 7/7 | CLEAR | same | none | none |
+| b1 | B | 12/12 | 7/7 | CLEAR | same | none | none |
+| b2 | B | 12/12 | 7/7 | CLEAR | BLOCKED (E3, query on sibling links) | **en, fr, he** | 1 stylesheet (highlight.js CDN) per file |
+| b3 | B | 12/12 | 7/7 | CLEAR | same | none | none |
+| c1 | C | 12/12 | 7/7 | CLEAR | same | none | none |
+| c2 | C | 12/12 | 7/7 | CLEAR | BLOCKED (E3, query on sibling links) | **en, fr, he** | none |
+| c3 | C | 12/12 | 7/7 | CLEAR | same | **en, fr, he** | none |
+
+**All nine CLEAR at stage 3**, and every arm's `mkdocs build` output is unchanged by its export (E7). The INFO
+column confirms the goal-2 record from the code: the three arms that did not surface the conflict (b2, c2, c3) are
+exactly the three whose exported files detect the browser's language.

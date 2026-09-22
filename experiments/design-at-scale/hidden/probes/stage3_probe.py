@@ -135,7 +135,9 @@ def main(arm, prev, pristine):
     def internal_ok(t):
         p = parse(t)
         local = [(h, s) for h, s in p.anchors if h and not h.startswith(("http:", "https:", "mailto:"))
-                 and h.split("#")[0].rsplit("/", 1)[-1] not in siblings]
+                 and h.split("#")[0].split("?")[0].rsplit("/", 1)[-1] not in siblings]
+        # Correction after the first stage-3 results (phase2/floor-notes.md): a sibling-file link may carry a query
+        # string (`fr.html?lang=fr`); the file name is compared without it, as the allowance intended.
         bad = [h for h, _ in local if not h.startswith("#") or h[1:] not in p.ids]
         toc = any(h.startswith("#") and "Guide" in s for h, s in local)
         return local and not bad and toc, bad
