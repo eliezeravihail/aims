@@ -2,94 +2,61 @@
 
 Everything the loop produces worth having *next year* — **that the code itself cannot hold** — is filed as
 a record **in the code tree**. This file owns the filing decision: whether a thing belongs in a record at
-all, which of the two homes it goes in, and who files it when. The *shape* of a record — frontmatter, the
+all, where it goes, and who files it when. The *shape* of a record — frontmatter, the
 three sections, how the anchor is derived — is `../../../knowledge/format.md`; fill-in skeletons are in
 `assets/record-templates.md`.
 
-## The rule — one rule, and everything below is it applied
+## Where knowledge goes
 
-**Knowledge goes to the narrowest thing it is true of.** That is the whole method. A reader looks where
-they already are, so knowledge waits there; a filer's only question is *what is this true of?* — and the
-answer is the address.
+**Write it next to what it is about.** That is the whole idea; everything else here is it applied.
 
-| true of… | goes… | anchored? |
-|---|---|---|
-| one line | a **comment** right there | — |
-| one function | its **name**, **signature**, **docstring**, or a **test** | — |
-| one file | its **companion**, `<file>.md` beside it | yes, to that file |
-| one directory / package | a record **beside the directory**, `<dir>.md` | no — a directory has no single content |
-| one dependency | `dependencies.md` — it is true of the library, not of whoever calls it | no |
-| the whole project | the **root record it concerns** — `goals.md`, `architecture.md`, `dependencies.md`, an ADR | no |
+Someone will need this knowledge while they are looking at something — a line, a file, a folder, the
+project as a whole. Put it there and they meet it without going to look for it. Put it anywhere else and
+they don't, and it might as well not exist.
 
-**The ladder ranges only over what the code cannot carry.** Run the *first gate* below before reading the
-table at all: it decides whether this is knowledge for a record or for the code, and the ladder then places
-what survives. An external reason — a library's defect, a contract, an incident — does not exempt a fact
-from the gate; if a comment at the line can state it, that is where it goes, and only what the comment
-cannot say (an alternative weighed, a fix attempted and failed) reaches a record.
+Two things follow.
 
-Two consequences do all the work, and they are the two halves of the same rule:
+**Say it in the code whenever the code can say it.** A name, a signature, a comment at the line, a guard, a
+test — these sit closer to the thing than any record can, and they are read by people who never open a
+record. So a record is not the default home for what you learned; it is what you write when the code has no
+way to say it.
 
-- **Narrower wins.** If a docstring is the narrowest true home, a companion is the wrong one — that is the
-  *first gate* below, and it is the case that disposes of most candidates.
-- **Wider is wrong too.** A fact true of six parsers and nothing else is not an `architecture.md` invariant;
-  filing it there claims the whole system obeys it. It goes beside `src/parsers/`, as `src/parsers.md`.
+**Otherwise write it beside the thing it is about.** About one file → a companion next to that file. About a
+folder → a record next to that folder. About the project → the root record that concerns it. About a
+library → with the library, however many files call it. About something you deleted → wherever its job went.
 
-**A thing that no longer exists is not an address.** Knowledge about something deleted goes to the narrowest
-thing that now holds its responsibility — the file or directory that took it over — and to the project only
-if nothing did. Never file a companion for a removed file: with no sibling to anchor to it is an orphan, which
-the hook reports as a fault, not a home.
+Nothing here needs classifying or counting. Ask what the knowledge is about, and go there.
 
-**Scope is continuous, not two-valued.** There is no rule that knowledge must be about exactly one file or
-about everything; "count the files it binds" below is a way of *finding* the narrowest true scope, not a
-choice between two homes.
+## What only a record can hold
 
-## First gate — does it belong in the **code** instead?
+The code can describe what is, and nothing else. A record is for what is **not** there, which is why nothing
+in the code asserts it:
 
-**A record is for knowledge the code cannot carry.** Most of what a design session produces *can* be
-carried by the code, and is worth more there — beside the thing it describes, where a reader already is.
-So before filing anything, ask where it is most useful to someone who has the file open:
-
-| if it is… | it belongs in… |
-|---|---|
-| what the code does now | the **docstring** |
-| why *this particular line* is surprising | a **comment right there** |
-| an invariant you can make unbreakable | the **signature, the type, a private field, a guard** |
-| a behaviour worth guaranteeing | a **test** |
-| a concept | a **name** |
-
-Only what survives that gate is a record — and all of it shares one property: **nothing in the code
-asserts it.**
-
-- **Why a considered alternative was rejected** — the road not taken leaves no trace in the code.
-- **A non-goal, or a boundary declared deliberately** — an absence leaves nothing to read. (This is the
+- why an alternative was **rejected** — the road not taken leaves no trace;
+- a **non-goal**, or a boundary you declared deliberately — an absence leaves nothing to read (this is the
   one category measured to be unrecoverable from code alone:
-  `../../../experiments/improve-2026-09/bp19-aims-filed-records/`.)
-- **What was tried and failed**, and the symptom that made it fail.
-- **An assumption the file rests on that was never proven** — stated *as* unproven.
-- **The context a decision was taken in, when that context has since gone** — an incident, an external
-  consumer, a contract, a constraint that expired.
-- **The history** — what a superseded decision was, and why it no longer holds.
+  `../../../experiments/improve-2026-09/bp19-aims-filed-records/`);
+- what you **tried and it failed**, and the symptom that killed it;
+- an **assumption the work rests on that was never proved** — said as unproved;
+- the **reason behind a decision once that reason is gone** — an incident, a consumer, a constraint that expired;
+- the **history** — what a superseded decision was, and why it no longer holds.
 
-**The test, in one line: if you could delete the entry, write it as a docstring, and lose nothing, then it
-was a docstring.**
+**The test, in one line: if you could delete the entry, write it in the code, and lose nothing, then it
+belonged in the code.** That disposes of most candidates. It applies to a fact with an external cause too —
+a library's defect, a contract, an incident: if a comment at the line states it, that is where it goes, and
+only what the comment cannot say reaches a record. And "the code says it" means a reader would meet it — in
+a name, a guard, a test, or a convention every instance already follows — not that something enforces it.
 
-**"The code carries it" means a reader would meet it** — in a name, a signature, a guard, a test, or a
-convention every instance already follows. It does not require the code to *enforce* it. A convention the
-code exhibits everywhere is carried; what is not carried is *why* it is that way and what it rules out, and
-only that reaches a record.
+**When the product is prose** (a method, a spec, guidance — this repo included), "the code" is the shipped
+text, and the question reads: *could the file simply say it?* Usually yes. What survives is what a text
+cannot assert about itself — how it was misread, what it deliberately leaves out.
 
-**When the product *is* prose** (a method, a spec, guidance — this repo included), "the code" is the shipped
-text, and the gate reads: *could the file itself simply say it?* Usually yes, and then it belongs in the file.
-What survives is what a text cannot assert about itself — how it was misread, what it deliberately leaves out,
-an alternative wording weighed and dropped.
+**Why this is a rule and not a preference.** A record that restates the code is **duplicate state**, and the
+only part of a record that can go wrong on its own: the code changes, the restatement is now false, and the
+anchor merely **flags** the drift — nothing repairs it. What the code cannot hold has no such failure mode,
+because nothing else asserts it. A short record of things the code cannot say is worth more than a long one
+that narrates it.
 
-**Why this is a rule and not a preference.** A record that restates the design is **duplicate state**, and
-it is the only part of a record that can *go wrong on its own*: the code changes, the restatement is now
-false, and the anchor merely **flags** the drift — nothing repairs it. Knowledge the code cannot hold has
-no such failure mode, because nothing else asserts it. Every restated line you file buys drift and pays
-nothing. A short companion of things the code cannot say is worth more than a long one that narrates it.
-
-The homes below are that ladder, written out.
 
 ## File-level → a companion beside a source file that has earned one
 
@@ -116,12 +83,11 @@ location, `knowledge/anchor.py`. This line owns the invocation — everywhere el
 
 A fact true of every file in `src/parsers/` and of nothing else goes in `src/parsers.md`, beside the
 directory it describes — same three sections. It takes **no anchor**: a directory has no single content to
-hash, so the tool files it as a system record, which is correct. Reach for this exactly when the narrowest
-true scope is a package: not a fact about one file that several happen to share, and not a fact the rest of
-the system obeys too.
+hash, so the tool files it as a system record, which is correct.
 
-Copying the same note into six companions, or promoting it to `architecture.md`, are the two ways of getting
-this wrong — one understates the scope, the other overstates it.
+This is for a fact that is genuinely about the folder — not one about a single file that the others happen
+to share, and not one the rest of the system obeys too. Copying the same note into six companions says too
+little; putting it in `architecture.md` says too much.
 
 ## Project-level → a record at the repo root
 
@@ -145,29 +111,27 @@ it corrects the record beside it rather than replacing it. Read literally as "a 
 alternatives", the table above would leave these unfilable; in practice they are the reason several of this
 repo's own ADRs exist.
 
-## The split, sharply
+## In short
 
-- **Could the code carry it?** → put it there (see *First gate* above) and file nothing. This question
-  comes first and disposes of most candidates; most files never earn a companion at all.
-- Is the knowledge **about one file**? → its companion, in the right section.
-- Is it **cross-cutting**? → the matching root record.
-- Is it true of a **dependency** rather than of your code? → `dependencies.md`. A file that merely guards
-  against a library's defect is not what the defect is true of; counting callers would misaddress it.
-- Otherwise, unclear? **Count the files it binds** — this finds the narrowest true scope. One file → its companion,
-  *even if the reason is system-wide* (an external consumer, a contract, an incident) — an external
-  justification does not widen what the knowledge is true of. One directory → beside that directory. The
-  whole system → the root record it concerns.
+Ask what the knowledge is about, and go there.
 
-**Cross-cutting learning goes in the root record it concerns** — an insight about what the project is for
-or what the evidence supports belongs in `goals.md`; one about the system's shape belongs in
-`architecture.md`. There is no separate root "Insights" record and none is needed: the three headings of a
-companion describe *a companion*, not a shape the root level has to repeat.
+- Can the code say it? Then it goes in the code, and you file nothing. Most candidates end here, and most
+  files never earn a companion.
+- About one file → that file's companion. An external reason for it — a consumer, a contract, an incident —
+  does not change what it is about.
+- About a folder → a record beside the folder. Not copied into each file's companion, which understates it,
+  and not raised to `architecture.md`, which claims the whole system obeys it.
+- About a library → `dependencies.md`. A file that merely guards against a library's defect is not what the
+  defect is about.
+- About the project → the root record that concerns it: what it is for and what its evidence supports →
+  `goals.md`; its shape → `architecture.md`; a decision, correction or finding → an ADR. There is no
+  separate root "Insights" file and none is needed — a companion has three headings because it holds
+  everything about one file; a root record is already about its subject.
+- About something you deleted → wherever its job went. Never a companion for a removed file: with nothing
+  to sit beside, it is an orphan the hook reports as a fault.
 
-Do not put a file-level insight at the root, and do not scatter a system-wide decision across file
-companions. A would-be file-level insight that concerns *several* files at once belongs at their narrowest common
-scope — their directory if that is what it is true of, a root record if the whole system obeys it — and it
-may also be a signal that those files share a responsibility wanting its own home (an add-feature
-objective). What it is never is a note copied into many companions.
+Several files sharing one insight can also be a signal that they share a responsibility wanting its own
+home — an add-feature objective, not a record.
 
 ## Who files, and when
 

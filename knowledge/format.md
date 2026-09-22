@@ -13,8 +13,8 @@ This file defines **what a record looks like** and how its anchor is derived —
 > *cannot* — anything a docstring, a comment, a name, a signature or a test could carry belongs there
 > instead, and the shape described here is no licence to fill a section that has nothing of that kind in it.
 
-A record's address is the **narrowest thing its knowledge is true of** — one file, one directory, or the
-project (`skills/aims-guide/references/design-record.md` owns that decision). The shapes below follow that:
+A record sits **next to what it is about** — a file, a folder, or the project
+(`skills/aims-guide/references/design-record.md` owns that decision). The shapes below follow from that:
 
 ## 1. A file companion — `<file>.md` beside `<file>`
 

@@ -309,8 +309,13 @@ Append-only. Each entry: timestamp · what happened · next.
   it unanchored, which is correct. The text was behind the tool.)
   **Fix:** state the one rule — *knowledge goes to the narrowest thing it is true of* — as a ladder (line →
   function → file → directory → dependency → project), with the tables demoted to illustrations of it.
-  Added the directory record, the gate-runs-first ordering, "a thing that no longer exists is not an
-  address" (it goes to what took over its responsibility), and widened `dependencies.md` from "confined,
-  replaceable deps" to what is *known* about a dependency. **After: 6/8 determined**, then two more
-  one-line clarifications from the same rule (a dependency is an address; "the code carries it" means a
-  reader meets it, not that a guard enforces it). Those last two are unmeasured.
+  Added the directory record, the gate-runs-first ordering, knowledge about something deleted going to
+  whatever took over its job, and widened `dependencies.md` from "confined, replaceable deps" to what is
+  *known* about a dependency. **After: 6/8 determined**, then two more clarifications from the same idea
+  (a library is what its own defect is about; "the code says it" means a reader would meet it, not that
+  something enforces it). Those last two are unmeasured.
+  **Then cut the scaffolding.** The first pass stated the idea but wrapped it in machinery — a scope
+  ladder with an "anchored?" column, "count the files it binds", "narrowest true scope". That is the same
+  failure the guidance had before, in a new shape: a procedure to execute instead of an idea to
+  understand. Rewritten as prose: *write it next to what it is about*, then say the code first whenever
+  the code can say it, then the homes. No counting, no ladder. `design-record.md` 174 → 153 lines.
