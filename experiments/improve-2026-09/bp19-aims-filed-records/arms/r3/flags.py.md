@@ -1,7 +1,7 @@
 ---
 title: "flags.py"
 date: 2026-09-22
-hash: "sha256:1982f621c2599fc41b35fc3917545f91be7518a97c56c43ac43fa8ce3d81712d"
+hash: "sha256:7bc2521a875b84beff2ab3e8ad362d7b849c6c706bb470fe5f26f4fbdf01341b"
 ---
 
 ## Insights

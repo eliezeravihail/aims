@@ -319,6 +319,74 @@ Part 2 confirms the verdict predicted real future cost (the reopen when a new ru
 a **design-quality edge the review surfaces and functional tests are structurally blind to** — flexibility to
 the foreseeable change — not a test-pass edge (there is none to have).
 
+# Round 16: BP14 — the correct instrument, demonstrated; and the measurement correction (I3 → `decisions/0021`)
+
+The campaign had drifted into measuring **test-pass and behavioral change-proxies**. That is the wrong
+currency: any capable model makes the tests pass, whatever the design, and tests can be worked around.
+**Design quality is scored against the §0–§14 rubric, from the code.** aims *is* that rubric — it was the
+instrument from the project's first experiments — and the drift lost it.
+
+- **BP14 (`bp14-design-rubric/`)** put the number on it: two designs passing the **identical** test suite
+  scored **43 vs 16** blind on a code-grounded §0–§14 scoring. Tests never separated them; the rubric did,
+  decisively.
+- **BP13 part 1** had already shown the proxy side is **gameable** (a 3-line seam edit, 0 reopened owners,
+  textbook `isinstance` chain left in place — fewer edits *and* worse design).
+
+So **I3 (`decisions/0019`) was itself a regression**: it demoted §0–§14 beneath a correctness-trap gate,
+reopened-owner count, and edit locality. `decisions/0021` supersedes it — a comparison leads with the
+code-grounded §0–§14 grade; **a correctness gate is a floor only (passing earns nothing)**; behavioral
+facts are weak corroboration. The one good idea in I3, the **disjoint-vocabulary judge**, is kept and
+re-pointed: it scores the design **against §0–§14 from code properties**, which is what produced the 43-vs-16
+separation. Every prior attempt of value is re-checked against the correct measure in
+[`REEVALUATION.md`](REEVALUATION.md) — I6 holds; BP9 was always a rubric measurement; BP6/BP7 re-read as a
+**distribution of design-rubric scores**, which is the same variance-reduction finding stated in the right
+currency; the design-only nulls stay null.
+
+# Round 17: the record-layer retraction — six experiments tested my construction, not aims
+
+[`AUDIT-record-layer-claims.md`](AUDIT-record-layer-claims.md) splits every record-layer conclusion by **who
+authored the records**. In I5, BP15, BP15b, BP16, BP16b, BP17 **I wrote the records by hand**, having never
+read [`design-record.md`](../../skills/aims-guide/references/design-record.md) — and I wrote them wrong,
+inventing a per-file record model the method never had. Those six tested my invention.
+
+- Agent-filed record work (BP1, BP2, BP5, BP7, BP12) stands.
+- **"Records raise the design floor" is withdrawn**; the BP18 conclusion is withdrawn in place.
+- "The record layer is unproven" is restated as **UNTESTED** — a different and worse status.
+
+The root cause was in the shipped documentation, not only in me: `format.md`'s heading read "a companion
+beside **each source file**" with "most files never need one" buried in a parenthetical, `design-record.md`
+kept its qualifier in the last section, and `CLAUDE.md` dropped it entirely. All three are fixed, and the
+filing decision now has **one owner** (`design-record.md` decides *which home*; `format.md` owns only the
+*shape*), with a **"count the files it binds"** discriminator for the file-vs-system call.
+
+# Round 18: BP19 — the first properly-constructed record-layer test, and the campaign's first non-null
+
+[`bp19-aims-filed-records/`](bp19-aims-filed-records/) is the first test in which **aims filed the records**
+(the real skill, on a real build, 117 lines across `goals.md` / `base-dependencies.md` / one ADR / one earned
+companion — and an explicit, cited decision *not* to create `architecture.md`). Six blind arms, n = 3 with
+records and n = 3 without, made the same non-elementary change (a `ScheduledRollout` rule kind + an explicit
+`now` parameter). All six clear the floor (29/29 on the original suite); per `0021` that earns nothing.
+
+- **Design rubric — directional, not evidence.** Blind totals: records **40 / 38 / 36** (mean 38.0) vs no
+  records **36 / 36 / 29** (mean 33.7). The whole gap is one arm; drop it and the groups are
+  indistinguishable at n = 3. Consistent with the **floor-raising / variance-cutting** shape BP6/BP7 found,
+  but it does not establish it, and no mechanism ties it to the records.
+- **The clean finding — 3/3 vs 0/3.** The filed `goals.md` carried the non-goal *"no targeting on … time
+  window"*, which the change request **contradicts**. **All three records arms detected the contradiction and
+  amended the record**, each in its own words, narrowing the non-goal to "time enters only as a schedule of
+  the rollout percentage, never as a targeting condition" — and all three amended the companion and re-stamped
+  its anchor. **Zero of three blind arms did, and none could**: the non-goal exists nowhere but the record.
+
+**What this is, precisely.** Not "records produce better code" — that stays unproven. It is that a record can
+hold a **declared intent** the code cannot, so a change that contradicts the project's stated intent is
+*visible* and gets reconciled instead of drifting silently. **Neither the tests nor the §0–§14 rubric can see
+it**: a design can score full marks while quietly breaking what the project said it would not do. That is a
+category of value distinct from design quality, and it is the campaign's first non-null.
+
+It also **corroborates** the earlier nulls instead of overturning them: six confounds showed a *rule or
+convention* is recoverable from a well-formed codebase. A **non-goal** is exactly what is not — it is the
+absence of code, and absence leaves no trace to recover.
+
 # Honest limits / future work
 
 - **A concrete, motivated improvement candidate surfaced by BP9 (not yet shipped, by discipline):** the
@@ -330,11 +398,18 @@ the foreseeable change — not a test-pass edge (there is none to have).
   over-blocking correct-but-simple code; it needs a blind A/B showing it catches real reopens without false
   positives).
 
-- The input-space-table question is closed (null on 3 products); the record-layer question is **not** cleanly
-  answered (I5's null is confounded by an in-code precedent). What remains, and needs a heavier **build-pilot**
-  setup rather than a design-only or single-module A/B: aims' **cost** (2.5–3× — the paper's main downside),
-  and the **record layer at a scale where the pattern is not visible in the code** (the paper's stated
-  frontier). These are a dedicated run, not a rushed appendix to this one.
+- The input-space-table question is closed (null on 3 products). The record layer is **partly** answered:
+  BP19 establishes the **declared-intent** value (3/3 vs 0/3 on a non-goal the change contradicted) and leaves
+  the **design-quality** claim unproven (n = 3, one outlier, no mechanism). Everything I5/BP15–BP18 appeared
+  to say about it is **withdrawn** — those records were hand-written by me, not filed by aims
+  (`AUDIT-record-layer-claims.md`). What remains needs a heavier **build-pilot** setup: aims' **cost**
+  (2.5–3× — the paper's main downside), and the record layer **at a scale where the pattern is not visible in
+  the code** (the paper's stated frontier). BP19 wants replication with the control it lacks — an arm given
+  117 lines of *irrelevant* prose — before "records raise the design floor" may be said again.
 - I2 is n=1 on one seed; a second seeded product could still surface value, but on the evidence it is a null.
-- I3 changes measurement *policy* from the record; it is validated by discrimination, not by a fresh blind
-  run, and keeps both readings so it is fully reversible.
+- **I3 is retracted, not merely qualified.** It changed measurement *policy* from the record, and the policy
+  it chose was wrong: it demoted the §0–§14 rubric beneath behavioral proxies that this run's own later data
+  (BP13 part 1) proved gameable. `decisions/0021` supersedes `0019` and restores the code-grounded rubric as
+  the lead. The lesson generalizes past I3 — **a measurement change is a method change and needs the same
+  evidential bar as any other**, and "the instrument ceilings" is a reason to score it more honestly, never a
+  licence to leave it.

@@ -187,3 +187,34 @@ Append-only. Each entry: timestamp · what happened · next.
   surfaces on the design's weak axis; and aims' review names that axis in advance (BP9 flagged these exact
   builds from code alone, tests green). bp13-design-under-surprise/results.md. Also reframed SYNTHESIS: test-pass
   demoted to a gate; design-shape + review verdict are the outcome.
+
+- **2026-09-21 — BP14 + the MEASUREMENT CORRECTION (round 16).** Scored two identical-passing designs blind
+  against a code-grounded §0–§14 rubric: **43 vs 16**. Tests never separated them. With BP13 part 1 (the
+  behavioral proxy is gameable), this shows **I3 / `decisions/0019` was itself a regression** — it demoted
+  §0–§14 beneath a correctness-trap gate, reopened-owner count and edit locality. Shipped
+  `decisions/0021` (supersedes 0019): a comparison **leads with the code-grounded §0–§14 grade**; a
+  correctness gate is a **floor only** (passing earns nothing); behavioral facts are weak corroboration. Kept
+  the disjoint-vocabulary judge, re-pointed to score §0–§14 from code properties. Rewrote
+  `references/measurement.md` "Comparing designs"; re-checked every prior attempt in `REEVALUATION.md`
+  (I6 holds; BP9 was always a rubric measurement; BP6/BP7 re-read as a design-rubric distribution).
+
+- **2026-09-21 — RECORD-LAYER RETRACTION (round 17).** `AUDIT-record-layer-claims.md`: in I5, BP15, BP15b,
+  BP16, BP16b, BP17 **I hand-wrote the records without ever reading `design-record.md`**, and wrote them wrong
+  (invented a per-file record model aims never had). Those six tested my construction, not aims.
+  **"Records raise the design floor" WITHDRAWN**; BP18's conclusion withdrawn in place; "the record layer is
+  unproven" restated as **UNTESTED**. Root cause was partly the shipped docs: fixed `format.md` (owns the
+  *shape* only), `design-record.md` (owns the *filing decision*, "most files never get a companion" moved to
+  the top, added the **"count the files it binds"** discriminator) and `CLAUDE.md`.
+
+- **2026-09-22 — BP19 COMPLETE (round 18, the first NON-NULL).** First record-layer test where **aims filed
+  the records** (real skill, 117 lines: goals / base-dependencies / one ADR / one earned companion, plus a
+  cited decision *not* to create architecture.md). Six blind arms (3 with records, 3 without) made the same
+  non-elementary change. Floor: all six 29/29 on the original suite (earns nothing, per 0021).
+  **Rubric — directional only:** records 40/38/36 (mean 38.0) vs none 36/36/29 (mean 33.7); the whole gap is
+  one arm, indistinguishable at n=3, no mechanism shown. **Clean finding — 3/3 vs 0/3:** the change request
+  contradicted the filed non-goal *"no targeting on … time window"*; all three records arms detected it and
+  amended `goals.md` (and the companion, re-stamping its anchor); zero blind arms did, and none could — the
+  non-goal exists nowhere but the record. **The value is declared intent, not code quality**: neither tests nor
+  the §0–§14 rubric can see a design that scores full marks while breaking what the project said it would not
+  do. Corroborates the earlier nulls (a *rule* is recoverable from good code; a *non-goal* is the absence of
+  code and leaves no trace). bp19-aims-filed-records/results.md.
