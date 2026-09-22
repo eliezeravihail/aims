@@ -16,11 +16,16 @@ stated, not spread across call sites.
 - **Early access** — named users get the feature regardless of the rollout.
 - **Damage control** — a named user is taken off the feature even though the rollout (up to 100%)
   covers them.
+- **A scheduled ramp** — the rollout widens on a clock, from one percentage to another over a
+  stated window, without anyone redeploying a rule mid-ramp; a user picked up by the ramp keeps
+  the feature as it widens.
 - **An unconfigured flag** — code asks about a flag no rule mentions and gets a safe *off*.
 
 ## Non-goals
 - No storage, configuration format, remote fetch, or hot reload — rules are handed in by the caller.
-- No targeting on anything but the user id (no country, plan, device, or time window).
+- No targeting on anything but the user id and the clock (no country, plan, or device). The clock
+  enters only as the instant a question is asked about — `is_enabled(flag, user_id, now=None)` —
+  and only a scheduled ramp reads it.
 - No multivariate flags or variants: the answer is on/off.
 - No exposure logging, metrics, or audit trail.
 - No external dependencies.

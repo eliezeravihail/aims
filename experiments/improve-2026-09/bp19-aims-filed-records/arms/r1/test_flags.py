@@ -6,8 +6,9 @@ import subprocess
 import sys
 import unittest
 from pathlib import Path
+from unittest import mock
 
-from flags import AllowList, BlockList, Percentage, Resolver
+from flags import AllowList, BlockList, Percentage, Resolver, ScheduledRollout
 
 
 class DefaultOff(unittest.TestCase):
@@ -127,6 +128,168 @@ class PercentageBuckets(unittest.TestCase):
                 self.assertTrue(large.is_enabled("search", user_id), user_id)
 
 
+class ScheduledRamp(unittest.TestCase):
+    # An arbitrary window of 1_000 seconds, so "before", "inside" and "after" are easy to name.
+    START, END = 1_700_000_000, 1_700_001_000
+
+    def _ramp(self, start_percent=0, end_percent=100):
+        return Resolver(
+            [ScheduledRollout("search", start_percent, end_percent, self.START, self.END)]
+        )
+
+    def _count_on(self, resolver, now, count=2_000):
+        return sum(resolver.is_enabled("search", f"user-{i}", now=now) for i in range(count))
+
+    def test_before_the_window_it_is_the_start_percentage(self):
+        resolver = self._ramp(0, 100)
+        self.assertEqual(self._count_on(resolver, self.START - 1), 0)
+        self.assertEqual(self._count_on(resolver, 0), 0)
+
+    def test_the_window_is_half_open_so_it_opens_at_the_start_percentage(self):
+        self.assertEqual(self._count_on(self._ramp(0, 100), self.START), 0)
+
+    def test_from_end_at_on_it_is_the_end_percentage(self):
+        resolver = self._ramp(0, 100)
+        self.assertEqual(self._count_on(resolver, self.END), 2_000)
+        self.assertEqual(self._count_on(resolver, self.END + 10_000_000), 2_000)
+
+    def test_the_middle_of_the_window_is_the_middle_of_the_ramp(self):
+        on = self._count_on(self._ramp(0, 100), self.START + 500)
+        self.assertLess(abs(on - 1_000), 100, on)
+
+    def test_the_ramp_is_linear_across_the_window(self):
+        resolver = self._ramp(0, 100)
+        for tenths in range(1, 10):
+            now = self.START + 100 * tenths
+            on = self._count_on(resolver, now, 5_000)
+            self.assertLess(abs(on - 500 * tenths), 200, (tenths, on))
+
+    def test_a_ramp_hands_out_the_same_cohort_as_a_fixed_percentage_of_that_size(self):
+        # The ramp reads the same buckets, so where it stands at 25% it has exactly the users a
+        # Percentage(25) has — a flag can be moved from one rule to the other without churn.
+        ramp = self._ramp(0, 100)
+        fixed = Resolver([Percentage("search", 25)])
+        a_quarter_in = self.START + 250
+        for i in range(500):
+            user_id = f"user-{i}"
+            self.assertEqual(
+                ramp.is_enabled("search", user_id, now=a_quarter_in),
+                fixed.is_enabled("search", user_id),
+                user_id,
+            )
+
+    def test_a_rising_ramp_only_ever_adds_users(self):
+        # Monotonicity over time: the guarantee widening a Percentage gives, now across a window.
+        resolver = self._ramp(10, 90)
+        for i in range(500):
+            user_id = f"user-{i}"
+            was_on = False
+            for now in range(self.START - 50, self.END + 50, 25):
+                on = resolver.is_enabled("search", user_id, now=now)
+                self.assertFalse(was_on and not on, (user_id, now))
+                was_on = was_on or on
+
+    def test_a_falling_ramp_only_ever_removes_users(self):
+        resolver = self._ramp(100, 0)
+        for i in range(500):
+            user_id = f"user-{i}"
+            was_off = False
+            for now in range(self.START - 50, self.END + 50, 25):
+                on = resolver.is_enabled("search", user_id, now=now)
+                self.assertFalse(was_off and on, (user_id, now))
+                was_off = was_off or not on
+
+    def test_the_same_instant_always_gives_the_same_answer(self):
+        resolver = self._ramp(0, 100)
+        mid = self.START + 333
+        first = [resolver.is_enabled("search", f"u{i}", now=mid) for i in range(200)]
+        second = [resolver.is_enabled("search", f"u{i}", now=mid) for i in range(200)]
+        self.assertEqual(first, second)
+
+    def test_an_empty_window_is_a_clean_step(self):
+        resolver = Resolver([ScheduledRollout("search", 0, 100, self.START, self.START)])
+        self.assertFalse(resolver.is_enabled("search", "u1", now=self.START - 1))
+        self.assertTrue(resolver.is_enabled("search", "u1", now=self.START))
+
+    def test_a_flat_ramp_is_just_a_percentage(self):
+        flat = Resolver([ScheduledRollout("search", 40, 40, self.START, self.END)])
+        fixed = Resolver([Percentage("search", 40)])
+        for i in range(300):
+            user_id = f"user-{i}"
+            self.assertEqual(
+                flat.is_enabled("search", user_id, now=self.START + 500),
+                fixed.is_enabled("search", user_id),
+                user_id,
+            )
+
+    def test_a_ramp_does_not_speak_about_other_flags(self):
+        resolver = self._ramp(0, 100)
+        self.assertFalse(resolver.is_enabled("billing", "u1", now=self.END))
+
+    def test_a_ramp_speaks_with_rollout_authority_so_the_lists_still_win(self):
+        blocked = Resolver(
+            [
+                ScheduledRollout("search", 100, 100, self.START, self.END),
+                BlockList("search", ["u1"]),
+            ]
+        )
+        self.assertFalse(blocked.is_enabled("search", "u1", now=self.END))
+        self.assertTrue(blocked.is_enabled("search", "u2", now=self.END))
+
+        allowed = Resolver(
+            [
+                ScheduledRollout("search", 0, 0, self.START, self.END),
+                AllowList("search", ["u1"]),
+            ]
+        )
+        self.assertTrue(allowed.is_enabled("search", "u1", now=self.END))
+        self.assertFalse(allowed.is_enabled("search", "u2", now=self.END))
+
+    def test_two_ramps_on_one_flag_resolve_restrictively(self):
+        # Same authority, so "off" wins, exactly as it does for two Percentage rules. Mirrored
+        # ramps disagree at every instant in the window, and both are asked about that one
+        # instant, so the answer is the intersection of the two cohorts.
+        rising = ScheduledRollout("search", 0, 100, self.START, self.END)
+        falling = ScheduledRollout("search", 100, 0, self.START, self.END)
+        both = Resolver([rising, falling])
+        for now in range(self.START, self.END, 100):
+            for i in range(50):
+                user_id = f"user-{i}"
+                in_both = Resolver([rising]).is_enabled(
+                    "search", user_id, now=now
+                ) and Resolver([falling]).is_enabled("search", user_id, now=now)
+                self.assertEqual(
+                    both.is_enabled("search", user_id, now=now), in_both, (user_id, now)
+                )
+
+
+class NowDefaultsToTheClock(unittest.TestCase):
+    def test_a_window_already_past_resolves_to_the_end_percentage(self):
+        resolver = Resolver([ScheduledRollout("search", 0, 100, 1_000_000, 1_000_001)])
+        self.assertTrue(resolver.is_enabled("search", "u1"))
+
+    def test_the_clock_is_read_where_an_explicit_now_would_have_gone(self):
+        resolver = Resolver([ScheduledRollout("search", 0, 100, 1_700_000_000, 1_700_001_000)])
+        mid_window = 1_700_000_400
+        with mock.patch("flags.time.time", return_value=mid_window + 0.75):
+            from_the_clock = [resolver.is_enabled("search", f"u{i}") for i in range(200)]
+        explicit = [resolver.is_enabled("search", f"u{i}", now=mid_window) for i in range(200)]
+        self.assertEqual(from_the_clock, explicit)
+
+    def test_a_window_still_ahead_resolves_to_the_start_percentage(self):
+        far_off = 4_000_000_000
+        resolver = Resolver([ScheduledRollout("search", 0, 100, far_off, far_off + 1)])
+        self.assertFalse(resolver.is_enabled("search", "u1"))
+
+    def test_timeless_rules_give_the_same_answer_at_every_instant(self):
+        resolver = Resolver([BlockList("search", ["u1"]), Percentage("search", 100)])
+        self.assertFalse(resolver.is_enabled("search", "u1"))
+        self.assertTrue(resolver.is_enabled("search", "u2"))
+        for now in (0, 1_700_000_000, 4_000_000_000):
+            self.assertFalse(resolver.is_enabled("search", "u1", now=now), now)
+            self.assertTrue(resolver.is_enabled("search", "u2", now=now), now)
+
+
 class StableAcrossProcesses(unittest.TestCase):
     def _answers_from_a_fresh_process(self, hash_seed):
         script = (
@@ -186,6 +349,33 @@ class Validation(unittest.TestCase):
     def test_a_bare_string_of_user_ids_is_rejected(self):
         with self.assertRaises(TypeError):
             AllowList("search", "u1")
+
+    def test_both_ramp_percentages_are_range_checked_at_construction(self):
+        with self.assertRaises(ValueError):
+            ScheduledRollout("search", -1, 100, 0, 10)
+        with self.assertRaises(ValueError):
+            ScheduledRollout("search", 0, 101, 0, 10)
+
+    def test_non_integer_window_times_are_rejected(self):
+        for start_at, end_at in ((0.5, 10), (0, 10.5), ("0", 10), (True, 10)):
+            with self.assertRaises(TypeError, msg=(start_at, end_at)):
+                ScheduledRollout("search", 0, 100, start_at, end_at)
+
+    def test_a_window_that_ends_before_it_starts_is_rejected(self):
+        with self.assertRaises(ValueError):
+            ScheduledRollout("search", 0, 100, 10, 9)
+
+    def test_an_empty_window_is_accepted(self):
+        ScheduledRollout("search", 0, 100, 10, 10)
+
+    def test_a_ramp_down_is_accepted(self):
+        ScheduledRollout("search", 100, 0, 0, 10)
+
+    def test_a_non_integer_now_is_rejected(self):
+        resolver = Resolver([Percentage("search", 100)])
+        for now in (1.5, "1700000000", True):
+            with self.assertRaises(TypeError, msg=now):
+                resolver.is_enabled("search", "u1", now=now)
 
 
 if __name__ == "__main__":

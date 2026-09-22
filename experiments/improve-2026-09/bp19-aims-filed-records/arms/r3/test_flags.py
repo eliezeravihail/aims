@@ -4,10 +4,11 @@ import hashlib
 import itertools
 import subprocess
 import sys
+import time
 import unittest
 from pathlib import Path
 
-from flags import AllowList, BlockList, Percentage, Resolver
+from flags import AllowList, BlockList, Percentage, Resolver, ScheduledRollout
 
 
 class DefaultOff(unittest.TestCase):
@@ -186,6 +187,154 @@ class Validation(unittest.TestCase):
     def test_a_bare_string_of_user_ids_is_rejected(self):
         with self.assertRaises(TypeError):
             AllowList("search", "u1")
+
+    def test_a_ramp_that_ends_before_it_starts_is_rejected_at_construction(self):
+        with self.assertRaises(ValueError):
+            ScheduledRollout("search", 0, 100, 2_000, 1_000)
+
+    def test_an_empty_ramp_window_is_rejected_at_construction(self):
+        with self.assertRaises(ValueError):
+            ScheduledRollout("search", 0, 100, 1_000, 1_000)
+
+    def test_ramp_endpoints_are_validated_like_any_percentage(self):
+        with self.assertRaises(ValueError):
+            ScheduledRollout("search", -1, 100, 1_000, 2_000)
+        with self.assertRaises(ValueError):
+            ScheduledRollout("search", 0, 101, 1_000, 2_000)
+        with self.assertRaises(TypeError):
+            ScheduledRollout("search", "0", 100, 1_000, 2_000)
+
+    def test_non_integer_times_are_rejected_at_construction(self):
+        with self.assertRaises(TypeError):
+            ScheduledRollout("search", 0, 100, 1_000.5, 2_000)
+        with self.assertRaises(TypeError):
+            ScheduledRollout("search", 0, 100, 1_000, "2000")
+        with self.assertRaises(TypeError):
+            ScheduledRollout("search", 0, 100, True, 2_000)
+
+    def test_a_non_integer_now_is_rejected(self):
+        with self.assertRaises(TypeError):
+            Resolver([]).is_enabled("search", "u1", "now")
+
+
+class ScheduledRamp(unittest.TestCase):
+    START, END = 1_000_000, 1_000_600  # a ten-minute ramp, in epoch seconds
+    USERS = [f"user-{i}" for i in range(2_000)]
+
+    def _ramp(self, start_percent=0, end_percent=100):
+        return Resolver(
+            [ScheduledRollout("search", start_percent, end_percent, self.START, self.END)]
+        )
+
+    def _on_at(self, resolver, now):
+        return {u for u in self.USERS if resolver.is_enabled("search", u, now)}
+
+    def _fixed(self, percent):
+        return self._on_at(Resolver([Percentage("search", percent)]), self.START)
+
+    def test_before_the_window_it_is_the_starting_percentage(self):
+        ramp = self._ramp(10, 90)
+        self.assertEqual(self._on_at(ramp, self.START - 1), self._fixed(10))
+        self.assertEqual(self._on_at(ramp, 0), self._fixed(10))
+
+    def test_at_the_start_instant_it_is_still_the_starting_percentage(self):
+        self.assertEqual(self._on_at(self._ramp(10, 90), self.START), self._fixed(10))
+
+    def test_at_the_end_instant_it_is_already_the_ending_percentage(self):
+        # The window is half-open: end_at belongs to "after".
+        self.assertEqual(self._on_at(self._ramp(10, 90), self.END), self._fixed(90))
+
+    def test_after_the_window_it_stays_the_ending_percentage(self):
+        ramp = self._ramp(10, 90)
+        self.assertEqual(self._on_at(ramp, self.END + 10_000_000), self._fixed(90))
+
+    def test_halfway_through_it_is_halfway_between_the_percentages(self):
+        self.assertEqual(self._on_at(self._ramp(20, 60), self.START + 300), self._fixed(40))
+
+    def test_the_share_grows_linearly_with_the_clock(self):
+        ramp = self._ramp(0, 100)
+        for elapsed in (0, 60, 150, 300, 450, 599):
+            expected = self._fixed(100 * elapsed / 600)
+            self.assertEqual(self._on_at(ramp, self.START + elapsed), expected, elapsed)
+
+    def test_nobody_loses_the_feature_as_the_ramp_widens(self):
+        ramp = self._ramp(0, 100)
+        held = set()
+        for now in range(self.START - 60, self.END + 60, 30):
+            on = self._on_at(ramp, now)
+            self.assertTrue(held <= on, now)
+            held = on
+
+    def test_the_same_instant_always_gives_the_same_answer(self):
+        rules = ScheduledRollout("search", 0, 100, self.START, self.END)
+        now = self.START + 137
+        first = [Resolver([rules]).is_enabled("search", u, now) for u in self.USERS]
+        second = [
+            Resolver([ScheduledRollout("search", 0, 100, self.START, self.END)]).is_enabled(
+                "search", u, now
+            )
+            for u in self.USERS
+        ]
+        self.assertEqual(first, second)
+
+    def test_a_ramp_selects_the_same_users_as_the_fixed_rollout_it_passes_through(self):
+        # Mid-ramp membership is the published bucket, not a second population: a user at 40%
+        # of the ramp is exactly a user of a fixed 40% rollout.
+        self.assertEqual(self._on_at(self._ramp(0, 100), self.START + 240), self._fixed(40))
+
+    def test_a_descending_ramp_winds_the_feature_back_down(self):
+        ramp = self._ramp(100, 0)
+        self.assertEqual(self._on_at(ramp, self.START), set(self.USERS))
+        self.assertEqual(self._on_at(ramp, self.START + 300), self._fixed(50))
+        self.assertEqual(self._on_at(ramp, self.END), set())
+
+    def test_it_does_not_leak_to_other_flags(self):
+        resolver = Resolver([ScheduledRollout("search", 100, 100, self.START, self.END)])
+        self.assertTrue(resolver.is_enabled("search", "u1", self.START))
+        self.assertFalse(resolver.is_enabled("billing", "u1", self.START))
+
+    def test_now_defaults_to_the_current_time(self):
+        now = int(time.time())
+        past = Resolver([ScheduledRollout("search", 0, 100, now - 7_200, now - 3_600)])
+        future = Resolver([ScheduledRollout("search", 0, 100, now + 3_600, now + 7_200)])
+        self.assertTrue(past.is_enabled("search", "u1"))
+        self.assertFalse(future.is_enabled("search", "u1"))
+
+    def test_clock_independent_rules_ignore_an_explicit_now(self):
+        resolver = Resolver([AllowList("search", ["u1"]), Percentage("search", 100)])
+        for now in (0, 1_000_000, 2_000_000_000):
+            self.assertTrue(resolver.is_enabled("search", "u1", now), now)
+            self.assertTrue(resolver.is_enabled("search", "u2", now), now)
+
+
+class ScheduledRampPrecedence(unittest.TestCase):
+    START, END = 1_000_000, 1_000_600
+
+    def test_a_block_beats_a_fully_ramped_rollout(self):
+        rules = [
+            ScheduledRollout("search", 0, 100, self.START, self.END),
+            BlockList("search", ["u1"]),
+        ]
+        for ordering in itertools.permutations(rules):
+            resolver = Resolver(list(ordering))
+            self.assertFalse(resolver.is_enabled("search", "u1", self.END), ordering)
+
+    def test_an_allow_beats_a_not_yet_started_ramp(self):
+        rules = [
+            ScheduledRollout("search", 0, 100, self.START, self.END),
+            AllowList("search", ["u1"]),
+        ]
+        for ordering in itertools.permutations(rules):
+            resolver = Resolver(list(ordering))
+            self.assertTrue(resolver.is_enabled("search", "u1", self.START - 1), ordering)
+
+    def test_within_the_rollout_tier_the_restrictive_answer_still_wins(self):
+        rules = [
+            ScheduledRollout("search", 100, 100, self.START, self.END),
+            Percentage("search", 0),
+        ]
+        self.assertFalse(Resolver(rules).is_enabled("search", "u1", self.START))
+        self.assertFalse(Resolver(rules[::-1]).is_enabled("search", "u1", self.START))
 
 
 if __name__ == "__main__":

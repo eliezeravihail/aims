@@ -1,7 +1,7 @@
 ---
 title: "flags.py"
 date: 2026-09-22
-hash: "sha256:1982f621c2599fc41b35fc3917545f91be7518a97c56c43ac43fa8ce3d81712d"
+hash: "sha256:333037cfecf7e2158edb817dbe28ce92e4a8d55901686ccecda1cd873c4fe559"
 ---
 
 ## Insights
@@ -16,6 +16,15 @@ hash: "sha256:1982f621c2599fc41b35fc3917545f91be7518a97c56c43ac43fa8ce3d81712d"
   of a string is salted per process, so it reshuffles every cohort on restart while looking correct
   in any single run. Evidence, not assertion: the resolver is run in two fresh interpreters with
   different `PYTHONHASHSEED` values and the answers compared.
+- A rollout that changes with time does not need a rule that *changes*: `ScheduledRollout` is a pure
+  function of the instant it is asked about, so "same user, same answer" simply extends to "at the
+  same instant". Time entered as a parameter of the question (flag, user, instant) rather than as
+  state inside a rule or a clock the rule reaches for; that is what lets a test replay a ramp second
+  by second and what keeps two rules in one call from straddling a tick.
+- The ramp turned out to need nothing new below it: percentage-of-a-population was already a
+  separate idea from *which* percentage, so lifting the bucket into `_RolloutRule` gave the new kind
+  its cohort for free — and gave it, deliberately, the *same* cohort a fixed `Percentage` of that
+  size hands out, so a flag can graduate from a ramp to a fixed percentage without churn.
 
 ## Decisions
 - **Precedence has one home: `Verdict.outranks`.** Higher authority wins (`EXPLICIT` over
@@ -35,6 +44,26 @@ hash: "sha256:1982f621c2599fc41b35fc3917545f91be7518a97c56c43ac43fa8ce3d81712d"
   `TypeError`/`ValueError` there, not at resolution time.
 - **Membership rules copy their ids into a `frozenset` at construction**, so a caller mutating the
   list it passed in cannot change answers afterwards.
+- **The instant is an argument, not ambient state.** `Rule.verdict_for(flag, user_id, now)` carries
+  it, and `Resolver.is_enabled(flag, user_id, now=None)` reads the clock **once per call**
+  (`int(time.time())`) and hands the same instant to every rule. No rule calls the clock itself, so
+  one answer is never assembled from two instants, and a caller can pin `now` to replay exactly what
+  production returned at that second. Cost, accepted: the rule protocol grew a parameter that
+  timeless rules ignore — the alternative (a rule reading the clock) gives up the guarantee.
+- **The bucket derivation moved to `_RolloutRule` and is unchanged.** It is the same published
+  contract as before, now stated once for every rule that speaks about a population; the golden
+  vector in `test_flags.py` still pins it. Any rollout kind, fixed or scheduled, therefore selects
+  the *same* users at the same percentage.
+- **`[start_at, end_at)` is half-open, and the ramp is flat outside it.** At `start_at` the rollout
+  is exactly `start_percent`; from `end_at` on, exactly `end_percent` — read from the endpoint, not
+  interpolated, so the ends carry no floating-point drift and an empty window
+  (`start_at == end_at`) is a clean step instead of a division by zero.
+- **A `ScheduledRollout` is never in an invalid state:** both percentages are validated exactly as
+  `Percentage`'s is, `start_at`/`end_at` must be integer epoch seconds (`bool` and `float` rejected,
+  matching the stated contract), and `end_at` may not precede `start_at` — all `TypeError`/
+  `ValueError` at construction. `now` is checked the same way at the call. A **falling** ramp
+  (`end_percent < start_percent`) is *allowed*: it is the planned way to wind a feature back down,
+  and on the shared buckets it removes users in the exact reverse of the order it added them.
 
 ## Discussions
 - Considered resolving with an if-chain in `Resolver` (any block → off, else any allow → on, else
@@ -52,3 +81,23 @@ hash: "sha256:1982f621c2599fc41b35fc3917545f91be7518a97c56c43ac43fa8ce3d81712d"
   the result is deterministic, but nobody confirmed that is the intended behavior. Also unconfirmed
   with the product owner: that a fractional `percent` is meaningful, and that user ids compare as
   exact, case-sensitive strings.
+- Considered letting `ScheduledRollout` call `time.time()` itself and leaving `Resolver` alone,
+  which would have kept the rule protocol untouched. Rejected: two rules in one resolution could
+  then land on different seconds, and nothing could be replayed — the ramp would be the one rule
+  whose answer you cannot reproduce, which is the opposite of what `goals.md` asks for.
+- Considered bundling `(flag, user_id, now)` into a `Query` value object instead of a third
+  parameter. Dropped for the same reason the earlier value objects were: it would own nothing
+  today, and it would rewrite every rule signature to buy a name.
+- Considered subclassing `ScheduledRollout` from `Percentage` (a percentage that happens to move).
+  Rejected: it would inherit a `percent` that is not the answer at any given instant. The shared
+  thing is the *bucket*, so that is what the common base (`_RolloutRule`) holds.
+- Considered clamping the interpolated percentage into 0–100 defensively. Unnecessary: both
+  endpoints are range-checked at construction, so every point between them is in range.
+- **Unproven, needs the product owner:** a falling ramp is accepted and read as a deliberate
+  wind-down, but nobody confirmed the product wants users *removed* from a feature by a schedule.
+  Also unconfirmed: that a rollout scheduled entirely in the past should simply read as
+  `end_percent` forever (it does), rather than being an expired rule that ought to be flagged.
+- **Time zones and clock skew are out of scope by construction** — instants are epoch seconds, so
+  there is no calendar arithmetic here. What is *not* settled is whose clock decides when callers
+  run on several machines; today it is each caller's, which can straddle a ramp boundary by the
+  size of the skew.
