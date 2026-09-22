@@ -100,3 +100,6 @@ same slower-but-correct question)*
 - a3 (A): followed the answer — no detection, no redirect, no links between language files; each language's site is
   built by the existing build code into a temporary directory and then turned into one file; records the answer in
   `decisions/0004-offline-export-per-language.md`. None given.
+- b1 (B): followed the answer — no detection, no links between language files; **recorded the rule with its reason**
+  in `decisions/0001-no-reader-language-detection.md`; the build and the export share one pipeline up to rendered
+  pages (a behaviour-preserving split first). None given.
