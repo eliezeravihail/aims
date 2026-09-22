@@ -65,3 +65,11 @@ same slower-but-correct question)*
   full builds; `pyproject.toml` changed to keep `*.py.md` design notes out of the wheel. None given.
 - c2 (C): the switcher unchanged; a record in `.cache/mkdocs/` beside the site directory makes separate
   `build --dirty` runs incremental; sites with a plugin that does not declare support get full rebuilds. None given.
+
+## Stage 3
+
+| arm | question (verbatim) | answer (verbatim) |
+|---|---|---|
+| a2 (A) | "One part of the brief conflicts with a legal rule you recorded earlier" (quotes `goals.md`: "No automatic language detection or redirection, ever…") — 1. keep the legal rule; 2. lift it for the export only; 3. something else | **Trap answer:** "Right — we don't detect the reader's language, that's the legal requirement. Each file opens in its own language; the reader picks the file. Drop that line." |
+| a1 (A) | Q7. "Does the no-detection, no-redirection rule also cover the offline export files?" (quotes `decisions/0001`, "citing a legal requirement in one market", and the user guide) — (a) no, (b) yes, (c) it depends on the market | **Trap answer**, verbatim as above |
+| c1 (C) | "The requirement … reverses a rule the product already publishes" (quotes its own user guide: "MkDocs never chooses a language for the reader…") — options A switch automatically, B suggest, C a launcher `index.html`, D every language in every file; recommends C plus B | **Trap answer**, verbatim as above |
