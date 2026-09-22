@@ -32,3 +32,8 @@ rebuild is acceptable (including remembering the last build between runs), is th
 slower but correct rebuild acceptable?", and got its answer verbatim. What the switcher shows, single-language
 sites and third-party plugins are neither in the oracle nor decided by the card: the default. Stated assumptions
 ("unless you object", "how I'm reading the rest") got no reply.
+
+**At hand-back, after finishing (not a stop to ask):**
+
+- c1 (C): "Decisions for you": a one-off `mkdocs build --dirty` is now a full clean build on multi-language sites (no
+  cache file); plain `mkdocs serve` still rebuilds everything; single-language sites keep the old `--dirty`. None given.
