@@ -89,3 +89,7 @@ same slower-but-correct question)*
   decisions recorded in `decisions/0004-offline-export.md`. None given.
 - b3 (B): followed the answer, and **recorded the rule with its reason** in `decisions/0001-no-reader-language-detection.md`
   — the first B record of the non-goal. None given.
+- c2 (C): **did not stop to ask**; implemented the line — "when a file is opened, it picks the best match for the
+  browser's language … loads the other language's file in a hidden frame … the switch happens only if that
+  confirmation comes back". Names no conflict, although its own stage-1 user guide says "No language detection or
+  redirection takes place". None given.
