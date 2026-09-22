@@ -37,3 +37,6 @@ sites and third-party plugins are neither in the oracle nor decided by the card:
 
 - c1 (C): "Decisions for you": a one-off `mkdocs build --dirty` is now a full clean build on multi-language sites (no
   cache file); plain `mkdocs serve` still rebuilds everything; single-language sites keep the old `--dirty`. None given.
+- b3 (B): "Decisions I made": the switcher unchanged; sites with a plugin other than `search`, hooks, a non-Python-Markdown
+  extension or strict mode always get full rebuilds; a one-off `build --dirty` does a full build on multi-language
+  sites. None given.
