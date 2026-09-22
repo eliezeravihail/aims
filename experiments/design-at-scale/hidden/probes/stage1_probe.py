@@ -119,7 +119,10 @@ def main(arm, pristine):
         # diffing two pristine builds) and in sitemap dates; mask exactly those, compare everything else.
         snap = {}
         for f in sorted(s.rglob("*")):
-            if f.is_file() and not f.name.startswith("sitemap.xml"):
+            # messages.pot (the theme's translator template, which pristine copies into every site) is skipped from
+            # Phase 2 on: Phase 1 showed it is the only file a label-adding change alters, and no reader sees it
+            # (phase1/floor-notes.md). Fixed before any Phase 2 arm ran.
+            if f.is_file() and not f.name.startswith("sitemap.xml") and f.name != "messages.pot":
                 data = f.read_bytes()
                 if f.suffix == ".html":
                     data = re.sub(rb"Build Date UTC : [^\n]*", b"Build Date UTC : <masked>", data)

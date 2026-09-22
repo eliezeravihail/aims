@@ -196,7 +196,7 @@ whether the design survives change.
 - [x] [`hidden/probes/stage1_probe.py`](hidden/probes/stage1_probe.py) — written from the card alone, validated on pristine mkdocs
       (the feature probes fail, the regression guards pass). Validation caught a probe bug — two builds of an
       identical site differ in a theme timestamp — fixed by masking exactly that line.
-- [ ] `hidden/probes/` for stages 2 and 3 — before Phase 2
+- [x] `hidden/probes/` for stages 2 and 3 — written from the hidden cards before Phase 2, validated on pristine (features fail) and on a Phase 0 design (runs cleanly); see `phase2/PROTOCOL-NOTES.md`
 - [x] [`hidden/baseline.md`](hidden/baseline.md) — the pinned baseline result
 - [x] [`phase0/arm-prompt.md`](phase0/arm-prompt.md) and [`phase0/judge-prompt.md`](phase0/judge-prompt.md) — Phase 0's prompts
 - [ ] the Phase 1 aims-arm prompt and the two opposite-disposition judge prompts — before Phase 1
