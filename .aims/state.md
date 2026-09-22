@@ -10,7 +10,7 @@ stepped
 
 ## Loop cursor
 
-awaiting-human <design-at-scale Phase 0 ran and the gate PASSED; Phase 1 (≈4–5 M tokens) awaits the owner's go-ahead>
+awaiting-human <design-at-scale Phase 1 ran — verdict aims at stage 1 (phase1/results.md); Phase 2 (stages 2–3) awaits the owner's go-ahead>
 
 ## Current objective
 
@@ -52,8 +52,10 @@ in 573 lines. A new experiment run against guidance that contradicts itself woul
 - [x] Design the single-root-file experiment (goal 2) — `experiments/single-root-file/`.
 - [x] Run design-at-scale Phase 0 — the gate PASSED: of four unaided designs, one clean, at least two with a
       verified precondition failure (`experiments/design-at-scale/phase0/results.md`).
-- [ ] Phase 1 — write the aims-arm prompt and the two opposite-disposition judge prompts; run 3 aims + 3 fresh
-      unaided stage-1 builds. Awaiting the owner's go-ahead on cost.
+- [x] Run design-at-scale Phase 1 — verdict **aims** by all three blind judges; 1 of 3 aims designs clean vs 0 of 3
+      unaided; every S3/S4 reproduced. Most of the gap is one product question the aims arms asked; aims' arms also
+      made one defect no unaided arm made (`experiments/design-at-scale/phase1/results.md`).
+- [ ] Phase 2 — stages 2 and 3 (incremental rebuild; offline export + the goal-2 trap). Awaiting the owner.
 - [ ] Update PR #65's description; merging or splitting it is the owner's decision.
 
 ## Last evaluated result

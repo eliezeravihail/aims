@@ -70,3 +70,31 @@ R is the only design that reaches into all five. **Reproduces.**
 **U §10 S3 — the switcher and notice markup live in the domain module.** `design-U/mkdocs/structure/languages.py:164-173`
 (`_PAGE_HEADER`: a `<nav>` switcher and the notice `<div>`), rendered at `:150`, spliced into `page.content` at
 `commands/build.py:225`; the build adds nothing to the template context. **Reproduces** as a structural fact.
+
+## Ownership judge — its further S3 findings
+
+**P and Q §7 S3 — the notice and language links exist only in the built-in themes.** Project `ctheme`: a bare
+custom theme (`main.html` = `{{ page.content }}`), an English-only page viewed at `/fr/guide/`.
+
+| design | notice on the fallback page | link to the English page |
+|---|---|---|
+| P | **no** | **no** |
+| Q | **no** | **no** |
+| R | yes | no |
+| S | yes | yes |
+| T | yes | no |
+| U | yes | yes |
+
+**Reproduces** for P and Q. (The judge scored T's and R's theme-only switcher lower, S2.)
+
+**Q §0 S3 — pipeline modules branch on a private config attribute.** See the module table above
+(files.py 8, pages.py 1, build.py 28 changed lines). **Reproduces.**
+
+## Context only — Phase 0's four unaided designs on the same two cases (not part of any verdict)
+
+| Phase 0 design | French-only page in every language | explicit `nav:` title translated |
+|---|---|---|
+| K | yes | yes |
+| L | no | yes |
+| M | yes | yes |
+| N | yes | yes |
