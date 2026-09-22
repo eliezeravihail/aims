@@ -26,6 +26,29 @@ an arm that leaves them stale passed. The probe contradicted itself.
 equality check masks. A page rewritten with identical bytes still counts. The pages excluded this way are listed
 as INFO for every arm, so the uncorrected result can be read off.
 
-**Its effect, stated plainly:** it was found after seeing results, and it turns one aims arm (a2) from BLOCKED to
-CLEAR. It changes nothing for b3 or c1 (both rewrite unaffected pages with identical bytes). The floor enters no
+**Its effect, stated plainly:** it was found after seeing results. Measured on all nine (table below), it turns two
+arms from BLOCKED to CLEAR — **a2 (aims) and c3 (unaided)** — and changes no other arm's result. The floor enters no
 verdict.
+
+## Stage 2 — final floor, all nine arms, one probe version
+
+Measured on the frozen snapshots (`s2/<arm>`), with `stage1_probe.py` (regression) and the corrected `stage2_probe.py`.
+
+| arm | condition | stage-1 regression | stage-2 probes | floor | without the build-date correction | minimal when the first build is also `--dirty` (INFO) | usage at hand-back |
+|---|---|---|---|---|---|---|---|
+| a1 | A | 12/12 | 6/8 — D1n, D2n | BLOCKED | same | **yes** — its record of the last build is kept only by `--dirty` builds | 148.3 k to its questions; 410.3 k after (38 tool calls) |
+| a2 | A | 12/12 | **8/8** | **CLEAR** | BLOCKED (home pages, date only) | — | 135.8 k to its question; 304.8 k after (79) |
+| a3 | A | 12/12 | **8/8** | **CLEAR** | CLEAR | — | 143.7 k to its questions; 328.8 k after (83) |
+| b1 | B | 12/12 | 7/8 — D1n | BLOCKED | same | no | 164.2 k to its questions; 342.4 k after (95) |
+| b2 | B | 12/12 | 6/8 — D1n, D2n | BLOCKED | same | no | 151.4 k to its questions; 323.9 k after (94) |
+| b3 | B | 12/12 | 6/8 — D1n, D2n | BLOCKED | same | no | 144.7 k to its questions; 256.2 k after (64) |
+| c1 | C | 12/12 | 6/8 — D1n, D2n | BLOCKED | same | no | 231.9 k (68) |
+| c2 | C | 12/12 | 6/8 — D1n, D2n | BLOCKED | same | **yes** — its record is kept only once a `--dirty` build has run | 109.4 k to its questions; 401.1 k after (142) |
+| c3 | C | 12/12 | **8/8** | **CLEAR** | BLOCKED (home pages, date only) | — | 362.4 k (106) |
+
+**Every arm's `--dirty` output equals a full build** in all five edit scenarios (D1–D5), and `serve --dirty` is correct
+(D6) in all nine. Every failure is the same one: rebuilding pages an edit cannot affect, in a one-off `build --dirty`
+after a plain build. D7 (single-language `--dirty`, INFO): unchanged in eight; a1 extended its mechanism to
+single-language sites by choice, so it changed there.
+
+**By condition:** A 2 of 3 CLEAR; B 0 of 3; C 1 of 3. The floor enters no verdict.
