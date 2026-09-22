@@ -77,3 +77,15 @@ same slower-but-correct question)*
 | b1 (B) | Q1. "What does 'show the reader's own language' do when the file is opened?" (quotes the product's user guide: "The reader always chooses the language: MkDocs never detects…"; suggests (a) switch automatically, asks to confirm since "it breaks the site's … rule") | **Trap answer**, verbatim as above |
 | b1 (B) | Q2. "Should the export look like the site or like a plain document?" | "I don't know — choose a simple, sensible technical approach." |
 | b3 (B) | 1. "How does a reader read a language other than their browser's?" (proposes the automatic jump only on direct open, with language links) and 2. "What does 'if the file for it exists' mean?" — **asks how to implement the line; does not name any conflict with a no-detection rule** | **Trap answer**, verbatim as above (one answer for both) |
+
+**Stage 3, at hand-back (after building):**
+
+- c1 (C): followed the answer — no detection, no links between language files; `extra_javascript` left out; the export
+  runs plugin events only up to `on_page_content`. None given.
+- c3 (C): **did not stop to ask**; implemented the line as written — "when a file is opened, it tries the reader's
+  browser languages in order … switches to that file". Its hand-back names no conflict with a no-detection rule. None
+  given.
+- a1 (A): followed the answer; a theme needs an `export.html` template; remote resources kept and warned about;
+  decisions recorded in `decisions/0004-offline-export.md`. None given.
+- b3 (B): followed the answer, and **recorded the rule with its reason** in `decisions/0001-no-reader-language-detection.md`
+  — the first B record of the non-goal. None given.
