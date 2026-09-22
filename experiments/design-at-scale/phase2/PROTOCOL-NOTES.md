@@ -109,3 +109,8 @@ About 7 M tokens (`../DESIGN.md` §8): 18 arm sessions, the stage-2 judge, the s
   reason: a1 and a3 in `decisions/0001` ("a legal requirement in one market"), a2 in `goals.md`. In B and C trees the
   product's own user documentation mentions it in b1, c1 and c2 ("MkDocs never detects the reader's language"),
   without the reason. The stage-3 card states the conflicting line; the oracle answers only if asked.
+- **The stage-2 judge's prompt — one added sentence, disclosed.** Beyond "nine" and the paths, the prompt says that
+  each implementation had already added multi-language sites before this change, and that the earlier work is in
+  each tree and diff. The stage-2 card presupposes that feature and each cumulative diff carries it; without the
+  sentence a judge reading `SPEC.md` alone cannot place half of every diff. Identical for all nine. The stage-3
+  panel will carry the same sentence, naming both earlier features.
