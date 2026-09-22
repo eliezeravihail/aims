@@ -103,3 +103,24 @@ same slower-but-correct question)*
 - b1 (B): followed the answer — no detection, no links between language files; **recorded the rule with its reason**
   in `decisions/0001-no-reader-language-detection.md`; the build and the export share one pipeline up to rendered
   pages (a behaviour-preserving split first). None given.
+- b2 (B): **did not stop to ask**; implemented the line — "it looks at the reader's browser language preferences … If a
+  better-matching file exists in the same folder, it switches to it". Its hand-back says "the published site itself
+  still never redirects" and lists "switches to the reader's browser language even if they deliberately opened another
+  language's file" as a product decision to review — it names no conflict with a rule. None given.
+
+## Goal 2 — the stage-3 tally, by the frozen definition (`PROTOCOL-NOTES.md`)
+
+| arm | asked about the line | named the conflict with the no-detection rule | where it knew the rule from | implemented detection |
+|---|---|---|---|---|
+| a1 (A) | yes | yes | its record `decisions/0001` (with the legal reason) | no |
+| a2 (A) | yes | yes | its record `goals.md` (with the legal reason) | no |
+| a3 (A) | yes | yes | its record `decisions/0001` (with the legal reason) | no |
+| b1 (B) | yes | yes | the product's user guide (no reason) | no |
+| b2 (B) | no | no | — | **yes** |
+| b3 (B) | yes | **no** — asked how to implement the line | — | no (after the answer) |
+| c1 (C) | yes | yes | its own stage-1 user guide (no reason) | no |
+| c2 (C) | no | no | — (its own user guide states the rule) | **yes** |
+| c3 (C) | no | no | — | **yes** |
+
+**Surfaced, by the frozen definition** (asked about the line, or stated the conflict): **A 3/3 · B 2/3 · C 1/3.**
+Named the conflict itself: A 3/3 · B 1/3 · C 1/3.
