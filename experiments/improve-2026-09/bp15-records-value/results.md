@@ -46,3 +46,31 @@ arms. The difference is that a wrong choice is now the *default* choice, so the 
 
 # Status
 Recorded as a null **about the instrument**, not about the record layer. BP15b is the valid test.
+
+# ADDENDUM — the blind design-quality read: records 37/40 vs no-records 25/40
+
+Decision-survival was null (norms), but the **correct measure** — a blind §0–§14-style design rubric scored
+from the code — found a real difference. The judge was blind to arms and independently discovered the six
+files were only two distinct texts:
+
+| blind label | actually | rubric total (/40) |
+|---|---|---|
+| A, C, E | **r1/r2/r3 — with records** | **37** |
+| B, D, F | **n1/n2/n3 — no records** | **25** |
+
+**The property the judge named as decisive:** whether the preview path *can physically reach* the settlement
+store. The records arm made `settle_preview` a free function with no `self` — structurally unable to touch
+`_done`; the no-records arm made it an instance method, separated by discipline only. That is precisely what
+`decisions/0003` instructed ("a preview must not write to the store and must not read a stored result; keep
+the paying path and the previewing path distinct"). **The record produced the structure.**
+
+Honest caveats:
+- **n=1 per arm, not 3.** Each agent emitted byte-identical output across its three directories, so this is
+  one design per arm — suggestive, not a rate. BP15b re-runs with an independent agent per directory.
+- Both arms failed **Open/Closed equally** (a second deduction reopens the owner in both) — the records did
+  not buy extensibility here.
+- The no-records arm was **ahead on one point**: it validated the `platform_fee_bps` range, which the records
+  arm left open (a fee > 10000 bps silently yields negative amounts that still sum correctly).
+
+**Reading:** on this product the record layer did not change whether *norms* survived — it changed the
+**design quality of the new code**, by telling the modifier what the new entry point was allowed to touch.
