@@ -53,3 +53,7 @@ same slower-but-correct question)*
 - a3 (A): "Decisions": the switcher keeps language names only; a record file `.site.mkdocs-build.json` beside `site/`
   makes separate `build --dirty` runs incremental; four existing mocks in `build_tests.py` retargeted to a
   replacement function, assertions unchanged. None given.
+- b2 (B): "Decision you should know about": equality with a full build is measured with the build date held fixed; a
+  page an edit cannot affect keeps its last build date. A one-off `build --dirty` builds in full. It also noted that
+  `mkdocs/structure/languages.py` points to a `decisions/0001` that does not exist in its checkout — the one residual
+  docstring mention the stripping rule leaves (`PROTOCOL-NOTES.md`), so B saw that a record had existed. None given.
