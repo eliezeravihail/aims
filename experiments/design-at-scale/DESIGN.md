@@ -187,12 +187,18 @@ whether the design survives change.
 
 # 10. What must exist before Phase 0 starts (the frozen package)
 
-- [ ] `starter/` — the pinned mkdocs checkout, its installed environment, the baseline command
+- [x] `starter/` — the pinned mkdocs checkout, its installed environment, the baseline command (built for Phase 0;
+      baseline re-verified on it: identical to `hidden/baseline.md`)
 - [x] [`cards/stage-1.md`](cards/stage-1.md) — drafted
 - [x] [`hidden/stage-2.md`](hidden/stage-2.md), [`hidden/stage-3.md`](hidden/stage-3.md) — drafted
 - [x] [`hidden/oracle.md`](hidden/oracle.md) — the product owner's answers, drafted
-- [ ] `hidden/probes/stage-{1,2,3}` — the acceptance probes, written from the cards alone
+- [x] [`hidden/probes/stage1_probe.py`](hidden/probes/stage1_probe.py) — written from the card alone, validated on pristine mkdocs
+      (the feature probes fail, the regression guards pass). Validation caught a probe bug — two builds of an
+      identical site differ in a theme timestamp — fixed by masking exactly that line.
+- [ ] `hidden/probes/` for stages 2 and 3 — before Phase 2
 - [x] [`hidden/baseline.md`](hidden/baseline.md) — the pinned baseline result
-- [ ] the four judge prompts, and the empty `blind/MAPPING-SECRET.txt` to be sealed
+- [x] [`phase0/arm-prompt.md`](phase0/arm-prompt.md) and [`phase0/judge-prompt.md`](phase0/judge-prompt.md) — Phase 0's prompts
+- [ ] the Phase 1 aims-arm prompt and the two opposite-disposition judge prompts — before Phase 1
 - [x] leak-word check on the drafts (`PROTOCOL.md` §4.5) — two found in the oracle's answers and removed; repeat on the frozen versions
-- [ ] a read-through that no card hints at a later stage (`PROTOCOL.md` §1.2)
+- [x] a read-through that no card hints at a later stage (`PROTOCOL.md` §1.2) — stage 1 names only its own
+      behaviour; nothing about rebuilds, exports, or a next stage
