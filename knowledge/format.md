@@ -1,22 +1,29 @@
-# The aims record format — knowledge co-located with code
+# The aims record format — the shape of a record
 
 Design knowledge lives **in the code tree**, so the one directory structure is both the code graph and
 the knowledge tree — understanding and navigation come from the structure itself, and you never read the
-whole project to find what bears on the file in front of you. There are exactly two homes.
+whole project to find what bears on the file in front of you.
 
-## 1. File-level — a companion beside a source file that has earned one
+This file defines **what a record looks like** and how its anchor is derived — the contract the tools
+(`anchor.py`, the staleness hook) implement.
 
-**Most files never get a companion.** One appears only when there is something durable worth recording about
-that file — never mechanically, never as a matter of course. When a file has earned one, it is a
-**companion record with the same name plus `.md`**, sitting right next to it:
+> **Which home a given piece of knowledge belongs in, whether it needs recording at all, and who files it
+> when, is `skills/aims-guide/references/design-record.md`.** That file owns the filing decision; this one
+> owns the shape.
+
+There are exactly two kinds of record.
+
+## 1. A file companion — `<file>.md` beside `<file>`
+
+A companion is named for its source file plus `.md`, sitting right next to it:
 
 ```
 src/render.py
 src/render.py.md      ← everything known about render.py
 ```
 
-The companion holds what is known about *that one file*, under three required sections — you read the
-whole companion whenever you touch the file, because it is all about that file:
+Its body is three sections — you read the whole companion whenever you touch the file, because it is all
+about that file:
 
 ```markdown
 ---
@@ -41,9 +48,9 @@ date: 2026-08-12
   claims something is known, and an unproven premise recorded as knowledge is how a later session
   inherits a guess as a fact.
 
-## 2. System-level — cross-cutting records at the repo root
+## 2. A system record at the repo root
 
-Knowledge that is *not* about one file lives at the repo root, one record per concern:
+One record per concern, not tied to any single file:
 
 - `goals.md` — what the product is for, use scenarios, non-goals.
 - `architecture.md` — boundaries, seams, invariants, change axes — the shape of the system.
@@ -62,31 +69,11 @@ exists; otherwise it is a system record and carries no anchor:
 
 Stamp it on filing with the anchor tool (its invocation is owned by
 `skills/aims-guide/references/design-record.md` — `.aims/anchor.py` in an installed project) — it writes
-the single `hash:` line; you never compute a hash. A read-time hook re-hashes the sibling and, on drift, advises *"re-verify"*; it
-never blocks. Because the pairing is by name, renaming the source and its companion **together** keeps
-them in sync with nothing to update; renaming only the source flags the orphaned companion.
-
-## How to write — the instruction
-
-- **First ask whether it needs recording at all.** Most files never earn a companion. If the code and its
-  own documentation already carry it, do not file it.
-- Knowledge **about one file** → its companion `<file>.md`, in the Insights / Decisions / Discussions
-  sections. Do not put it at the root.
-- Knowledge that is **cross-cutting** (a goal, the architecture, a dependency choice, a system ADR) →
-  the matching root record. Do not scatter it into file companions.
-- **The test when it is unclear: how many files does it bind?** Knowledge that governs **one** file is
-  file-level and belongs in that companion — *even when the reason for it is system-wide* (an external
-  consumer, a contract, a past incident). An external justification does not promote a decision to an ADR.
-  Knowledge that binds **several** files at once is system-level → `architecture.md` or an ADR.
-- Anchor every companion on filing. System records take no anchor.
-
-## Reading — navigate, don't read everything
-
-To understand a file, open its companion — all of it, it is small and entirely about that file. For
-system context, read the root records (`goals.md`, `architecture.md`, the relevant ADR). That is the
-whole point: relevant knowledge is found by **navigating to the file or the root record**, never by
-reading the whole project. A companion flagged stale on read is *possibly* out of date; re-verify
-against the current code before relying on it.
+the single `hash:` line; you never compute a hash. A read-time hook re-hashes the sibling and, on drift,
+advises *"re-verify"*; it never blocks. Because the pairing is by name, renaming the source and its
+companion **together** keeps them in sync with nothing to update; renaming only the source flags the
+orphaned companion. A companion flagged stale on read is *possibly* out of date; re-verify against the
+current code before relying on it.
 
 ---
 
