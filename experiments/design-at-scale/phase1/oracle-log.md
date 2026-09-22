@@ -25,3 +25,7 @@ object" get no reply: the product owner volunteers nothing.
 *w3 also said it would treat right-to-left as out of scope "unless you say otherwise" — a stated decision, not a question: no reply, per the rule.*
 | w5 (unaided) | *(at hand-back, after finishing — not a stop to ask)* "Decisions for the product owner to confirm": pages only in a non-default language left out; nav section headings untranslated; labels need Babel; right-to-left | none given — raised after the arm had chosen and finished |
 | w6 (unaided) | *(at hand-back, after finishing)* "Decisions I made that you may want to confirm": pages only in a non-default language published in that language only; Markdown outside language folders left out; draft translations; language-menu link target | none given — raised after the arm had chosen and finished |
+| w4 (unaided) | *(at hand-back, after finishing)* "Judgement calls": pages only in a non-default language left out (the default language defines the page set); Markdown outside language folders left out; new labels need the Babel catalogues compiled; one full site per language | none given — raised after the arm had chosen and finished |
+
+**Asking, by condition.** Each of the three aims arms stopped before building to ask two to four product
+questions. None of the three unaided arms stopped; each chose alone and listed its choices at hand-back.

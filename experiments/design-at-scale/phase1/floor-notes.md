@@ -14,3 +14,8 @@ hand-back. Whether the second figure includes the first is not stated by the too
 | w3 | aims | **12/12** | **CLEAR** | 10 files changed, +235 / −4, plus 5 new files | 162.5 k tokens to its questions; 320.9 k reported at hand-back, 75 tool calls |
 | w1 | aims | **12/12** | **CLEAR** | 14 files changed, +327 / −8, plus 4 new files | 155.9 k tokens to its questions; 318.7 k reported at hand-back, 74 tool calls |
 | w6 | unaided | 11/12 | BLOCKED (P10) | 20 files changed, +664 / −118, plus 5 new files | 328.2 k tokens, 121 tool calls |
+| w4 | unaided | 11/12 | BLOCKED (P10) | 55 files changed, +906 / −106, plus 6 new files (32 of the changed files are theme message catalogues) | 373.0 k tokens, 115 tool calls |
+
+**Floor by condition.** aims: 3 of 3 CLEAR (12/12 each). Unaided: 0 of 3 CLEAR — all three fail only P10, and all
+three for the same reason: each edited the theme's `messages.pot` to add its new labels, so a site with no
+`languages` no longer builds byte-for-byte as before. The aims arms added their labels without touching it.
