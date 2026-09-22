@@ -288,3 +288,13 @@ Append-only. Each entry: timestamp · what happened · next.
   **My own prediction was falsified then half-restored:** I expected three homeless items; the filer placed
   all three — but only via a non-standard `goals.md`, which restores the gap for any project following the
   template. bp22-gate-on-itself/results.md.
+
+- **2026-09-22 — BP22 finding #1 WITHDRAWN; `decisions/0025` supersedes `0024`.** The claimed "no root-level
+  home for cross-cutting learning" was not a defect. An insight concerning the whole project belongs in the
+  **root record it concerns** — `goals.md` for what the project is for and what its evidence supports,
+  `architecture.md` for the system's shape. The two root filings were not "smuggled"; that is where they
+  belong. The error: reading the companion's Insights/Decisions/Discussions headings as a shape the root
+  level must mirror. Those headings lay out *a companion*, which holds everything about one file and needs
+  internal divisions; a root record is already scoped by its subject. `design-record.md` now says this
+  plainly. `0023`'s single-root-file question stays open and is no longer entangled with it. The other four
+  BP22 findings stand and remain fixed.

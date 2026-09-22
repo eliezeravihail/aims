@@ -37,11 +37,14 @@ not**, because no instruction could make a code-only arm reconcile an intent tha
 
 All five verified against the repo before acting:
 
-1. **Cross-cutting learning has no root-level home.** Insights and Discussions exist **only** at file level;
-   every root record is intent, shape, dependencies, or a decision. Both root filings above were, in the
-   agent's word, **smuggled** into `goals.md` — and fit only because *this* repo's `goals.md` has outgrown
-   the template it ships (Primary goal / Use scenarios / Non-goals). A project following that template hits
-   the gap immediately. → recorded, and the fix **deliberately deferred**, in `decisions/0024`.
+1. ~~**Cross-cutting learning has no root-level home.**~~ **WITHDRAWN — this was not a defect.** An insight
+   concerning the whole project belongs in the **root record it concerns**: what the project is for and what
+   its evidence supports → `goals.md`; the system's shape → `architecture.md`. The two items were not
+   "smuggled" into `goals.md`; that is where they belong. The error was reading the companion's three
+   headings as a shape the root level must mirror — they describe how *a companion* is laid out, because a
+   companion holds everything about one file and needs internal divisions. A root record is already scoped
+   by its subject. `decisions/0024` recorded the false gap; `decisions/0025` supersedes it and states the
+   rule. The remaining four findings stand.
 2. **ADR-as-correction was practice, not rule.** `0007`, `0008`, `0010` are findings and corrections, not
    decisions; the written rule ("a system-wide decision + rejected alternatives") would have left the
    `0023` filing impossible. → now documented in `design-record.md`.
@@ -56,11 +59,13 @@ All five verified against the repo before acting:
 
 # Reading
 
-**My own hypothesis was falsified, then half-restored.** I predicted three items would be homeless. The
-agent placed all three without inventing a record kind — so the format is more capacious than I judged. But
-it then reported that two of those placements only worked because this repo's `goals.md` is non-standard,
-which restores the gap for every project that follows the template. The honest verdict is the agent's, not
-my prediction and not my correction of it.
+**My hypothesis was wrong, and so was my correction of it.** I predicted three items would be homeless; the
+filer placed all three without inventing a record kind. I then accepted its report that two placements only
+worked because this repo's `goals.md` is non-standard — and filed that as a real gap. It was not. A
+cross-cutting insight belongs in the root record it concerns; `goals.md` was the right home, not a
+workaround. Both the prediction and the "gap" came from the same habit this session kept catching itself in:
+treating a shape I could see (three headings on a companion) as the thing that matters, instead of the
+question the format actually answers (what is this knowledge about?).
 
 **The gate held on a hostile case.** 10 of 14 items declined as already-carried, in a repo where "the code"
 is prose and the temptation to restate is at its highest. Nothing filed was a restatement.

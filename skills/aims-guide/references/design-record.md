@@ -102,6 +102,11 @@ repo's own ADRs exist.
   (an external consumer, a contract, an incident) — an external justification does not make it an ADR.
   Several files → system-level.
 
+**Cross-cutting learning goes in the root record it concerns** — an insight about what the project is for
+or what the evidence supports belongs in `goals.md`; one about the system's shape belongs in
+`architecture.md`. There is no separate root "Insights" record and none is needed: the three headings of a
+companion describe *a companion*, not a shape the root level has to repeat.
+
 Do not put a file-level insight at the root, and do not scatter a system-wide decision across file
 companions. If a would-be file-level insight actually concerns *several* files at once, that is usually a
 system-level fact (→ `architecture.md` or an ADR) or a signal the files share a responsibility that

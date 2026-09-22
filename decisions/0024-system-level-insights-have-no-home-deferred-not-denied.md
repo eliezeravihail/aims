@@ -1,7 +1,13 @@
 ---
 title: "cross-cutting learning has no root-level home; the gap is recorded and the fix deliberately deferred"
 date: 2026-09-22
+status: SUPERSEDED by 0025 — there is no gap. Cross-cutting learning goes in the root record it concerns.
+  The "missing Insights section" was a formalism read into the companion's three headings; the root records
+  are the home, and they always were.
 ---
+
+> **Superseded by `0025`.** Read that ADR for the current rule. What follows is the original (mistaken)
+> reasoning, kept for the record.
 
 **Context.** `decisions/0022`'s First gate lists what survives into a record — all of it knowledge nothing
 in the code asserts. Two of those categories, **"what was tried and failed, and the symptom"** and **"an
