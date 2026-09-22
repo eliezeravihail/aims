@@ -93,3 +93,7 @@ same slower-but-correct question)*
   browser's language … loads the other language's file in a hidden frame … the switch happens only if that
   confirmation comes back". Names no conflict, although its own stage-1 user guide says "No language detection or
   redirection takes place". None given.
+- a2 (A): followed the answer; **recorded that the legal rule covers exported files too** (`goals.md`,
+  `decisions/0005`); kept language links between the exported files ("the reader picks the file"); embeds only woff2
+  fonts. Left open from stage 2: whether `serve --strict` should stop on warnings from pages it did not rebuild —
+  raised at hand-back, after finishing; none given.
