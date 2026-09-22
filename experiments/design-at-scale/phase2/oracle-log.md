@@ -97,3 +97,6 @@ same slower-but-correct question)*
   `decisions/0005`); kept language links between the exported files ("the reader picks the file"); embeds only woff2
   fonts. Left open from stage 2: whether `serve --strict` should stop on warnings from pages it did not rebuild —
   raised at hand-back, after finishing; none given.
+- a3 (A): followed the answer — no detection, no redirect, no links between language files; each language's site is
+  built by the existing build code into a temporary directory and then turned into one file; records the answer in
+  `decisions/0004-offline-export-per-language.md`. None given.
