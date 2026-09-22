@@ -1,9 +1,47 @@
 # The design record — how the method's outputs become co-located records
 
-Everything the loop produces worth having *next year* is filed as a record **in the code tree**. The
-**This file owns the filing decision**: whether a thing needs recording at all, which of the two homes it
-goes in, and who files it when. The *shape* of a record — frontmatter, the three sections, how the anchor
-is derived — is `../../../knowledge/format.md`; fill-in skeletons are in `assets/record-templates.md`.
+Everything the loop produces worth having *next year* — **that the code itself cannot hold** — is filed as
+a record **in the code tree**. This file owns the filing decision: whether a thing belongs in a record at
+all, which of the two homes it goes in, and who files it when. The *shape* of a record — frontmatter, the
+three sections, how the anchor is derived — is `../../../knowledge/format.md`; fill-in skeletons are in
+`assets/record-templates.md`.
+
+## First gate — does it belong in the **code** instead?
+
+**A record is for knowledge the code cannot carry.** Most of what a design session produces *can* be
+carried by the code, and is worth more there — beside the thing it describes, where a reader already is.
+So before filing anything, ask where it is most useful to someone who has the file open:
+
+| if it is… | it belongs in… |
+|---|---|
+| what the code does now | the **docstring** |
+| why *this particular line* is surprising | a **comment right there** |
+| an invariant you can make unbreakable | the **signature, the type, a private field, a guard** |
+| a behaviour worth guaranteeing | a **test** |
+| a concept | a **name** |
+
+Only what survives that gate is a record — and all of it shares one property: **nothing in the code
+asserts it.**
+
+- **Why a considered alternative was rejected** — the road not taken leaves no trace in the code.
+- **A non-goal, or a boundary declared deliberately** — an absence leaves nothing to read. (This is the
+  one category measured to be unrecoverable from code alone:
+  `../../../experiments/improve-2026-09/bp19-aims-filed-records/`.)
+- **What was tried and failed**, and the symptom that made it fail.
+- **An assumption the file rests on that was never proven** — stated *as* unproven.
+- **The context a decision was taken in, when that context has since gone** — an incident, an external
+  consumer, a contract, a constraint that expired.
+- **The history** — what a superseded decision was, and why it no longer holds.
+
+**The test, in one line: if you could delete the entry, write it as a docstring, and lose nothing, then it
+was a docstring.**
+
+**Why this is a rule and not a preference.** A record that restates the design is **duplicate state**, and
+it is the only part of a record that can *go wrong on its own*: the code changes, the restatement is now
+false, and the anchor merely **flags** the drift — nothing repairs it. Knowledge the code cannot hold has
+no such failure mode, because nothing else asserts it. Every restated line you file buys drift and pays
+nothing. A short companion of things the code cannot say is worth more than a long one that narrates it.
+
 There are two homes, and the split is by *what the knowledge is about*.
 
 ## File-level → a companion beside a source file that has earned one
@@ -12,8 +50,10 @@ There are two homes, and the split is by *what the knowledge is about*.
 about that file, never mechanically for every file. Knowledge **about one source file** goes in that file's companion — the same name plus `.md`, right
 next to it (`src/render.py` → `src/render.py.md`) — under three sections:
 
-- **Insights** — what was learned about this file (tried, failed, why).
-- **Decisions** — file-level choices and the rule they impose (append-only within the section).
+- **Insights** — what was *learned* about this file: what was tried, what failed, why. Not what the code
+  shows — a reader can see that.
+- **Decisions** — a file-level choice and the rule it imposes, **with what it rules out** (append-only
+  within the section). A decision whose rule the code already enforces is a docstring, not a Decision.
 - **Discussions** — trade-offs weighed, options considered, the road not taken.
 
 You read the whole companion when you touch the file, because it is all about that file. Anchor it on
@@ -38,8 +78,8 @@ ADRs are append-only — to change one, add a new ADR that supersedes it, naming
 
 ## The split, sharply
 
-- Does it need recording **at all**? Most files never earn a companion — if the code and its own
-  documentation already carry it, do not file it.
+- **Could the code carry it?** → put it there (see *First gate* above) and file nothing. This question
+  comes first and disposes of most candidates; most files never earn a companion at all.
 - Is the knowledge **about one file**? → its companion, in the right section.
 - Is it **cross-cutting**? → the matching root record.
 - Unclear? **Count the files it binds.** One file → its companion, *even if the reason is system-wide*
@@ -49,7 +89,7 @@ ADRs are append-only — to change one, add a new ADR that supersedes it, naming
 Do not put a file-level insight at the root, and do not scatter a system-wide decision across file
 companions. If a would-be file-level insight actually concerns *several* files at once, that is usually a
 system-level fact (→ `architecture.md` or an ADR) or a signal the files share a responsibility that
-wants its own home (a add-feature objective) — not a note copied into many companions.
+wants its own home (an add-feature objective) — not a note copied into many companions.
 
 ## Who files, and when
 

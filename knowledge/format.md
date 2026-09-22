@@ -7,9 +7,11 @@ whole project to find what bears on the file in front of you.
 This file defines **what a record looks like** and how its anchor is derived — the contract the tools
 (`anchor.py`, the staleness hook) implement.
 
-> **Which home a given piece of knowledge belongs in, whether it needs recording at all, and who files it
-> when, is `skills/aims-guide/references/design-record.md`.** That file owns the filing decision; this one
-> owns the shape.
+> **Which home a given piece of knowledge belongs in, whether it belongs in a record at all, and who files
+> it when, is `skills/aims-guide/references/design-record.md`.** That file owns the filing decision; this
+> one owns the shape. Its **first gate** governs everything below: a record holds only what the code
+> *cannot* — anything a docstring, a comment, a name, a signature or a test could carry belongs there
+> instead, and the shape described here is no licence to fill a section that has nothing of that kind in it.
 
 There are exactly two kinds of record.
 
@@ -31,18 +33,25 @@ title: "render.py"
 date: 2026-08-12
 ---
 ## Insights
-- SVG was chosen over canvas because the pages are static.
+- Canvas was tried first and dropped: its text nodes rasterise, so a zoomed page lost the labels.
 ## Decisions
-- render must not know how the maze was generated (it takes a finished maze).
+- render never generates — it takes a finished maze. This rules out the "render(seed)" convenience
+  overload that has now been asked for twice.
 ## Discussions
-- Considered PNG; dropped — not crisp when zoomed.
+- PNG output was weighed and dropped: not crisp when zoomed. Worth revisiting only if pages go to print.
 ```
+
+Notice what the example does **not** contain: that `render` takes a maze and returns SVG (the signature
+says so), or that it validates its input (a guard says so). Each entry is something no reader could
+recover from the code — a failed attempt, what a choice forecloses, a road not taken and its trigger.
 
 - The frontmatter is just `title` + `date`; the body is the three sections. Leave a section empty
   (or omit it) until it has content.
-- **Insights** — what was learned about this file (what was tried, what failed, why).
-- **Decisions** — file-level choices and the rule they impose (append-only: to change one, add a new
-  bullet that supersedes the old, naming it — never rewrite).
+- **Insights** — what was learned about this file (what was tried, what failed, why) — not a description
+  of what the code does, which a reader can already see.
+- **Decisions** — file-level choices, the rule they impose and **what they rule out** (append-only: to
+  change one, add a new bullet that supersedes the old, naming it — never rewrite). A rule the code
+  itself enforces is a docstring, not a Decision.
 - **Discussions** — trade-offs weighed, options considered, the road not taken. An assumption the file
   rests on but which was never proven belongs here too, stated as unproven — a Decision or an Insight
   claims something is known, and an unproven premise recorded as knowledge is how a later session

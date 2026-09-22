@@ -247,3 +247,25 @@ Append-only. Each entry: timestamp · what happened · next.
   verdict. The 6/6 convergence is **not** evidence against the record layer — a record that preserves an
   intent perfectly changes no structure, which is the record doing its job. Goal 2's finding (3/3 vs 0/3)
   stands undiminished; goal 1's evidence is BP9/BP13/BP14 and the aims-vs-openspec pilots, not BP19.
+
+- **2026-09-22 — BP21 COMPLETE: the record guidance lacked a placement gate; fixed and tested (goal 2).**
+  Found by examining the filing guidance against goal 2's own wording ("knowledge that does **not** belong
+  to the code"): `design-record.md` asked *which home* and *is it durable*, never *should this be in the
+  code instead*. Its one nearby clause was a **redundancy** test ("already carry it"), not a **placement**
+  test, and it sat in the last section. Failing instance in aims' own output: BP19's skill-filed companion
+  records *"the strongest verdict … a flag no rule speaks about is off"* while `Resolver.is_enabled`'s
+  docstring says the same thing — filed twice. **Why it matters:** a record that restates the design is
+  **duplicate state**, the only part of a record that can go wrong *on its own* — the code changes, the
+  restatement is false, and the anchor only **flags** drift; nothing repairs it.
+  **Shipped `decisions/0022`** + a *First gate* in `design-record.md` (docstring / comment / signature /
+  test / name first; a record holds only what nothing in the code asserts), rule 1 of four in `SKILL.md`,
+  the gate in `format.md` and `record-templates.md`, and the `format.md` companion example rewritten — it
+  had itself modelled restatement.
+  **Measured, against a clean pre-gate control:** blind auditor rates **8/13 (62%)** of the old companion's
+  entries RECOVERABLE with `file:line`. Run 1 was confounded (I gave the new arm only 4 history items, 3
+  code-carried → 1 entry; the judge correctly called its 100% ratio "an artifact of length"). **Run 2, with
+  matched history and a prediction fixed in advance: 8/8 code-carried items dropped, 6/6 unrecoverable kept
+  — exact match.** Convergent check: the blind judge, before run 2 and unaware of the gate, wrote that the
+  ideal file would be "X's entries 9–13 plus Y's single entry — six bullets, no restatement"; that is
+  precisely what the gate produced. n=1; the untested mirror risk is an agent that must *remember* the
+  rejected alternatives rather than being handed them. bp21-code-first-gate/results.md.

@@ -266,11 +266,14 @@ second, drifting source of truth:
     intent), `base-dependencies.md` (foundational substrate), `dependencies.md` (confined deps),
     `architecture.md` (boundaries/seams/invariants), and `decisions/NNNN.md` (system-wide **ADRs**).
 
-  Three rules govern every record: **(1) facts + rationale, never a write-up of the discussion or its
-  history; (2) `decisions/` (file-level and ADRs) are append-only — to change one, add a new entry that
-  supersedes it, never rewrite; (3) each companion is anchored to its source file on filing** (see
-  below), so instead of "keep it true by hand", drift is *detected* mechanically and a later reader is
-  told to re-verify.
+  Four rules govern every record: **(1) a record holds only what the code *cannot* — what the code can
+  carry belongs in a docstring, a comment, a name, a signature or a test, and restating the design in a
+  record is duplicate state that goes stale on its own; (2) facts + rationale, never a write-up of the
+  discussion or its history; (3) `decisions/` (file-level and ADRs) are append-only — to change one, add
+  a new entry that supersedes it, never rewrite; (4) each companion is anchored to its source file on
+  filing** (see below), so instead of "keep it true by hand", drift is *detected* mechanically and a later
+  reader is told to re-verify. Rule 1 comes first and disposes of most candidates —
+  `references/design-record.md` owns the gate.
 
 Create and maintain the records as the product takes shape; a design objective's result is *filed* in
 the code tree, not narrated into the conversation and lost. The **rationale** for each decision is
