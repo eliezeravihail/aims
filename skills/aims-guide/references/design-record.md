@@ -6,6 +6,43 @@ all, which of the two homes it goes in, and who files it when. The *shape* of a 
 three sections, how the anchor is derived — is `../../../knowledge/format.md`; fill-in skeletons are in
 `assets/record-templates.md`.
 
+## The rule — one rule, and everything below is it applied
+
+**Knowledge goes to the narrowest thing it is true of.** That is the whole method. A reader looks where
+they already are, so knowledge waits there; a filer's only question is *what is this true of?* — and the
+answer is the address.
+
+| true of… | goes… | anchored? |
+|---|---|---|
+| one line | a **comment** right there | — |
+| one function | its **name**, **signature**, **docstring**, or a **test** | — |
+| one file | its **companion**, `<file>.md` beside it | yes, to that file |
+| one directory / package | a record **beside the directory**, `<dir>.md` | no — a directory has no single content |
+| one dependency | `dependencies.md` — it is true of the library, not of whoever calls it | no |
+| the whole project | the **root record it concerns** — `goals.md`, `architecture.md`, `dependencies.md`, an ADR | no |
+
+**The ladder ranges only over what the code cannot carry.** Run the *first gate* below before reading the
+table at all: it decides whether this is knowledge for a record or for the code, and the ladder then places
+what survives. An external reason — a library's defect, a contract, an incident — does not exempt a fact
+from the gate; if a comment at the line can state it, that is where it goes, and only what the comment
+cannot say (an alternative weighed, a fix attempted and failed) reaches a record.
+
+Two consequences do all the work, and they are the two halves of the same rule:
+
+- **Narrower wins.** If a docstring is the narrowest true home, a companion is the wrong one — that is the
+  *first gate* below, and it is the case that disposes of most candidates.
+- **Wider is wrong too.** A fact true of six parsers and nothing else is not an `architecture.md` invariant;
+  filing it there claims the whole system obeys it. It goes beside `src/parsers/`, as `src/parsers.md`.
+
+**A thing that no longer exists is not an address.** Knowledge about something deleted goes to the narrowest
+thing that now holds its responsibility — the file or directory that took it over — and to the project only
+if nothing did. Never file a companion for a removed file: with no sibling to anchor to it is an orphan, which
+the hook reports as a fault, not a home.
+
+**Scope is continuous, not two-valued.** There is no rule that knowledge must be about exactly one file or
+about everything; "count the files it binds" below is a way of *finding* the narrowest true scope, not a
+choice between two homes.
+
 ## First gate — does it belong in the **code** instead?
 
 **A record is for knowledge the code cannot carry.** Most of what a design session produces *can* be
@@ -36,6 +73,11 @@ asserts it.**
 **The test, in one line: if you could delete the entry, write it as a docstring, and lose nothing, then it
 was a docstring.**
 
+**"The code carries it" means a reader would meet it** — in a name, a signature, a guard, a test, or a
+convention every instance already follows. It does not require the code to *enforce* it. A convention the
+code exhibits everywhere is carried; what is not carried is *why* it is that way and what it rules out, and
+only that reaches a record.
+
 **When the product *is* prose** (a method, a spec, guidance — this repo included), "the code" is the shipped
 text, and the gate reads: *could the file itself simply say it?* Usually yes, and then it belongs in the file.
 What survives is what a text cannot assert about itself — how it was misread, what it deliberately leaves out,
@@ -47,7 +89,7 @@ false, and the anchor merely **flags** the drift — nothing repairs it. Knowled
 no such failure mode, because nothing else asserts it. Every restated line you file buys drift and pays
 nothing. A short companion of things the code cannot say is worth more than a long one that narrates it.
 
-There are two homes, and the split is by *what the knowledge is about*.
+The homes below are that ladder, written out.
 
 ## File-level → a companion beside a source file that has earned one
 
@@ -70,7 +112,18 @@ filing (`python3 .aims/anchor.py <companion>`) — it hashes the same-named sour
 where `/install-on` puts the tool in every project; the aims repo itself runs it from its source
 location, `knowledge/anchor.py`. This line owns the invocation — everywhere else refers to it.
 
-## System-level → a record at the repo root
+## Directory-level → a record beside the directory
+
+A fact true of every file in `src/parsers/` and of nothing else goes in `src/parsers.md`, beside the
+directory it describes — same three sections. It takes **no anchor**: a directory has no single content to
+hash, so the tool files it as a system record, which is correct. Reach for this exactly when the narrowest
+true scope is a package: not a fact about one file that several happen to share, and not a fact the rest of
+the system obeys too.
+
+Copying the same note into six companions, or promoting it to `architecture.md`, are the two ways of getting
+this wrong — one understates the scope, the other overstates it.
+
+## Project-level → a record at the repo root
 
 Knowledge that is **cross-cutting** (not about one file) goes to the matching root record:
 
@@ -79,7 +132,7 @@ Knowledge that is **cross-cutting** (not about one file) goes to the matching ro
 | primary goal, use scenarios, non-goals | `goals.md` |
 | boundaries, seams, invariants, change axes — the shape of the system | `architecture.md` |
 | the foundational substrate (language, framework, pervasive base) | `base-dependencies.md` |
-| a confined, replaceable dependency and what it is for | `dependencies.md` |
+| a dependency — what it is for, and what is known about it (a defect to guard against, a constraint it imposes) | `dependencies.md` |
 | a system-wide architecture decision + rejected alternatives | `decisions/NNNN-slug.md` (an ADR) |
 
 System records take **no anchor** (they are intent/architecture, not tied to one file). `decisions/`
@@ -98,9 +151,12 @@ repo's own ADRs exist.
   comes first and disposes of most candidates; most files never earn a companion at all.
 - Is the knowledge **about one file**? → its companion, in the right section.
 - Is it **cross-cutting**? → the matching root record.
-- Unclear? **Count the files it binds.** One file → its companion, *even if the reason is system-wide*
-  (an external consumer, a contract, an incident) — an external justification does not make it an ADR.
-  Several files → system-level.
+- Is it true of a **dependency** rather than of your code? → `dependencies.md`. A file that merely guards
+  against a library's defect is not what the defect is true of; counting callers would misaddress it.
+- Otherwise, unclear? **Count the files it binds** — this finds the narrowest true scope. One file → its companion,
+  *even if the reason is system-wide* (an external consumer, a contract, an incident) — an external
+  justification does not widen what the knowledge is true of. One directory → beside that directory. The
+  whole system → the root record it concerns.
 
 **Cross-cutting learning goes in the root record it concerns** — an insight about what the project is for
 or what the evidence supports belongs in `goals.md`; one about the system's shape belongs in
@@ -108,9 +164,10 @@ or what the evidence supports belongs in `goals.md`; one about the system's shap
 companion describe *a companion*, not a shape the root level has to repeat.
 
 Do not put a file-level insight at the root, and do not scatter a system-wide decision across file
-companions. If a would-be file-level insight actually concerns *several* files at once, that is usually a
-system-level fact (→ `architecture.md` or an ADR) or a signal the files share a responsibility that
-wants its own home (an add-feature objective) — not a note copied into many companions.
+companions. A would-be file-level insight that concerns *several* files at once belongs at their narrowest common
+scope — their directory if that is what it is true of, a root record if the whole system obeys it — and it
+may also be a signal that those files share a responsibility wanting its own home (an add-feature
+objective). What it is never is a note copied into many companions.
 
 ## Who files, and when
 

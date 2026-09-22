@@ -63,15 +63,30 @@ date: <date>
 - <the language / framework / pervasive base — what stands on it and why it is foundational>
 ```
 
-## Dependencies — `dependencies.md` at the root (confined, replaceable deps)
+## Dependencies — `dependencies.md` at the root (replaceable deps)
 
 ```markdown
 ---
 title: "dependencies"
 date: <date>
 ---
-- <dependency> — what it is for, and which boundary confines it
+- <dependency> — what it is for, which boundary confines it (if one does), and anything known about it
+  that a caller must respect
 ```
+
+## Directory record — `<dir>.md` beside the directory (e.g. `src/parsers.md`; no anchor)
+
+```markdown
+---
+title: "parsers"
+date: <date>
+---
+## Insights
+## Decisions
+## Discussions
+```
+
+For knowledge true of every file in that directory and of nothing else.
 
 ## ADR — `decisions/NNNN-slug.md` at the root (system-wide; append-only)
 

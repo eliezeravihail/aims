@@ -13,7 +13,8 @@ This file defines **what a record looks like** and how its anchor is derived —
 > *cannot* — anything a docstring, a comment, a name, a signature or a test could carry belongs there
 > instead, and the shape described here is no licence to fill a section that has nothing of that kind in it.
 
-There are exactly two kinds of record.
+A record's address is the **narrowest thing its knowledge is true of** — one file, one directory, or the
+project (`skills/aims-guide/references/design-record.md` owns that decision). The shapes below follow that:
 
 ## 1. A file companion — `<file>.md` beside `<file>`
 
@@ -57,14 +58,22 @@ recover from the code — a failed attempt, what a choice forecloses, a road not
   claims something is known, and an unproven premise recorded as knowledge is how a later session
   inherits a guess as a fact.
 
-## 2. A system record at the repo root
+## 2. A directory record — `<dir>.md` beside `<dir>`
+
+Same three sections, for knowledge true of every file in that directory and of nothing else
+(`src/parsers/` → `src/parsers.md`). It carries **no anchor**: `.md` stripped names a directory, not a
+file, so the derivation below files it as a system record — which is what it is.
+
+## 3. A project record at the repo root
 
 One record per concern, not tied to any single file:
 
 - `goals.md` — what the product is for, use scenarios, non-goals.
 - `architecture.md` — boundaries, seams, invariants, change axes — the shape of the system.
 - `base-dependencies.md` — the foundational substrate (language, framework, the pervasive base).
-- `dependencies.md` — the confined, replaceable dependencies and what each is for.
+- `dependencies.md` — the replaceable dependencies: what each is for, and what is known about it that a
+  caller must respect (a defect to guard against, a constraint it imposes). Reach for it when the knowledge
+  is true of *the dependency*, whether or not its use is confined to one boundary.
 - `decisions/NNNN-slug.md` — system-wide **ADRs** (append-only; supersede, never rewrite). Frontmatter is
   `title` + `date`, plus an optional `supersedes:` naming the ADR this one replaces. An ADR that *corrects*
   an earlier one without replacing it carries no `supersedes:`.

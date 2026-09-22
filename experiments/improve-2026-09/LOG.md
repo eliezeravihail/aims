@@ -298,3 +298,19 @@ Append-only. Each entry: timestamp · what happened · next.
   internal divisions; a root record is already scoped by its subject. `design-record.md` now says this
   plainly. `0023`'s single-root-file question stays open and is no longer entangled with it. The other four
   BP22 findings stand and remain fixed.
+
+- **2026-09-22 — The record guidance was tables, not a principle; stated the principle and measured it.**
+  Prompted by the observation that all of it follows from one assumption — *document each thing in the
+  place relevant to it*, which the guidance never stated. Probe: 8 placement cases, mostly ones the tables
+  do not name, answered blind from the guidance alone, self-reporting determined vs. had-to-choose.
+  **Before: 3/8 determined.** The structural miss: knowledge true of **one directory and nothing else** had
+  no home — the method had exactly two scopes, one file or the whole repo — so it got promoted to
+  `architecture.md`, overstating its scope. (The anchor tool already handled `src/parsers.md` fine: it files
+  it unanchored, which is correct. The text was behind the tool.)
+  **Fix:** state the one rule — *knowledge goes to the narrowest thing it is true of* — as a ladder (line →
+  function → file → directory → dependency → project), with the tables demoted to illustrations of it.
+  Added the directory record, the gate-runs-first ordering, "a thing that no longer exists is not an
+  address" (it goes to what took over its responsibility), and widened `dependencies.md` from "confined,
+  replaceable deps" to what is *known* about a dependency. **After: 6/8 determined**, then two more
+  one-line clarifications from the same rule (a dependency is an address; "the code carries it" means a
+  reader meets it, not that a guard enforces it). Those last two are unmeasured.
