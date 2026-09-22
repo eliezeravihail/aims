@@ -1,10 +1,10 @@
 # Record templates (co-located)
 
-**Before reaching for a template:** a record holds only what the code *cannot*. If a docstring, a comment,
-a name, a signature or a test could carry it, it goes there and nothing is filed — `references/design-record.md`
-owns that gate. A skeleton's empty section is not a prompt to fill it.
+**Before reaching for a template:** a record is for discussions and decisions **not evident from the code
+itself**. If a name, a docstring, a comment, a signature or a test could carry it, it goes there and nothing
+is filed. A skeleton's empty section is not a prompt to fill it.
 
-Two homes. File-level knowledge → a companion beside the source file; cross-cutting → a root record.
+A record sits next to what it is about: beside the file, in the folder, or at the project root.
 Anchor a companion on filing: `python3 .aims/anchor.py <companion>` (system records take no anchor;
 see `references/design-record.md` for the invocation and the aims-repo exception).
 Dates are `YYYY-MM-DD`.

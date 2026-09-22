@@ -319,3 +319,12 @@ Append-only. Each entry: timestamp · what happened · next.
   failure the guidance had before, in a new shape: a procedure to execute instead of an idea to
   understand. Rewritten as prose: *write it next to what it is about*, then say the code first whenever
   the code can say it, then the homes. No counting, no ladder. `design-record.md` 174 → 153 lines.
+
+- **2026-09-22 — The guidance now opens with the rule, in two sentences.** Each pass fixed the content and
+  then re-buried it: tables, then a scope ladder, then prose that still said the idea three times over.
+  `design-record.md` now leads with it — *discussions and decisions not evident from the code itself go in
+  a `.md` file next to what they are about: beside the file, in the module's folder, or at the project root
+  if they concern the whole project; everything else belongs in the code's own documentation* — followed by
+  "That is the whole idea. The rest of this file is detail." 174 → 99 lines. `format.md`,
+  `record-templates.md` and `SKILL.md` now open with the same two sentences rather than their own
+  paraphrases. No rule changed; this is the same rule said once instead of four times.

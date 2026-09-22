@@ -1,7 +1,7 @@
 ---
 title: "design-record.md"
 date: 2026-09-22
-hash: "sha256:51cac38dfb9d0f68b79b1ae439369fbf780ae67761dec107d14d6fdd7aef9beb"
+hash: "sha256:49b77056f684cd52c556e977569a3c00e182d7d873b5d9a44d352632a1986392"
 ---
 ## Insights
 - Both defects this file has shipped had the **same form: the rule was present, but not where it is
