@@ -1,7 +1,7 @@
 """Payout settlement."""
 
 from dataclasses import dataclass
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 
 @dataclass(frozen=True)
@@ -15,6 +15,8 @@ class Settlement:
     settlement_id: str
     total_cents: int
     payouts: List[Payout]
+    #: id of the settlement this entry reverses, or None for an original settlement.
+    reverses: Optional[str] = None
 
 
 def _allocate(total_cents: int, shares: Dict[str, int]) -> List[Payout]:
@@ -45,6 +47,29 @@ class Ledger:
         entry = Settlement(settlement_id, total_cents, _allocate(total_cents, shares))
         self._entries.append(entry)
         return entry
+
+    def reverse(self, settlement_id: str) -> Settlement:
+        """Undo a settlement by appending a linked reversal entry.
+
+        The reversal carries the opposite amounts, so the two entries together net
+        to zero for every payee. The original entry is left untouched — the ledger
+        is append-only (``decisions/0001``).
+
+        Raises KeyError if the settlement id is unknown, and ValueError if it has
+        already been reversed (a second reversal would not net to zero).
+        """
+        entry = self.get(settlement_id)
+        for e in self._entries:
+            if e.reverses == settlement_id:
+                raise ValueError(f"settlement already reversed: {settlement_id}")
+        reversal = Settlement(
+            f"{settlement_id}:reversal",
+            -entry.total_cents,
+            [Payout(p.payee_id, -p.amount_cents) for p in entry.payouts],
+            reverses=settlement_id,
+        )
+        self._entries.append(reversal)
+        return reversal
 
     def entries(self) -> List[Settlement]:
         return list(self._entries)
