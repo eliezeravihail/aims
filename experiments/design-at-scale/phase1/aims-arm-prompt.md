@@ -1,7 +1,8 @@
 # The aims arm's prompt — frozen before Phase 1
 
-The unaided prompt (`../phase0/arm-prompt.md`), identical except that it names the method and where to read
-it (`PROTOCOL.md` §2: the identical request, plus the method). `<N>` is the arm's directory.
+The unaided prompt (`../phase0/arm-prompt.md`), plus exactly the one line `PROTOCOL.md` §2 allows — *follow the
+`aims-guide` skill* — and where it is, since it is not installed as a plugin. Nothing else: no choice of flow,
+no command to run, no hint about the codebase. The method decides everything else. `<N>` is the arm's directory.
 
 ---
 
@@ -22,10 +23,8 @@ Here is the change the product owner wants:
 
 Build it well.
 
-Work with the aims method, which is at `/tmp/claude-0/phase1/aims/` (read it there; it is part of your
-working material). This is a change to existing code: plan it as `commands/aims-add-feature.md` describes, and
-drive the full loop through to the delivered change as `commands/aims-plan-and-build.md` describes. The method's
-anchor tool is installed at `.aims/anchor.py`.
+Follow the `aims-guide` skill: `/tmp/claude-0/phase1/aims/skills/aims-guide/SKILL.md`. Everything it refers to
+is under `/tmp/claude-0/phase1/aims/`.
 
 If you reach a product question whose answer would materially change what you build, you may stop and reply
 with your questions; the product owner will answer and you will continue. For technical choices, use your own

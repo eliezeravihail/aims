@@ -12,10 +12,18 @@ Operational detail `../DESIGN.md` leaves open, fixed here before any result exis
 Every arm: the pinned mkdocs checkout, its own `.venv`, the identical stage-1 card, the same model, and
 no access to this repository.
 
-**The aims arm's request** is the unaided request plus the instruction to use the method as shipped for a change
-to existing code: plan it as `/aims-add-feature` describes, and drive the full loop as `/aims-plan-and-build`
-describes (which resumes such a plan in automatic mode). No further guidance — the method decides everything
-else, including whether to convene the panel-plan and whether to delegate to a Worker.
+**The aims arm's request** is the unaided request plus one line: *follow the `aims-guide` skill*, with its location
+(`PROTOCOL.md` §2). Nothing else — the method decides everything, including which flow to use for existing code,
+whether to convene the panel-plan, and whether to delegate to a Worker.
+
+**Correction, before any aims result existed.** The first frozen version of this prompt also said *"this is a change
+to existing code: plan it as `aims-add-feature` describes, and drive the full loop as `aims-plan-and-build`
+describes"* and named the anchor tool's location. That chose the flow for the method, which is steering, and it
+went beyond the one line the protocol allows. The owner flagged it. The three aims arms were stopped while still
+reading the method — none had written a file (each directory was checked: zero changes) — their directories
+were reset to fresh copies, and they were relaunched with this prompt. The unaided arms were unaffected and ran
+on. The pinned method copy was also checked for anything about this experiment (mkdocs, languages, detection,
+later stages): nothing.
 
 ## The product owner
 
