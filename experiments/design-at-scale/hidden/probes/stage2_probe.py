@@ -36,6 +36,7 @@ PLAIN_FILES = {
     "docs/sub/deep.md": "# Deep\n\nPLAINDEEP body, [back](../index.md).\n",
 }
 TICK = 1.2  # seconds between a build and an edit, so file mtimes differ
+DATE_ONLY = {}  # scenario -> pages rewritten only to carry a new build date (not counted; reported)
 
 
 def write(root, files):
@@ -79,6 +80,7 @@ def scenario(arm, work, name, files, edit):
     if rc:
         return False, [], set(), False, "initial build failed: " + (err.strip().splitlines() or [""])[-1]
     before = mtimes(proj / "site")
+    raw_before = {rel: p.read_bytes() for rel, p in pages(proj / "site").items()}
     time.sleep(TICK)
     edit(proj)
     time.sleep(TICK)
@@ -86,7 +88,17 @@ def scenario(arm, work, name, files, edit):
     if rc:
         return False, [], set(), False, "--dirty build failed: " + (err.strip().splitlines() or [""])[-1]
     after = mtimes(proj / "site")
-    rewritten = {k for k in after if before.get(k) != after[k]}
+    # Correction made after the first stage-2 results (floor-notes.md): a page rewritten only to carry the new
+    # "Build Date UTC" line is not counted as rebuilt — equality masks that line, so the rebuild count must too.
+    # A page rewritten with identical bytes still counts.
+    def date_only(rel):
+        old, new = raw_before.get(rel), (proj / "site" / rel).read_bytes()
+        mask = lambda b: re.sub(rb"Build Date UTC : [^\n]*", b"", b)
+        return old is not None and old != new and mask(old) == mask(new)
+    touched = {k for k in after if before.get(k) != after[k]}
+    rewritten = {k for k in touched if not date_only(k)}
+    if touched - rewritten:
+        DATE_ONLY.setdefault(name, sorted(touched - rewritten))
     rc, err = mk(arm, proj, "-d", "full")
     if rc:
         return False, [], rewritten, False, "full build failed"
@@ -201,6 +213,8 @@ def main(arm, pristine):
                 "changed from pristine — " + (ea or (f"rewrote {sorted(ra)} vs pristine {sorted(rp)}" if ra != rp
                                                      else "output differs")) + " (reported, not gated)"))
 
+    for code, rels in DATE_ONLY.items():
+        info.append(f"{code}: rewritten only for the build date, not counted as rebuilt: {', '.join(rels[:5])}")
     shutil.rmtree(work, ignore_errors=True)
     for name, ok, detail in results:
         print(f"{'PASS' if ok else 'FAIL'}  {name}" + (f"  — {detail}" if detail and not ok else ""))

@@ -40,3 +40,13 @@ sites and third-party plugins are neither in the oracle nor decided by the card:
 - b3 (B): "Decisions I made": the switcher unchanged; sites with a plugin other than `search`, hooks, a non-Python-Markdown
   extension or strict mode always get full rebuilds; a one-off `build --dirty` does a full build on multi-language
   sites. None given.
+- a2 (A): "Decisions for you": no record kept between separate `build --dirty` runs (it re-derives the whole site and
+  rewrites only changed files); strict-mode warnings from kept pages are not replayed; sites with non-opted-in plugins
+  get full rebuilds. None given.
+- c3 (C): "Decisions for you": plain `serve` still rebuilds everything; a separate `build --dirty` rebuilds every page but
+  leaves unchanged files untouched. None given.
+
+**A second stop to ask, after building (a1):** "Decision needed: speed versus exactness" — (a) keep it exact with no
+speed-up, (b) reuse converted Markdown when source, metadata and file list are unchanged, (c) as (b) assuming
+extensions never read other files → "Correct first. It must not rebuild pages an edit can't affect." *(oracle, the
+same slower-but-correct question)*
