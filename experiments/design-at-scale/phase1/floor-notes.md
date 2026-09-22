@@ -16,6 +16,18 @@ hand-back. Whether the second figure includes the first is not stated by the too
 | w6 | unaided | 11/12 | BLOCKED (P10) | 20 files changed, +664 / −118, plus 5 new files | 328.2 k tokens, 121 tool calls |
 | w4 | unaided | 11/12 | BLOCKED (P10) | 55 files changed, +906 / −106, plus 6 new files (32 of the changed files are theme message catalogues) | 373.0 k tokens, 115 tool calls |
 
-**Floor by condition.** aims: 3 of 3 CLEAR (12/12 each). Unaided: 0 of 3 CLEAR — all three fail only P10, and all
-three for the same reason: each edited the theme's `messages.pot` to add its new labels, so a site with no
-`languages` no longer builds byte-for-byte as before. The aims arms added their labels without touching it.
+**Floor by condition.** aims: 3 of 3 CLEAR (12/12 each). Unaided: 0 of 3 CLEAR — all three fail only P10.
+
+**What P10 caught — checked before any judge ran.** Each of the six arms' plain (no-`languages`) site was built and
+diffed file by file against the pristine build. For w1, w2, w3 nothing differs. For w4, w5, w6 exactly one file
+differs, and every HTML page, asset and search index is identical: `messages.pot`, the theme's template for
+translators, which pristine mkdocs happens to copy into every built site. The three unaided arms added their new
+labels ("Language", "Languages") to that template — the step mkdocs' own translation guide asks for when a label is
+added. The aims arms did not: w1 and w3 added translatable labels to the templates without adding them to the
+translator template; w2 added none.
+
+**So the floor gap is an artefact of the probe, not a difference a reader would see.** If anything, on this one
+point the unaided arms did the fuller job. The frozen result stands as given — 3/3 CLEAR against 0/3 — and the
+pre-registered prediction (`../DESIGN.md` §6) comes out true by its letter. It is **not** counted as evidence for
+aims: it rests entirely on this one file. The probe is not changed now; a later phase that reuses it should ignore
+`messages.pot`, fixed before that phase runs.
