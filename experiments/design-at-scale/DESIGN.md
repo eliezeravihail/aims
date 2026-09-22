@@ -1,7 +1,8 @@
 ---
 title: "Design at scale — does aims produce better design where the right design is not obvious?"
 date: 2026-09-22
-status: DESIGNED — not run. Frozen at the start of Phase 0; nothing below changes once a run begins.
+status: Phase 0 RUN — the difficulty gate PASSED (phase0/results.md). Phase 1 not yet run. Frozen at the start of
+  Phase 0; nothing below changes once a run begins.
 ---
 
 # The idea, in plain terms

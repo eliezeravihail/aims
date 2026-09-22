@@ -10,8 +10,7 @@ stepped
 
 ## Loop cursor
 
-ready-to-choose-next <cleanup round delivered; both open questions have a designed experiment — next is
-design-at-scale Phase 0, the difficulty gate>
+awaiting-human <design-at-scale Phase 0 ran and the gate PASSED; Phase 1 (≈4–5 M tokens) awaits the owner's go-ahead>
 
 ## Current objective
 
@@ -51,7 +50,10 @@ in 573 lines. A new experiment run against guidance that contradicts itself woul
 
 - [x] Design the scale experiment (goal 1) — `experiments/design-at-scale/`.
 - [x] Design the single-root-file experiment (goal 2) — `experiments/single-root-file/`.
-- [ ] Run design-at-scale Phase 0 — the difficulty gate decides whether the rest is worth running.
+- [x] Run design-at-scale Phase 0 — the gate PASSED: of four unaided designs, one clean, at least two with a
+      verified precondition failure (`experiments/design-at-scale/phase0/results.md`).
+- [ ] Phase 1 — write the aims-arm prompt and the two opposite-disposition judge prompts; run 3 aims + 3 fresh
+      unaided stage-1 builds. Awaiting the owner's go-ahead on cost.
 - [ ] Update PR #65's description; merging or splitting it is the owner's decision.
 
 ## Last evaluated result
