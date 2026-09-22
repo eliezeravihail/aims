@@ -11,3 +11,4 @@ design; it is reported as given.
 *Usage note: an arm that stops to ask and is then continued reports usage twice — once at the question, once at
 hand-back. Whether the second figure includes the first is not stated by the tooling; both are recorded as given.*
 | w5 | unaided | 11/12 | BLOCKED (P10) | 20 files changed, +535 / −26, plus 2 new files | 287.7 k tokens, 86 tool calls |
+| w3 | aims | **12/12** | **CLEAR** | 10 files changed, +235 / −4, plus 5 new files | 162.5 k tokens to its questions; 320.9 k reported at hand-back, 75 tool calls |
