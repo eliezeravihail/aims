@@ -7,3 +7,24 @@ question gets the same words in every arm. Questions raised only at hand-back ar
 
 | arm | question (verbatim) | answer (verbatim) |
 |---|---|---|
+| a2 (A) | "Which rebuilds should become incremental?" — (a) every `serve` rebuild, `build --dirty` correct by redoing everything; (b) only `serve --dirty`; (c) as (a), and `build --dirty` minimal across runs via a saved record outside `site/` | "Correct first. It must not rebuild pages an edit can't affect." *(oracle, stage 2: "Is a slower but correct rebuild acceptable?")* |
+| a1 (A) | Q1. "Which command becomes incremental?" — plain `mkdocs serve` or only `--dirty` | "Correct first. It must not rebuild pages an edit can't affect." |
+| a1 (A) | Q2. "Remembering the last build between separate `mkdocs build --dirty` runs" — re-read everything and rewrite only changed outputs, or a cache file outside the site folder | "Correct first. It must not rebuild pages an edit can't affect." |
+| a1 (A) | Q3. "What the language links show" — keep names only, or show the page's title / mark untranslated pages | "I don't know — choose a simple, sensible technical approach." |
+| a1 (A) | Q4. "Single-language sites" — fix their `--dirty` too, with the same mechanism? | "I don't know — choose a simple, sensible technical approach." |
+| a1 (A) | Q5. "Third-party plugins and themes" — guarantee exactness only for plugins whose output depends on sources/nav/config, or fall back to full rebuilds when any is enabled | "I don't know — choose a simple, sensible technical approach." |
+| b3 (B) | Question 1. "What should the links between languages show?" — switcher unchanged, or showing each language's page title | "I don't know — choose a simple, sensible technical approach." |
+| b3 (B) | Question 2. "Should plain `mkdocs serve` (without `--dirty`) also rebuild only what an edit affects on a multi-language site?" | "Correct first. It must not rebuild pages an edit can't affect." |
+| a3 (A) | Q1. "Should cross-language links show the page's title?" | "I don't know — choose a simple, sensible technical approach." |
+| a3 (A) | Q2. "How precise should `mkdocs build --dirty` be?" — selective with a state file (e.g. `.cache/mkdocs/`), or correct with only `serve` selective | "Correct first. It must not rebuild pages an edit can't affect." |
+| b2 (B) | Question 1. "Should the language links show the page's title?" — (a) the title, (b) whether translated, (c) both, (d) nothing | "I don't know — choose a simple, sensible technical approach." |
+| b2 (B) | Question 2. "Which rebuilds become incremental?" — only `serve --dirty`, every `serve` rebuild, or also `build --dirty` across runs with a record outside `site_dir` | "Correct first. It must not rebuild pages an edit can't affect." |
+| c2 (C) | 1. "Should the language links show the page's title or whether it is translated?" | "I don't know — choose a simple, sensible technical approach." |
+| c2 (C) | 2. "Must one-shot `mkdocs build --dirty` also match a full build exactly, or only `mkdocs serve`?" — a state file, or re-read every page and skip only rewriting | "Correct first. It must not rebuild pages an edit can't affect." |
+| c2 (C) | 3. "Should `mkdocs serve` rebuild incrementally by default on multi-language sites, or only with `--dirty`?" | "Correct first. It must not rebuild pages an edit can't affect." |
+
+*How the rule was applied:* every question about which rebuilds must be minimal, or whether a correct but fuller
+rebuild is acceptable (including remembering the last build between runs), is the oracle's stage-2 question "Is a
+slower but correct rebuild acceptable?", and got its answer verbatim. What the switcher shows, single-language
+sites and third-party plugins are neither in the oracle nor decided by the card: the default. Stated assumptions
+("unless you object", "how I'm reading the rest") got no reply.
