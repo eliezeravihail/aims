@@ -3,6 +3,10 @@
 from dataclasses import dataclass
 from typing import Dict, List
 
+from common.money import assert_conserved, bps_of
+
+PLATFORM_PAYEE_ID = "platform"
+
 
 @dataclass(frozen=True)
 class Payout:
@@ -31,11 +35,36 @@ def _allocate(total_cents: int, shares: Dict[str, int]) -> List[Payout]:
     return [Payout(p, base[p]) for p in payees]
 
 
+def settle_preview(
+    total_cents: int, shares: Dict[str, int], platform_fee_bps: int = 0
+) -> List[Payout]:
+    """Return the rows `settle` would produce, without recording anything.
+
+    The platform fee is deducted from the total *before* the split and emitted as
+    its own row, so it is exactly `bps_of(total_cents, platform_fee_bps)` and is
+    never touched by the allocator's remainder rule (`decisions/0003`).
+    """
+    fee = bps_of(total_cents, platform_fee_bps)
+    payee_total = total_cents - fee
+    assert_conserved(total_cents, [payee_total, fee])
+
+    rows = _allocate(payee_total, shares)
+    if platform_fee_bps:
+        rows.append(Payout(PLATFORM_PAYEE_ID, fee))
+    return rows
+
+
 class Settlements:
     def __init__(self) -> None:
         self._done: Dict[str, List[Payout]] = {}
 
-    def settle(self, settlement_id: str, total_cents: int, shares: Dict[str, int]) -> List[Payout]:
-        result = _allocate(total_cents, shares)
+    def settle(
+        self,
+        settlement_id: str,
+        total_cents: int,
+        shares: Dict[str, int],
+        platform_fee_bps: int = 0,
+    ) -> List[Payout]:
+        result = settle_preview(total_cents, shares, platform_fee_bps)
         self._done[settlement_id] = result
         return list(result)

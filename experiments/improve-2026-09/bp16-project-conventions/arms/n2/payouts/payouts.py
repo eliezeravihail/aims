@@ -3,6 +3,10 @@
 from dataclasses import dataclass
 from typing import Dict, List
 
+from common.money import bps_of, assert_conserved
+
+PLATFORM_PAYEE_ID = "platform"
+
 
 @dataclass(frozen=True)
 class Payout:
@@ -31,11 +35,40 @@ def _allocate(total_cents: int, shares: Dict[str, int]) -> List[Payout]:
     return [Payout(p, base[p]) for p in payees]
 
 
+def settle_preview(
+    total_cents: int, shares: Dict[str, int], platform_fee_bps: int = 0
+) -> List[Payout]:
+    """Return the rows a settlement would produce, without recording anything.
+
+    The platform takes `platform_fee_bps` basis points of `total_cents`, floored
+    to the cent, emitted as an extra `PLATFORM_PAYEE_ID` row; the payees split
+    the rest. The rows conserve `total_cents` exactly. With no fee, no platform
+    row is added.
+    """
+    fee = bps_of(total_cents, platform_fee_bps)
+    rows = _allocate(total_cents - fee, shares)
+    if not rows:
+        # Degenerate share table: there is no payee to settle to, so nothing is
+        # settled -- not even the fee.
+        return []
+    if fee:
+        rows.append(Payout(PLATFORM_PAYEE_ID, fee))
+
+    assert_conserved(total_cents, [r.amount_cents for r in rows])
+    return rows
+
+
 class Settlements:
     def __init__(self) -> None:
         self._done: Dict[str, List[Payout]] = {}
 
-    def settle(self, settlement_id: str, total_cents: int, shares: Dict[str, int]) -> List[Payout]:
-        result = _allocate(total_cents, shares)
+    def settle(
+        self,
+        settlement_id: str,
+        total_cents: int,
+        shares: Dict[str, int],
+        platform_fee_bps: int = 0,
+    ) -> List[Payout]:
+        result = settle_preview(total_cents, shares, platform_fee_bps)
         self._done[settlement_id] = result
         return list(result)

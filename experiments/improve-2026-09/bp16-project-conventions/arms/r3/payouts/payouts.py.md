@@ -12,5 +12,9 @@
 - A fee is deducted before the split, never given a weight in `shares` — `decisions/0003`.
 
 ## Discussions
+- `settle_preview` is the single place the rows are built; `Settlements.settle` is that call plus the
+  recording step, so the preview and the recorded settlement can never drift apart.
+- The fee row is emitted whenever a non-zero rate is given, even when it floors to 0 cents: the row set
+  then depends on the rate alone, not on the total, which is what finance reconciles against.
 - `_allocate` gives the whole rounding leftover to the largest-share payee. That is deliberate (the lead
   partner is the residual party by contract) and is the precise reason a fee must not sit in `shares`.
