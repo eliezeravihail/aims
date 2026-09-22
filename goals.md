@@ -1,6 +1,6 @@
 ---
 title: "goals"
-date: 2026-09-16
+date: 2026-09-22
 ---
 
 ## Two goals — separate, and never measured together
@@ -35,6 +35,16 @@ on §0–§14 while quietly breaking what the project declared it would not do �
 a record can do its whole job without moving a single line of code. Any measurement that reads one goal's
 instrument as a verdict on the other will report a false result in one direction or the other; this run
 produced both mistakes before catching them.
+
+**One shape, three times.** Every measurement error this run made was the same substitution: the thing
+aims actually optimizes, replaced by a proxy that was easier to observe. Functional tests stood in for
+design quality (`decisions/0021`); then the design rubric stood in for the record layer (the *Withdrawn*
+comparisons below); then a structural-convergence result — six agents landing on the same class
+hierarchy at ~300 lines — was read as a verdict on records, when it measures how much a strong model
+re-derives and says nothing about whether a record was used. None of the three felt like a shortcut at
+the time; each felt like rigour, *because* the proxy was the more measurable quantity. The warning sign
+is therefore not sloppiness but the opposite — when one candidate measure is conspicuously easier to
+observe than the goal, that ease is the thing to distrust, not the justification for adopting it.
 
 ## Use scenarios
 - **A new product under the method** — the developer runs `/aims-plan-and-build "<product>"` in an
@@ -110,6 +120,12 @@ on. In `experiments/improve-2026-09/bp19-aims-filed-records/`, a change request 
 reconciled it; **0/3** agents with the code alone did, and none could — the non-goal exists nowhere but the
 record. Plus the narrower, longer-standing payoff: a durable append-only trail of *why a superseded decision
 no longer holds*.
+
+*What the 3/3 does not establish.* Amending a record when a change contradicts it is behaviour the skill
+explicitly asks for, so the records arm's 3/3 is in part a measure of instruction-following and must not
+be quoted as a clean effect size. The half that instruction-following cannot explain is the **0/3**: no
+instruction could have made the code-only arm reconcile an intent that exists nowhere in the code. What
+is established is that the contradiction was **detectable at all** on one side and not the other.
 
 **Open.** Whether the record layer also helps a session **re-derive less** at a scale where the pattern is
 not visible in the code. Unanswered: at ~300 lines a strong model converges on the same design with or
