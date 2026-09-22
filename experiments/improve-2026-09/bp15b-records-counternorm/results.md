@@ -50,3 +50,32 @@ A second honest null — and, like the first, a null **about the instrument**, n
 layer. Two necessary conditions are now identified; a valid test needs both at once. The only positive
 record-layer signal so far remains BP15's blind design-quality read (records 37/40 vs no-records 25/40, n=1
 per arm) — i.e. records affected the **quality of the new code**, not the survival of old decisions.
+
+# ADDENDUM — the blind design-quality read, with REAL n=3 independence
+
+All six outputs were genuinely distinct this time (six distinct texts), so unlike BP15's addendum this is
+n=3 per arm. Blind judge, design rubric, scored from the code:
+
+| arm | scores /40 | mean | worst | best | spread |
+|---|---|---|---|---|---|
+| **records** (r1,r2,r3) | 38, 32, 30 | **33.3** | **30** | 38 | **8** |
+| **no records** (n1,n2,n3) | 37, 30, 20 | **29.0** | **20** | 37 | **17** |
+
+**The pattern is floor-raising / variance reduction, not a higher ceiling.**
+
+- The worst design in the whole set — **20/40**, which the judge independently called "the clear outlier and
+  the only design with a real structural defect" — is a **no-records** arm. Its defect: it patches the
+  platform row's amount after allocation (`fee + unallocated`), so the fee row is no longer the fee and the
+  sum invariant is enforced in **two places that can drift** — precisely what `architecture.md` and the
+  companion warn against ("a deduction applied *after* allocation would break the exact-sum property").
+- The records arm never fell below **30**; its spread is half the no-records spread (8 vs 17).
+- The **best** no-records design (37) nearly ties the best records design (38). Records did not raise the
+  ceiling.
+
+This reproduces, on the design rubric and with real independence, the same shape the rest of the campaign
+found by other routes: **aims' value is reliability of the structural choice — it prevents the bad design
+rather than producing a better best.**
+
+Honest limits: n=3 per arm, one product, one judge, overlapping ranges (37 vs 38 at the top). Suggestive, not
+conclusive. And note this is the value of the records on the **quality of the new code** — decision *survival*
+was null in both BP15 and BP15b for the two structural reasons documented above.
