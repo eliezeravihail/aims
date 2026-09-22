@@ -72,6 +72,12 @@ Synthesis of the add-feature runs: [`refactoring-SYNTHESIS.md`](refactoring-SYNT
 | [`instance-seg-annotator`](instance-seg-annotator/results.md) | Q2: did the fresh session continue from the records? | yes, blind-corroborated | **stands** |
 | [`refactoring-continuity`](refactoring-continuity/results.md) | the same code with and without its record | both correct; the record added legibility, not a different outcome | **null** at this scale |
 
+## Designed, not yet run
+
+| experiment | goal | asks | status |
+|---|---|---|---|
+| [`design-at-scale`](design-at-scale/DESIGN.md) | 1, and 2 separately | does aims produce better design on a real codebase (mkdocs, 7k lines) with changes that cut across it — and only after a gate proves unaided agents sometimes get that design wrong? | **designed** — Phase 0 (the gate) first |
+
 ## The measurement instrument
 
 | item | what it is |
