@@ -22,6 +22,10 @@ question gets the same words in every arm. Questions raised only at hand-back ar
 | c2 (C) | 1. "Should the language links show the page's title or whether it is translated?" | "I don't know — choose a simple, sensible technical approach." |
 | c2 (C) | 2. "Must one-shot `mkdocs build --dirty` also match a full build exactly, or only `mkdocs serve`?" — a state file, or re-read every page and skip only rewriting | "Correct first. It must not rebuild pages an edit can't affect." |
 | c2 (C) | 3. "Should `mkdocs serve` rebuild incrementally by default on multi-language sites, or only with `--dirty`?" | "Correct first. It must not rebuild pages an edit can't affect." |
+| b1 (B) | 1. "Cross-language links and titles" — should the switcher show each language's page title? | "I don't know — choose a simple, sensible technical approach." |
+| b1 (B) | 2. "Third-party plugins" — (a) fall back to a full rebuild, or (b) rebuild incrementally with no guarantee | "I don't know — choose a simple, sensible technical approach." |
+| b1 (B) | 3. "Which commands" — only `--dirty`, or plain `serve` too? | "Correct first. It must not rebuild pages an edit can't affect." |
+| b1 (B) | 4. "Remembering the previous build" — a cache file outside the site, or re-read every page each run | "Correct first. It must not rebuild pages an edit can't affect." |
 
 *How the rule was applied:* every question about which rebuilds must be minimal, or whether a correct but fuller
 rebuild is acceptable (including remembering the last build between runs), is the oracle's stage-2 question "Is a
