@@ -269,3 +269,22 @@ Append-only. Each entry: timestamp · what happened · next.
   ideal file would be "X's entries 9–13 plus Y's single entry — six bullets, no restatement"; that is
   precisely what the gate produced. n=1; the untested mirror risk is an agent that must *remember* the
   rejected alternatives rather than being handed them. bp21-code-first-gate/results.md.
+
+- **2026-09-22 — BP22: ran the record gate on aims' own session (dogfood).** A blind filer got the
+  guidance, everything the repo already asserts, and this session's 14 design-history items unordered,
+  with an explicit licence to leave something unfiled if it had no home. **10 declined as already
+  carried; 4 filed** — the measurement-error *pattern* (goals.md), "the rule was present but not where it
+  is read" (a companion beside `design-record.md`), the single-root-file alternative as
+  considered-but-untested (`decisions/0023`), and the instruction-following caveat (goals.md). Two of
+  those are sharper than what I had written: the caveat splits the contaminated 3/3 from the **0/3 that no
+  instruction can explain**.
+  **Five guidance defects found, all verified before acting:** (1) cross-cutting learning has **no
+  root-level home** — Insights/Discussions exist only at file level, and both root filings were smuggled
+  into `goals.md`, which fits only because this repo's `goals.md` outgrew the template it ships →
+  `decisions/0024` records the gap and **defers** the fix, since a root `insights.md` would prejudge
+  `0023`'s open question; (2) ADR-as-correction was practice, never written → documented; (3) the gate's
+  "code" was undefined when the product **is** prose → defined; (4) `guide.md.md` companions → documented;
+  (5) ADR frontmatter unspecified while ADRs carry `supersedes:` → specified.
+  **My own prediction was falsified then half-restored:** I expected three homeless items; the filer placed
+  all three — but only via a non-standard `goals.md`, which restores the gap for any project following the
+  template. bp22-gate-on-itself/results.md.

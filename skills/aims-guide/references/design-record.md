@@ -36,6 +36,11 @@ asserts it.**
 **The test, in one line: if you could delete the entry, write it as a docstring, and lose nothing, then it
 was a docstring.**
 
+**When the product *is* prose** (a method, a spec, guidance — this repo included), "the code" is the shipped
+text, and the gate reads: *could the file itself simply say it?* Usually yes, and then it belongs in the file.
+What survives is what a text cannot assert about itself — how it was misread, what it deliberately leaves out,
+an alternative wording weighed and dropped.
+
 **Why this is a rule and not a preference.** A record that restates the design is **duplicate state**, and
 it is the only part of a record that can *go wrong on its own*: the code changes, the restatement is now
 false, and the anchor merely **flags** the drift — nothing repairs it. Knowledge the code cannot hold has
@@ -56,6 +61,10 @@ next to it (`src/render.py` → `src/render.py.md`) — under three sections:
   within the section). A decision whose rule the code already enforces is a docstring, not a Decision.
 - **Discussions** — trade-offs weighed, options considered, the road not taken.
 
+"Source file" means any file the project ships, **including a Markdown one** — in a documentation product
+that is most of them. A companion for `guide.md` is therefore `guide.md.md`; the double extension looks like
+a slip but is the anchor derivation working exactly as specified (strip `.md`, the sibling exists, hash it).
+
 You read the whole companion when you touch the file, because it is all about that file. Anchor it on
 filing (`python3 .aims/anchor.py <companion>`) — it hashes the same-named source file. That path is
 where `/install-on` puts the tool in every project; the aims repo itself runs it from its source
@@ -75,6 +84,13 @@ Knowledge that is **cross-cutting** (not about one file) goes to the matching ro
 
 System records take **no anchor** (they are intent/architecture, not tied to one file). `decisions/`
 ADRs are append-only — to change one, add a new ADR that supersedes it, naming it.
+
+**An ADR is not only a decision.** It is also where a **correction** or a **finding of record** goes: that an
+earlier ADR's evidence no longer holds, that a result was withdrawn, that an alternative is
+*considered-but-untested* rather than rejected. Such an entry may leave the ADR it concerns **unsuperseded** —
+it corrects the record beside it rather than replacing it. Read literally as "a decision + rejected
+alternatives", the table above would leave these unfilable; in practice they are the reason several of this
+repo's own ADRs exist.
 
 ## The split, sharply
 

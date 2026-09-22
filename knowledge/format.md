@@ -65,7 +65,9 @@ One record per concern, not tied to any single file:
 - `architecture.md` — boundaries, seams, invariants, change axes — the shape of the system.
 - `base-dependencies.md` — the foundational substrate (language, framework, the pervasive base).
 - `dependencies.md` — the confined, replaceable dependencies and what each is for.
-- `decisions/NNNN-slug.md` — system-wide **ADRs** (append-only; supersede, never rewrite).
+- `decisions/NNNN-slug.md` — system-wide **ADRs** (append-only; supersede, never rewrite). Frontmatter is
+  `title` + `date`, plus an optional `supersedes:` naming the ADR this one replaces. An ADR that *corrects*
+  an earlier one without replacing it carries no `supersedes:`.
 
 ## The anchor — one derivation, machine-stamped
 
@@ -73,6 +75,9 @@ A record `X.md` **anchors to a sibling file named `X`** (its own name with `.md`
 exists; otherwise it is a system record and carries no anchor:
 
 - `render.py.md` → `.md` stripped is `render.py`, which exists → a content `hash:` of `render.py`.
+- `guide.md.md` → `.md` stripped is `guide.md`, which exists → a content `hash:` of `guide.md`. A shipped
+  Markdown file earns a companion the same way any other file does; the double extension is the rule
+  applying, not a slip.
 - `goals.md` / `architecture.md` → `goals` / `architecture` do not exist → **no anchor** (intent, not
   tied to one file).
 
