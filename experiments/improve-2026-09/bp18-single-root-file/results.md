@@ -40,3 +40,36 @@ n=3 per arm, one product, one judge, overlapping ranges at the top; the judge it
 "one design with cosmetic variation, within noise of each other". The load-bearing assumption is the rarity
 premise: a root file that inflates stops being read in full, and that is exactly the property it wins on.
 A second product, and a test of what happens when the file grows, are the checks this needs before shipping.
+
+---
+
+# CORRECTION — the "per-file companions (aims today)" arm was NOT aims
+
+Checked against the shipped method (`skills/aims-guide/references/design-record.md`). Two errors, both mine:
+
+**1. aims does not prescribe a companion per source file.** The reference says the opposite, explicitly:
+> *"A source file gets a companion the first time there is something durable to record about it — **not
+> mechanically for every file**."*
+
+I extrapolated "knowledge about one file → its companion" into "a companion beside every source file". That
+is my extrapolation, not the method.
+
+**2. I mis-filed the records inside the experiment.** In BP15b I produced six record files for one small
+module (`goals.md`, `architecture.md`, `decisions/0001-0003`, `payouts.py.md`). But all three deliberations
+were **file-level** facts about `payouts.py`, and the method's split rule is explicit: file-level knowledge
+belongs in that file's companion; an ADR is for a **system-wide** decision. Applied correctly, aims would
+have produced **one file** — `payouts.py.md`.
+
+## What this does to the result
+
+- The arm labelled "per-file companions (aims today)" measured **my over-application**, not the method. Its
+  31.7 is not a score for aims.
+- What survives: **142 lines across 6 files scored worse than 49 lines in 1 file** — concentration beats
+  scatter. That is real, and it is an argument against *over-filing*, which the method already forbids.
+- What does **not** survive: the claim that a root file beats aims' record model, and the consequent
+  proposal to delete `anchor.py`, the staleness hook and the copies-identical test. Applied correctly the
+  comparison is **one companion beside the file vs one file at the root** — a difference of *location only*,
+  which this experiment never tested and which plausibly shows nothing.
+
+**Status: the BP18 conclusion is withdrawn.** The valid residue is a caution against over-filing — which is
+the method's own bootstrapping rule, restated by measurement.
