@@ -1,6 +1,7 @@
 ---
-title: "BP16b result — NULL again (3/3 both arms): one usage example is enough to infer a convention"
+title: "[WITHDRAWN] BP16b result — NULL again (3/3 both arms): one usage example is enough to infer a convention"
 date: 2026-09-22
+status: WITHDRAWN — the records in this run were written by hand, not filed by aims, so it tested that construction rather than aims (AUDIT-record-layer-claims.md).
 ---
 
 Conventions stripped from the code's docstrings. Still **3/3 in both arms**.

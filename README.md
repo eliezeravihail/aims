@@ -200,47 +200,24 @@ single task before you execute it.
 - `/install-on <path>` — install aims' per-project pieces (the two hooks + the anchor tool) into a
   target project.
 
-## Running the experiments
+## The evidence
 
-[`experiments/`](experiments/) holds the evaluations behind the design. Every experiment must follow the
-protocol — a controlled, **blind-judged** comparison (a control/clean arm + a separate judge), not a
-single-arm demonstration:
+[`experiments/README.md`](experiments/README.md) lists **every experiment** behind aims — what it asked, what
+it found, and whether it stands, was superseded, or was withdrawn — split by the two goals, since they are
+measured separately. The short version:
 
-- **[`experiments/PROTOCOL.md`](experiments/PROTOCOL.md)** — how to run an aims pilot: two arms (aims vs.
-  clean), a hidden oracle, staged reveals with no foreknowledge, and blind judgment by separate judge
-  subagents (three unmerged reports; verify the judge). A demonstration is not an experiment; the control
-  arm and the separate blind judge are what make it one.
+- **Design.** Passing tests does not separate designs; the design rubric does (43 vs 16 at an identical test
+  suite). The review catches designs that pass every test but are badly built. On a weaker model aims raises
+  the floor. On a strong model the effect has been small — because every task measured so far was small
+  enough for a strong model to find a good design unaided. Whether aims wins **at a scale where the right
+  design is not obvious** is the open question.
+- **Knowledge.** A recorded non-goal catches a change that contradicts it; the code alone cannot (3/3 vs
+  0/3). On small code a record does not change the outcome, because the pattern is recoverable from the code.
+- **Losses are recorded as losses**: aims lost the plant → mineral pilot decisively, and its best design
+  pilot (v4) ships a real defect.
 
-The pilots:
-
-- [`experiments/navigation/`](experiments/navigation/) — *does a fresh agent find the knowledge it
-  needs by navigating the structure, without reading the whole project?* Reproduce: copy
-  `navigation/product/` to a scratch directory, then run a fresh, no-history session (e.g. a
-  subagent) with the task in the README. It should open only the relevant file's companion — the
-  recorded run read 2 of 8 files and honored a constraint that lived only in the companion.
-- [`experiments/continued-development/`](experiments/continued-development/) — *does a clean session
-  continue from the records instead of re-deriving?* Reproduce: take `continued-development/product-v1/`
-  (a small product with its records), hand a fresh session the product plus a continuation task, and
-  compare against a blind session with the records withheld.
-- [`experiments/instance-seg-annotator/`](experiments/instance-seg-annotator/) — a real, container-run
-  product (multi-class instance-segmentation annotator) built across a staged evolution (general
-  annotator → satellite tiling + dataset export), run as a two-arm blind pilot under `PROTOCOL.md`.
-- [`experiments/aims-vs-openspec/`](experiments/aims-vs-openspec/) — aims against a *rival method* rather
-  than against no method, **on the architecture only — nothing is built**. Three arms (aims / OpenSpec /
-  plain) each design a checkout pricing service across three staged reveals; the primary reading is
-  countable — when an unforeseen requirement arrives, how many named components and seams must be
-  **reopened**. **Run, and honest about the result: aims did not win.** The one clean blind run (v1) found
-  **no design advantage** for aims — it placed third of three and reopened the most, and the pre-registered
-  falsifier fired (`decisions/0007`). Later runs improved: the concept-fit pass eliminated the architectural
-  fault, and the **clean isolated re-run (v4)** ranks aims-panel first under both opposite-prior judges with
-  the pass generalizing — **but aims-panel's own v4 design ships a real, acknowledged defect** in its tax
-  mechanism (`decisions/0010`, `experiments/aims-vs-openspec/results-v4.md`). The honest current claim is
-  *"aims improved change-absorption and v4 is its strongest result, but ships a real defect — a win on this
-  pilot's measures, not yet a design to build from unmodified"* — not
-  that aims beats a spec-first method.
-
-Each README states exactly what was handed to each arm and what was measured, so a run is reproducible and
-the claims are checkable.
+Every experiment follows [`experiments/PROTOCOL.md`](experiments/PROTOCOL.md): a controlled, **blind-judged**
+comparison against a control arm, judged by a separate agent — a demonstration is not an experiment.
 
 ## What aims deliberately does not have
 

@@ -1,6 +1,7 @@
 ---
-title: "BP15b result — decision survival NULL again (4/4 both arms), for a NEW structural reason: nobody had to touch the decisions"
+title: "[WITHDRAWN] BP15b result — decision survival NULL again (4/4 both arms), for a NEW structural reason: nobody had to touch the decisions"
 date: 2026-09-22
+status: WITHDRAWN — the records in this run were written by hand, not filed by aims, so it tested that construction rather than aims (AUDIT-record-layer-claims.md).
 ---
 
 # Result: 4/4 in both arms

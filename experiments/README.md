@@ -1,0 +1,123 @@
+# Experiments — what each one asked, what it found, and whether it stands
+
+Every experiment behind aims, in one place. Each row is taken from that experiment's own results file; follow
+the link for the evidence. Each experiment's README states exactly what was handed to each arm and what was
+measured, so a run is reproducible and its claims checkable. How to run a new one: [`PROTOCOL.md`](PROTOCOL.md).
+
+**Two that reproduce in minutes:**
+
+- **Navigation** — copy [`navigation/product/`](navigation/product/) to a scratch directory, then give a fresh,
+  no-history session (e.g. a subagent) the task in [`navigation/README.md`](navigation/README.md). It should open
+  only the relevant file's companion; the recorded run read 2 of 8 files and honored a constraint that lived
+  only there.
+- **Continued development** — take [`continued-development/product-v1/`](continued-development/product-v1/) (a
+  small product with its records), hand a fresh session the product plus the continuation task, and compare
+  against a session with the records withheld.
+
+aims has **two goals, measured separately** ([`../goals.md`](../goals.md)):
+
+- **Goal 1 — correct design.** Measured by the §0–§14 rubric **scored from the code**. Passing tests is a floor
+  that earns nothing ([`../decisions/0021`](../decisions/0021-design-rubric-leads-a-comparison-not-behavioral-proxies.md)).
+- **Goal 2 — knowledge that is not in the code.** Measured by whether that knowledge survives and is acted on.
+
+**Status:** **stands** · **null** (tested, no effect — recorded as such) · **superseded** (a later run
+replaced its conclusion) · **withdrawn** (the test was invalid).
+
+## Where the evidence stands today
+
+- **Goal 1.** The rubric separates designs the tests cannot (43 vs 16 at an identical suite). The **review**
+  catches green-but-bad designs (4/4). On a *weaker* model aims raises the floor; on a strong one the effect
+  is small, because **every task so far was small enough that a strong model converged on a good design
+  unaided**. Whether aims produces better design **at a scale where the right design is not obvious** is
+  untested — the open question.
+- **Goal 2.** A filed **non-goal** catches a change that contradicts it (3/3 vs 0/3) — the one thing a
+  record holds that the code cannot. A record does not change the outcome on small code, where the pattern is
+  recoverable from the code itself. Six campaign runs were withdrawn (hand-written records).
+- **Cost.** ≈1.85–2.34× tokens in the campaign's two measurements; 2.5–3× in the paper's study.
+
+---
+
+## Goal 1 — correct design
+
+| experiment | asked | found | status |
+|---|---|---|---|
+| [`aims-vs-openspec`](aims-vs-openspec/results.md) (v1) | aims vs OpenSpec vs plain, design-only, checkout pricing over 3 stages | aims won no reading; third under both judges | **superseded** by v4 (`0010`) |
+| [`aims-vs-openspec`](aims-vs-openspec/results-v3.md) (v3) | same, after the concept-fit pass | the cram fault gone — but the arms could read the ADR naming it | **superseded** — flawed (leak), replaced by v4 |
+| [`aims-vs-openspec`](aims-vs-openspec/results-v4.md) (v4) | clean isolated re-run | aims-panel first under both opposite-prior judges — **and ships a real defect** in its tax mechanism | **stands**, with the defect |
+| [`aims-upgraded-rerun`](aims-upgraded-rerun/results.md) | the pilot aims lost, re-run on upgraded aims | the judges now agree — on a real structural fault (two structures for one tax concept) and a correctness gap | **stands** — a loss, diagnosed |
+| [`aims-single-pass-rerun`](aims-single-pass-rerun/README.md) | single-pass designer on the corrected principles | discovered the discount→line allocation from the requirement itself | **stands** |
+| [`single-pass-assessment-rerun`](single-pass-assessment-rerun/README.md) | the same, scored on the assessment form | checkout a three-way tie; aims no longer last | **stands** |
+| [`principles-polish-vs-openspec`](principles-polish-vs-openspec/results.md) | design-principles.md vs OpenSpec, 3 fresh products | aims wins first-round on all three; change absorption tie / win / tie | **stands** — with a ceiling (every aims arm scored the maximum) and vocabulary-capture caveat |
+| [`plant-mineral-id`](plant-mineral-id/results.md) | aims vs OpenSpec, feature-based identifier | **aims lost decisively** (6.63 vs 9.54), the only BLOCKED arm | **stands** — a loss |
+| [`s7-yagni-stated-capability`](s7-yagni-stated-capability/results.md) | does a §7 clause fix that loss on an unseen product? | the loss did not reproduce with or without it | **null** — not adopted |
+| [`marketplace-change-absorption`](marketplace-change-absorption/results.md) | informal change-absorption probe, furniture → cars | three blind judges: aims > OpenSpec > plain | **stands** — informal |
+| [`instance-seg-annotator`](instance-seg-annotator/results.md) | two-arm build pilot, staged evolution | design: **no clear advantage** (verdict flips with the judge) | **stands** (its Q2 is in goal 2) |
+| [`iter-plan`](iter-plan/README.md) | revise round vs a long upfront brief | one review-and-revise round is the biggest lever measured (2.0 → 3.5) | **stands** → `0011` |
+| [`plan-diversity`](plan-diversity/results.md) | three candidate designs + synthesis vs single pass | synthesized inter-model 38/40 vs single pass 24/40 — n = 1, and the winner leaned on the judge's own model | **stands** — suggestive |
+| [`self-redesign-regression`](self-redesign-regression/results.md) | did the self-redesign regress the method? | no; one probe fix was caught blind | **stands** |
+| [`refactoring-principles-validation`](refactoring-principles-validation/results.md) | add-feature principles on a synthetic change | both arms correct; the card over-specified the trap | **stands** |
+| [`refactoring-suite`](refactoring-suite/results.md) | 3 real-code tasks, aims vs plain | both correct on all; aims kept the one-owner rule where plain scattered it | **stands** |
+| [`refactoring-suite-real`](refactoring-suite-real/results.md) | a real library (boltons cache TTL) | both correct; aims tighter (expiry co-located, 31 vs 53 lines) | **stands** |
+| [`refactoring-rot`](refactoring-rot/results.md) | 3 successive interacting changes | both correct each step; **aims' design improves, plain's stays flat and denser** | **stands** |
+| [`refactoring-crosscut`](refactoring-crosscut/results.md) | multi-currency across a 4-module ledger | essentially a tie | **stands** |
+
+Synthesis of the add-feature runs: [`refactoring-SYNTHESIS.md`](refactoring-SYNTHESIS.md).
+
+## Goal 2 — knowledge that is not in the code
+
+| experiment | asked | found | status |
+|---|---|---|---|
+| [`navigation`](navigation/results.md) | does a fresh agent reach the knowledge by navigating? | opened exactly 2 of 8 files, found and honored a constraint that lived only in the companion, skipped the distractor | **stands** — navigation on a prepared fixture |
+| [`continued-development`](continued-development/results.md) | does a fresh session continue from the records? | a tie on the code; the records arm *knew* the invariant instead of re-deriving it | **stands** — narrow |
+| [`instance-seg-annotator`](instance-seg-annotator/results.md) | Q2: did the fresh session continue from the records? | yes, blind-corroborated | **stands** |
+| [`refactoring-continuity`](refactoring-continuity/results.md) | the same code with and without its record | both correct; the record added legibility, not a different outcome | **null** at this scale |
+
+## The measurement instrument
+
+| item | what it is |
+|---|---|
+| [`judging-rubric/`](judging-rubric/) | the assessment form and its regrades |
+| [`grade-rule-regrade.md`](grade-rule-regrade.md) | every earlier grade recomputed without the removed global cap, both readings kept; no ranking changed (`0018`) |
+| [`PROTOCOL.md`](PROTOCOL.md) | how to run an experiment that discriminates |
+
+---
+
+## The 2026-09 improvement campaign — [`improve-2026-09/`](improve-2026-09/)
+
+Current conclusions: [`SYNTHESIS.md`](improve-2026-09/SYNTHESIS.md) · history: [`LOG.md`](improve-2026-09/LOG.md) ·
+every attempt re-checked against the corrected measure: [`REEVALUATION.md`](improve-2026-09/REEVALUATION.md) ·
+which record-layer runs are valid: [`AUDIT-record-layer-claims.md`](improve-2026-09/AUDIT-record-layer-claims.md).
+
+**Method changes proposed and tested:**
+
+| run | goal | asked | found | status |
+|---|---|---|---|---|
+| [`i1`](improve-2026-09/i1-input-space-table/results.md) | 1 | a design-time input-space table | no gain over the shipped §1 | **null** — not adopted |
+| [`i2`](improve-2026-09/i2-falsification-review/results.md) | 1 | an adversarial falsification review pass | the shipped review already falsifies | **null** — not adopted |
+| [`i3`](improve-2026-09/i3-outcome-first/validation.md) | 1 | lead comparisons with behavioural proxies | shipped as `0019` — then shown to be a regression | **superseded** by `0021` |
+| [`i4`](improve-2026-09/i4-table-unstated-corner/results.md) | 1 | the table, on an unstated corner | still no gain | **null** — closed |
+| [`i5`](improve-2026-09/i5-record-trap/results.md) | 2 | a record-layer trap | — | **withdrawn** |
+
+**Build pilots:**
+
+| run | goal | asked | found | status |
+|---|---|---|---|---|
+| [`bp1`](improve-2026-09/bp1-inventory/results.md) | 1 | 3-stage build, aims vs no method | 0 vs 1 reopen; correctness a tie; ≈1.85× tokens | **stands** — modest |
+| [`bp2`](improve-2026-09/bp2-inventory-haiku/results.md) | 1 | the same on a cheaper model | reproduces (n = 2); did not compound | **stands** |
+| [`bp3`](improve-2026-09/bp3-hint-transfer/results.md) | 1 | is the edge the method, or one principle? | one principle made a plain arm match aims — on a strong model | **stands** |
+| [`bp4`](improve-2026-09/bp4-conceptfit-probe/results.md) | 1 | a concept-fit trap | both arms avoided it | **null** |
+| [`bp5`](improve-2026-09/bp5-ledger-compounding/results.md) | 1 | does the edge compound over 4 changes? | no — both absorbed all four | **null** on compounding |
+| [`bp6`](improve-2026-09/bp6-baserate/results.md) | 1 | how often does a plain build take the shortcut? | 1 of 6 | **stands** |
+| [`bp7`](improve-2026-09/bp7-conceptfit-generalize/results.md) | 1 | on a second axis? | 0/3 on a strong model, 2/6 on a weak one — model-dependent | **stands** |
+| [`bp8`](improve-2026-09/bp8-lite-baserate/results.md) | 1 | does the principle in the prompt help a weak model? | no — 2/6 both ways | **null** |
+| [`bp9`](improve-2026-09/bp9-review-vs-principle/results.md) | 1 | does the review catch what the prompt missed? | **yes, 4/4** — output inspection is the part that matters | **stands** |
+| [`bp10`](improve-2026-09/bp10-correctness-baserate/results.md) | 1 | a correctness deficit on clear specs? | 0 bugs in 12 | **null** |
+| [`bp11`](improve-2026-09/bp11-interaction-corner/results.md) | 1 | a designed interaction corner? | 0 slips in 6 | **null** |
+| [`bp12`](improve-2026-09/bp12-cost/results.md) | — | cost, second datapoint | ≈2.3× tokens, ≈12× wall on a small task | **stands** |
+| [`bp13`](improve-2026-09/bp13-design-under-surprise/results.md) | 1 | does design quality show under an unforeseen change? | only on the right change: type-switch 4/4 reopen vs polymorphic 0/2, identical tests | **stands** |
+| [`bp14`](improve-2026-09/bp14-design-rubric/results.md) | 1 | does the rubric separate designs the tests cannot? | **43 vs 16** at an identical suite | **stands** |
+| [`bp15`](improve-2026-09/bp15-records-value/results.md), [`bp15b`](improve-2026-09/bp15b-records-counternorm/results.md), [`bp16`](improve-2026-09/bp16-project-conventions/results.md), [`bp16b`](improve-2026-09/bp16b-silent-code/results.md), [`bp17`](improve-2026-09/bp17-deliberation/results.md) | 2 | does a record help on a later change? | — | **withdrawn** — hand-written records |
+| [`bp18`](improve-2026-09/bp18-single-root-file/results.md) | 2 | one root file vs per-file companions | — | **withdrawn** — the question is open (`0023`) |
+| [`bp19`](improve-2026-09/bp19-aims-filed-records/results.md) | 2 | do aims-filed records help a blind agent? | a filed non-goal caught a contradicting change **3/3 vs 0/3**; the design rubric could not see it | **stands** |
+| [`bp21`](improve-2026-09/bp21-code-first-gate/results.md) | 2 | does the code-first gate stop records restating the code? | 62% of a pre-gate companion was restatement; with the gate 8/8 dropped, 6/6 kept, matching a pre-registered prediction | **stands** → `0022` |
+| [`bp22`](improve-2026-09/bp22-gate-on-itself/results.md) | 2 | the gate run on aims' own session | 10 of 14 declined as already carried; found four real guidance defects (a fifth claimed defect was wrong) | **stands** |

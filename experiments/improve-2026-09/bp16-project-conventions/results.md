@@ -1,6 +1,7 @@
 ---
-title: "BP16 result — NULL (3/3 both arms): I wrote the conventions into the code's own docstrings"
+title: "[WITHDRAWN] BP16 result — NULL (3/3 both arms): I wrote the conventions into the code's own docstrings"
 date: 2026-09-22
+status: WITHDRAWN — the records in this run were written by hand, not filed by aims, so it tested that construction rather than aims (AUDIT-record-layer-claims.md).
 ---
 
 # Result

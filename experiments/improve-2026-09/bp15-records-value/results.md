@@ -1,6 +1,7 @@
 ---
-title: "BP15 result — NULL, and the null is about the experiment design: the decisions were industry norms"
+title: "[WITHDRAWN] BP15 result — NULL, and the null is about the experiment design: the decisions were industry norms"
 date: 2026-09-22
+status: WITHDRAWN — the records in this run were written by hand, not filed by aims, so it tested that construction rather than aims (AUDIT-record-layer-claims.md).
 ---
 
 # Result: 4/4 in both arms — no signal

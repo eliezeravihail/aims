@@ -1,6 +1,7 @@
 ---
-title: "I5 result — the record confirmed but did not change the outcome (null; honest limitation noted)"
+title: "[WITHDRAWN] I5 result — the record confirmed but did not change the outcome (null; honest limitation noted)"
 date: 2026-09-20
+status: WITHDRAWN — the records in this run were written by hand, not filed by aims, so it tested that construction rather than aims (AUDIT-record-layer-claims.md).
 ---
 
 # I5 — record-layer trap continuity: NULL

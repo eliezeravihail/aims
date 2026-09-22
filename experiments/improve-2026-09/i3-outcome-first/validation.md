@@ -1,6 +1,7 @@
 ---
-title: "I3 validation — outcome-first comparison discriminates where the rubric ceiling'd"
+title: "[SUPERSEDED] I3 validation — outcome-first comparison discriminates where the rubric ceiling'd"
 date: 2026-09-20
+status: SUPERSEDED by decisions/0021 — leading a comparison with behavioural proxies was itself a regression; the §0–§14 rubric scored from the code leads.
 ---
 
 # I3 — make the rubric-free OUTCOME the primary comparison reading (validated against the record)

@@ -1,6 +1,7 @@
 ---
-title: "BP17 result — NULL (4/4 both arms): the code's SHAPE encoded the decision, and the records arm misjudged its own counterfactual"
+title: "[WITHDRAWN] BP17 result — NULL (4/4 both arms): the code's SHAPE encoded the decision, and the records arm misjudged its own counterfactual"
 date: 2026-09-22
+status: WITHDRAWN — the records in this run were written by hand, not filed by aims, so it tested that construction rather than aims (AUDIT-record-layer-claims.md).
 ---
 
 # Result

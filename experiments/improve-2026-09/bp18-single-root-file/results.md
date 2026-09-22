@@ -1,6 +1,7 @@
 ---
-title: "BP18 result — a single root decisions file BEATS per-file companions: floor 31 vs 26 vs 20"
+title: "[WITHDRAWN] BP18 result — a single root decisions file BEATS per-file companions: floor 31 vs 26 vs 20"
 date: 2026-09-22
+status: WITHDRAWN — the records in this run were written by hand, not filed by aims, so it tested that construction rather than aims (AUDIT-record-layer-claims.md). Its headline comparison is also void: the single-root-file question is open (decisions/0023).
 ---
 
 # Result — nine modules, one blind judge, one shuffled pass
