@@ -218,3 +218,17 @@ Append-only. Each entry: timestamp · what happened · next.
   the §0–§14 rubric can see a design that scores full marks while breaking what the project said it would not
   do. Corroborates the earlier nulls (a *rule* is recoverable from good code; a *non-goal* is the absence of
   code and leaves no trace). bp19-aims-filed-records/results.md.
+
+- **2026-09-22 — BP19 FOLLOW-UP: a 6/6 NULL that narrows the non-null.** Asked whether the amended
+  declared intent ("time is a schedule for a rollout, never a targeting condition") reached the **code**.
+  Predicate fixed before inspecting the blind arms (`bp19-.../followup-predicate.txt`, labelled as not
+  blind on the records side): does `ScheduledRollout` hand a percentage to the **same bucket + comparison
+  `Percentage` uses**, and does `Resolver` gain a branch? **6/6 pass, 0/6 type-dispatch** — all six arms
+  produced the *same* hierarchy, differing only in a private base class's name; r1's and n1's
+  `Resolver.is_enabled` are near-identical line for line. So the record changed the **record**, not the
+  **code**. This also explains the rubric cluster (36–40, no group separation): no structural difference
+  existed to separate, and n3's 29 is a *local* defect (clock resolved at three sites), not architectural.
+  BP19's claim narrowed accordingly: the demonstrated value is **record fidelity, not better code**, and
+  "records produce better designs" is now **evidence against** on this task, not merely unproven. Mechanism
+  for the earlier nulls: at this scale a strong model **converges**, so only what is absent from the code
+  (a non-goal) is unrecoverable. The design question is a question about **scale**.

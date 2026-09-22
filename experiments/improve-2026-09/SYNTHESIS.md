@@ -377,15 +377,27 @@ records and n = 3 without, made the same non-elementary change (a `ScheduledRoll
   the rollout percentage, never as a targeting condition" — and all three amended the companion and re-stamped
   its anchor. **Zero of three blind arms did, and none could**: the non-goal exists nowhere but the record.
 
-**What this is, precisely.** Not "records produce better code" — that stays unproven. It is that a record can
-hold a **declared intent** the code cannot, so a change that contradicts the project's stated intent is
-*visible* and gets reconciled instead of drifting silently. **Neither the tests nor the §0–§14 rubric can see
-it**: a design can score full marks while quietly breaking what the project said it would not do. That is a
-category of value distinct from design quality, and it is the campaign's first non-null.
+- **Follow-up, and it is a null: the declared intent changed the record, not the code.** Predicate fixed
+  before inspecting the blind arms — does `ScheduledRollout` hand a percentage to the **same bucket and
+  comparison `Percentage` uses** (time moves the *share*, never membership), and does `Resolver` gain a
+  branch? **6/6 pass, 0/6 type-dispatch.** All six arms independently produced the *same* hierarchy,
+  differing only in a private base class's name; `r1`'s and `n1`'s `Resolver.is_enabled` are near-identical
+  line for line. This also explains the rubric cluster: there was no structural difference to separate, and
+  `n3`'s 29 is a **local** defect (the clock resolved at three sites), not an architectural one.
 
-It also **corroborates** the earlier nulls instead of overturning them: six confounds showed a *rule or
-convention* is recoverable from a well-formed codebase. A **non-goal** is exactly what is not — it is the
-absence of code, and absence leaves no trace to recover.
+**What this is, precisely.** Not "records produce better code" — on this task that came back **null**, not
+merely unproven. It is that a record holds a **declared intent the code cannot**, so a change contradicting
+the project's stated intent is *visible* and gets reconciled instead of drifting silently. **Neither the tests
+nor the §0–§14 rubric can see it**: a design can score full marks while quietly breaking what the project said
+it would not do. The demonstrated value is **record fidelity, not better code** — a category distinct from
+design quality, and the campaign's first non-null.
+
+It also **corroborates** the earlier nulls instead of overturning them, now with a mechanism: on a
+well-formed codebase at this scale a strong model **converges** — six arms, one design — so a *rule or
+convention* is recoverable and the record adds nothing the code was not going to say anyway. A **non-goal**
+is exactly what is not: it is the absence of code, and absence leaves no trace to recover. Whether the
+record earns its keep on **design** is therefore a question about **scale**, untouched by a ~300-line
+module, and it remains the standing frontier.
 
 # Honest limits / future work
 
