@@ -5,9 +5,10 @@ complete format is `../../../knowledge/format.md` (short, self-contained); fill-
 record kind are in `assets/record-templates.md`; this file maps "what I just decided" to "which record".
 There are two homes, and the split is by *what the knowledge is about*.
 
-## File-level → a companion beside the source file
+## File-level → a companion beside a source file that has earned one
 
-Knowledge **about one source file** goes in that file's companion — the same name plus `.md`, right
+**Most files never get a companion** — one is created the first time there is something durable to record
+about that file, never mechanically for every file. Knowledge **about one source file** goes in that file's companion — the same name plus `.md`, right
 next to it (`src/render.py` → `src/render.py.md`) — under three sections:
 
 - **Insights** — what was learned about this file (tried, failed, why).
@@ -36,8 +37,13 @@ ADRs are append-only — to change one, add a new ADR that supersedes it, naming
 
 ## The split, sharply
 
+- Does it need recording **at all**? Most files never earn a companion — if the code and its own
+  documentation already carry it, do not file it.
 - Is the knowledge **about one file**? → its companion, in the right section.
 - Is it **cross-cutting**? → the matching root record.
+- Unclear? **Count the files it binds.** One file → its companion, *even if the reason is system-wide*
+  (an external consumer, a contract, an incident) — an external justification does not make it an ADR.
+  Several files → system-level.
 
 Do not put a file-level insight at the root, and do not scatter a system-wide decision across file
 companions. If a would-be file-level insight actually concerns *several* files at once, that is usually a

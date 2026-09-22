@@ -15,14 +15,15 @@ overview; this file is the working guidance for developing aims itself.
 - `knowledge/` — the durable-knowledge layer: `format.md` (the record format), `anchor.py` (write-time
   stamper), `staleness_hook.py` (read-time advisory).
 - Design records are **co-located in this repo's own code tree** (dogfood): root `goals.md`,
-  `architecture.md`, and `decisions/` (system ADRs); a companion beside each source file
+  `architecture.md`, and `decisions/` (system ADRs); a companion beside each source file that earned one
   (`knowledge/anchor.py.md`, `knowledge/staleness_hook.py.md`, …).
 
 ## How aims documents itself — companions + root records
 
 Durable design knowledge for aims lives **next to the code it describes**, in two homes:
 
-- Knowledge about one source file → its **companion** `<file>.md` beside it, under the sections
+- Knowledge about one source file → its **companion** `<file>.md` beside it (**only when the file has earned
+  one — most files never get a companion**), under the sections
   Insights / Decisions / Discussions (Decisions are append-only — supersede in place, never rewrite).
 - Cross-cutting knowledge → a root record: `goals.md`, `architecture.md`, `base-dependencies.md`,
   `dependencies.md`, or a `decisions/` ADR.

@@ -4,9 +4,11 @@ Design knowledge lives **in the code tree**, so the one directory structure is b
 the knowledge tree — understanding and navigation come from the structure itself, and you never read the
 whole project to find what bears on the file in front of you. There are exactly two homes.
 
-## 1. File-level — a companion beside each source file
+## 1. File-level — a companion beside a source file that has earned one
 
-A source file that has something worth recording gets a **companion record with the same name plus `.md`**, sitting right next to it (most files never need one):
+**Most files never get a companion.** One appears only when there is something durable worth recording about
+that file — never mechanically, never as a matter of course. When a file has earned one, it is a
+**companion record with the same name plus `.md`**, sitting right next to it:
 
 ```
 src/render.py
@@ -66,10 +68,16 @@ them in sync with nothing to update; renaming only the source flags the orphaned
 
 ## How to write — the instruction
 
+- **First ask whether it needs recording at all.** Most files never earn a companion. If the code and its
+  own documentation already carry it, do not file it.
 - Knowledge **about one file** → its companion `<file>.md`, in the Insights / Decisions / Discussions
   sections. Do not put it at the root.
 - Knowledge that is **cross-cutting** (a goal, the architecture, a dependency choice, a system ADR) →
   the matching root record. Do not scatter it into file companions.
+- **The test when it is unclear: how many files does it bind?** Knowledge that governs **one** file is
+  file-level and belongs in that companion — *even when the reason for it is system-wide* (an external
+  consumer, a contract, a past incident). An external justification does not promote a decision to an ADR.
+  Knowledge that binds **several** files at once is system-level → `architecture.md` or an ADR.
 - Anchor every companion on filing. System records take no anchor.
 
 ## Reading — navigate, don't read everything
