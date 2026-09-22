@@ -50,3 +50,6 @@ sites and third-party plugins are neither in the oracle nor decided by the card:
 speed-up, (b) reuse converted Markdown when source, metadata and file list are unchanged, (c) as (b) assuming
 extensions never read other files → "Correct first. It must not rebuild pages an edit can't affect." *(oracle, the
 same slower-but-correct question)*
+- a3 (A): "Decisions": the switcher keeps language names only; a record file `.site.mkdocs-build.json` beside `site/`
+  makes separate `build --dirty` runs incremental; four existing mocks in `build_tests.py` retargeted to a
+  replacement function, assertions unchanged. None given.
