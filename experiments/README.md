@@ -21,7 +21,7 @@ aims has **two goals, measured separately** ([`../goals.md`](../goals.md)):
 - **Goal 2 — knowledge that is not in the code.** Measured by whether that knowledge survives and is acted on.
 
 **Status:** **stands** · **null** (tested, no effect — recorded as such) · **superseded** (a later run
-replaced its conclusion) · **withdrawn** (the test was invalid).
+replaced its conclusion) · **removed** (the test was invalid; its files are deleted and kept only in git history).
 
 ## Where the evidence stands today
 
@@ -42,7 +42,7 @@ replaced its conclusion) · **withdrawn** (the test was invalid).
 | experiment | asked | found | status |
 |---|---|---|---|
 | [`aims-vs-openspec`](aims-vs-openspec/results.md) (v1) | aims vs OpenSpec vs plain, design-only, checkout pricing over 3 stages | aims won no reading; third under both judges | **superseded** by v4 (`0010`) |
-| [`aims-vs-openspec`](aims-vs-openspec/results-v3.md) (v3) | same, after the concept-fit pass | the cram fault gone — but the arms could read the ADR naming it | **superseded** — flawed (leak), replaced by v4 |
+| `aims-vs-openspec` (v3) | same, after the concept-fit pass | the arms could read the ADR naming the fault under test | **removed** — flawed (leak), replaced by v4; in git history at `7a7f71d` |
 | [`aims-vs-openspec`](aims-vs-openspec/results-v4.md) (v4) | clean isolated re-run | aims-panel first under both opposite-prior judges — **and ships a real defect** in its tax mechanism | **stands**, with the defect |
 | [`aims-upgraded-rerun`](aims-upgraded-rerun/results.md) | the pilot aims lost, re-run on upgraded aims | the judges now agree — on a real structural fault (two structures for one tax concept) and a correctness gap | **stands** — a loss, diagnosed |
 | [`aims-single-pass-rerun`](aims-single-pass-rerun/README.md) | single-pass designer on the corrected principles | discovered the discount→line allocation from the requirement itself | **stands** |
@@ -103,7 +103,7 @@ which record-layer runs are valid: [`AUDIT-record-layer-claims.md`](improve-2026
 | [`i2`](improve-2026-09/i2-falsification-review/results.md) | 1 | an adversarial falsification review pass | the shipped review already falsifies | **null** — not adopted |
 | [`i3`](improve-2026-09/i3-outcome-first/validation.md) | 1 | lead comparisons with behavioural proxies | shipped as `0019` — then shown to be a regression | **superseded** by `0021` |
 | [`i4`](improve-2026-09/i4-table-unstated-corner/results.md) | 1 | the table, on an unstated corner | still no gain | **null** — closed |
-| [`i5`](improve-2026-09/i5-record-trap/results.md) | 2 | a record-layer trap | — | **withdrawn** |
+| `i5` | 2 | a record-layer trap | — | **removed** — withdrawn (records written by hand); in git history at `7a7f71d` |
 
 **Build pilots:**
 
@@ -123,8 +123,8 @@ which record-layer runs are valid: [`AUDIT-record-layer-claims.md`](improve-2026
 | [`bp12`](improve-2026-09/bp12-cost/results.md) | — | cost, second datapoint | ≈2.3× tokens, ≈12× wall on a small task | **stands** |
 | [`bp13`](improve-2026-09/bp13-design-under-surprise/results.md) | 1 | does design quality show under an unforeseen change? | only on the right change: type-switch 4/4 reopen vs polymorphic 0/2, identical tests | **stands** |
 | [`bp14`](improve-2026-09/bp14-design-rubric/results.md) | 1 | does the rubric separate designs the tests cannot? | **43 vs 16** at an identical suite | **stands** |
-| [`bp15`](improve-2026-09/bp15-records-value/results.md), [`bp15b`](improve-2026-09/bp15b-records-counternorm/results.md), [`bp16`](improve-2026-09/bp16-project-conventions/results.md), [`bp16b`](improve-2026-09/bp16b-silent-code/results.md), [`bp17`](improve-2026-09/bp17-deliberation/results.md) | 2 | does a record help on a later change? | — | **withdrawn** — hand-written records |
-| [`bp18`](improve-2026-09/bp18-single-root-file/results.md) | 2 | one root file vs per-file companions | — | **withdrawn** — the question is open (`0023`) |
+| `bp15`, `bp15b`, `bp16`, `bp16b`, `bp17` | 2 | record-layer runs | — | **removed** — withdrawn: the evaluator wrote the records by hand, so they tested that construction, not the method; in git history at `7a7f71d` |
+| `bp18` | 2 | one root file vs per-file companions | — | **removed** — withdrawn; the question is open (`0023`) and re-designed in [`single-root-file`](single-root-file/DESIGN.md); in git history at `7a7f71d` |
 | [`bp19`](improve-2026-09/bp19-aims-filed-records/results.md) | 2 | do aims-filed records help a blind agent? | a filed non-goal caught a contradicting change **3/3 vs 0/3**; the design rubric could not see it | **stands** |
 | [`bp21`](improve-2026-09/bp21-code-first-gate/results.md) | 2 | does the code-first gate stop records restating the code? | 62% of a pre-gate companion was restatement; with the gate 8/8 dropped, 6/6 kept, matching a pre-registered prediction | **stands** → `0022` |
 | [`bp22`](improve-2026-09/bp22-gate-on-itself/results.md) | 2 | the gate run on aims' own session | 10 of 14 declined as already carried; found four real guidance defects (a fifth claimed defect was wrong) | **stands** |

@@ -84,8 +84,8 @@ The blind design-only pilot
   beside the promotion walk rather than crammed into `Adjustment`; no wrong number on any case. Survival:
   aims-panel **1** (decisive best), aims-single 5, OpenSpec 5 — trajectory 11→5→1. Two opposite-prior
   substantive judges **split**: a consequence/future-cost lens ranks the aims arms above OpenSpec; an
-  accidental-complexity lens ranks OpenSpec's single-mechanism spec above them. See
-  `experiments/aims-vs-openspec/results-v3.md`.
+  accidental-complexity lens ranks OpenSpec's single-mechanism spec above them. (v3's results file was
+  removed as flawed; it remains in git history at commit `7a7f71d`.)
 
 **⚠️ v3 was a flawed experiment** (the design arms could reach `decisions/0007`, which names the exact
 fault being tested for) and is superseded by **v4**, a full clean re-run (stages 1→2→3 from scratch, both
