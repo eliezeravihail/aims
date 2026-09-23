@@ -34,3 +34,25 @@ project exported with the default `mkdocs` theme:
 | W | 139 | 2.9 MB |
 
 **Reproduces** exactly as placed.
+
+## Ownership judge — its further findings
+
+**§5 one owner, S4 (N, P, V) — the second notice is already visibly different.** The same project built and exported;
+the untranslated French guide page's notice:
+
+| design | on the site | in the export |
+|---|---|---|
+| N | `<div class="alert alert-info untranslated-notice" role="note">` | `<div class="untranslated-notice" role="note">` |
+| P | `<div class="alert alert-info mkdocs-untranslated" role="note">` | `<div class="mkdocs-untranslated" role="note">` |
+| V | `<div class="alert alert-info mkdocs-untranslated" role="note">` | `<div class="mkdocs-untranslated" role="note">` |
+| Q | `alert alert-info mkdocs-untranslated` | identical |
+| T | `admonition note mkdocs-untranslated` | identical |
+
+**Reproduces** — "exactly as they do on the site" does not hold for N, P, V's notice markup.
+
+**§5 calibrate, S3 (Q) — a third-party theme cannot export.** A bare custom theme: Q exits 1 with "The theme does
+not support exporting: it has no 'export.html' template."; T and N export. **Reproduces.**
+
+**§7 DRY, S3 (V) — the page-reading loop re-implemented without `on_env`.** `on_env` occurs 0 times in
+`design-V/mkdocs/commands/export.py`. **Reproduces.** (R's parallel `render_site` beside `_build_site` in
+`design-R/mkdocs/commands/build.py` is a structural fact, seen at the cited lines.)
