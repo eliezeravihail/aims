@@ -1,0 +1,3706 @@
+diff --git a/judge/pristine/mkdocs/commands/build.py b/judge/design-M/mkdocs/commands/build.py
+index f111bcd..44bc7d8 100644
+--- a/judge/pristine/mkdocs/commands/build.py
++++ b/judge/design-M/mkdocs/commands/build.py
+@@ -11,7 +11,7 @@ import jinja2
+ from jinja2.exceptions import TemplateNotFound
+ 
+ import mkdocs
+-from mkdocs import utils
++from mkdocs import languages, utils
+ from mkdocs.exceptions import Abort, BuildError
+ from mkdocs.structure.files import File, Files, InclusionLevel, get_files, set_exclusions
+ from mkdocs.structure.nav import Navigation, get_navigation
+@@ -45,7 +45,7 @@ def get_context(
+     if isinstance(files, Files):
+         files = files.documentation_pages()
+ 
+-    return templates.TemplateContext(
++    context = templates.TemplateContext(
+         nav=nav,
+         pages=files,
+         base_url=base_url,
+@@ -56,6 +56,9 @@ def get_context(
+         config=config,
+         page=page,
+     )
++    if (site := languages.get_language_site(config)) is not None:
++        context['language'] = languages.LanguageContext(site, page, config, base_url)
++    return context
+ 
+ 
+ def _build_template(
+@@ -72,6 +75,8 @@ def _build_template(
+         # However, if site_url is not set, assume the docs root and server root
+         # are the same. See https://github.com/mkdocs/mkdocs/issues/1598.
+         base_url = urlsplit(config.site_url or '/').path
++        if not config.site_url and (site := languages.get_language_site(config)) is not None:
++            base_url += site.path
+     else:
+         base_url = utils.get_relative_url('.', name)
+ 
+@@ -212,6 +217,12 @@ def _build_page(
+         # Run `page_context` plugin events.
+         context = config.plugins.on_page_context(context, page=page, config=config, nav=nav)
+ 
++        site = languages.get_language_site(config)
++        if site is not None and page.file.src_uri in site.untranslated:
++            page.content = languages.mark_untranslated(
++                page.content or '', env, context, site.untranslated[page.file.src_uri]
++            )
++
+         if excluded:
+             page.content = (
+                 '<div class="mkdocs-draft-marker" title="This page will not be included into the built site.">'
+@@ -256,95 +267,13 @@ def build(config: MkDocsConfig, *, serve_url: str | None = None, dirty: bool = F
+     if config.strict:
+         logging.getLogger('mkdocs').addHandler(warning_counter)
+ 
+-    inclusion = InclusionLevel.is_in_serve if serve_url else InclusionLevel.is_included
+-
+     try:
+         start = time.monotonic()
+ 
+-        # Run `config` plugin events.
+-        config = config.plugins.on_config(config)
+-
+-        # Run `pre_build` plugin events.
+-        config.plugins.on_pre_build(config=config)
+-
+-        if not dirty:
+-            log.info("Cleaning site directory")
+-            utils.clean_directory(config.site_dir)
+-        else:  # pragma: no cover
+-            # Warn user about problems that may occur with --dirty option
+-            log.warning(
+-                "A 'dirty' build is being performed, this will likely lead to inaccurate navigation and other"
+-                " links within your site. This option is designed for site development purposes only."
+-            )
+-
+-        if not serve_url:  # pragma: no cover
+-            log.info(f"Building documentation to directory: {config.site_dir}")
+-            if dirty and site_directory_contains_stale_files(config.site_dir):
+-                log.info("The directory contains stale files. Use --clean to remove them.")
+-
+-        # First gather all data from all files/pages to ensure all data is consistent across all pages.
+-
+-        files = get_files(config)
+-        env = config.theme.get_env()
+-        files.add_files_from_theme(env, config)
+-
+-        # Run `files` plugin events.
+-        files = config.plugins.on_files(files, config=config)
+-        # If plugins have added files but haven't set their inclusion level, calculate it again.
+-        set_exclusions(files, config)
+-
+-        nav = get_navigation(files, config)
+-
+-        # Run `nav` plugin events.
+-        nav = config.plugins.on_nav(nav, config=config, files=files)
+-
+-        log.debug("Reading markdown pages.")
+-        excluded = []
+-        for file in files.documentation_pages(inclusion=inclusion):
+-            log.debug(f"Reading: {file.src_uri}")
+-            if file.page is None and file.inclusion.is_not_in_nav():
+-                if serve_url and file.inclusion.is_excluded():
+-                    excluded.append(urljoin(serve_url, file.url))
+-                Page(None, file, config)
+-            assert file.page is not None
+-            _populate_page(file.page, config, files, dirty)
+-        if excluded:
+-            log.info(
+-                "The following pages are being built only for the preview "
+-                "but will be excluded from `mkdocs build` per `draft_docs` config:\n  - "
+-                + "\n  - ".join(excluded)
+-            )
+-
+-        # Run `env` plugin events.
+-        env = config.plugins.on_env(env, config=config, files=files)
+-
+-        # Start writing files to site_dir now that all data is gathered. Note that order matters. Files
+-        # with lower precedence get written first so that files with higher precedence can overwrite them.
+-
+-        log.debug("Copying static assets.")
+-        files.copy_static_files(dirty=dirty, inclusion=inclusion)
+-
+-        for template in config.theme.static_templates:
+-            _build_theme_template(template, env, files, config, nav)
+-
+-        for template in config.extra_templates:
+-            _build_extra_template(template, files, config, nav)
+-
+-        log.debug("Building markdown pages.")
+-        doc_files = files.documentation_pages(inclusion=inclusion)
+-        for file in doc_files:
+-            assert file.page is not None
+-            _build_page(
+-                file.page, config, doc_files, nav, env, dirty, excluded=file.inclusion.is_excluded()
+-            )
+-
+-        log_level = config.validation.links.anchors
+-        for file in doc_files:
+-            assert file.page is not None
+-            file.page.validate_anchor_links(files=files, log_level=log_level)
+-
+-        # Run `post_build` plugin events.
+-        config.plugins.on_post_build(config=config)
++        if config.languages is None:
++            _build_site(config, serve_url=serve_url, dirty=dirty)
++        else:
++            _build_language_sites(config, serve_url=serve_url, dirty=dirty)
+ 
+         if counts := warning_counter.get_counts():
+             msg = ', '.join(f'{v} {k.lower()}s' for k, v in counts)
+@@ -364,6 +293,114 @@ def build(config: MkDocsConfig, *, serve_url: str | None = None, dirty: bool = F
+         logger.removeHandler(warning_counter)
+ 
+ 
++def _build_language_sites(config: MkDocsConfig, *, serve_url: str | None, dirty: bool) -> None:
++    """Build each site of a multi-language site (see `mkdocs.languages`)."""
++    assert config.languages is not None
++    with languages.logged_once_across_sites() as next_site:
++        for site in languages.get_sites(config.languages):
++            if serve_url:  # Otherwise the site's directory is logged.
++                log.info(f"Building the site of '{site.language.code}' at /{site.path}")
++            _build_site(
++                languages.config_for_site(config, site),
++                serve_url=serve_url and urljoin(serve_url, site.path),
++                dirty=dirty,
++            )
++            next_site()
++
++
++def _build_site(config: MkDocsConfig, *, serve_url: str | None, dirty: bool) -> None:
++    """Build one complete site into `config.site_dir`."""
++    inclusion = InclusionLevel.is_in_serve if serve_url else InclusionLevel.is_included
++
++    # Run `config` plugin events.
++    config = config.plugins.on_config(config)
++
++    # Run `pre_build` plugin events.
++    config.plugins.on_pre_build(config=config)
++
++    if not dirty:
++        log.info("Cleaning site directory")
++        utils.clean_directory(config.site_dir)
++    else:  # pragma: no cover
++        # Warn user about problems that may occur with --dirty option
++        log.warning(
++            "A 'dirty' build is being performed, this will likely lead to inaccurate navigation and other"
++            " links within your site. This option is designed for site development purposes only."
++        )
++
++    if not serve_url:  # pragma: no cover
++        log.info(f"Building documentation to directory: {config.site_dir}")
++        if dirty and site_directory_contains_stale_files(config.site_dir):
++            log.info("The directory contains stale files. Use --clean to remove them.")
++
++    # First gather all data from all files/pages to ensure all data is consistent across all pages.
++
++    files = get_files(config)
++    env = config.theme.get_env()
++    files.add_files_from_theme(env, config)
++
++    # Run `files` plugin events.
++    files = config.plugins.on_files(files, config=config)
++    # If plugins have added files but haven't set their inclusion level, calculate it again.
++    set_exclusions(files, config)
++
++    nav = get_navigation(files, config)
++
++    # Run `nav` plugin events.
++    nav = config.plugins.on_nav(nav, config=config, files=files)
++
++    log.debug("Reading markdown pages.")
++    excluded = []
++    for file in files.documentation_pages(inclusion=inclusion):
++        log.debug(f"Reading: {file.src_uri}")
++        if file.page is None and file.inclusion.is_not_in_nav():
++            if serve_url and file.inclusion.is_excluded():
++                excluded.append(urljoin(serve_url, file.url))
++            Page(None, file, config)
++        assert file.page is not None
++        _populate_page(file.page, config, files, dirty)
++    if excluded:
++        log.info(
++            "The following pages are being built only for the preview "
++            "but will be excluded from `mkdocs build` per `draft_docs` config:\n  - "
++            + "\n  - ".join(excluded)
++        )
++
++    if (site := languages.get_language_site(config)) is not None:
++        languages.localize_nav_titles(nav, site)
++
++    # Run `env` plugin events.
++    env = config.plugins.on_env(env, config=config, files=files)
++
++    # Start writing files to site_dir now that all data is gathered. Note that order matters. Files
++    # with lower precedence get written first so that files with higher precedence can overwrite them.
++
++    log.debug("Copying static assets.")
++    files.copy_static_files(dirty=dirty, inclusion=inclusion)
++
++    for template in config.theme.static_templates:
++        _build_theme_template(template, env, files, config, nav)
++
++    for template in config.extra_templates:
++        _build_extra_template(template, files, config, nav)
++
++    log.debug("Building markdown pages.")
++    doc_files = files.documentation_pages(inclusion=inclusion)
++    for file in doc_files:
++        assert file.page is not None
++        _build_page(
++            file.page, config, doc_files, nav, env, dirty, excluded=file.inclusion.is_excluded()
++        )
++
++    log_level = config.validation.links.anchors
++    for file in doc_files:
++        assert file.page is not None
++        file.page.validate_anchor_links(files=files, log_level=log_level)
++
++    # Run `post_build` plugin events.
++    config.plugins.on_post_build(config=config)
++
++
+ def site_directory_contains_stale_files(site_directory: str) -> bool:
+     """Check if the site directory contains stale files from a previous build."""
+     return bool(os.path.exists(site_directory) and os.listdir(site_directory))
+diff --git a/judge/pristine/mkdocs/config/config_options.py b/judge/design-M/mkdocs/config/config_options.py
+index 94171c4..7cec4ea 100644
+--- a/judge/pristine/mkdocs/config/config_options.py
++++ b/judge/design-M/mkdocs/config/config_options.py
+@@ -33,7 +33,7 @@ import markdown
+ import pathspec
+ import pathspec.gitignore
+ 
+-from mkdocs import plugins, theme, utils
++from mkdocs import languages, plugins, theme, utils
+ from mkdocs.config.base import (
+     BaseConfigOption,
+     Config,
+@@ -907,6 +907,45 @@ class Nav(OptionallyRequired):
+             return f"a {type(value).__name__}: {value!r}"
+ 
+ 
++class Languages(BaseConfigOption[languages.Languages]):
++    """
++    Languages Config Option.
++
++    Declares the languages of a multi-language site: a mapping with the `default` language code
++    and a list of `others`. Each language's files are in the directory of that name in `docs_dir`.
++    """
++
++    def run_validation(self, value: object) -> languages.Languages:
++        if not isinstance(value, dict):
++            raise ValidationError(
++                f"Expected a mapping with the keys 'default' and 'others', got {type(value)}."
++            )
++        unknown = sorted(str(key) for key in value if key not in ('default', 'others'))
++        if unknown:
++            raise ValidationError(
++                f"Unrecognised key(s): {', '.join(unknown)}. Expected 'default' and 'others'."
++            )
++        default = value.get('default')
++        if not isinstance(default, str):
++            raise ValidationError("'default' must be set to the code of the default language.")
++        others = value.get('others')
++        if others is None:
++            others = []
++        if not isinstance(others, list):
++            raise ValidationError("'others' must be a list of language codes.")
++        return languages.Languages(default, others)
++
++    def post_validation(self, config: Config, key_name: str):
++        value: languages.Languages | None = config[key_name]
++        if value is None:
++            return
++        path = os.path.join(config['docs_dir'], value.default.code)
++        if not os.path.isdir(path):
++            raise ValidationError(
++                f"The directory of the default language, '{path}', does not exist."
++            )
++
++
+ class Private(Generic[T], BaseConfigOption[T]):
+     """A config option that can only be populated programmatically. Raises an error if set by the user."""
+ 
+diff --git a/judge/pristine/mkdocs/config/defaults.py b/judge/design-M/mkdocs/config/defaults.py
+index 68ebf3a..7f12a99 100644
+--- a/judge/pristine/mkdocs/config/defaults.py
++++ b/judge/design-M/mkdocs/config/defaults.py
+@@ -1,13 +1,16 @@
+ from __future__ import annotations
+ 
+ import logging
+-from typing import IO, Dict, Mapping
++from typing import IO, TYPE_CHECKING, Dict, Mapping
+ 
+ from mkdocs.config import base
+ from mkdocs.config import config_options as c
+ from mkdocs.structure.pages import Page, _AbsoluteLinksValidationValue
+ from mkdocs.utils.yaml import get_yaml_loader, yaml_load
+ 
++if TYPE_CHECKING:
++    from mkdocs.languages import LanguageSite
++
+ 
+ class _LogLevel(c.OptionallyRequired[int]):
+     levels: Mapping[str, int] = {
+@@ -79,6 +82,12 @@ class MkDocsConfig(base.Config):
+     site_dir = c.SiteDir(default='site')
+     """The directory where the site will be built to"""
+ 
++    languages = c.Optional(c.Languages())
++    """The languages of a multi-language site: `{default: <code>, others: [<code>, ...]}`.
++
++    Each language's files are in `docs_dir/<code>/`. Each language gets its own site at
++    `<code>/`, and the default language is also built at the root of the site."""
++
+     copyright = c.Optional(c.Type(str))
+     """A copyright notice to add to the footer of documentation."""
+ 
+@@ -202,6 +211,11 @@ class MkDocsConfig(base.Config):
+     """The currently rendered page. Please do not access this and instead
+     rely on the `page` argument to event handlers."""
+ 
++    _language_site: LanguageSite | None = None
++    """On a multi-language site, the language site that this config builds.
++
++    See `mkdocs.languages`."""
++
+     def load_dict(self, patch: dict) -> None:
+         super().load_dict(patch)
+         if 'config_file_path' in patch:
+diff --git a/judge/pristine/mkdocs/contrib/search/__init__.py b/judge/design-M/mkdocs/contrib/search/__init__.py
+index 74b96bb..b14899d 100644
+--- a/judge/pristine/mkdocs/contrib/search/__init__.py
++++ b/judge/design-M/mkdocs/contrib/search/__init__.py
+@@ -62,6 +62,8 @@ class _PluginConfig(base.Config):
+ class SearchPlugin(BasePlugin[_PluginConfig]):
+     """Add a search feature to MkDocs."""
+ 
++    _lang_from_locale = False
++
+     def on_config(self, config: MkDocsConfig, **kwargs) -> MkDocsConfig:
+         """Add plugin templates and scripts to config."""
+         if config.theme.get('include_search_page'):
+@@ -71,10 +73,12 @@ class SearchPlugin(BasePlugin[_PluginConfig]):
+             config.theme.dirs.append(path)
+             if 'search/main.js' not in config.extra_javascript:
+                 config.extra_javascript.append('search/main.js')  # type: ignore
+-        if self.config.lang is None:
+-            # lang setting undefined. Set default based on theme locale
++        if self.config.lang is None or self._lang_from_locale:
++            # lang setting undefined. Set default based on theme locale, which differs between
++            # the sites of a multi-language site (each of which runs this event).
+             validate = _PluginConfig.lang.run_validation
+             self.config.lang = validate(config.theme.locale.language)
++            self._lang_from_locale = True
+         # The `python` method of `prebuild_index` is pending deprecation as of version 1.2.
+         # TODO: Raise a deprecation warning in a future release (1.3?).
+         if self.config.prebuild_index == 'python':
+diff --git a/judge/design-M/mkdocs/languages.py b/judge/design-M/mkdocs/languages.py
+new file mode 100644
+index 0000000..92ad66f
+--- /dev/null
++++ b/judge/design-M/mkdocs/languages.py
+@@ -0,0 +1,535 @@
++"""
++Documentation sites written in several languages.
++
++A site declares its languages in `mkdocs.yml`:
++
++    languages:
++      default: en
++      others: [fr, he]
++
++and keeps each language's files under `docs_dir/<code>/`. Everything else in `docs_dir` is shared
++by all languages (images, stylesheets and the like).
++
++The site is then built as several complete sites, one per *language site*:
++
++*   the default language at the root of `site_dir`, and
++*   every language, the default included, at `site_dir/<code>/`.
++
++Each language site is an ordinary MkDocs build: it has its own config (derived from the user's by
++`config_for_site`, with its own `site_dir`, `site_url` and theme locale), its own files, navigation,
++plugin run and search index. Its files form a *virtual docs dir* (`get_site_files`) in which the
++language's directory is the root, so paths in `nav`, `exclude_docs`, links between pages etc. are
++all written relative to a language's directory, the same for every language. In that virtual docs
++dir, every page of every language exists: a page the language lacks is taken from the default
++language (or, failing that, the first other language that has it) and marked as untranslated.
++"""
++
++from __future__ import annotations
++
++import copy
++import logging
++import os
++import posixpath
++import re
++from collections import UserDict
++from contextlib import contextmanager
++from typing import TYPE_CHECKING, Callable, Iterator, NamedTuple, Sequence
++from urllib.parse import urljoin
++
++import jinja2
++from markupsafe import Markup
++
++from mkdocs import localization
++from mkdocs.config.base import ValidationError
++from mkdocs.exceptions import BuildError
++
++if TYPE_CHECKING:
++    from mkdocs.config.defaults import MkDocsConfig
++    from mkdocs.structure.files import File
++    from mkdocs.structure.nav import Navigation
++    from mkdocs.structure.pages import Page
++    from mkdocs.utils.templates import TemplateContext
++
++
++log = logging.getLogger(__name__)
++
++# A language code is used as a directory name and a URL segment, so keep it to the safe subset of
++# BCP 47 / POSIX locale identifiers: "fr", "pt-BR", "pt_BR", "zh-Hant".
++_CODE_RE = re.compile(r'[A-Za-z]{2,3}(?:[-_][A-Za-z0-9]{2,8})*')
++
++# Used only when Babel (which knows about every language) is not installed.
++_RTL_LANGUAGES = frozenset(
++    {'ar', 'arc', 'ckb', 'dv', 'fa', 'he', 'iw', 'ks', 'ku', 'ps', 'sd', 'ug', 'ur', 'yi'}
++)
++# fmt: off
++_NATIVE_NAMES = {
++    'ar': 'العربية', 'bg': 'Български', 'bn': 'বাংলা', 'ca': 'Català', 'cs': 'Čeština',
++    'da': 'Dansk', 'de': 'Deutsch', 'el': 'Ελληνικά', 'en': 'English', 'es': 'Español',
++    'et': 'Eesti', 'eu': 'Euskara', 'fa': 'فارسی', 'fi': 'Suomi', 'fr': 'Français',
++    'ga': 'Gaeilge', 'gl': 'Galego', 'he': 'עברית', 'hi': 'हिन्दी', 'hr': 'Hrvatski',
++    'hu': 'Magyar', 'hy': 'Հայերեն', 'id': 'Indonesia', 'is': 'Íslenska', 'it': 'Italiano',
++    'ja': '日本語', 'ka': 'ქართული', 'kk': 'Қазақ тілі', 'ko': '한국어', 'lt': 'Lietuvių',
++    'lv': 'Latviešu', 'ms': 'Melayu', 'nb': 'Norsk bokmål', 'nl': 'Nederlands',
++    'nn': 'Norsk nynorsk', 'no': 'Norsk', 'pl': 'Polski', 'pt': 'Português', 'ro': 'Română',
++    'ru': 'Русский', 'sk': 'Slovenčina', 'sl': 'Slovenščina', 'sr': 'Српски', 'sv': 'Svenska',
++    'sw': 'Kiswahili', 'ta': 'தமிழ்', 'th': 'ไทย', 'tr': 'Türkçe', 'uk': 'Українська',
++    'ur': 'اردو', 'vi': 'Tiếng Việt', 'zh': '中文',
++}
++# fmt: on
++
++
++class Language:
++    """One of the languages a site is written in."""
++
++    def __init__(self, code: str, *, is_default: bool = False) -> None:
++        if not isinstance(code, str) or not _CODE_RE.fullmatch(code):
++            raise ValidationError(
++                f"Invalid language code {code!r}: expected a code such as 'en', 'fr' or 'pt-BR'."
++            )
++        self.code = code
++        self.locale = localization.parse_locale(code.replace('-', '_'))
++        self.is_default = is_default
++
++    code: str
++    """The code as declared: the name of the language's directory in `docs_dir` and of its URL
++    segment in the built site."""
++
++    locale: localization.Locale
++    """The locale that the theme is rendered in for this language."""
++
++    is_default: bool
++    """Whether this is the site's default language."""
++
++    @property
++    def hreflang(self) -> str:
++        """The code in the form HTML expects (BCP 47), for `lang` and `hreflang` attributes."""
++        return self.code.replace('_', '-')
++
++    @property
++    def name(self) -> str:
++        """The language's name in the language itself, e.g. "Français"."""
++        get_display_name = getattr(self.locale, 'get_display_name', None)
++        if get_display_name is not None:
++            name = get_display_name(self.locale)
++        else:
++            name = _NATIVE_NAMES.get(self.locale.language)
++            if name and self.locale.territory:
++                name += f' ({self.locale.territory})'
++        if not name:
++            return self.code
++        return name[:1].upper() + name[1:]
++
++    @property
++    def dir(self) -> str:
++        """The direction of the language's script: 'ltr' or 'rtl'."""
++        order = getattr(self.locale, 'character_order', None)
++        if order is not None:
++            return 'rtl' if order == 'right-to-left' else 'ltr'
++        return 'rtl' if self.locale.language in _RTL_LANGUAGES else 'ltr'
++
++    def __eq__(self, other) -> bool:
++        return isinstance(other, Language) and self.code == other.code
++
++    def __hash__(self) -> int:
++        return hash(self.code)
++
++    def __str__(self) -> str:
++        return self.code
++
++    def __repr__(self) -> str:
++        return f"Language({self.code!r}{', is_default=True' if self.is_default else ''})"
++
++
++class Languages(Sequence[Language]):
++    """The value of the `languages` config option: the default language, then the others."""
++
++    def __init__(self, default: str, others: Sequence[str] = ()) -> None:
++        self.default = Language(default, is_default=True)
++        self.others = [Language(code) for code in others]
++        seen: set[str] = set()
++        for language in self:
++            key = language.hreflang.lower()
++            if key in seen:
++                raise ValidationError(f"Language '{language.code}' is declared more than once.")
++            seen.add(key)
++
++    default: Language
++    others: list[Language]
++
++    @property
++    def codes(self) -> list[str]:
++        return [language.code for language in self]
++
++    def __getitem__(self, index):
++        return [self.default, *self.others][index]
++
++    def __len__(self) -> int:
++        return 1 + len(self.others)
++
++    def __repr__(self) -> str:
++        return f"Languages(default={self.default.code!r}, others={[x.code for x in self.others]!r})"
++
++
++class LanguageSite:
++    """
++    One of the complete sites that a multi-language site is built as.
++
++    Either a language's site at `<code>/`, or the default language's copy at the root.
++    """
++
++    def __init__(self, languages: Languages, language: Language, *, is_root: bool = False) -> None:
++        if is_root and not language.is_default:
++            raise ValueError("Only the default language is built at the root of the site.")
++        self.languages = languages
++        self.language = language
++        self.is_root = is_root
++        self.untranslated: dict[str, Language] = {}
++
++    languages: Languages
++    """All the languages of the site."""
++
++    language: Language
++    """The language of this site: of its navigation, labels and, where translated, pages."""
++
++    is_root: bool
++    """Whether this is the default language's copy at the root of the site."""
++
++    untranslated: dict[str, Language]
++    """The pages (by `src_uri`) that this language lacks, mapped to the language they are shown in.
++
++    Populated by `get_site_files`."""
++
++    @property
++    def path(self) -> str:
++        """Where this site is in the whole site: '' for the root, else e.g. 'fr/'."""
++        return '' if self.is_root else self.language.code + '/'
++
++    def url_to(self, other: LanguageSite, url: str) -> str:
++        """Return the URL, relative to this site's root, of the page `url` of site `other`."""
++        up = '' if self.is_root else '../'
++        return up + other.path + url
++
++    def __repr__(self) -> str:
++        return f"LanguageSite({self.language.code!r}{', is_root=True' if self.is_root else ''})"
++
++
++def get_sites(languages: Languages) -> list[LanguageSite]:
++    """
++    Return the sites to build, in the order to build them.
++
++    The root site comes first because it's the one that cleans the whole `site_dir`.
++    """
++    return [
++        LanguageSite(languages, languages.default, is_root=True),
++        *(LanguageSite(languages, language) for language in languages),
++    ]
++
++
++def get_language_site(config: MkDocsConfig) -> LanguageSite | None:
++    """Return the language site that `config` builds, or None if the site has a single language."""
++    return getattr(config, '_language_site', None)
++
++
++def config_for_site(config: MkDocsConfig, site: LanguageSite) -> MkDocsConfig:
++    """
++    Derive the config that builds `site` from the user's config.
++
++    Plugins run their `on_config` event once per language site and are free to modify the config
++    (append to `extra_javascript`, add theme dirs...), so the derived config gets its own copy of
++    every value that is commonly modified in place.
++    """
++    site_config = copy.copy(config)
++    for key, value in config.items():
++        if type(value) in (list, dict, set):
++            site_config[key] = type(value)(value)
++        elif isinstance(value, UserDict):
++            site_config[key] = copy.copy(value)
++    site_config.theme = config.theme._clone()
++    site_config.theme['locale'] = site.language.locale
++    if not site.is_root:
++        site_config.site_dir = os.path.join(config.site_dir, site.language.code)
++        if config.site_url:
++            site_config.site_url = urljoin(config.site_url, site.path)
++    site_config._language_site = site
++    return site_config
++
++
++def get_site_files(config: MkDocsConfig, site: LanguageSite) -> list[File]:
++    """
++    Return the files of the virtual docs dir of `site`.
++
++    Every file is found at its path relative to its language's directory (or to `docs_dir` for the
++    shared files). Where several have the same destination, the first of these wins:
++
++    1. the site's language's own file,
++    2. a shared file,
++    3. the default language's file, then those of the other languages in the declared order.
++
++    Pages obtained from 3. are recorded in `site.untranslated`.
++    """
++    from mkdocs.structure.files import file_sort_key, walk_docs_dir
++
++    docs_dir = config.docs_dir
++    site.untranslated = {}
++    chosen: dict[str, File] = {}
++
++    def add(file: File, language: Language | None) -> bool:
++        if file.dest_uri in chosen:
++            return False
++        if language is not None:  # Its path in the repository is its path in `docs_dir`.
++            file.edit_uri = f'{language.code}/{file.src_uri}'
++        chosen[file.dest_uri] = file
++        return True
++
++    def language_files(language: Language) -> list[File]:
++        path = os.path.join(docs_dir, language.code)
++        if not os.path.isdir(path):
++            return []
++        return walk_docs_dir(path, config)
++
++    for file in language_files(site.language):
++        add(file, site.language)
++
++    shared = walk_docs_dir(docs_dir, config, skip_dirs=site.languages.codes)
++    stray = [f for f in shared if f.is_documentation_page() and f.inclusion.is_included()]
++    if stray:
++        log.warning(
++            "The following pages are outside of the language directories "
++            f"({', '.join(d + '/' for d in site.languages.codes)}), so they are not part of the "
++            "site:\n  - " + "\n  - ".join(f.src_uri for f in stray)
++        )
++    for file in shared:
++        if not file.is_documentation_page():
++            add(file, None)
++
++    for language in site.languages:
++        if language == site.language:
++            continue
++        for file in language_files(language):
++            if add(file, language) and file.is_documentation_page():
++                site.untranslated[file.src_uri] = language
++
++    files = sorted(chosen.values(), key=file_sort_key)
++    if site.is_root:
++        _check_no_collision_with_language_sites(files, site)
++    return files
++
++
++def _check_no_collision_with_language_sites(files: list[File], site: LanguageSite) -> None:
++    codes = set(site.languages.codes)
++    clashes = [f for f in files if f.dest_uri.split('/', 1)[0] in codes]
++    if clashes:
++        raise BuildError(
++            "The following files would be written into the directory of a language's site when "
++            "the default language is built at the root of the site. Please rename or move them:"
++            "\n  - " + "\n  - ".join(f.edit_uri or f.src_uri for f in clashes)
++        )
++
++
++def localize_nav_titles(nav: Navigation, site: LanguageSite) -> None:
++    """
++    Show translated pages in the navigation under their own title.
++
++    Titles given in the `nav` config are written in the default language, so in the other
++    languages a translated page is listed under the title it declares itself (its `title`
++    metadata or its first heading), if any. Untranslated pages keep the `nav` title.
++
++    Must be called after the pages have been read.
++    """
++    if site.language.is_default:
++        return
++    for page in nav.pages:
++        if page.file.src_uri in site.untranslated or 'title' not in vars(page):
++            continue
++        if page.markdown is None:  # Not read, e.g. unmodified in a dirty build.
++            continue
++        own_title = page.meta.get('title') or page._title_from_render
++        if own_title:
++            page.title = own_title
++
++
++class AlternateLink(NamedTuple):
++    """A link to the page being rendered, in one of the site's languages."""
++
++    language: Language
++    url: str
++    """The URL of the page in that language, relative to the site's root: pass it through `|url`."""
++    canonical_url: str | None
++    """The full URL of the page in that language, if `site_url` is set."""
++    active: bool
++    """Whether this is the language of the page being rendered."""
++
++    @property
++    def code(self) -> str:
++        return self.language.code
++
++    @property
++    def name(self) -> str:
++        return self.language.name
++
++    @property
++    def hreflang(self) -> str:
++        return self.language.hreflang
++
++
++class LanguageContext:
++    """
++    What templates see as `language` on a multi-language site (on other sites it's undefined).
++
++    For example:
++
++        <html lang="{{ language.hreflang }}" dir="{{ language.dir }}">
++        {% for alt in language.alternates %}
++          <a href="{{ alt.url|url }}" hreflang="{{ alt.hreflang }}">{{ alt.name }}</a>
++        {% endfor %}
++    """
++
++    def __init__(
++        self, site: LanguageSite, page: Page | None, config: MkDocsConfig, base_url: str = ''
++    ) -> None:
++        self._site = site
++        source = site.untranslated.get(page.file.src_uri) if page is not None else None
++        self.untranslated = source is not None
++        self.content = source or site.language
++
++        if page is not None:
++            url = page.url
++        else:
++            url = '' if config.use_directory_urls else 'index.html'
++
++        def link_to(other: LanguageSite) -> AlternateLink:
++            link = site.url_to(other, url)
++            canonical_url = urljoin(config.site_url, link) if config.site_url else None
++            if page is None and base_url.startswith('/'):
++                # Error pages are served from any URL, so they use absolute URLs.
++                absolute = posixpath.normpath(posixpath.join(base_url, link))
++                link = absolute + ('/' if link.endswith('/') and absolute != '/' else '')
++            return AlternateLink(
++                language=other.language,
++                url=link,
++                canonical_url=canonical_url,
++                active=other.language == site.language,
++            )
++
++        self.alternates = [link_to(LanguageSite(site.languages, lang)) for lang in site.languages]
++        self.root = link_to(LanguageSite(site.languages, site.languages.default, is_root=True))
++
++    untranslated: bool
++    """Whether the page being rendered is not translated into this language, and is therefore
++    shown in another language (`content`)."""
++
++    content: Language
++    """The language that the content of the page being rendered is written in."""
++
++    alternates: list[AlternateLink]
++    """The page being rendered in each language of the site (the site's homepage, if rendering a
++    template that isn't a page), in the declared order, default language first."""
++
++    root: AlternateLink
++    """The page being rendered in the default language's copy at the root of the site: where
++    readers who haven't chosen a language land (`hreflang="x-default"`)."""
++
++    @property
++    def language(self) -> Language:
++        """The language of the site being rendered."""
++        return self._site.language
++
++    @property
++    def code(self) -> str:
++        return self.language.code
++
++    @property
++    def name(self) -> str:
++        return self.language.name
++
++    @property
++    def hreflang(self) -> str:
++        return self.language.hreflang
++
++    @property
++    def dir(self) -> str:
++        return self.language.dir
++
++    @property
++    def is_default(self) -> bool:
++        return self.language.is_default
++
++    @property
++    def languages(self) -> Languages:
++        return self._site.languages
++
++    def __str__(self) -> str:
++        return self.code
++
++
++# Themes can override this by providing an `untranslated.html` template.
++_DEFAULT_NOTICE_TEMPLATE = (
++    '<div class="mkdocs-untranslated-notice" role="note"><p>'
++    '{% trans %}This page has not been translated yet. It is shown in its original language.'
++    '{% endtrans %}</p></div>'
++)
++
++
++def mark_untranslated(
++    content: str, env: jinja2.Environment, context: TemplateContext, language: Language
++) -> str:
++    """
++    Return the content of an untranslated page with a notice saying so.
++
++    The notice is rendered, in the language of the site, from the theme's `untranslated.html`
++    template if it has one. The content is marked up as being in its own `language`.
++    """
++    try:
++        template = env.get_template('untranslated.html')
++    except jinja2.TemplateNotFound:
++        template = env.from_string(_DEFAULT_NOTICE_TEMPLATE)
++    notice = template.render(context)
++    return str(
++        Markup('{}<div class="mkdocs-untranslated" lang="{}" dir="{}">{}</div>').format(
++            Markup(notice), language.hreflang, language.dir, Markup(content)
++        )
++    )
++
++
++@contextmanager
++def logged_once_across_sites() -> Iterator[Callable[[], None]]:
++    """
++    Keep messages logged while building one language site from being repeated by the next ones.
++
++    The language sites largely consist of the same pages, so without this, a problem in a page of
++    the default language would be reported once for each site. Messages repeated while building
++    a single site are left alone, as they are in a single-language build.
++
++    Yields a function to call after building each site.
++    """
++    dedup = _SeenInPreviousSites()
++    handlers = []
++    logger: logging.Logger | None = logging.getLogger('mkdocs')
++    while logger is not None:
++        handlers.extend(logger.handlers)
++        logger = logger.parent if logger.propagate else None
++    for handler in handlers:
++        handler.addFilter(dedup)
++    try:
++        yield dedup.next_site
++    finally:
++        for handler in handlers:
++            handler.removeFilter(dedup)
++
++
++class _SeenInPreviousSites(logging.Filter):
++    def __init__(self) -> None:
++        super().__init__()
++        self.previous: set[tuple[int, str]] = set()
++        self.current: set[tuple[int, str]] = set()
++
++    def filter(self, record: logging.LogRecord) -> bool:
++        key = (record.levelno, record.getMessage())
++        if key in self.previous:
++            return False
++        self.current.add(key)
++        return True
++
++    def next_site(self) -> None:
++        self.previous |= self.current
++        self.current = set()
+diff --git a/judge/pristine/mkdocs/structure/files.py b/judge/design-M/mkdocs/structure/files.py
+index 86f94bd..7237cef 100644
+--- a/judge/pristine/mkdocs/structure/files.py
++++ b/judge/design-M/mkdocs/structure/files.py
+@@ -9,7 +9,16 @@ import shutil
+ import warnings
+ from functools import cached_property
+ from pathlib import PurePath, PurePosixPath
+-from typing import TYPE_CHECKING, Callable, Iterable, Iterator, Mapping, Sequence, overload
++from typing import (
++    TYPE_CHECKING,
++    Callable,
++    Collection,
++    Iterable,
++    Iterator,
++    Mapping,
++    Sequence,
++    overload,
++)
+ from urllib.parse import quote as urlquote
+ 
+ import pathspec
+@@ -545,10 +554,27 @@ def set_exclusions(files: Iterable[File], config: MkDocsConfig) -> None:
+ 
+ def get_files(config: MkDocsConfig) -> Files:
+     """Walk the `docs_dir` and return a Files collection."""
++    from mkdocs import languages
++
++    if (site := languages.get_language_site(config)) is not None:
++        return Files(languages.get_site_files(config, site))
++    return Files(walk_docs_dir(config['docs_dir'], config))
++
++
++def walk_docs_dir(
++    docs_dir: str, config: MkDocsConfig, *, skip_dirs: Collection[str] = ()
++) -> list[File]:
++    """
++    Walk `docs_dir` and return a list of the File objects it contains, in `get_files` order.
++
++    Top-level subdirectories named in `skip_dirs` are not walked.
++    """
+     files: list[File] = []
+     conflicting_files: list[tuple[File, File]] = []
+-    for source_dir, dirnames, filenames in os.walk(config['docs_dir'], followlinks=True):
+-        relative_dir = os.path.relpath(source_dir, config['docs_dir'])
++    for source_dir, dirnames, filenames in os.walk(docs_dir, followlinks=True):
++        relative_dir = os.path.relpath(source_dir, docs_dir)
++        if skip_dirs and relative_dir == '.':
++            dirnames[:] = [d for d in dirnames if d not in skip_dirs]
+         dirnames.sort()
+         filenames.sort(key=_file_sort_key)
+ 
+@@ -556,7 +582,7 @@ def get_files(config: MkDocsConfig) -> Files:
+         for filename in filenames:
+             file = File(
+                 os.path.join(relative_dir, filename),
+-                config['docs_dir'],
++                docs_dir,
+                 config['site_dir'],
+                 config['use_directory_urls'],
+             )
+@@ -585,7 +611,7 @@ def get_files(config: MkDocsConfig) -> Files:
+             except ValueError:
+                 pass
+ 
+-    return Files(files)
++    return files
+ 
+ 
+ def file_sort_key(f: File, /):
+diff --git a/judge/design-M/mkdocs/tests/integration/multilang/docs/en/about.md b/judge/design-M/mkdocs/tests/integration/multilang/docs/en/about.md
+new file mode 100644
+index 0000000..5b4adf0
+--- /dev/null
++++ b/judge/design-M/mkdocs/tests/integration/multilang/docs/en/about.md
+@@ -0,0 +1,3 @@
++# About
++
++Written by the team.
+diff --git a/judge/design-M/mkdocs/tests/integration/multilang/docs/en/guide/install.md b/judge/design-M/mkdocs/tests/integration/multilang/docs/en/guide/install.md
+new file mode 100644
+index 0000000..c4e4754
+--- /dev/null
++++ b/judge/design-M/mkdocs/tests/integration/multilang/docs/en/guide/install.md
+@@ -0,0 +1,5 @@
++# Installing
++
++Run the installer. See also [the usage guide](usage.md).
++
++![Screenshot](../img/screenshot.png)
+diff --git a/judge/design-M/mkdocs/tests/integration/multilang/docs/en/guide/usage.md b/judge/design-M/mkdocs/tests/integration/multilang/docs/en/guide/usage.md
+new file mode 100644
+index 0000000..9d108d3
+--- /dev/null
++++ b/judge/design-M/mkdocs/tests/integration/multilang/docs/en/guide/usage.md
+@@ -0,0 +1,5 @@
++# Using it
++
++## Basics
++
++Start it up. Go back to the [home page](../index.md).
+diff --git a/judge/design-M/mkdocs/tests/integration/multilang/docs/en/img/screenshot.png b/judge/design-M/mkdocs/tests/integration/multilang/docs/en/img/screenshot.png
+new file mode 100644
+index 0000000..babb6cc
+--- /dev/null
++++ b/judge/design-M/mkdocs/tests/integration/multilang/docs/en/img/screenshot.png
+@@ -0,0 +1 @@
++EN-SHOT
+\ No newline at end of file
+diff --git a/judge/design-M/mkdocs/tests/integration/multilang/docs/en/index.md b/judge/design-M/mkdocs/tests/integration/multilang/docs/en/index.md
+new file mode 100644
+index 0000000..a788cbd
+--- /dev/null
++++ b/judge/design-M/mkdocs/tests/integration/multilang/docs/en/index.md
+@@ -0,0 +1,5 @@
++# Welcome
++
++Read the [installation guide](guide/install.md) or [how to use it](guide/usage.md#basics).
++
++![Logo](img/logo.png)
+diff --git a/judge/design-M/mkdocs/tests/integration/multilang/docs/fr/guide/install.md b/judge/design-M/mkdocs/tests/integration/multilang/docs/fr/guide/install.md
+new file mode 100644
+index 0000000..03a0963
+--- /dev/null
++++ b/judge/design-M/mkdocs/tests/integration/multilang/docs/fr/guide/install.md
+@@ -0,0 +1,5 @@
++# Installer le logiciel
++
++Lancez l'installateur. Voir aussi [le guide d'utilisation](usage.md).
++
++![Capture](../img/screenshot.png)
+diff --git a/judge/design-M/mkdocs/tests/integration/multilang/docs/fr/index.md b/judge/design-M/mkdocs/tests/integration/multilang/docs/fr/index.md
+new file mode 100644
+index 0000000..c3a5da2
+--- /dev/null
++++ b/judge/design-M/mkdocs/tests/integration/multilang/docs/fr/index.md
+@@ -0,0 +1,5 @@
++# Bienvenue
++
++Lisez le [guide d'installation](guide/install.md) ou [comment l'utiliser](guide/usage.md#basics).
++
++![Logo](img/logo.png)
+diff --git a/judge/design-M/mkdocs/tests/integration/multilang/docs/he/index.md b/judge/design-M/mkdocs/tests/integration/multilang/docs/he/index.md
+new file mode 100644
+index 0000000..3ff609f
+--- /dev/null
++++ b/judge/design-M/mkdocs/tests/integration/multilang/docs/he/index.md
+@@ -0,0 +1,3 @@
++# ברוכים הבאים
++
++קראו את [מדריך ההתקנה](guide/install.md).
+diff --git a/judge/design-M/mkdocs/tests/integration/multilang/docs/img/logo.png b/judge/design-M/mkdocs/tests/integration/multilang/docs/img/logo.png
+new file mode 100644
+index 0000000..6746137
+--- /dev/null
++++ b/judge/design-M/mkdocs/tests/integration/multilang/docs/img/logo.png
+@@ -0,0 +1 @@
++PNG
+\ No newline at end of file
+diff --git a/judge/design-M/mkdocs/tests/integration/multilang/mkdocs.yml b/judge/design-M/mkdocs/tests/integration/multilang/mkdocs.yml
+new file mode 100644
+index 0000000..41c98a4
+--- /dev/null
++++ b/judge/design-M/mkdocs/tests/integration/multilang/mkdocs.yml
+@@ -0,0 +1,13 @@
++site_name: Multi-language
++site_url: https://example.com/docs/
++
++languages:
++  default: en
++  others: [fr, he]
++
++nav:
++  - Home: index.md
++  - User guide:
++    - Installation: guide/install.md
++    - guide/usage.md
++  - About: about.md
+diff --git a/judge/design-M/mkdocs/tests/languages_tests.py b/judge/design-M/mkdocs/tests/languages_tests.py
+new file mode 100644
+index 0000000..89b670e
+--- /dev/null
++++ b/judge/design-M/mkdocs/tests/languages_tests.py
+@@ -0,0 +1,553 @@
++#!/usr/bin/env python
++from __future__ import annotations
++
++import contextlib
++import json
++import os
++import textwrap
++import unittest
++from pathlib import Path
++
++from mkdocs import languages
++from mkdocs.commands import build
++from mkdocs.config.defaults import MkDocsConfig
++from mkdocs.exceptions import Abort
++from mkdocs.tests.base import PathAssertionMixin, load_config, tempdir
++
++NOTICE = 'This page has not been translated yet. It is shown in its original language.'
++
++DOCS = {
++    'en/index.md': '# Welcome\n\nRead the [guide](guide.md).\n\n![Shot](img/shot.png)',
++    'en/guide.md': '# Guide\n\nEnglish guide text. Back [home](index.md).',
++    'en/about.md': '# About\n\nAbout us, in English.',
++    'en/img/shot.png': 'en-shot',
++    'fr/index.md': '# Bienvenue\n\nLisez le [guide](guide.md).\n\n![Capture](img/shot.png)',
++    'fr/guide.md': '# Le guide\n\nTexte du guide.',
++    'fr/img/shot.png': 'fr-shot',
++    'img/logo.png': 'logo',
++}
++
++
++def read(*parts: str) -> str:
++    return Path(*parts).read_text(encoding='utf-8')
++
++
++class LanguageTests(unittest.TestCase):
++    def test_attributes(self):
++        lang = languages.Language('fr')
++        self.assertEqual(lang.code, 'fr')
++        self.assertEqual(lang.hreflang, 'fr')
++        self.assertEqual(lang.name, 'Français')
++        self.assertEqual(lang.dir, 'ltr')
++        self.assertFalse(lang.is_default)
++        self.assertEqual(str(lang), 'fr')
++
++    def test_rtl(self):
++        self.assertEqual(languages.Language('he').dir, 'rtl')
++        self.assertEqual(languages.Language('ar').dir, 'rtl')
++
++    def test_territory(self):
++        lang = languages.Language('pt-BR')
++        self.assertEqual(lang.code, 'pt-BR')
++        self.assertEqual(lang.hreflang, 'pt-BR')
++        self.assertEqual(str(lang.locale), 'pt_BR')
++        self.assertEqual(languages.Language('pt_BR').hreflang, 'pt-BR')
++
++    def test_invalid_codes(self):
++        for code in ('', 'e', 'english', 'en/fr', '../en', 'en-', 5, None):
++            with self.subTest(code=code):
++                with self.assertRaises(languages.ValidationError):
++                    languages.Language(code)  # type: ignore[arg-type]
++
++    def test_languages(self):
++        langs = languages.Languages('en', ['fr', 'he'])
++        self.assertEqual(langs.codes, ['en', 'fr', 'he'])
++        self.assertEqual(langs.default, languages.Language('en'))
++        self.assertTrue(langs.default.is_default)
++        self.assertEqual([x.is_default for x in langs], [True, False, False])
++        self.assertEqual(len(langs), 3)
++
++    def test_duplicates(self):
++        for default, others in (('en', ['en']), ('en', ['fr', 'fr']), ('pt-BR', ['pt_BR'])):
++            with self.subTest(default=default, others=others):
++                with self.assertRaisesRegex(languages.ValidationError, 'more than once'):
++                    languages.Languages(default, others)
++
++
++class LanguagesConfigTests(unittest.TestCase):
++    def _validate(self, docs_dir, value):
++        conf = MkDocsConfig()
++        conf.load_dict({'site_name': 'Example', 'docs_dir': docs_dir, 'languages': value})
++        errors, warnings = conf.validate()
++        self.assertEqual(warnings, [])
++        return conf, [str(e) for key, e in errors]
++
++    @tempdir(['en/index.md'])
++    def test_valid(self, docs_dir):
++        conf, errors = self._validate(docs_dir, {'default': 'en', 'others': ['fr', 'he']})
++        self.assertEqual(errors, [])
++        self.assertEqual(conf.languages.codes, ['en', 'fr', 'he'])
++        self.assertEqual(conf.languages.default.code, 'en')
++
++    @tempdir(['en/index.md'])
++    def test_others_optional(self, docs_dir):
++        for value in {'default': 'en'}, {'default': 'en', 'others': None}:
++            conf, errors = self._validate(docs_dir, value)
++            self.assertEqual(errors, [])
++            self.assertEqual(conf.languages.codes, ['en'])
++
++    @tempdir()
++    def test_not_set(self, docs_dir):
++        conf, errors = self._validate(docs_dir, None)
++        self.assertEqual(errors, [])
++        self.assertIsNone(conf.languages)
++
++    @tempdir(['en/index.md'])
++    def test_invalid(self, docs_dir):
++        for value, error in (
++            ('en', "Expected a mapping with the keys 'default' and 'others'"),
++            (['en', 'fr'], "Expected a mapping with the keys 'default' and 'others'"),
++            ({'others': ['fr']}, "'default' must be set"),
++            ({'default': 'en', 'others': 'fr'}, "'others' must be a list"),
++            ({'default': 'en', 'other': ['fr']}, "Unrecognised key(s): other"),
++            ({'default': 'en', 'others': ['fr', 'en']}, "'en' is declared more than once"),
++            ({'default': 'en', 'others': ['fr/x']}, "Invalid language code 'fr/x'"),
++        ):
++            with self.subTest(value=value):
++                conf, errors = self._validate(docs_dir, value)
++                self.assertEqual(len(errors), 1, errors)
++                self.assertIn(error, errors[0])
++
++    @tempdir(['fr/index.md'])
++    def test_default_language_dir_missing(self, docs_dir):
++        conf, errors = self._validate(docs_dir, {'default': 'en', 'others': ['fr']})
++        self.assertEqual(len(errors), 1)
++        self.assertIn("The directory of the default language", errors[0])
++        self.assertIn("does not exist", errors[0])
++
++
++class ConfigForSiteTests(unittest.TestCase):
++    @tempdir(['en/index.md'])
++    @tempdir()
++    def test_derived_config(self, site_dir, docs_dir):
++        cfg = load_config(
++            docs_dir=docs_dir,
++            site_dir=site_dir,
++            site_url='https://example.com/docs/',
++            languages={'default': 'en', 'others': ['fr']},
++            extra_javascript=['a.js'],
++            extra={'version': 1},
++        )
++        root, en, fr = languages.get_sites(cfg.languages)
++        self.assertTrue(root.is_root)
++        self.assertEqual([root.path, en.path, fr.path], ['', 'en/', 'fr/'])
++
++        root_cfg = languages.config_for_site(cfg, root)
++        self.assertEqual(root_cfg.site_dir, cfg.site_dir)
++        self.assertEqual(root_cfg.site_url, 'https://example.com/docs/')
++        self.assertEqual(str(root_cfg.theme.locale), 'en')
++
++        fr_cfg = languages.config_for_site(cfg, fr)
++        self.assertIs(languages.get_language_site(fr_cfg), fr)
++        self.assertIsNone(languages.get_language_site(cfg))
++        self.assertEqual(fr_cfg.site_dir, os.path.join(cfg.site_dir, 'fr'))
++        self.assertEqual(fr_cfg.site_url, 'https://example.com/docs/fr/')
++        self.assertEqual(str(fr_cfg.theme.locale), 'fr')
++        self.assertIs(fr_cfg.plugins, cfg.plugins)
++
++        # Plugins modify the config of each site: that must not leak into the others.
++        fr_cfg.extra_javascript.append('b.js')
++        fr_cfg.extra['version'] = 2
++        fr_cfg.theme.dirs.append('/somewhere')
++        fr_cfg.theme.static_templates.add('foo.html')
++        fr_cfg.theme['nav_style'] = 'dark'
++        self.assertEqual(cfg.extra_javascript, ['a.js'])
++        self.assertEqual(cfg.extra['version'], 1)
++        self.assertNotIn('/somewhere', cfg.theme.dirs)
++        self.assertNotIn('foo.html', cfg.theme.static_templates)
++        self.assertEqual(cfg.theme['nav_style'], 'primary')
++        self.assertEqual(str(cfg.theme.locale), 'en')
++
++
++class MultiLanguageBuildTests(PathAssertionMixin, unittest.TestCase):
++    @contextlib.contextmanager
++    def _assert_build_logs(self, expected):
++        with self.assertLogs('mkdocs') as cm:
++            yield
++        msgs = [
++            f'{r.levelname}:{r.message}'
++            for r in cm.records
++            if not r.message.startswith(
++                ('Cleaning site directory', 'Building documentation to directory')
++            )
++        ]
++        if msgs and msgs[-1].startswith('INFO:Documentation built'):
++            del msgs[-1]
++        self.assertEqual('\n'.join(msgs), textwrap.dedent(expected).strip('\n'))
++
++    def _build(self, docs_dir, site_dir, expected_logs='', **kwargs):
++        kwargs.setdefault('languages', {'default': 'en', 'others': ['fr', 'he']})
++        cfg = load_config(docs_dir=docs_dir, site_dir=site_dir, **kwargs)
++        with self._assert_build_logs(expected_logs):
++            build.build(cfg)
++        return cfg
++
++    @tempdir(DOCS)
++    @tempdir()
++    def test_builds_every_language_and_the_root(self, site_dir, docs_dir):
++        self._build(docs_dir, site_dir)
++        for prefix in '', 'en/', 'fr/', 'he/':
++            for page in 'index.html', 'guide/index.html', 'about/index.html', '404.html':
++                self.assertPathIsFile(site_dir, prefix + page)
++        # The language directories aren't themselves part of any site.
++        self.assertPathNotExists(site_dir, 'en', 'en')
++        self.assertPathNotExists(site_dir, 'fr', 'en')
++
++        self.assertIn('Welcome', read(site_dir, 'index.html'))
++        self.assertIn('Welcome', read(site_dir, 'en', 'index.html'))
++        self.assertIn('Bienvenue', read(site_dir, 'fr', 'index.html'))
++        self.assertIn('Texte du guide', read(site_dir, 'fr', 'guide', 'index.html'))
++        self.assertIn('<html lang="fr" data-bs-theme', read(site_dir, 'fr', 'index.html'))
++        self.assertIn('<html lang="he" dir="rtl"', read(site_dir, 'he', 'index.html'))
++        self.assertIn('<html lang="en" data-bs-theme', read(site_dir, 'index.html'))
++
++    @tempdir(DOCS)
++    @tempdir()
++    def test_untranslated_pages(self, site_dir, docs_dir):
++        self._build(docs_dir, site_dir)
++        # Translated pages have no notice.
++        for path in ('index.html',), ('fr', 'guide', 'index.html'), ('en', 'about', 'index.html'):
++            self.assertNotIn(NOTICE, read(site_dir, *path))
++            self.assertNotIn('mkdocs-untranslated', read(site_dir, *path))
++        # Untranslated ones are shown in the default language, marked as such, in the chrome
++        # of their site.
++        for lang in 'fr', 'he':
++            about = read(site_dir, lang, 'about', 'index.html')
++            self.assertIn(f'<html lang="{lang}"', about)
++            self.assertIn(NOTICE, about)
++            self.assertRegex(
++                about,
++                r'</div><div class="mkdocs-untranslated" lang="en" dir="ltr">'
++                r'<h1 id="about">About</h1>\s*<p>About us, in English.</p></div>',
++            )
++        # Links in an untranslated page lead to the pages of its site.
++        he_guide = read(site_dir, 'he', 'guide', 'index.html')
++        self.assertIn('Back <a href="../">home</a>', he_guide)
++
++    @tempdir(DOCS)
++    @tempdir()
++    def test_theme_can_render_the_notice(self, site_dir, docs_dir):
++        theme_dir = os.path.join(docs_dir, os.pardir, 'custom_theme')
++        os.makedirs(theme_dir, exist_ok=True)
++        Path(theme_dir, 'untranslated.html').write_text(
++            '<aside>Not in {{ language.name }} yet, this is {{ language.content.name }}.</aside>'
++        )
++        self._build(docs_dir, site_dir, theme={'name': 'mkdocs', 'custom_dir': theme_dir})
++        about = read(site_dir, 'fr', 'about', 'index.html')
++        self.assertIn(
++            '<aside>Not in Français yet, this is English.</aside>'
++            '<div class="mkdocs-untranslated" lang="en" dir="ltr">',
++            about,
++        )
++
++    @tempdir(DOCS)
++    @tempdir()
++    def test_notice_in_a_theme_without_support(self, site_dir, docs_dir):
++        theme_dir = os.path.join(docs_dir, os.pardir, 'bare_theme')
++        os.makedirs(theme_dir, exist_ok=True)
++        Path(theme_dir, 'main.html').write_text('{{ page.content }}')
++        self._build(docs_dir, site_dir, theme={'name': None, 'custom_dir': theme_dir})
++        self.assertEqual(
++            read(site_dir, 'fr', 'about', 'index.html'),
++            f'<div class="mkdocs-untranslated-notice" role="note"><p>{NOTICE}</p></div>'
++            '<div class="mkdocs-untranslated" lang="en" dir="ltr">'
++            '<h1 id="about">About</h1>\n<p>About us, in English.</p></div>',
++        )
++
++    @tempdir(DOCS)
++    @tempdir()
++    def test_files(self, site_dir, docs_dir):
++        self._build(docs_dir, site_dir)
++        # A language's own file, else a shared one, else the default language's.
++        self.assertEqual(read(site_dir, 'img', 'shot.png'), 'en-shot')
++        self.assertEqual(read(site_dir, 'en', 'img', 'shot.png'), 'en-shot')
++        self.assertEqual(read(site_dir, 'fr', 'img', 'shot.png'), 'fr-shot')
++        self.assertEqual(read(site_dir, 'he', 'img', 'shot.png'), 'en-shot')
++        for prefix in '', 'en/', 'fr/', 'he/':
++            self.assertEqual(read(site_dir, prefix + 'img/logo.png'), 'logo')
++            self.assertPathIsFile(site_dir, prefix + 'css/base.css')  # From the theme.
++
++    @tempdir({**DOCS, 'img/shot.png': 'shared-shot'})
++    @tempdir()
++    def test_shared_file_before_default_language(self, site_dir, docs_dir):
++        self._build(docs_dir, site_dir)
++        self.assertEqual(read(site_dir, 'en', 'img', 'shot.png'), 'en-shot')
++        self.assertEqual(read(site_dir, 'fr', 'img', 'shot.png'), 'fr-shot')
++        self.assertEqual(read(site_dir, 'he', 'img', 'shot.png'), 'shared-shot')
++
++    @tempdir(DOCS)
++    @tempdir()
++    def test_links_to_other_languages(self, site_dir, docs_dir):
++        self._build(docs_dir, site_dir, site_url='https://example.com/docs/')
++        fr_guide = read(site_dir, 'fr', 'guide', 'index.html')
++        self.assertIn('<a href="../../en/guide/" hreflang="en" lang="en"', fr_guide)
++        self.assertIn('<a href="../../he/guide/" hreflang="he" lang="he"', fr_guide)
++        self.assertIn(
++            '<a href="../../fr/guide/" hreflang="fr" lang="fr" class="dropdown-item active"',
++            fr_guide,
++        )
++        self.assertIn(
++            '<link rel="alternate" hreflang="he" href="https://example.com/docs/he/guide/">',
++            fr_guide,
++        )
++        self.assertIn(
++            '<link rel="alternate" hreflang="x-default" href="https://example.com/docs/guide/">',
++            fr_guide,
++        )
++        self.assertIn(
++            '<link rel="canonical" href="https://example.com/docs/fr/guide/">', fr_guide
++        )
++        root_guide = read(site_dir, 'guide', 'index.html')
++        self.assertIn('<a href="../fr/guide/" hreflang="fr"', root_guide)
++        self.assertIn('<link rel="canonical" href="https://example.com/docs/guide/">', root_guide)
++        # The switcher shows the languages by their own name.
++        self.assertIn('>Français</a>', root_guide)
++        self.assertIn('>English</a>', root_guide)
++
++    @tempdir(DOCS)
++    @tempdir()
++    def test_links_without_directory_urls(self, site_dir, docs_dir):
++        self._build(docs_dir, site_dir, use_directory_urls=False)
++        fr_guide = read(site_dir, 'fr', 'guide.html')
++        self.assertIn('<a href="../en/guide.html" hreflang="en"', fr_guide)
++        self.assertIn('<a href="fr/index.html" hreflang="fr"', read(site_dir, 'index.html'))
++        self.assertIn('<a href="/he/index.html" hreflang="he"', read(site_dir, 'fr', '404.html'))
++
++    @tempdir(DOCS)
++    @tempdir()
++    def test_error_page_urls(self, site_dir, docs_dir):
++        self._build(docs_dir, site_dir)
++        self.assertIn('href="/css/base.css"', read(site_dir, '404.html'))
++        self.assertIn('href="/fr/css/base.css"', read(site_dir, 'fr', '404.html'))
++        fr_404 = read(site_dir, 'fr', '404.html')
++        self.assertIn('<a href="/he/" hreflang="he"', fr_404)
++        self.assertIn('<link rel="alternate" hreflang="x-default" href="/">', fr_404)
++
++    @tempdir(DOCS)
++    @tempdir()
++    def test_navigation(self, site_dir, docs_dir):
++        self._build(
++            docs_dir,
++            site_dir,
++            nav=[{'Home': 'index.md'}, {'The guide': 'guide.md'}, 'about.md'],
++        )
++        # Titles given in `nav` are used for the default language, and wherever a page isn't
++        # translated, whereas translated pages are listed by their own title.
++        en_nav = read(site_dir, 'en', 'about', 'index.html')
++        self.assertIn('>The guide</a>', en_nav)
++        self.assertIn('>Home</a>', en_nav)
++        fr_nav = read(site_dir, 'fr', 'about', 'index.html')
++        self.assertIn('>Le guide</a>', fr_nav)
++        self.assertIn('>Bienvenue</a>', fr_nav)
++        self.assertIn('>About</a>', fr_nav)
++        self.assertNotIn('The guide', fr_nav)
++        he_nav = read(site_dir, 'he', 'about', 'index.html')
++        self.assertIn('>The guide</a>', he_nav)
++
++    @tempdir(DOCS)
++    @tempdir()
++    def test_auto_navigation(self, site_dir, docs_dir):
++        self._build(docs_dir, site_dir)
++        fr_nav = read(site_dir, 'fr', 'about', 'index.html')
++        self.assertIn('>Le guide</a>', fr_nav)
++        self.assertIn('>About</a>', fr_nav)
++        self.assertIn('>Guide</a>', read(site_dir, 'about', 'index.html'))
++
++    @tempdir(DOCS)
++    @tempdir()
++    def test_search_index_per_language(self, site_dir, docs_dir):
++        self._build(
++            docs_dir,
++            site_dir,
++            plugins=['search'],
++            expected_logs="INFO:Option search.lang 'he' is not supported, falling back to 'en'",
++        )
++
++        def index(*prefix):
++            data = json.loads(read(site_dir, *prefix, 'search', 'search_index.json'))
++            text = ' '.join(doc['text'] for doc in data['docs'])
++            return data['config']['lang'], text
++
++        for prefix in (), ('en',):
++            lang, text = index(*prefix)
++            self.assertEqual(lang, ['en'])
++            self.assertIn('English guide text', text)
++            self.assertNotIn('Texte du guide', text)
++        lang, text = index('fr')
++        self.assertEqual(lang, ['fr'])
++        self.assertIn('Texte du guide', text)
++        self.assertIn('About us, in English', text)  # Untranslated, so a French reader sees it.
++        self.assertNotIn('English guide text', text)
++        self.assertNotIn(NOTICE, text)
++        self.assertPathIsFile(site_dir, 'fr', 'search', 'lunr.fr.js')
++        self.assertPathNotExists(site_dir, 'search', 'lunr.fr.js')
++
++    @tempdir({**DOCS, 'fr/extra.md': '# En plus\n\nSeulement en français.'})
++    @tempdir()
++    def test_page_missing_in_the_default_language(self, site_dir, docs_dir):
++        self._build(docs_dir, site_dir)
++        for prefix in '', 'en/', 'he/':
++            extra = read(site_dir, prefix + 'extra/index.html')
++            self.assertIn(NOTICE, extra)
++            self.assertIn('<div class="mkdocs-untranslated" lang="fr" dir="ltr">', extra)
++        self.assertNotIn(NOTICE, read(site_dir, 'fr', 'extra', 'index.html'))
++
++    @tempdir(DOCS)
++    @tempdir()
++    def test_edit_urls(self, site_dir, docs_dir):
++        self._build(
++            docs_dir, site_dir, repo_url='https://github.com/x/y/', edit_uri='edit/main/docs/'
++        )
++        self.assertIn(
++            'href="https://github.com/x/y/edit/main/docs/fr/guide.md"',
++            read(site_dir, 'fr', 'guide', 'index.html'),
++        )
++        # An untranslated page is edited in the language it's shown in.
++        self.assertIn(
++            'href="https://github.com/x/y/edit/main/docs/en/about.md"',
++            read(site_dir, 'fr', 'about', 'index.html'),
++        )
++
++    @tempdir({**DOCS, 'en/about.md': 'See [this](missing.md).', 'README.md': '# Docs'})
++    @tempdir()
++    def test_problems_reported_once(self, site_dir, docs_dir):
++        self._build(
++            docs_dir,
++            site_dir,
++            expected_logs='''
++                WARNING:The following pages are outside of the language directories (en/, fr/, he/), so they are not part of the site:
++                  - README.md
++                WARNING:Doc file 'about.md' contains a link 'missing.md', but the target is not found among documentation files.
++            ''',
++        )
++
++    @tempdir({**DOCS, 'fr/guide.md': 'See [this](missing.md).'})
++    @tempdir()
++    def test_strict(self, site_dir, docs_dir):
++        cfg = load_config(
++            docs_dir=docs_dir,
++            site_dir=site_dir,
++            strict=True,
++            languages={'default': 'en', 'others': ['fr']},
++        )
++        with self.assertLogs('mkdocs') as cm:
++            with self.assertRaisesRegex(Abort, 'Aborted with 1 warnings in strict mode!'):
++                build.build(cfg)
++        self.assertIn(
++            "WARNING:mkdocs.structure.pages:Doc file 'guide.md' contains a link 'missing.md', "
++            "but the target is not found among documentation files.",
++            cm.output,
++        )
++
++    @tempdir({**DOCS, 'en/fr/index.md': 'Clash'})
++    @tempdir()
++    def test_default_language_page_in_a_language_directory(self, site_dir, docs_dir):
++        cfg = load_config(
++            docs_dir=docs_dir, site_dir=site_dir, languages={'default': 'en', 'others': ['fr']}
++        )
++        with self.assertLogs('mkdocs') as cm:
++            with self.assertRaises(Abort):
++                build.build(cfg)
++        self.assertIn(
++            "ERROR:mkdocs.commands.build:The following files would be written into the directory "
++            "of a language's site when the default language is built at the root of the site. "
++            "Please rename or move them:\n  - en/fr/index.md",
++            cm.output,
++        )
++
++    @tempdir(DOCS)
++    @tempdir()
++    def test_plugins_run_for_each_site(self, site_dir, docs_dir):
++        seen = []
++
++        def on_config(config):
++            config.extra_javascript.append('plugin.js')
++            seen.append((config.site_dir, str(config.theme.locale)))
++            return config
++
++        cfg = load_config(
++            docs_dir=docs_dir,
++            site_dir=site_dir,
++            languages={'default': 'en', 'others': ['fr']},
++        )
++        cfg.plugins.events['config'].append(on_config)
++        with self.assertLogs('mkdocs', level='INFO'):
++            build.build(cfg)
++        self.assertEqual(
++            seen,
++            [
++                (site_dir, 'en'),
++                (os.path.join(site_dir, 'en'), 'en'),
++                (os.path.join(site_dir, 'fr'), 'fr'),
++            ],
++        )
++        self.assertEqual(cfg.extra_javascript, [])
++        self.assertEqual(read(site_dir, 'fr', 'index.html').count('plugin.js'), 1)
++
++    @tempdir(DOCS)
++    @tempdir()
++    def test_draft_pages_while_serving(self, site_dir, docs_dir):
++        cfg = load_config(
++            docs_dir=docs_dir,
++            site_dir=site_dir,
++            draft_docs='about.md',
++            languages={'default': 'en', 'others': ['fr']},
++        )
++        with self._assert_build_logs(
++            '''
++            INFO:Building the site of 'en' at /
++            INFO:The following pages are being built only for the preview but will be excluded from `mkdocs build` per `draft_docs` config:
++              - http://localhost:123/about/
++            INFO:Building the site of 'en' at /en/
++            INFO:The following pages are being built only for the preview but will be excluded from `mkdocs build` per `draft_docs` config:
++              - http://localhost:123/en/about/
++            INFO:Building the site of 'fr' at /fr/
++            INFO:The following pages are being built only for the preview but will be excluded from `mkdocs build` per `draft_docs` config:
++              - http://localhost:123/fr/about/
++            '''
++        ):
++            build.build(cfg, serve_url='http://localhost:123/')
++        self.assertPathIsFile(site_dir, 'fr', 'about', 'index.html')
++
++    @tempdir({'index.md': '# Home'})
++    @tempdir()
++    def test_single_language_site_has_no_language_context(self, site_dir, docs_dir):
++        cfg = load_config(docs_dir=docs_dir, site_dir=site_dir)
++        with self.assertLogs('mkdocs', level='INFO'):
++            build.build(cfg)
++        self.assertIn('<html lang="en" data-bs-theme="light">', read(site_dir, 'index.html'))
++        self.assertNotIn('hreflang', read(site_dir, 'index.html'))
++        self.assertPathNotExists(site_dir, 'en')
++
++
++class ReadTheDocsThemeTests(PathAssertionMixin, unittest.TestCase):
++    @tempdir(DOCS)
++    @tempdir()
++    def test_language_list_and_notice(self, site_dir, docs_dir):
++        cfg = load_config(
++            docs_dir=docs_dir,
++            site_dir=site_dir,
++            theme='readthedocs',
++            languages={'default': 'en', 'others': ['fr', 'he']},
++        )
++        with self.assertLogs('mkdocs', level='INFO'):
++            build.build(cfg)
++        about = read(site_dir, 'he', 'about', 'index.html')
++        self.assertIn('<html class="writer-html5" lang="he" dir="rtl" >', about)
++        self.assertIn('<a href="../../fr/about/" hreflang="fr" lang="fr">Français</a>', about)
++        self.assertIn(
++            '<a href="../../he/about/" hreflang="he" lang="he" class="current" '
++            'aria-current="true">',
++            about,
++        )
++        self.assertIn(f'<div class="admonition note" role="note">\n  <p>{NOTICE}</p>', about)
+diff --git a/judge/pristine/mkdocs/theme.py b/judge/design-M/mkdocs/theme.py
+index b45f107..0bb374f 100644
+--- a/judge/pristine/mkdocs/theme.py
++++ b/judge/design-M/mkdocs/theme.py
+@@ -1,5 +1,6 @@
+ from __future__ import annotations
+ 
++import copy
+ import logging
+ import os
+ import warnings
+@@ -121,6 +122,17 @@ class Theme(MutableMapping[str, Any]):
+     def __iter__(self):
+         return iter(self.__vars)
+ 
++    def _clone(self) -> Theme:
++        """Return a copy of the theme that can be modified without affecting this one."""
++        clone = copy.copy(self)
++        clone.dirs = list(self.dirs)
++        clone.static_templates = set(self.static_templates)
++        clone.__vars = {
++            k: copy.deepcopy(v) if isinstance(v, (dict, list, set)) else v
++            for k, v in self.__vars.items()
++        }
++        return clone
++
+     def _load_theme_config(self, name: str) -> None:
+         """Recursively load theme and any parent themes."""
+         theme_dir = utils.get_theme_dir(name)
+diff --git a/judge/pristine/mkdocs/themes/mkdocs/base.html b/judge/design-M/mkdocs/themes/mkdocs/base.html
+index e8c8c45..b7f16d4 100644
+--- a/judge/pristine/mkdocs/themes/mkdocs/base.html
++++ b/judge/design-M/mkdocs/themes/mkdocs/base.html
+@@ -1,5 +1,5 @@
+ <!DOCTYPE html>
+-<html lang="{{ config.theme.locale|default('en') }}" data-bs-theme="{{ config.theme.color_mode }}">
++<html lang="{% if language %}{{ language.hreflang }}{% else %}{{ config.theme.locale|default('en') }}{% endif %}"{% if language and language.dir == 'rtl' %} dir="rtl"{% endif %} data-bs-theme="{{ config.theme.color_mode }}">
+     <head>
+       {%- block site_meta %}
+         <meta charset="utf-8">
+@@ -8,6 +8,12 @@
+         {% if page and page.is_homepage %}<meta name="description" content="{{ config.site_description }}">{% endif %}
+         {% if config.site_author %}<meta name="author" content="{{ config.site_author }}">{% endif %}
+         {% if page and page.canonical_url %}<link rel="canonical" href="{{ page.canonical_url }}">{% endif %}
++        {%- if language %}
++        {%- for alt in language.alternates %}
++        <link rel="alternate" hreflang="{{ alt.hreflang }}" href="{{ alt.canonical_url or alt.url|url }}">
++        {%- endfor %}
++        <link rel="alternate" hreflang="x-default" href="{{ language.root.canonical_url or language.root.url|url }}">
++        {%- endif %}
+         {% if config.site_favicon %}<link rel="shortcut icon" href="{{ config.site_favicon|url }}">
+         {% else %}<link rel="shortcut icon" href="{{ 'img/favicon.ico'|url }}">{% endif %}
+       {%- endblock %}
+@@ -110,6 +116,20 @@
+                   {%- endblock %}
+ 
+                     <ul class="nav navbar-nav ms-md-auto">
++                      {%- block languages %}
++                        {%- if language %}
++                        <li class="nav-item dropdown">
++                            <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="{% trans %}Language{% endtrans %}">
++                                <i class="fa fa-language"></i> {{ language.name }}
++                            </a>
++                            <ul class="dropdown-menu dropdown-menu-end">
++                            {%- for alt in language.alternates %}
++                                <li><a href="{{ alt.url|url }}" hreflang="{{ alt.hreflang }}" lang="{{ alt.hreflang }}" class="dropdown-item{% if alt.active %} active" aria-current="true{% endif %}">{{ alt.name }}</a></li>
++                            {%- endfor %}
++                            </ul>
++                        </li>
++                        {%- endif %}
++                      {%- endblock %}
+                       {%- block search_button %}
+                         {%- if 'search' in config.plugins %}
+                         <li class="nav-item">
+diff --git a/judge/pristine/mkdocs/themes/mkdocs/locales/de/LC_MESSAGES/messages.po b/judge/design-M/mkdocs/themes/mkdocs/locales/de/LC_MESSAGES/messages.po
+index 8f8510e..4aa61c0 100644
+--- a/judge/pristine/mkdocs/themes/mkdocs/locales/de/LC_MESSAGES/messages.po
++++ b/judge/design-M/mkdocs/themes/mkdocs/locales/de/LC_MESSAGES/messages.po
+@@ -21,31 +21,35 @@ msgstr ""
+ msgid "Page not found"
+ msgstr "Seite nicht gefunden"
+ 
+-#: mkdocs/themes/mkdocs/base.html:117
++#: mkdocs/themes/mkdocs/base.html:122
++msgid "Language"
++msgstr "Sprache"
++
++#: mkdocs/themes/mkdocs/base.html:137
+ #: mkdocs/themes/mkdocs/keyboard-modal.html:31
+ #: mkdocs/themes/mkdocs/search-modal.html:5
+ msgid "Search"
+ msgstr "Suche"
+ 
+-#: mkdocs/themes/mkdocs/base.html:127
++#: mkdocs/themes/mkdocs/base.html:147
+ msgid "Previous"
+ msgstr "Zurück"
+ 
+-#: mkdocs/themes/mkdocs/base.html:132
++#: mkdocs/themes/mkdocs/base.html:152
+ msgid "Next"
+ msgstr "Weiter"
+ 
+-#: mkdocs/themes/mkdocs/base.html:143 mkdocs/themes/mkdocs/base.html:145
+-#: mkdocs/themes/mkdocs/base.html:147 mkdocs/themes/mkdocs/base.html:149
++#: mkdocs/themes/mkdocs/base.html:163 mkdocs/themes/mkdocs/base.html:165
++#: mkdocs/themes/mkdocs/base.html:167 mkdocs/themes/mkdocs/base.html:169
+ #, python-format
+ msgid "Edit on %(repo_name)s"
+ msgstr "Bearbeiten auf %(repo_name)s"
+ 
+-#: mkdocs/themes/mkdocs/base.html:151
++#: mkdocs/themes/mkdocs/base.html:171
+ msgid "Edit"
+ msgstr "Bearbeiten"
+ 
+-#: mkdocs/themes/mkdocs/base.html:225
++#: mkdocs/themes/mkdocs/base.html:245
+ #, python-format
+ msgid "Documentation built with %(mkdocs_link)s."
+ msgstr "Diese Dokumentation wurde erstellt mit %(mkdocs_link)s."
+@@ -101,3 +105,7 @@ msgstr "Keine Ergebnisse gefunden"
+ msgid "Table of Contents"
+ msgstr "Inhaltsverzeichnis"
+ 
++#: mkdocs/themes/mkdocs/untranslated.html:2
++msgid "This page has not been translated yet. It is shown in its original language."
++msgstr "Diese Seite wurde noch nicht übersetzt. Sie wird in ihrer Originalsprache angezeigt."
++
+diff --git a/judge/pristine/mkdocs/themes/mkdocs/locales/es/LC_MESSAGES/messages.po b/judge/design-M/mkdocs/themes/mkdocs/locales/es/LC_MESSAGES/messages.po
+index cad4971..2e7565d 100644
+--- a/judge/pristine/mkdocs/themes/mkdocs/locales/es/LC_MESSAGES/messages.po
++++ b/judge/design-M/mkdocs/themes/mkdocs/locales/es/LC_MESSAGES/messages.po
+@@ -21,31 +21,35 @@ msgstr ""
+ msgid "Page not found"
+ msgstr "Página no encontrada"
+ 
+-#: mkdocs/themes/mkdocs/base.html:117
++#: mkdocs/themes/mkdocs/base.html:122
++msgid "Language"
++msgstr "Idioma"
++
++#: mkdocs/themes/mkdocs/base.html:137
+ #: mkdocs/themes/mkdocs/keyboard-modal.html:31
+ #: mkdocs/themes/mkdocs/search-modal.html:5
+ msgid "Search"
+ msgstr "Buscar"
+ 
+-#: mkdocs/themes/mkdocs/base.html:127
++#: mkdocs/themes/mkdocs/base.html:147
+ msgid "Previous"
+ msgstr "Anterior"
+ 
+-#: mkdocs/themes/mkdocs/base.html:132
++#: mkdocs/themes/mkdocs/base.html:152
+ msgid "Next"
+ msgstr "Siguiente"
+ 
+-#: mkdocs/themes/mkdocs/base.html:143 mkdocs/themes/mkdocs/base.html:145
+-#: mkdocs/themes/mkdocs/base.html:147 mkdocs/themes/mkdocs/base.html:149
++#: mkdocs/themes/mkdocs/base.html:163 mkdocs/themes/mkdocs/base.html:165
++#: mkdocs/themes/mkdocs/base.html:167 mkdocs/themes/mkdocs/base.html:169
+ #, python-format
+ msgid "Edit on %(repo_name)s"
+ msgstr "Editar en %(repo_name)s"
+ 
+-#: mkdocs/themes/mkdocs/base.html:151
++#: mkdocs/themes/mkdocs/base.html:171
+ msgid "Edit"
+ msgstr "Editar"
+ 
+-#: mkdocs/themes/mkdocs/base.html:225
++#: mkdocs/themes/mkdocs/base.html:245
+ #, python-format
+ msgid "Documentation built with %(mkdocs_link)s."
+ msgstr "Documentación construida con %(mkdocs_link)s."
+@@ -101,3 +105,7 @@ msgstr "No se encontraron resultados"
+ msgid "Table of Contents"
+ msgstr "Tabla de contenidos"
+ 
++#: mkdocs/themes/mkdocs/untranslated.html:2
++msgid "This page has not been translated yet. It is shown in its original language."
++msgstr "Esta página aún no ha sido traducida. Se muestra en su idioma original."
++
+diff --git a/judge/pristine/mkdocs/themes/mkdocs/locales/fa/LC_MESSAGES/messages.po b/judge/design-M/mkdocs/themes/mkdocs/locales/fa/LC_MESSAGES/messages.po
+index 70c535b..955473a 100644
+--- a/judge/pristine/mkdocs/themes/mkdocs/locales/fa/LC_MESSAGES/messages.po
++++ b/judge/design-M/mkdocs/themes/mkdocs/locales/fa/LC_MESSAGES/messages.po
+@@ -21,31 +21,35 @@ msgstr ""
+ msgid "Page not found"
+ msgstr "صفحه یافت نشد"
+ 
+-#: mkdocs/themes/mkdocs/base.html:117
++#: mkdocs/themes/mkdocs/base.html:122
++msgid "Language"
++msgstr "زبان"
++
++#: mkdocs/themes/mkdocs/base.html:137
+ #: mkdocs/themes/mkdocs/keyboard-modal.html:31
+ #: mkdocs/themes/mkdocs/search-modal.html:5
+ msgid "Search"
+ msgstr "جستجو"
+ 
+-#: mkdocs/themes/mkdocs/base.html:127
++#: mkdocs/themes/mkdocs/base.html:147
+ msgid "Previous"
+ msgstr "قبلی"
+ 
+-#: mkdocs/themes/mkdocs/base.html:132
++#: mkdocs/themes/mkdocs/base.html:152
+ msgid "Next"
+ msgstr "بعدی"
+ 
+-#: mkdocs/themes/mkdocs/base.html:143 mkdocs/themes/mkdocs/base.html:145
+-#: mkdocs/themes/mkdocs/base.html:147 mkdocs/themes/mkdocs/base.html:149
++#: mkdocs/themes/mkdocs/base.html:163 mkdocs/themes/mkdocs/base.html:165
++#: mkdocs/themes/mkdocs/base.html:167 mkdocs/themes/mkdocs/base.html:169
+ #, python-format
+ msgid "Edit on %(repo_name)s"
+ msgstr "ویرایش در %(repo_name)s"
+ 
+-#: mkdocs/themes/mkdocs/base.html:151
++#: mkdocs/themes/mkdocs/base.html:171
+ msgid "Edit"
+ msgstr ""
+ 
+-#: mkdocs/themes/mkdocs/base.html:225
++#: mkdocs/themes/mkdocs/base.html:245
+ #, python-format
+ msgid "Documentation built with %(mkdocs_link)s."
+ msgstr "مستندات ساخته شده توسط %(mkdocs_link)s."
+@@ -101,3 +105,7 @@ msgstr "موردی یافت نشد"
+ msgid "Table of Contents"
+ msgstr "فهرست مطالب"
+ 
++#: mkdocs/themes/mkdocs/untranslated.html:2
++msgid "This page has not been translated yet. It is shown in its original language."
++msgstr "این صفحه هنوز ترجمه نشده است. به زبان اصلی خود نمایش داده می‌شود."
++
+diff --git a/judge/pristine/mkdocs/themes/mkdocs/locales/fr/LC_MESSAGES/messages.po b/judge/design-M/mkdocs/themes/mkdocs/locales/fr/LC_MESSAGES/messages.po
+index 95c35e6..cae13ce 100644
+--- a/judge/pristine/mkdocs/themes/mkdocs/locales/fr/LC_MESSAGES/messages.po
++++ b/judge/design-M/mkdocs/themes/mkdocs/locales/fr/LC_MESSAGES/messages.po
+@@ -21,31 +21,35 @@ msgstr ""
+ msgid "Page not found"
+ msgstr "Page non trouvée"
+ 
+-#: mkdocs/themes/mkdocs/base.html:117
++#: mkdocs/themes/mkdocs/base.html:122
++msgid "Language"
++msgstr "Langue"
++
++#: mkdocs/themes/mkdocs/base.html:137
+ #: mkdocs/themes/mkdocs/keyboard-modal.html:31
+ #: mkdocs/themes/mkdocs/search-modal.html:5
+ msgid "Search"
+ msgstr "Rechercher"
+ 
+-#: mkdocs/themes/mkdocs/base.html:127
++#: mkdocs/themes/mkdocs/base.html:147
+ msgid "Previous"
+ msgstr "Précédent"
+ 
+-#: mkdocs/themes/mkdocs/base.html:132
++#: mkdocs/themes/mkdocs/base.html:152
+ msgid "Next"
+ msgstr "Suivant"
+ 
+-#: mkdocs/themes/mkdocs/base.html:143 mkdocs/themes/mkdocs/base.html:145
+-#: mkdocs/themes/mkdocs/base.html:147 mkdocs/themes/mkdocs/base.html:149
++#: mkdocs/themes/mkdocs/base.html:163 mkdocs/themes/mkdocs/base.html:165
++#: mkdocs/themes/mkdocs/base.html:167 mkdocs/themes/mkdocs/base.html:169
+ #, python-format
+ msgid "Edit on %(repo_name)s"
+ msgstr "Editer dans %(repo_name)s"
+ 
+-#: mkdocs/themes/mkdocs/base.html:151
++#: mkdocs/themes/mkdocs/base.html:171
+ msgid "Edit"
+ msgstr "Editer"
+ 
+-#: mkdocs/themes/mkdocs/base.html:225
++#: mkdocs/themes/mkdocs/base.html:245
+ #, python-format
+ msgid "Documentation built with %(mkdocs_link)s."
+ msgstr "Documentation générée avec %(mkdocs_link)s."
+@@ -101,3 +105,7 @@ msgstr "Aucun résultat trouvé"
+ msgid "Table of Contents"
+ msgstr "Table des matières"
+ 
++#: mkdocs/themes/mkdocs/untranslated.html:2
++msgid "This page has not been translated yet. It is shown in its original language."
++msgstr "Cette page n'a pas encore été traduite. Elle est affichée dans sa langue d'origine."
++
+diff --git a/judge/design-M/mkdocs/themes/mkdocs/locales/he/LC_MESSAGES/messages.po b/judge/design-M/mkdocs/themes/mkdocs/locales/he/LC_MESSAGES/messages.po
+new file mode 100644
+index 0000000..e411672
+--- /dev/null
++++ b/judge/design-M/mkdocs/themes/mkdocs/locales/he/LC_MESSAGES/messages.po
+@@ -0,0 +1,109 @@
++# Hebrew translations for MkDocs.
++# Copyright (C) 2026 MkDocs
++# This file is distributed under the same license as the MkDocs project.
++#
++msgid ""
++msgstr ""
++"Project-Id-Version: MkDocs 1.6\n"
++"Report-Msgid-Bugs-To: https://github.com/mkdocs/mkdocs/issues\n"
++"POT-Creation-Date: 2024-04-18 21:03+0200\n"
++"PO-Revision-Date: 2026-09-22 12:00+0000\n"
++"Last-Translator: \n"
++"Language: he\n"
++"Language-Team: he <LL@li.org>\n"
++"Plural-Forms: nplurals=2; plural=(n != 1);\n"
++"MIME-Version: 1.0\n"
++"Content-Type: text/plain; charset=utf-8\n"
++"Content-Transfer-Encoding: 8bit\n"
++"Generated-By: Babel 2.14.0\n"
++
++#: mkdocs/themes/mkdocs/404.html:8
++msgid "Page not found"
++msgstr "הדף לא נמצא"
++
++#: mkdocs/themes/mkdocs/base.html:122
++msgid "Language"
++msgstr "שפה"
++
++#: mkdocs/themes/mkdocs/base.html:137
++#: mkdocs/themes/mkdocs/keyboard-modal.html:31
++#: mkdocs/themes/mkdocs/search-modal.html:5
++msgid "Search"
++msgstr "חיפוש"
++
++#: mkdocs/themes/mkdocs/base.html:147
++msgid "Previous"
++msgstr "הקודם"
++
++#: mkdocs/themes/mkdocs/base.html:152
++msgid "Next"
++msgstr "הבא"
++
++#: mkdocs/themes/mkdocs/base.html:163 mkdocs/themes/mkdocs/base.html:165
++#: mkdocs/themes/mkdocs/base.html:167 mkdocs/themes/mkdocs/base.html:169
++#, python-format
++msgid "Edit on %(repo_name)s"
++msgstr "עריכה ב־%(repo_name)s"
++
++#: mkdocs/themes/mkdocs/base.html:171
++msgid "Edit"
++msgstr "עריכה"
++
++#: mkdocs/themes/mkdocs/base.html:245
++#, python-format
++msgid "Documentation built with %(mkdocs_link)s."
++msgstr "התיעוד נבנה באמצעות %(mkdocs_link)s."
++
++#: mkdocs/themes/mkdocs/keyboard-modal.html:5
++msgid "Keyboard Shortcuts"
++msgstr "קיצורי מקלדת"
++
++#: mkdocs/themes/mkdocs/keyboard-modal.html:6
++#: mkdocs/themes/mkdocs/search-modal.html:6
++msgid "Close"
++msgstr "סגירה"
++
++#: mkdocs/themes/mkdocs/keyboard-modal.html:12
++msgid "Keys"
++msgstr "מקשים"
++
++#: mkdocs/themes/mkdocs/keyboard-modal.html:13
++msgid "Action"
++msgstr "פעולה"
++
++#: mkdocs/themes/mkdocs/keyboard-modal.html:19
++msgid "Open this help"
++msgstr "פתיחת עזרה זו"
++
++#: mkdocs/themes/mkdocs/keyboard-modal.html:23
++msgid "Next page"
++msgstr "הדף הבא"
++
++#: mkdocs/themes/mkdocs/keyboard-modal.html:27
++msgid "Previous page"
++msgstr "הדף הקודם"
++
++#: mkdocs/themes/mkdocs/search-modal.html:9
++msgid "From here you can search these documents. Enter your search terms below."
++msgstr "מכאן אפשר לחפש במסמכים האלה. הקלידו את מילות החיפוש למטה."
++
++#: mkdocs/themes/mkdocs/search-modal.html:12
++msgid "Search..."
++msgstr "חיפוש..."
++
++#: mkdocs/themes/mkdocs/search-modal.html:12
++msgid "Type search term here"
++msgstr "הקלידו כאן מילות חיפוש"
++
++#: mkdocs/themes/mkdocs/search-modal.html:15
++msgid "No results found"
++msgstr "לא נמצאו תוצאות"
++
++#: mkdocs/themes/mkdocs/toc.html:3
++msgid "Table of Contents"
++msgstr "תוכן העניינים"
++
++#: mkdocs/themes/mkdocs/untranslated.html:2
++msgid "This page has not been translated yet. It is shown in its original language."
++msgstr "דף זה עדיין לא תורגם. הוא מוצג בשפת המקור שלו."
++
+diff --git a/judge/pristine/mkdocs/themes/mkdocs/locales/id/LC_MESSAGES/messages.po b/judge/design-M/mkdocs/themes/mkdocs/locales/id/LC_MESSAGES/messages.po
+index 2e97c1d..22b2011 100644
+--- a/judge/pristine/mkdocs/themes/mkdocs/locales/id/LC_MESSAGES/messages.po
++++ b/judge/design-M/mkdocs/themes/mkdocs/locales/id/LC_MESSAGES/messages.po
+@@ -21,31 +21,35 @@ msgstr ""
+ msgid "Page not found"
+ msgstr "Halaman tidak ditemukan"
+ 
+-#: mkdocs/themes/mkdocs/base.html:117
++#: mkdocs/themes/mkdocs/base.html:122
++msgid "Language"
++msgstr "Bahasa"
++
++#: mkdocs/themes/mkdocs/base.html:137
+ #: mkdocs/themes/mkdocs/keyboard-modal.html:31
+ #: mkdocs/themes/mkdocs/search-modal.html:5
+ msgid "Search"
+ msgstr "Telusuri"
+ 
+-#: mkdocs/themes/mkdocs/base.html:127
++#: mkdocs/themes/mkdocs/base.html:147
+ msgid "Previous"
+ msgstr "Sebelumnya"
+ 
+-#: mkdocs/themes/mkdocs/base.html:132
++#: mkdocs/themes/mkdocs/base.html:152
+ msgid "Next"
+ msgstr "Selanjutnya"
+ 
+-#: mkdocs/themes/mkdocs/base.html:143 mkdocs/themes/mkdocs/base.html:145
+-#: mkdocs/themes/mkdocs/base.html:147 mkdocs/themes/mkdocs/base.html:149
++#: mkdocs/themes/mkdocs/base.html:163 mkdocs/themes/mkdocs/base.html:165
++#: mkdocs/themes/mkdocs/base.html:167 mkdocs/themes/mkdocs/base.html:169
+ #, python-format
+ msgid "Edit on %(repo_name)s"
+ msgstr "Sunting pada %(repo_name)s"
+ 
+-#: mkdocs/themes/mkdocs/base.html:151
++#: mkdocs/themes/mkdocs/base.html:171
+ msgid "Edit"
+ msgstr "Sunting"
+ 
+-#: mkdocs/themes/mkdocs/base.html:225
++#: mkdocs/themes/mkdocs/base.html:245
+ #, python-format
+ msgid "Documentation built with %(mkdocs_link)s."
+ msgstr "Dokumentasi dibuat dengan %(mkdocs_link)s."
+@@ -101,3 +105,7 @@ msgstr "Tidak ada hasil yang ditemukan"
+ msgid "Table of Contents"
+ msgstr "Daftar Isi"
+ 
++#: mkdocs/themes/mkdocs/untranslated.html:2
++msgid "This page has not been translated yet. It is shown in its original language."
++msgstr "Halaman ini belum diterjemahkan. Halaman ini ditampilkan dalam bahasa aslinya."
++
+diff --git a/judge/pristine/mkdocs/themes/mkdocs/locales/it/LC_MESSAGES/messages.po b/judge/design-M/mkdocs/themes/mkdocs/locales/it/LC_MESSAGES/messages.po
+index abdf778..ace4807 100644
+--- a/judge/pristine/mkdocs/themes/mkdocs/locales/it/LC_MESSAGES/messages.po
++++ b/judge/design-M/mkdocs/themes/mkdocs/locales/it/LC_MESSAGES/messages.po
+@@ -21,31 +21,35 @@ msgstr ""
+ msgid "Page not found"
+ msgstr "Pagina non trovata"
+ 
+-#: mkdocs/themes/mkdocs/base.html:117
++#: mkdocs/themes/mkdocs/base.html:122
++msgid "Language"
++msgstr "Lingua"
++
++#: mkdocs/themes/mkdocs/base.html:137
+ #: mkdocs/themes/mkdocs/keyboard-modal.html:31
+ #: mkdocs/themes/mkdocs/search-modal.html:5
+ msgid "Search"
+ msgstr "Cerca"
+ 
+-#: mkdocs/themes/mkdocs/base.html:127
++#: mkdocs/themes/mkdocs/base.html:147
+ msgid "Previous"
+ msgstr "Precedente"
+ 
+-#: mkdocs/themes/mkdocs/base.html:132
++#: mkdocs/themes/mkdocs/base.html:152
+ msgid "Next"
+ msgstr "Successivo"
+ 
+-#: mkdocs/themes/mkdocs/base.html:143 mkdocs/themes/mkdocs/base.html:145
+-#: mkdocs/themes/mkdocs/base.html:147 mkdocs/themes/mkdocs/base.html:149
++#: mkdocs/themes/mkdocs/base.html:163 mkdocs/themes/mkdocs/base.html:165
++#: mkdocs/themes/mkdocs/base.html:167 mkdocs/themes/mkdocs/base.html:169
+ #, python-format
+ msgid "Edit on %(repo_name)s"
+ msgstr "Modifica su %(repo_name)s"
+ 
+-#: mkdocs/themes/mkdocs/base.html:151
++#: mkdocs/themes/mkdocs/base.html:171
+ msgid "Edit"
+ msgstr "Modificare"
+ 
+-#: mkdocs/themes/mkdocs/base.html:225
++#: mkdocs/themes/mkdocs/base.html:245
+ #, python-format
+ msgid "Documentation built with %(mkdocs_link)s."
+ msgstr "Documentazione creata con %(mkdocs_link)s."
+@@ -101,3 +105,7 @@ msgstr "Nessun risultato trovato"
+ msgid "Table of Contents"
+ msgstr "Tabella dei Contenuti"
+ 
++#: mkdocs/themes/mkdocs/untranslated.html:2
++msgid "This page has not been translated yet. It is shown in its original language."
++msgstr "Questa pagina non è ancora stata tradotta. Viene mostrata nella sua lingua originale."
++
+diff --git a/judge/pristine/mkdocs/themes/mkdocs/locales/ja/LC_MESSAGES/messages.po b/judge/design-M/mkdocs/themes/mkdocs/locales/ja/LC_MESSAGES/messages.po
+index aa79a82..06c467f 100644
+--- a/judge/pristine/mkdocs/themes/mkdocs/locales/ja/LC_MESSAGES/messages.po
++++ b/judge/design-M/mkdocs/themes/mkdocs/locales/ja/LC_MESSAGES/messages.po
+@@ -21,31 +21,35 @@ msgstr ""
+ msgid "Page not found"
+ msgstr "ページが見つかりません"
+ 
+-#: mkdocs/themes/mkdocs/base.html:117
++#: mkdocs/themes/mkdocs/base.html:122
++msgid "Language"
++msgstr "言語"
++
++#: mkdocs/themes/mkdocs/base.html:137
+ #: mkdocs/themes/mkdocs/keyboard-modal.html:31
+ #: mkdocs/themes/mkdocs/search-modal.html:5
+ msgid "Search"
+ msgstr "検索"
+ 
+-#: mkdocs/themes/mkdocs/base.html:127
++#: mkdocs/themes/mkdocs/base.html:147
+ msgid "Previous"
+ msgstr "前へ"
+ 
+-#: mkdocs/themes/mkdocs/base.html:132
++#: mkdocs/themes/mkdocs/base.html:152
+ msgid "Next"
+ msgstr "次へ"
+ 
+-#: mkdocs/themes/mkdocs/base.html:143 mkdocs/themes/mkdocs/base.html:145
+-#: mkdocs/themes/mkdocs/base.html:147 mkdocs/themes/mkdocs/base.html:149
++#: mkdocs/themes/mkdocs/base.html:163 mkdocs/themes/mkdocs/base.html:165
++#: mkdocs/themes/mkdocs/base.html:167 mkdocs/themes/mkdocs/base.html:169
+ #, python-format
+ msgid "Edit on %(repo_name)s"
+ msgstr "%(repo_name)s で編集"
+ 
+-#: mkdocs/themes/mkdocs/base.html:151
++#: mkdocs/themes/mkdocs/base.html:171
+ msgid "Edit"
+ msgstr ""
+ 
+-#: mkdocs/themes/mkdocs/base.html:225
++#: mkdocs/themes/mkdocs/base.html:245
+ #, python-format
+ msgid "Documentation built with %(mkdocs_link)s."
+ msgstr "%(mkdocs_link)s でビルドされたドキュメンテーション"
+@@ -99,3 +103,7 @@ msgstr "結果がありません"
+ msgid "Table of Contents"
+ msgstr "目次"
+ 
++#: mkdocs/themes/mkdocs/untranslated.html:2
++msgid "This page has not been translated yet. It is shown in its original language."
++msgstr "このページはまだ翻訳されていません。原文の言語で表示しています。"
++
+diff --git a/judge/pristine/mkdocs/themes/mkdocs/locales/nb/LC_MESSAGES/messages.po b/judge/design-M/mkdocs/themes/mkdocs/locales/nb/LC_MESSAGES/messages.po
+index 743a51b..b866b46 100644
+--- a/judge/pristine/mkdocs/themes/mkdocs/locales/nb/LC_MESSAGES/messages.po
++++ b/judge/design-M/mkdocs/themes/mkdocs/locales/nb/LC_MESSAGES/messages.po
+@@ -21,31 +21,35 @@ msgstr ""
+ msgid "Page not found"
+ msgstr "Fant ikke siden"
+ 
+-#: mkdocs/themes/mkdocs/base.html:117
++#: mkdocs/themes/mkdocs/base.html:122
++msgid "Language"
++msgstr "Språk"
++
++#: mkdocs/themes/mkdocs/base.html:137
+ #: mkdocs/themes/mkdocs/keyboard-modal.html:31
+ #: mkdocs/themes/mkdocs/search-modal.html:5
+ msgid "Search"
+ msgstr "Søk"
+ 
+-#: mkdocs/themes/mkdocs/base.html:127
++#: mkdocs/themes/mkdocs/base.html:147
+ msgid "Previous"
+ msgstr "Forrige"
+ 
+-#: mkdocs/themes/mkdocs/base.html:132
++#: mkdocs/themes/mkdocs/base.html:152
+ msgid "Next"
+ msgstr "Neste"
+ 
+-#: mkdocs/themes/mkdocs/base.html:143 mkdocs/themes/mkdocs/base.html:145
+-#: mkdocs/themes/mkdocs/base.html:147 mkdocs/themes/mkdocs/base.html:149
++#: mkdocs/themes/mkdocs/base.html:163 mkdocs/themes/mkdocs/base.html:165
++#: mkdocs/themes/mkdocs/base.html:167 mkdocs/themes/mkdocs/base.html:169
+ #, python-format
+ msgid "Edit on %(repo_name)s"
+ msgstr "Rediger på %(repo_name)s"
+ 
+-#: mkdocs/themes/mkdocs/base.html:151
++#: mkdocs/themes/mkdocs/base.html:171
+ msgid "Edit"
+ msgstr "Rediger"
+ 
+-#: mkdocs/themes/mkdocs/base.html:225
++#: mkdocs/themes/mkdocs/base.html:245
+ #, python-format
+ msgid "Documentation built with %(mkdocs_link)s."
+ msgstr "Dokumentasjonen bygget med %(mkdocs_link)s."
+@@ -99,3 +103,7 @@ msgstr "Fant ingen resultater"
+ msgid "Table of Contents"
+ msgstr "Innholdsfortegnelse"
+ 
++#: mkdocs/themes/mkdocs/untranslated.html:2
++msgid "This page has not been translated yet. It is shown in its original language."
++msgstr "Denne siden er ikke oversatt ennå. Den vises på originalspråket."
++
+diff --git a/judge/pristine/mkdocs/themes/mkdocs/locales/nl/LC_MESSAGES/messages.po b/judge/design-M/mkdocs/themes/mkdocs/locales/nl/LC_MESSAGES/messages.po
+index b050f7c..9ef9874 100644
+--- a/judge/pristine/mkdocs/themes/mkdocs/locales/nl/LC_MESSAGES/messages.po
++++ b/judge/design-M/mkdocs/themes/mkdocs/locales/nl/LC_MESSAGES/messages.po
+@@ -22,31 +22,35 @@ msgstr ""
+ msgid "Page not found"
+ msgstr "Pagina niet gevonden"
+ 
+-#: mkdocs/themes/mkdocs/base.html:117
++#: mkdocs/themes/mkdocs/base.html:122
++msgid "Language"
++msgstr "Taal"
++
++#: mkdocs/themes/mkdocs/base.html:137
+ #: mkdocs/themes/mkdocs/keyboard-modal.html:31
+ #: mkdocs/themes/mkdocs/search-modal.html:5
+ msgid "Search"
+ msgstr "Zoeken"
+ 
+-#: mkdocs/themes/mkdocs/base.html:127
++#: mkdocs/themes/mkdocs/base.html:147
+ msgid "Previous"
+ msgstr "Vorige"
+ 
+-#: mkdocs/themes/mkdocs/base.html:132
++#: mkdocs/themes/mkdocs/base.html:152
+ msgid "Next"
+ msgstr "Volgende"
+ 
+-#: mkdocs/themes/mkdocs/base.html:143 mkdocs/themes/mkdocs/base.html:145
+-#: mkdocs/themes/mkdocs/base.html:147 mkdocs/themes/mkdocs/base.html:149
++#: mkdocs/themes/mkdocs/base.html:163 mkdocs/themes/mkdocs/base.html:165
++#: mkdocs/themes/mkdocs/base.html:167 mkdocs/themes/mkdocs/base.html:169
+ #, python-format
+ msgid "Edit on %(repo_name)s"
+ msgstr "Bewerk op %(repo_name)s"
+ 
+-#: mkdocs/themes/mkdocs/base.html:151
++#: mkdocs/themes/mkdocs/base.html:171
+ msgid "Edit"
+ msgstr "Bewerk"
+ 
+-#: mkdocs/themes/mkdocs/base.html:225
++#: mkdocs/themes/mkdocs/base.html:245
+ #, python-format
+ msgid "Documentation built with %(mkdocs_link)s."
+ msgstr "Documentatie gebouwd met %(mkdocs_link)s."
+@@ -100,3 +104,7 @@ msgstr "Geen resultaten gevonden"
+ msgid "Table of Contents"
+ msgstr "Inhoudsopgave"
+ 
++#: mkdocs/themes/mkdocs/untranslated.html:2
++msgid "This page has not been translated yet. It is shown in its original language."
++msgstr "Deze pagina is nog niet vertaald. Ze wordt weergegeven in de oorspronkelijke taal."
++
+diff --git a/judge/pristine/mkdocs/themes/mkdocs/locales/nn/LC_MESSAGES/messages.po b/judge/design-M/mkdocs/themes/mkdocs/locales/nn/LC_MESSAGES/messages.po
+index 39b92e6..f420eda 100644
+--- a/judge/pristine/mkdocs/themes/mkdocs/locales/nn/LC_MESSAGES/messages.po
++++ b/judge/design-M/mkdocs/themes/mkdocs/locales/nn/LC_MESSAGES/messages.po
+@@ -21,31 +21,35 @@ msgstr ""
+ msgid "Page not found"
+ msgstr "Fann ikkje sida"
+ 
+-#: mkdocs/themes/mkdocs/base.html:117
++#: mkdocs/themes/mkdocs/base.html:122
++msgid "Language"
++msgstr "Språk"
++
++#: mkdocs/themes/mkdocs/base.html:137
+ #: mkdocs/themes/mkdocs/keyboard-modal.html:31
+ #: mkdocs/themes/mkdocs/search-modal.html:5
+ msgid "Search"
+ msgstr "Søk"
+ 
+-#: mkdocs/themes/mkdocs/base.html:127
++#: mkdocs/themes/mkdocs/base.html:147
+ msgid "Previous"
+ msgstr "Førre"
+ 
+-#: mkdocs/themes/mkdocs/base.html:132
++#: mkdocs/themes/mkdocs/base.html:152
+ msgid "Next"
+ msgstr "Neste"
+ 
+-#: mkdocs/themes/mkdocs/base.html:143 mkdocs/themes/mkdocs/base.html:145
+-#: mkdocs/themes/mkdocs/base.html:147 mkdocs/themes/mkdocs/base.html:149
++#: mkdocs/themes/mkdocs/base.html:163 mkdocs/themes/mkdocs/base.html:165
++#: mkdocs/themes/mkdocs/base.html:167 mkdocs/themes/mkdocs/base.html:169
+ #, python-format
+ msgid "Edit on %(repo_name)s"
+ msgstr "Rediger på %(repo_name)s"
+ 
+-#: mkdocs/themes/mkdocs/base.html:151
++#: mkdocs/themes/mkdocs/base.html:171
+ msgid "Edit"
+ msgstr "Rediger"
+ 
+-#: mkdocs/themes/mkdocs/base.html:225
++#: mkdocs/themes/mkdocs/base.html:245
+ #, python-format
+ msgid "Documentation built with %(mkdocs_link)s."
+ msgstr "Dokumentasjonen bygd med %(mkdocs_link)s."
+@@ -99,3 +103,7 @@ msgstr "Fann ingen resultat"
+ msgid "Table of Contents"
+ msgstr "Innhaldsliste"
+ 
++#: mkdocs/themes/mkdocs/untranslated.html:2
++msgid "This page has not been translated yet. It is shown in its original language."
++msgstr "Denne sida er ikkje omsett enno. Ho blir vist på originalspråket."
++
+diff --git a/judge/pristine/mkdocs/themes/mkdocs/locales/pl/LC_MESSAGES/messages.po b/judge/design-M/mkdocs/themes/mkdocs/locales/pl/LC_MESSAGES/messages.po
+index fdcf68f..b765495 100644
+--- a/judge/pristine/mkdocs/themes/mkdocs/locales/pl/LC_MESSAGES/messages.po
++++ b/judge/design-M/mkdocs/themes/mkdocs/locales/pl/LC_MESSAGES/messages.po
+@@ -22,31 +22,35 @@ msgstr ""
+ msgid "Page not found"
+ msgstr "Nie znaleziono strony"
+ 
+-#: mkdocs/themes/mkdocs/base.html:117
++#: mkdocs/themes/mkdocs/base.html:122
++msgid "Language"
++msgstr "Język"
++
++#: mkdocs/themes/mkdocs/base.html:137
+ #: mkdocs/themes/mkdocs/keyboard-modal.html:31
+ #: mkdocs/themes/mkdocs/search-modal.html:5
+ msgid "Search"
+ msgstr "Szukaj"
+ 
+-#: mkdocs/themes/mkdocs/base.html:127
++#: mkdocs/themes/mkdocs/base.html:147
+ msgid "Previous"
+ msgstr "Wstecz"
+ 
+-#: mkdocs/themes/mkdocs/base.html:132
++#: mkdocs/themes/mkdocs/base.html:152
+ msgid "Next"
+ msgstr "Dalej"
+ 
+-#: mkdocs/themes/mkdocs/base.html:143 mkdocs/themes/mkdocs/base.html:145
+-#: mkdocs/themes/mkdocs/base.html:147 mkdocs/themes/mkdocs/base.html:149
++#: mkdocs/themes/mkdocs/base.html:163 mkdocs/themes/mkdocs/base.html:165
++#: mkdocs/themes/mkdocs/base.html:167 mkdocs/themes/mkdocs/base.html:169
+ #, python-format
+ msgid "Edit on %(repo_name)s"
+ msgstr "Edytuj w %(repo_name)s"
+ 
+-#: mkdocs/themes/mkdocs/base.html:151
++#: mkdocs/themes/mkdocs/base.html:171
+ msgid "Edit"
+ msgstr "Edytuj"
+ 
+-#: mkdocs/themes/mkdocs/base.html:225
++#: mkdocs/themes/mkdocs/base.html:245
+ #, python-format
+ msgid "Documentation built with %(mkdocs_link)s."
+ msgstr "Dokumentacja zbudowana przy użyciu pakietu %(mkdocs_link)s."
+@@ -102,3 +106,7 @@ msgstr "Nie znaleziono wyników"
+ msgid "Table of Contents"
+ msgstr "Spis treści"
+ 
++#: mkdocs/themes/mkdocs/untranslated.html:2
++msgid "This page has not been translated yet. It is shown in its original language."
++msgstr "Ta strona nie została jeszcze przetłumaczona. Jest wyświetlana w języku oryginału."
++
+diff --git a/judge/pristine/mkdocs/themes/mkdocs/locales/pt_BR/LC_MESSAGES/messages.po b/judge/design-M/mkdocs/themes/mkdocs/locales/pt_BR/LC_MESSAGES/messages.po
+index 5a9fe65..608f346 100644
+--- a/judge/pristine/mkdocs/themes/mkdocs/locales/pt_BR/LC_MESSAGES/messages.po
++++ b/judge/design-M/mkdocs/themes/mkdocs/locales/pt_BR/LC_MESSAGES/messages.po
+@@ -21,31 +21,35 @@ msgstr ""
+ msgid "Page not found"
+ msgstr "Página não encontrada"
+ 
+-#: mkdocs/themes/mkdocs/base.html:117
++#: mkdocs/themes/mkdocs/base.html:122
++msgid "Language"
++msgstr "Idioma"
++
++#: mkdocs/themes/mkdocs/base.html:137
+ #: mkdocs/themes/mkdocs/keyboard-modal.html:31
+ #: mkdocs/themes/mkdocs/search-modal.html:5
+ msgid "Search"
+ msgstr "Buscar"
+ 
+-#: mkdocs/themes/mkdocs/base.html:127
++#: mkdocs/themes/mkdocs/base.html:147
+ msgid "Previous"
+ msgstr "Anterior"
+ 
+-#: mkdocs/themes/mkdocs/base.html:132
++#: mkdocs/themes/mkdocs/base.html:152
+ msgid "Next"
+ msgstr "Seguinte"
+ 
+-#: mkdocs/themes/mkdocs/base.html:143 mkdocs/themes/mkdocs/base.html:145
+-#: mkdocs/themes/mkdocs/base.html:147 mkdocs/themes/mkdocs/base.html:149
++#: mkdocs/themes/mkdocs/base.html:163 mkdocs/themes/mkdocs/base.html:165
++#: mkdocs/themes/mkdocs/base.html:167 mkdocs/themes/mkdocs/base.html:169
+ #, python-format
+ msgid "Edit on %(repo_name)s"
+ msgstr "Editar em %(repo_name)s"
+ 
+-#: mkdocs/themes/mkdocs/base.html:151
++#: mkdocs/themes/mkdocs/base.html:171
+ msgid "Edit"
+ msgstr "Editar"
+ 
+-#: mkdocs/themes/mkdocs/base.html:225
++#: mkdocs/themes/mkdocs/base.html:245
+ #, python-format
+ msgid "Documentation built with %(mkdocs_link)s."
+ msgstr "Documentação construída com %(mkdocs_link)s."
+@@ -101,3 +105,7 @@ msgstr "Não foram encontrados resultados"
+ msgid "Table of Contents"
+ msgstr "Tabela de Conteúdos"
+ 
++#: mkdocs/themes/mkdocs/untranslated.html:2
++msgid "This page has not been translated yet. It is shown in its original language."
++msgstr "Esta página ainda não foi traduzida. Ela é exibida em seu idioma original."
++
+diff --git a/judge/pristine/mkdocs/themes/mkdocs/locales/ru/LC_MESSAGES/messages.po b/judge/design-M/mkdocs/themes/mkdocs/locales/ru/LC_MESSAGES/messages.po
+index ba0d105..0472ef7 100644
+--- a/judge/pristine/mkdocs/themes/mkdocs/locales/ru/LC_MESSAGES/messages.po
++++ b/judge/design-M/mkdocs/themes/mkdocs/locales/ru/LC_MESSAGES/messages.po
+@@ -22,31 +22,35 @@ msgstr ""
+ msgid "Page not found"
+ msgstr "Страница не найдена"
+ 
+-#: mkdocs/themes/mkdocs/base.html:117
++#: mkdocs/themes/mkdocs/base.html:122
++msgid "Language"
++msgstr "Язык"
++
++#: mkdocs/themes/mkdocs/base.html:137
+ #: mkdocs/themes/mkdocs/keyboard-modal.html:31
+ #: mkdocs/themes/mkdocs/search-modal.html:5
+ msgid "Search"
+ msgstr "Поиск"
+ 
+-#: mkdocs/themes/mkdocs/base.html:127
++#: mkdocs/themes/mkdocs/base.html:147
+ msgid "Previous"
+ msgstr "Назад"
+ 
+-#: mkdocs/themes/mkdocs/base.html:132
++#: mkdocs/themes/mkdocs/base.html:152
+ msgid "Next"
+ msgstr "Вперед"
+ 
+-#: mkdocs/themes/mkdocs/base.html:143 mkdocs/themes/mkdocs/base.html:145
+-#: mkdocs/themes/mkdocs/base.html:147 mkdocs/themes/mkdocs/base.html:149
++#: mkdocs/themes/mkdocs/base.html:163 mkdocs/themes/mkdocs/base.html:165
++#: mkdocs/themes/mkdocs/base.html:167 mkdocs/themes/mkdocs/base.html:169
+ #, python-format
+ msgid "Edit on %(repo_name)s"
+ msgstr "Редактировать в %(repo_name)s"
+ 
+-#: mkdocs/themes/mkdocs/base.html:151
++#: mkdocs/themes/mkdocs/base.html:171
+ msgid "Edit"
+ msgstr "Редактировать"
+ 
+-#: mkdocs/themes/mkdocs/base.html:225
++#: mkdocs/themes/mkdocs/base.html:245
+ #, python-format
+ msgid "Documentation built with %(mkdocs_link)s."
+ msgstr "Документация создана с помощью %(mkdocs_link)s."
+@@ -102,3 +106,7 @@ msgstr "Ничего не найдено"
+ msgid "Table of Contents"
+ msgstr "Содержание"
+ 
++#: mkdocs/themes/mkdocs/untranslated.html:2
++msgid "This page has not been translated yet. It is shown in its original language."
++msgstr "Эта страница ещё не переведена. Она показана на языке оригинала."
++
+diff --git a/judge/pristine/mkdocs/themes/mkdocs/locales/tr/LC_MESSAGES/messages.po b/judge/design-M/mkdocs/themes/mkdocs/locales/tr/LC_MESSAGES/messages.po
+index 1829fd5..708785a 100644
+--- a/judge/pristine/mkdocs/themes/mkdocs/locales/tr/LC_MESSAGES/messages.po
++++ b/judge/design-M/mkdocs/themes/mkdocs/locales/tr/LC_MESSAGES/messages.po
+@@ -21,31 +21,35 @@ msgstr ""
+ msgid "Page not found"
+ msgstr "Sayfa bulunamadı"
+ 
+-#: mkdocs/themes/mkdocs/base.html:117
++#: mkdocs/themes/mkdocs/base.html:122
++msgid "Language"
++msgstr "Dil"
++
++#: mkdocs/themes/mkdocs/base.html:137
+ #: mkdocs/themes/mkdocs/keyboard-modal.html:31
+ #: mkdocs/themes/mkdocs/search-modal.html:5
+ msgid "Search"
+ msgstr "Ara"
+ 
+-#: mkdocs/themes/mkdocs/base.html:127
++#: mkdocs/themes/mkdocs/base.html:147
+ msgid "Previous"
+ msgstr "Önceki"
+ 
+-#: mkdocs/themes/mkdocs/base.html:132
++#: mkdocs/themes/mkdocs/base.html:152
+ msgid "Next"
+ msgstr "Sonraki"
+ 
+-#: mkdocs/themes/mkdocs/base.html:143 mkdocs/themes/mkdocs/base.html:145
+-#: mkdocs/themes/mkdocs/base.html:147 mkdocs/themes/mkdocs/base.html:149
++#: mkdocs/themes/mkdocs/base.html:163 mkdocs/themes/mkdocs/base.html:165
++#: mkdocs/themes/mkdocs/base.html:167 mkdocs/themes/mkdocs/base.html:169
+ #, python-format
+ msgid "Edit on %(repo_name)s"
+ msgstr "%(repo_name)s içinde düzenle"
+ 
+-#: mkdocs/themes/mkdocs/base.html:151
++#: mkdocs/themes/mkdocs/base.html:171
+ msgid "Edit"
+ msgstr "Düzenle"
+ 
+-#: mkdocs/themes/mkdocs/base.html:225
++#: mkdocs/themes/mkdocs/base.html:245
+ #, python-format
+ msgid "Documentation built with %(mkdocs_link)s."
+ msgstr "Belgeler %(mkdocs_link)s ile oluşturuldu."
+@@ -101,3 +105,7 @@ msgstr "Sonuç bulunamadı"
+ msgid "Table of Contents"
+ msgstr "İçindekiler"
+ 
++#: mkdocs/themes/mkdocs/untranslated.html:2
++msgid "This page has not been translated yet. It is shown in its original language."
++msgstr "Bu sayfa henüz çevrilmedi. Sayfa özgün dilinde gösterilmektedir."
++
+diff --git a/judge/pristine/mkdocs/themes/mkdocs/locales/uk/LC_MESSAGES/messages.po b/judge/design-M/mkdocs/themes/mkdocs/locales/uk/LC_MESSAGES/messages.po
+index bdd4fbd..330b881 100644
+--- a/judge/pristine/mkdocs/themes/mkdocs/locales/uk/LC_MESSAGES/messages.po
++++ b/judge/design-M/mkdocs/themes/mkdocs/locales/uk/LC_MESSAGES/messages.po
+@@ -22,31 +22,35 @@ msgstr ""
+ msgid "Page not found"
+ msgstr "Сторінку не знайдено"
+ 
+-#: mkdocs/themes/mkdocs/base.html:117
++#: mkdocs/themes/mkdocs/base.html:122
++msgid "Language"
++msgstr "Мова"
++
++#: mkdocs/themes/mkdocs/base.html:137
+ #: mkdocs/themes/mkdocs/keyboard-modal.html:31
+ #: mkdocs/themes/mkdocs/search-modal.html:5
+ msgid "Search"
+ msgstr "Пошук"
+ 
+-#: mkdocs/themes/mkdocs/base.html:127
++#: mkdocs/themes/mkdocs/base.html:147
+ msgid "Previous"
+ msgstr "Назад"
+ 
+-#: mkdocs/themes/mkdocs/base.html:132
++#: mkdocs/themes/mkdocs/base.html:152
+ msgid "Next"
+ msgstr "Вперед"
+ 
+-#: mkdocs/themes/mkdocs/base.html:143 mkdocs/themes/mkdocs/base.html:145
+-#: mkdocs/themes/mkdocs/base.html:147 mkdocs/themes/mkdocs/base.html:149
++#: mkdocs/themes/mkdocs/base.html:163 mkdocs/themes/mkdocs/base.html:165
++#: mkdocs/themes/mkdocs/base.html:167 mkdocs/themes/mkdocs/base.html:169
+ #, python-format
+ msgid "Edit on %(repo_name)s"
+ msgstr "Редагувати в %(repo_name)s"
+ 
+-#: mkdocs/themes/mkdocs/base.html:151
++#: mkdocs/themes/mkdocs/base.html:171
+ msgid "Edit"
+ msgstr "Редагувати"
+ 
+-#: mkdocs/themes/mkdocs/base.html:225
++#: mkdocs/themes/mkdocs/base.html:245
+ #, python-format
+ msgid "Documentation built with %(mkdocs_link)s."
+ msgstr "Документація збудована з %(mkdocs_link)s."
+@@ -100,3 +104,7 @@ msgstr "Нічого не знайдено"
+ msgid "Table of Contents"
+ msgstr "Зміст"
+ 
++#: mkdocs/themes/mkdocs/untranslated.html:2
++msgid "This page has not been translated yet. It is shown in its original language."
++msgstr "Цю сторінку ще не перекладено. Її показано мовою оригіналу."
++
+diff --git a/judge/pristine/mkdocs/themes/mkdocs/locales/zh_CN/LC_MESSAGES/messages.po b/judge/design-M/mkdocs/themes/mkdocs/locales/zh_CN/LC_MESSAGES/messages.po
+index 0fb565c..112edcf 100644
+--- a/judge/pristine/mkdocs/themes/mkdocs/locales/zh_CN/LC_MESSAGES/messages.po
++++ b/judge/design-M/mkdocs/themes/mkdocs/locales/zh_CN/LC_MESSAGES/messages.po
+@@ -22,31 +22,35 @@ msgstr ""
+ msgid "Page not found"
+ msgstr "找不到页面"
+ 
+-#: mkdocs/themes/mkdocs/base.html:117
++#: mkdocs/themes/mkdocs/base.html:122
++msgid "Language"
++msgstr "语言"
++
++#: mkdocs/themes/mkdocs/base.html:137
+ #: mkdocs/themes/mkdocs/keyboard-modal.html:31
+ #: mkdocs/themes/mkdocs/search-modal.html:5
+ msgid "Search"
+ msgstr "搜索"
+ 
+-#: mkdocs/themes/mkdocs/base.html:127
++#: mkdocs/themes/mkdocs/base.html:147
+ msgid "Previous"
+ msgstr "上一章"
+ 
+-#: mkdocs/themes/mkdocs/base.html:132
++#: mkdocs/themes/mkdocs/base.html:152
+ msgid "Next"
+ msgstr "下一章"
+ 
+-#: mkdocs/themes/mkdocs/base.html:143 mkdocs/themes/mkdocs/base.html:145
+-#: mkdocs/themes/mkdocs/base.html:147 mkdocs/themes/mkdocs/base.html:149
++#: mkdocs/themes/mkdocs/base.html:163 mkdocs/themes/mkdocs/base.html:165
++#: mkdocs/themes/mkdocs/base.html:167 mkdocs/themes/mkdocs/base.html:169
+ #, python-format
+ msgid "Edit on %(repo_name)s"
+ msgstr "在%(repo_name)s上编辑"
+ 
+-#: mkdocs/themes/mkdocs/base.html:151
++#: mkdocs/themes/mkdocs/base.html:171
+ msgid "Edit"
+ msgstr "编辑"
+ 
+-#: mkdocs/themes/mkdocs/base.html:225
++#: mkdocs/themes/mkdocs/base.html:245
+ #, python-format
+ msgid "Documentation built with %(mkdocs_link)s."
+ msgstr "用%(mkdocs_link)s建立的文档。"
+@@ -99,3 +103,8 @@ msgstr "没有搜索到结果"
+ #: mkdocs/themes/mkdocs/toc.html:3
+ msgid "Table of Contents"
+ msgstr "目录"
++
++#: mkdocs/themes/mkdocs/untranslated.html:2
++msgid "This page has not been translated yet. It is shown in its original language."
++msgstr "此页面尚未翻译，以原始语言显示。"
++
+diff --git a/judge/pristine/mkdocs/themes/mkdocs/locales/zh_TW/LC_MESSAGES/messages.po b/judge/design-M/mkdocs/themes/mkdocs/locales/zh_TW/LC_MESSAGES/messages.po
+index dba6e8f..275ce60 100644
+--- a/judge/pristine/mkdocs/themes/mkdocs/locales/zh_TW/LC_MESSAGES/messages.po
++++ b/judge/design-M/mkdocs/themes/mkdocs/locales/zh_TW/LC_MESSAGES/messages.po
+@@ -21,31 +21,35 @@ msgstr ""
+ msgid "Page not found"
+ msgstr "找不到頁面"
+ 
+-#: mkdocs/themes/mkdocs/base.html:117
++#: mkdocs/themes/mkdocs/base.html:122
++msgid "Language"
++msgstr "語言"
++
++#: mkdocs/themes/mkdocs/base.html:137
+ #: mkdocs/themes/mkdocs/keyboard-modal.html:31
+ #: mkdocs/themes/mkdocs/search-modal.html:5
+ msgid "Search"
+ msgstr "搜尋"
+ 
+-#: mkdocs/themes/mkdocs/base.html:127
++#: mkdocs/themes/mkdocs/base.html:147
+ msgid "Previous"
+ msgstr "上一頁"
+ 
+-#: mkdocs/themes/mkdocs/base.html:132
++#: mkdocs/themes/mkdocs/base.html:152
+ msgid "Next"
+ msgstr "下一頁"
+ 
+-#: mkdocs/themes/mkdocs/base.html:143 mkdocs/themes/mkdocs/base.html:145
+-#: mkdocs/themes/mkdocs/base.html:147 mkdocs/themes/mkdocs/base.html:149
++#: mkdocs/themes/mkdocs/base.html:163 mkdocs/themes/mkdocs/base.html:165
++#: mkdocs/themes/mkdocs/base.html:167 mkdocs/themes/mkdocs/base.html:169
+ #, python-format
+ msgid "Edit on %(repo_name)s"
+ msgstr "在 %(repo_name)s 上編輯"
+ 
+-#: mkdocs/themes/mkdocs/base.html:151
++#: mkdocs/themes/mkdocs/base.html:171
+ msgid "Edit"
+ msgstr "編輯"
+ 
+-#: mkdocs/themes/mkdocs/base.html:225
++#: mkdocs/themes/mkdocs/base.html:245
+ #, python-format
+ msgid "Documentation built with %(mkdocs_link)s."
+ msgstr "使用 %(mkdocs_link)s 建立的文件"
+@@ -99,3 +103,7 @@ msgstr "沒有找到結果"
+ msgid "Table of Contents"
+ msgstr "目錄"
+ 
++#: mkdocs/themes/mkdocs/untranslated.html:2
++msgid "This page has not been translated yet. It is shown in its original language."
++msgstr "此頁面尚未翻譯，以原始語言顯示。"
++
+diff --git a/judge/pristine/mkdocs/themes/mkdocs/messages.pot b/judge/design-M/mkdocs/themes/mkdocs/messages.pot
+index 828dd2e..f47db95 100644
+--- a/judge/pristine/mkdocs/themes/mkdocs/messages.pot
++++ b/judge/design-M/mkdocs/themes/mkdocs/messages.pot
+@@ -21,31 +21,35 @@ msgstr ""
+ msgid "Page not found"
+ msgstr ""
+ 
+-#: mkdocs/themes/mkdocs/base.html:117
++#: mkdocs/themes/mkdocs/base.html:122
++msgid "Language"
++msgstr ""
++
++#: mkdocs/themes/mkdocs/base.html:137
+ #: mkdocs/themes/mkdocs/keyboard-modal.html:31
+ #: mkdocs/themes/mkdocs/search-modal.html:5
+ msgid "Search"
+ msgstr ""
+ 
+-#: mkdocs/themes/mkdocs/base.html:127
++#: mkdocs/themes/mkdocs/base.html:147
+ msgid "Previous"
+ msgstr ""
+ 
+-#: mkdocs/themes/mkdocs/base.html:132
++#: mkdocs/themes/mkdocs/base.html:152
+ msgid "Next"
+ msgstr ""
+ 
+-#: mkdocs/themes/mkdocs/base.html:143 mkdocs/themes/mkdocs/base.html:145
+-#: mkdocs/themes/mkdocs/base.html:147 mkdocs/themes/mkdocs/base.html:149
++#: mkdocs/themes/mkdocs/base.html:163 mkdocs/themes/mkdocs/base.html:165
++#: mkdocs/themes/mkdocs/base.html:167 mkdocs/themes/mkdocs/base.html:169
+ #, python-format
+ msgid "Edit on %(repo_name)s"
+ msgstr ""
+ 
+-#: mkdocs/themes/mkdocs/base.html:151
++#: mkdocs/themes/mkdocs/base.html:171
+ msgid "Edit"
+ msgstr ""
+ 
+-#: mkdocs/themes/mkdocs/base.html:225
++#: mkdocs/themes/mkdocs/base.html:245
+ #, python-format
+ msgid "Documentation built with %(mkdocs_link)s."
+ msgstr ""
+@@ -99,3 +103,7 @@ msgstr ""
+ msgid "Table of Contents"
+ msgstr ""
+ 
++#: mkdocs/themes/mkdocs/untranslated.html:2
++msgid "This page has not been translated yet. It is shown in its original language."
++msgstr ""
++
+diff --git a/judge/design-M/mkdocs/themes/mkdocs/untranslated.html b/judge/design-M/mkdocs/themes/mkdocs/untranslated.html
+new file mode 100644
+index 0000000..8a42463
+--- /dev/null
++++ b/judge/design-M/mkdocs/themes/mkdocs/untranslated.html
+@@ -0,0 +1,3 @@
++<div class="alert alert-info" role="note">
++    {% trans %}This page has not been translated yet. It is shown in its original language.{% endtrans %}
++</div>
+diff --git a/judge/pristine/mkdocs/themes/readthedocs/base.html b/judge/design-M/mkdocs/themes/readthedocs/base.html
+index 4265d4a..fc9a193 100644
+--- a/judge/pristine/mkdocs/themes/readthedocs/base.html
++++ b/judge/design-M/mkdocs/themes/readthedocs/base.html
+@@ -1,5 +1,5 @@
+ <!DOCTYPE html>
+-<html class="writer-html5" lang="{{ config.theme.locale|default('en') }}" >
++<html class="writer-html5" lang="{% if language %}{{ language.hreflang }}{% else %}{{ config.theme.locale|default('en') }}{% endif %}"{% if language and language.dir == 'rtl' %} dir="rtl"{% endif %} >
+ <head>
+   {%- block site_meta %}
+     <meta charset="utf-8" />
+@@ -8,6 +8,12 @@
+     {%- if page and page.is_homepage %}<meta name="description" content="{{ config.site_description }}" />{%- endif %}
+     {%- if config.site_author %}<meta name="author" content="{{ config.site_author }}" />{%- endif %}
+     {%- if page and page.canonical_url %}<link rel="canonical" href="{{ page.canonical_url }}" />{%- endif %}
++    {%- if language %}
++      {%- for alt in language.alternates %}
++      <link rel="alternate" hreflang="{{ alt.hreflang }}" href="{{ alt.canonical_url or alt.url|url }}" />
++      {%- endfor %}
++      <link rel="alternate" hreflang="x-default" href="{{ language.root.canonical_url or language.root.url|url }}" />
++    {%- endif %}
+     {%- if config.site_favicon %}
+       <link rel="shortcut icon" href="{{ config.site_favicon|url }}" />
+     {%- else %}
+@@ -102,6 +108,15 @@
+           {{ config.extra.version }}
+         </div>
+       {%- endif %}
++      {%- block languages %}
++        {%- if language %}
++        <ul class="languages" aria-label="{% trans %}Language{% endtrans %}">
++          {%- for alt in language.alternates %}
++          <li><a href="{{ alt.url|url }}" hreflang="{{ alt.hreflang }}" lang="{{ alt.hreflang }}"{% if alt.active %} class="current" aria-current="true"{% endif %}>{{ alt.name }}</a></li>
++          {%- endfor %}
++        </ul>
++        {%- endif %}
++      {%- endblock %}
+       {%- block search_button %}
+         {%- if 'search' in config.plugins %}{%- include "searchbox.html" %}{%- endif %}
+       {%- endblock %}
+diff --git a/judge/pristine/mkdocs/themes/readthedocs/css/theme_extra.css b/judge/design-M/mkdocs/themes/readthedocs/css/theme_extra.css
+index ab0631a..5cae2dd 100644
+--- a/judge/pristine/mkdocs/themes/readthedocs/css/theme_extra.css
++++ b/judge/design-M/mkdocs/themes/readthedocs/css/theme_extra.css
+@@ -195,3 +195,27 @@ td, th {
+     flex: 1;
+     text-align: center;
+ }
++
++/*
++ * The list of languages of a multi-language site, in the side bar.
++ */
++.wy-side-nav-search .languages {
++    list-style: none;
++    margin: 0 0 .809em;
++    padding: 0;
++}
++
++.wy-side-nav-search .languages li {
++    display: inline-block;
++    margin: 0 .4em;
++}
++
++.wy-side-nav-search .languages a {
++    color: #fcfcfc;
++    opacity: .8;
++}
++
++.wy-side-nav-search .languages a.current {
++    font-weight: bold;
++    opacity: 1;
++}
+diff --git a/judge/pristine/mkdocs/themes/readthedocs/locales/de/LC_MESSAGES/messages.po b/judge/design-M/mkdocs/themes/readthedocs/locales/de/LC_MESSAGES/messages.po
+index b8cb026..9b5fce2 100644
+--- a/judge/pristine/mkdocs/themes/readthedocs/locales/de/LC_MESSAGES/messages.po
++++ b/judge/design-M/mkdocs/themes/readthedocs/locales/de/LC_MESSAGES/messages.po
+@@ -21,15 +21,19 @@ msgstr ""
+ msgid "Page not found"
+ msgstr "Seite nicht gefunden"
+ 
+-#: mkdocs/themes/readthedocs/base.html:96
++#: mkdocs/themes/readthedocs/base.html:102
+ msgid "Logo"
+ msgstr "Logo"
+ 
+-#: mkdocs/themes/readthedocs/base.html:110
++#: mkdocs/themes/readthedocs/base.html:113
++msgid "Language"
++msgstr "Sprache"
++
++#: mkdocs/themes/readthedocs/base.html:125
+ msgid "Navigation menu"
+ msgstr "Navigationsmenü"
+ 
+-#: mkdocs/themes/readthedocs/base.html:147
++#: mkdocs/themes/readthedocs/base.html:162
+ msgid "Mobile navigation menu"
+ msgstr "Mobile Navigationsmenü"
+ 
+@@ -105,6 +109,10 @@ msgstr "Suche..."
+ msgid "Search docs"
+ msgstr "Durchsuchen"
+ 
++#: mkdocs/themes/readthedocs/untranslated.html:2
++msgid "This page has not been translated yet. It is shown in its original language."
++msgstr "Diese Seite wurde noch nicht übersetzt. Sie wird in ihrer Originalsprache angezeigt."
++
+ #: mkdocs/themes/readthedocs/versions.html:1
+ msgid "Versions"
+ msgstr "Versionen"
+diff --git a/judge/pristine/mkdocs/themes/readthedocs/locales/es/LC_MESSAGES/messages.po b/judge/design-M/mkdocs/themes/readthedocs/locales/es/LC_MESSAGES/messages.po
+index c3421ad..c51c424 100644
+--- a/judge/pristine/mkdocs/themes/readthedocs/locales/es/LC_MESSAGES/messages.po
++++ b/judge/design-M/mkdocs/themes/readthedocs/locales/es/LC_MESSAGES/messages.po
+@@ -21,15 +21,19 @@ msgstr ""
+ msgid "Page not found"
+ msgstr "Página no encontrada"
+ 
+-#: mkdocs/themes/readthedocs/base.html:96
++#: mkdocs/themes/readthedocs/base.html:102
+ msgid "Logo"
+ msgstr "Logo"
+ 
+-#: mkdocs/themes/readthedocs/base.html:110
++#: mkdocs/themes/readthedocs/base.html:113
++msgid "Language"
++msgstr "Idioma"
++
++#: mkdocs/themes/readthedocs/base.html:125
+ msgid "Navigation menu"
+ msgstr "Menu de navegación"
+ 
+-#: mkdocs/themes/readthedocs/base.html:147
++#: mkdocs/themes/readthedocs/base.html:162
+ msgid "Mobile navigation menu"
+ msgstr "Menú de navegación en móvil"
+ 
+@@ -107,6 +111,10 @@ msgstr "Buscando..."
+ msgid "Search docs"
+ msgstr "Buscar documentos"
+ 
++#: mkdocs/themes/readthedocs/untranslated.html:2
++msgid "This page has not been translated yet. It is shown in its original language."
++msgstr "Esta página aún no ha sido traducida. Se muestra en su idioma original."
++
+ #: mkdocs/themes/readthedocs/versions.html:1
+ msgid "Versions"
+ msgstr "Versiones"
+diff --git a/judge/pristine/mkdocs/themes/readthedocs/locales/fa/LC_MESSAGES/messages.po b/judge/design-M/mkdocs/themes/readthedocs/locales/fa/LC_MESSAGES/messages.po
+index dcc042e..dc66b6c 100644
+--- a/judge/pristine/mkdocs/themes/readthedocs/locales/fa/LC_MESSAGES/messages.po
++++ b/judge/design-M/mkdocs/themes/readthedocs/locales/fa/LC_MESSAGES/messages.po
+@@ -21,15 +21,19 @@ msgstr ""
+ msgid "Page not found"
+ msgstr "صفحه یافت نشد"
+ 
+-#: mkdocs/themes/readthedocs/base.html:96
++#: mkdocs/themes/readthedocs/base.html:102
+ msgid "Logo"
+ msgstr "لوگو"
+ 
+-#: mkdocs/themes/readthedocs/base.html:110
++#: mkdocs/themes/readthedocs/base.html:113
++msgid "Language"
++msgstr "زبان"
++
++#: mkdocs/themes/readthedocs/base.html:125
+ msgid "Navigation menu"
+ msgstr "منوی ناوبری"
+ 
+-#: mkdocs/themes/readthedocs/base.html:147
++#: mkdocs/themes/readthedocs/base.html:162
+ msgid "Mobile navigation menu"
+ msgstr "منوی ناوبری موبایل"
+ 
+@@ -107,6 +111,10 @@ msgstr "درحال جستجو..."
+ msgid "Search docs"
+ msgstr "جستجوی مستندات"
+ 
++#: mkdocs/themes/readthedocs/untranslated.html:2
++msgid "This page has not been translated yet. It is shown in its original language."
++msgstr "این صفحه هنوز ترجمه نشده است. به زبان اصلی خود نمایش داده می‌شود."
++
+ #: mkdocs/themes/readthedocs/versions.html:1
+ msgid "Versions"
+ msgstr "نسخه‌ها"
+diff --git a/judge/pristine/mkdocs/themes/readthedocs/locales/fr/LC_MESSAGES/messages.po b/judge/design-M/mkdocs/themes/readthedocs/locales/fr/LC_MESSAGES/messages.po
+index 4138a18..c0734ac 100644
+--- a/judge/pristine/mkdocs/themes/readthedocs/locales/fr/LC_MESSAGES/messages.po
++++ b/judge/design-M/mkdocs/themes/readthedocs/locales/fr/LC_MESSAGES/messages.po
+@@ -21,15 +21,19 @@ msgstr ""
+ msgid "Page not found"
+ msgstr "Page non trouvée"
+ 
+-#: mkdocs/themes/readthedocs/base.html:96
++#: mkdocs/themes/readthedocs/base.html:102
+ msgid "Logo"
+ msgstr "Logo"
+ 
+-#: mkdocs/themes/readthedocs/base.html:110
++#: mkdocs/themes/readthedocs/base.html:113
++msgid "Language"
++msgstr "Langue"
++
++#: mkdocs/themes/readthedocs/base.html:125
+ msgid "Navigation menu"
+ msgstr "Menu de navigation"
+ 
+-#: mkdocs/themes/readthedocs/base.html:147
++#: mkdocs/themes/readthedocs/base.html:162
+ msgid "Mobile navigation menu"
+ msgstr "Menu de navigation sur mobile"
+ 
+@@ -107,6 +111,10 @@ msgstr "Recherche en cours..."
+ msgid "Search docs"
+ msgstr "Rechercher des documents"
+ 
++#: mkdocs/themes/readthedocs/untranslated.html:2
++msgid "This page has not been translated yet. It is shown in its original language."
++msgstr "Cette page n'a pas encore été traduite. Elle est affichée dans sa langue d'origine."
++
+ #: mkdocs/themes/readthedocs/versions.html:1
+ msgid "Versions"
+ msgstr "Versions"
+diff --git a/judge/design-M/mkdocs/themes/readthedocs/locales/he/LC_MESSAGES/messages.po b/judge/design-M/mkdocs/themes/readthedocs/locales/he/LC_MESSAGES/messages.po
+new file mode 100644
+index 0000000..4f385e9
+--- /dev/null
++++ b/judge/design-M/mkdocs/themes/readthedocs/locales/he/LC_MESSAGES/messages.po
+@@ -0,0 +1,117 @@
++# Hebrew translations for MkDocs.
++# Copyright (C) 2026 MkDocs
++# This file is distributed under the same license as the MkDocs project.
++#
++msgid ""
++msgstr ""
++"Project-Id-Version: MkDocs 1.6\n"
++"Report-Msgid-Bugs-To: https://github.com/mkdocs/mkdocs/issues\n"
++"POT-Creation-Date: 2024-04-18 21:03+0200\n"
++"PO-Revision-Date: 2026-09-22 12:00+0000\n"
++"Last-Translator: \n"
++"Language: he\n"
++"Language-Team: he <LL@li.org>\n"
++"Plural-Forms: nplurals=2; plural=(n != 1);\n"
++"MIME-Version: 1.0\n"
++"Content-Type: text/plain; charset=utf-8\n"
++"Content-Transfer-Encoding: 8bit\n"
++"Generated-By: Babel 2.14.0\n"
++
++#: mkdocs/themes/readthedocs/404.html:7
++msgid "Page not found"
++msgstr "הדף לא נמצא"
++
++#: mkdocs/themes/readthedocs/base.html:102
++msgid "Logo"
++msgstr "לוגו"
++
++#: mkdocs/themes/readthedocs/base.html:113
++msgid "Language"
++msgstr "שפה"
++
++#: mkdocs/themes/readthedocs/base.html:125
++msgid "Navigation menu"
++msgstr "תפריט ניווט"
++
++#: mkdocs/themes/readthedocs/base.html:162
++msgid "Mobile navigation menu"
++msgstr "תפריט ניווט לנייד"
++
++#: mkdocs/themes/readthedocs/breadcrumbs.html:3
++msgid "Docs"
++msgstr "תיעוד"
++
++#: mkdocs/themes/readthedocs/breadcrumbs.html:18
++#: mkdocs/themes/readthedocs/breadcrumbs.html:20
++#: mkdocs/themes/readthedocs/breadcrumbs.html:22
++#: mkdocs/themes/readthedocs/breadcrumbs.html:24
++#, python-format
++msgid "Edit on %(repo_name)s"
++msgstr "עריכה ב־%(repo_name)s"
++
++#: mkdocs/themes/readthedocs/breadcrumbs.html:26
++msgid "Edit"
++msgstr "עריכה"
++
++#: mkdocs/themes/readthedocs/breadcrumbs.html:34
++msgid "Breadcrumb Navigation"
++msgstr "ניווט בפירורי לחם"
++
++#: mkdocs/themes/readthedocs/breadcrumbs.html:36
++#: mkdocs/themes/readthedocs/footer.html:7
++#: mkdocs/themes/readthedocs/versions.html:21
++msgid "Previous"
++msgstr "הקודם"
++
++#: mkdocs/themes/readthedocs/breadcrumbs.html:39
++#: mkdocs/themes/readthedocs/footer.html:10
++#: mkdocs/themes/readthedocs/versions.html:24
++msgid "Next"
++msgstr "הבא"
++
++#: mkdocs/themes/readthedocs/footer.html:5
++msgid "Footer Navigation"
++msgstr "ניווט בתחתית הדף"
++
++#: mkdocs/themes/readthedocs/footer.html:25
++#, python-format
++msgid "Built with %(mkdocs_link)s using a %(sphinx_link)s provided by %(rtd_link)s."
++msgstr "נבנה באמצעות %(mkdocs_link)s עם %(sphinx_link)s שסופקה על ידי %(rtd_link)s."
++
++#: mkdocs/themes/readthedocs/footer.html:25
++msgid "theme"
++msgstr "ערכת עיצוב"
++
++#: mkdocs/themes/readthedocs/search.html:5
++msgid "Search Results"
++msgstr "תוצאות החיפוש"
++
++#: mkdocs/themes/readthedocs/search.html:9
++msgid "Search the Docs"
++msgstr "חיפוש בתיעוד"
++
++#: mkdocs/themes/readthedocs/search.html:9
++#: mkdocs/themes/readthedocs/searchbox.html:3
++msgid "Type search term here"
++msgstr "הקלידו כאן מילות חיפוש"
++
++#: mkdocs/themes/readthedocs/search.html:12
++msgid "No results found"
++msgstr "לא נמצאו תוצאות"
++
++#: mkdocs/themes/readthedocs/search.html:13
++msgid "Searching..."
++msgstr "מחפש..."
++
++#: mkdocs/themes/readthedocs/searchbox.html:3
++msgid "Search docs"
++msgstr "חיפוש בתיעוד"
++
++#: mkdocs/themes/readthedocs/untranslated.html:2
++msgid "This page has not been translated yet. It is shown in its original language."
++msgstr "דף זה עדיין לא תורגם. הוא מוצג בשפת המקור שלו."
++
++#: mkdocs/themes/readthedocs/versions.html:1
++msgid "Versions"
++msgstr "גרסאות"
++
+diff --git a/judge/pristine/mkdocs/themes/readthedocs/locales/id/LC_MESSAGES/messages.po b/judge/design-M/mkdocs/themes/readthedocs/locales/id/LC_MESSAGES/messages.po
+index 25f99c4..fc2c179 100644
+--- a/judge/pristine/mkdocs/themes/readthedocs/locales/id/LC_MESSAGES/messages.po
++++ b/judge/design-M/mkdocs/themes/readthedocs/locales/id/LC_MESSAGES/messages.po
+@@ -22,15 +22,19 @@ msgstr ""
+ msgid "Page not found"
+ msgstr "Halaman tidak ditemukan"
+ 
+-#: mkdocs/themes/readthedocs/base.html:96
++#: mkdocs/themes/readthedocs/base.html:102
+ msgid "Logo"
+ msgstr "Logo"
+ 
+-#: mkdocs/themes/readthedocs/base.html:110
++#: mkdocs/themes/readthedocs/base.html:113
++msgid "Language"
++msgstr "Bahasa"
++
++#: mkdocs/themes/readthedocs/base.html:125
+ msgid "Navigation menu"
+ msgstr "Menu navigasi"
+ 
+-#: mkdocs/themes/readthedocs/base.html:147
++#: mkdocs/themes/readthedocs/base.html:162
+ msgid "Mobile navigation menu"
+ msgstr "Menu navigasi seluler"
+ 
+@@ -108,6 +112,10 @@ msgstr "Menelusuri..."
+ msgid "Search docs"
+ msgstr "Telusuri dokumen"
+ 
++#: mkdocs/themes/readthedocs/untranslated.html:2
++msgid "This page has not been translated yet. It is shown in its original language."
++msgstr "Halaman ini belum diterjemahkan. Halaman ini ditampilkan dalam bahasa aslinya."
++
+ #: mkdocs/themes/readthedocs/versions.html:1
+ msgid "Versions"
+ msgstr "Versi"
+diff --git a/judge/pristine/mkdocs/themes/readthedocs/locales/it/LC_MESSAGES/messages.po b/judge/design-M/mkdocs/themes/readthedocs/locales/it/LC_MESSAGES/messages.po
+index f73364e..0df3eb0 100644
+--- a/judge/pristine/mkdocs/themes/readthedocs/locales/it/LC_MESSAGES/messages.po
++++ b/judge/design-M/mkdocs/themes/readthedocs/locales/it/LC_MESSAGES/messages.po
+@@ -21,15 +21,19 @@ msgstr ""
+ msgid "Page not found"
+ msgstr "Pagina non trovata"
+ 
+-#: mkdocs/themes/readthedocs/base.html:96
++#: mkdocs/themes/readthedocs/base.html:102
+ msgid "Logo"
+ msgstr "Logo"
+ 
+-#: mkdocs/themes/readthedocs/base.html:110
++#: mkdocs/themes/readthedocs/base.html:113
++msgid "Language"
++msgstr "Lingua"
++
++#: mkdocs/themes/readthedocs/base.html:125
+ msgid "Navigation menu"
+ msgstr "Menu"
+ 
+-#: mkdocs/themes/readthedocs/base.html:147
++#: mkdocs/themes/readthedocs/base.html:162
+ msgid "Mobile navigation menu"
+ msgstr "Menu di navigazione mobile"
+ 
+@@ -107,6 +111,10 @@ msgstr "Ricerca in corso…"
+ msgid "Search docs"
+ msgstr "Cerca documenti"
+ 
++#: mkdocs/themes/readthedocs/untranslated.html:2
++msgid "This page has not been translated yet. It is shown in its original language."
++msgstr "Questa pagina non è ancora stata tradotta. Viene mostrata nella sua lingua originale."
++
+ #: mkdocs/themes/readthedocs/versions.html:1
+ msgid "Versions"
+ msgstr "Versioni"
+diff --git a/judge/pristine/mkdocs/themes/readthedocs/locales/ja/LC_MESSAGES/messages.po b/judge/design-M/mkdocs/themes/readthedocs/locales/ja/LC_MESSAGES/messages.po
+index 123e3bd..4578fe5 100644
+--- a/judge/pristine/mkdocs/themes/readthedocs/locales/ja/LC_MESSAGES/messages.po
++++ b/judge/design-M/mkdocs/themes/readthedocs/locales/ja/LC_MESSAGES/messages.po
+@@ -21,15 +21,19 @@ msgstr ""
+ msgid "Page not found"
+ msgstr "ページが見つかりません"
+ 
+-#: mkdocs/themes/readthedocs/base.html:96
++#: mkdocs/themes/readthedocs/base.html:102
+ msgid "Logo"
+ msgstr "ロゴ"
+ 
+-#: mkdocs/themes/readthedocs/base.html:110
++#: mkdocs/themes/readthedocs/base.html:113
++msgid "Language"
++msgstr "言語"
++
++#: mkdocs/themes/readthedocs/base.html:125
+ msgid "Navigation menu"
+ msgstr "ナビゲーションメニュー"
+ 
+-#: mkdocs/themes/readthedocs/base.html:147
++#: mkdocs/themes/readthedocs/base.html:162
+ msgid "Mobile navigation menu"
+ msgstr "モバイルナビゲーションメニュー"
+ 
+@@ -105,6 +109,10 @@ msgstr "検索しています..."
+ msgid "Search docs"
+ msgstr "ドキュメントを検索"
+ 
++#: mkdocs/themes/readthedocs/untranslated.html:2
++msgid "This page has not been translated yet. It is shown in its original language."
++msgstr "このページはまだ翻訳されていません。原文の言語で表示しています。"
++
+ #: mkdocs/themes/readthedocs/versions.html:1
+ msgid "Versions"
+ msgstr "バージョン"
+diff --git a/judge/pristine/mkdocs/themes/readthedocs/locales/nl/LC_MESSAGES/messages.po b/judge/design-M/mkdocs/themes/readthedocs/locales/nl/LC_MESSAGES/messages.po
+index f4d3d79..f324315 100644
+--- a/judge/pristine/mkdocs/themes/readthedocs/locales/nl/LC_MESSAGES/messages.po
++++ b/judge/design-M/mkdocs/themes/readthedocs/locales/nl/LC_MESSAGES/messages.po
+@@ -22,15 +22,19 @@ msgstr ""
+ msgid "Page not found"
+ msgstr "Pagina niet gevonden"
+ 
+-#: mkdocs/themes/readthedocs/base.html:96
++#: mkdocs/themes/readthedocs/base.html:102
+ msgid "Logo"
+ msgstr "Logo"
+ 
+-#: mkdocs/themes/readthedocs/base.html:110
++#: mkdocs/themes/readthedocs/base.html:113
++msgid "Language"
++msgstr "Taal"
++
++#: mkdocs/themes/readthedocs/base.html:125
+ msgid "Navigation menu"
+ msgstr "Navigatiemenu"
+ 
+-#: mkdocs/themes/readthedocs/base.html:147
++#: mkdocs/themes/readthedocs/base.html:162
+ msgid "Mobile navigation menu"
+ msgstr "Mobiel navigatiemenu"
+ 
+@@ -108,6 +112,10 @@ msgstr "Zoeken..."
+ msgid "Search docs"
+ msgstr "Doorzoek documentatie"
+ 
++#: mkdocs/themes/readthedocs/untranslated.html:2
++msgid "This page has not been translated yet. It is shown in its original language."
++msgstr "Deze pagina is nog niet vertaald. Ze wordt weergegeven in de oorspronkelijke taal."
++
+ #: mkdocs/themes/readthedocs/versions.html:1
+ msgid "Versions"
+ msgstr "Versies"
+diff --git a/judge/pristine/mkdocs/themes/readthedocs/locales/pl/LC_MESSAGES/messages.po b/judge/design-M/mkdocs/themes/readthedocs/locales/pl/LC_MESSAGES/messages.po
+index 32dfbb2..208295d 100644
+--- a/judge/pristine/mkdocs/themes/readthedocs/locales/pl/LC_MESSAGES/messages.po
++++ b/judge/design-M/mkdocs/themes/readthedocs/locales/pl/LC_MESSAGES/messages.po
+@@ -22,15 +22,19 @@ msgstr ""
+ msgid "Page not found"
+ msgstr "Nie znaleziono strony"
+ 
+-#: mkdocs/themes/readthedocs/base.html:96
++#: mkdocs/themes/readthedocs/base.html:102
+ msgid "Logo"
+ msgstr "Logo"
+ 
+-#: mkdocs/themes/readthedocs/base.html:110
++#: mkdocs/themes/readthedocs/base.html:113
++msgid "Language"
++msgstr "Język"
++
++#: mkdocs/themes/readthedocs/base.html:125
+ msgid "Navigation menu"
+ msgstr "Menu nawigacji"
+ 
+-#: mkdocs/themes/readthedocs/base.html:147
++#: mkdocs/themes/readthedocs/base.html:162
+ msgid "Mobile navigation menu"
+ msgstr "Mobilne menu nawigacji"
+ 
+@@ -108,6 +112,10 @@ msgstr "Wyszukiwanie..."
+ msgid "Search docs"
+ msgstr "Przeszukaj dokumentację"
+ 
++#: mkdocs/themes/readthedocs/untranslated.html:2
++msgid "This page has not been translated yet. It is shown in its original language."
++msgstr "Ta strona nie została jeszcze przetłumaczona. Jest wyświetlana w języku oryginału."
++
+ #: mkdocs/themes/readthedocs/versions.html:1
+ msgid "Versions"
+ msgstr "Wersje"
+diff --git a/judge/pristine/mkdocs/themes/readthedocs/locales/pt_BR/LC_MESSAGES/messages.po b/judge/design-M/mkdocs/themes/readthedocs/locales/pt_BR/LC_MESSAGES/messages.po
+index 3aa29e1..542161c 100644
+--- a/judge/pristine/mkdocs/themes/readthedocs/locales/pt_BR/LC_MESSAGES/messages.po
++++ b/judge/design-M/mkdocs/themes/readthedocs/locales/pt_BR/LC_MESSAGES/messages.po
+@@ -21,15 +21,19 @@ msgstr ""
+ msgid "Page not found"
+ msgstr "Página não encontrada"
+ 
+-#: mkdocs/themes/readthedocs/base.html:96
++#: mkdocs/themes/readthedocs/base.html:102
+ msgid "Logo"
+ msgstr "Logo"
+ 
+-#: mkdocs/themes/readthedocs/base.html:110
++#: mkdocs/themes/readthedocs/base.html:113
++msgid "Language"
++msgstr "Idioma"
++
++#: mkdocs/themes/readthedocs/base.html:125
+ msgid "Navigation menu"
+ msgstr "Menu de navegação"
+ 
+-#: mkdocs/themes/readthedocs/base.html:147
++#: mkdocs/themes/readthedocs/base.html:162
+ msgid "Mobile navigation menu"
+ msgstr "Menu de navegação em dispositivo móvel"
+ 
+@@ -108,6 +112,10 @@ msgstr "Buscando..."
+ msgid "Search docs"
+ msgstr "Buscar documentos"
+ 
++#: mkdocs/themes/readthedocs/untranslated.html:2
++msgid "This page has not been translated yet. It is shown in its original language."
++msgstr "Esta página ainda não foi traduzida. Ela é exibida em seu idioma original."
++
+ #: mkdocs/themes/readthedocs/versions.html:1
+ msgid "Versions"
+ msgstr "Versões"
+diff --git a/judge/pristine/mkdocs/themes/readthedocs/locales/ru/LC_MESSAGES/messages.po b/judge/design-M/mkdocs/themes/readthedocs/locales/ru/LC_MESSAGES/messages.po
+index be122de..a3ead2e 100644
+--- a/judge/pristine/mkdocs/themes/readthedocs/locales/ru/LC_MESSAGES/messages.po
++++ b/judge/design-M/mkdocs/themes/readthedocs/locales/ru/LC_MESSAGES/messages.po
+@@ -22,15 +22,19 @@ msgstr ""
+ msgid "Page not found"
+ msgstr "Страница не найдена"
+ 
+-#: mkdocs/themes/readthedocs/base.html:96
++#: mkdocs/themes/readthedocs/base.html:102
+ msgid "Logo"
+ msgstr "Логотип"
+ 
+-#: mkdocs/themes/readthedocs/base.html:110
++#: mkdocs/themes/readthedocs/base.html:113
++msgid "Language"
++msgstr "Язык"
++
++#: mkdocs/themes/readthedocs/base.html:125
+ msgid "Navigation menu"
+ msgstr "Навигационное меню"
+ 
+-#: mkdocs/themes/readthedocs/base.html:147
++#: mkdocs/themes/readthedocs/base.html:162
+ msgid "Mobile navigation menu"
+ msgstr "Мобильная версия навигации"
+ 
+@@ -108,6 +112,10 @@ msgstr "Поиск..."
+ msgid "Search docs"
+ msgstr "Поиск в документации"
+ 
++#: mkdocs/themes/readthedocs/untranslated.html:2
++msgid "This page has not been translated yet. It is shown in its original language."
++msgstr "Эта страница ещё не переведена. Она показана на языке оригинала."
++
+ #: mkdocs/themes/readthedocs/versions.html:1
+ msgid "Versions"
+ msgstr "Версии"
+diff --git a/judge/pristine/mkdocs/themes/readthedocs/locales/tr/LC_MESSAGES/messages.po b/judge/design-M/mkdocs/themes/readthedocs/locales/tr/LC_MESSAGES/messages.po
+index ab4eb19..6f48d32 100644
+--- a/judge/pristine/mkdocs/themes/readthedocs/locales/tr/LC_MESSAGES/messages.po
++++ b/judge/design-M/mkdocs/themes/readthedocs/locales/tr/LC_MESSAGES/messages.po
+@@ -21,15 +21,19 @@ msgstr ""
+ msgid "Page not found"
+ msgstr "Sayfa bulunamadı"
+ 
+-#: mkdocs/themes/readthedocs/base.html:96
++#: mkdocs/themes/readthedocs/base.html:102
+ msgid "Logo"
+ msgstr "Logo"
+ 
+-#: mkdocs/themes/readthedocs/base.html:110
++#: mkdocs/themes/readthedocs/base.html:113
++msgid "Language"
++msgstr "Dil"
++
++#: mkdocs/themes/readthedocs/base.html:125
+ msgid "Navigation menu"
+ msgstr "Gezinme menüsü"
+ 
+-#: mkdocs/themes/readthedocs/base.html:147
++#: mkdocs/themes/readthedocs/base.html:162
+ msgid "Mobile navigation menu"
+ msgstr "Mobil gezinme menüsü"
+ 
+@@ -107,6 +111,10 @@ msgstr "Aranıyor..."
+ msgid "Search docs"
+ msgstr "Belgelerde ara"
+ 
++#: mkdocs/themes/readthedocs/untranslated.html:2
++msgid "This page has not been translated yet. It is shown in its original language."
++msgstr "Bu sayfa henüz çevrilmedi. Sayfa özgün dilinde gösterilmektedir."
++
+ #: mkdocs/themes/readthedocs/versions.html:1
+ msgid "Versions"
+ msgstr "Sürümler"
+diff --git a/judge/pristine/mkdocs/themes/readthedocs/locales/uk/LC_MESSAGES/messages.po b/judge/design-M/mkdocs/themes/readthedocs/locales/uk/LC_MESSAGES/messages.po
+index e48fa3d..9ba882b 100644
+--- a/judge/pristine/mkdocs/themes/readthedocs/locales/uk/LC_MESSAGES/messages.po
++++ b/judge/design-M/mkdocs/themes/readthedocs/locales/uk/LC_MESSAGES/messages.po
+@@ -22,15 +22,19 @@ msgstr ""
+ msgid "Page not found"
+ msgstr "Сторінку не знайдено"
+ 
+-#: mkdocs/themes/readthedocs/base.html:96
++#: mkdocs/themes/readthedocs/base.html:102
+ msgid "Logo"
+ msgstr "Логотип"
+ 
+-#: mkdocs/themes/readthedocs/base.html:110
++#: mkdocs/themes/readthedocs/base.html:113
++msgid "Language"
++msgstr "Мова"
++
++#: mkdocs/themes/readthedocs/base.html:125
+ msgid "Navigation menu"
+ msgstr "Меню навігації"
+ 
+-#: mkdocs/themes/readthedocs/base.html:147
++#: mkdocs/themes/readthedocs/base.html:162
+ msgid "Mobile navigation menu"
+ msgstr "Мобільна версія меню"
+ 
+@@ -108,6 +112,10 @@ msgstr "Пошук..."
+ msgid "Search docs"
+ msgstr "Пошук у документації"
+ 
++#: mkdocs/themes/readthedocs/untranslated.html:2
++msgid "This page has not been translated yet. It is shown in its original language."
++msgstr "Цю сторінку ще не перекладено. Її показано мовою оригіналу."
++
+ #: mkdocs/themes/readthedocs/versions.html:1
+ msgid "Versions"
+ msgstr "Версії"
+diff --git a/judge/pristine/mkdocs/themes/readthedocs/locales/zh_CN/LC_MESSAGES/messages.po b/judge/design-M/mkdocs/themes/readthedocs/locales/zh_CN/LC_MESSAGES/messages.po
+index a59e462..5fc9668 100644
+--- a/judge/pristine/mkdocs/themes/readthedocs/locales/zh_CN/LC_MESSAGES/messages.po
++++ b/judge/design-M/mkdocs/themes/readthedocs/locales/zh_CN/LC_MESSAGES/messages.po
+@@ -23,15 +23,19 @@ msgstr ""
+ msgid "Page not found"
+ msgstr "找不到页面"
+ 
+-#: mkdocs/themes/readthedocs/base.html:96
++#: mkdocs/themes/readthedocs/base.html:102
+ msgid "Logo"
+ msgstr "Logo"
+ 
+-#: mkdocs/themes/readthedocs/base.html:110
++#: mkdocs/themes/readthedocs/base.html:113
++msgid "Language"
++msgstr "语言"
++
++#: mkdocs/themes/readthedocs/base.html:125
+ msgid "Navigation menu"
+ msgstr "导航栏"
+ 
+-#: mkdocs/themes/readthedocs/base.html:147
++#: mkdocs/themes/readthedocs/base.html:162
+ msgid "Mobile navigation menu"
+ msgstr "移动导航栏"
+ 
+@@ -108,6 +112,11 @@ msgstr "搜索中..."
+ msgid "Search docs"
+ msgstr "搜索文档"
+ 
++#: mkdocs/themes/readthedocs/untranslated.html:2
++msgid "This page has not been translated yet. It is shown in its original language."
++msgstr "此页面尚未翻译，以原始语言显示。"
++
+ #: mkdocs/themes/readthedocs/versions.html:1
+ msgid "Versions"
+ msgstr "版本"
++
+diff --git a/judge/pristine/mkdocs/themes/readthedocs/locales/zh_TW/LC_MESSAGES/messages.po b/judge/design-M/mkdocs/themes/readthedocs/locales/zh_TW/LC_MESSAGES/messages.po
+index 31d8abd..3f5c815 100644
+--- a/judge/pristine/mkdocs/themes/readthedocs/locales/zh_TW/LC_MESSAGES/messages.po
++++ b/judge/design-M/mkdocs/themes/readthedocs/locales/zh_TW/LC_MESSAGES/messages.po
+@@ -21,15 +21,19 @@ msgstr ""
+ msgid "Page not found"
+ msgstr "找不到頁面"
+ 
+-#: mkdocs/themes/readthedocs/base.html:96
++#: mkdocs/themes/readthedocs/base.html:102
+ msgid "Logo"
+ msgstr "Logo"
+ 
+-#: mkdocs/themes/readthedocs/base.html:110
++#: mkdocs/themes/readthedocs/base.html:113
++msgid "Language"
++msgstr "語言"
++
++#: mkdocs/themes/readthedocs/base.html:125
+ msgid "Navigation menu"
+ msgstr "導覽列"
+ 
+-#: mkdocs/themes/readthedocs/base.html:147
++#: mkdocs/themes/readthedocs/base.html:162
+ msgid "Mobile navigation menu"
+ msgstr "行動裝置導覽列"
+ 
+@@ -105,6 +109,10 @@ msgstr "搜尋中..."
+ msgid "Search docs"
+ msgstr "搜尋文件"
+ 
++#: mkdocs/themes/readthedocs/untranslated.html:2
++msgid "This page has not been translated yet. It is shown in its original language."
++msgstr "此頁面尚未翻譯，以原始語言顯示。"
++
+ #: mkdocs/themes/readthedocs/versions.html:1
+ msgid "Versions"
+ msgstr "版本"
+diff --git a/judge/pristine/mkdocs/themes/readthedocs/messages.pot b/judge/design-M/mkdocs/themes/readthedocs/messages.pot
+index 9780e91..b919a90 100644
+--- a/judge/pristine/mkdocs/themes/readthedocs/messages.pot
++++ b/judge/design-M/mkdocs/themes/readthedocs/messages.pot
+@@ -21,15 +21,19 @@ msgstr ""
+ msgid "Page not found"
+ msgstr ""
+ 
+-#: mkdocs/themes/readthedocs/base.html:96
++#: mkdocs/themes/readthedocs/base.html:102
+ msgid "Logo"
+ msgstr ""
+ 
+-#: mkdocs/themes/readthedocs/base.html:110
++#: mkdocs/themes/readthedocs/base.html:113
++msgid "Language"
++msgstr ""
++
++#: mkdocs/themes/readthedocs/base.html:125
+ msgid "Navigation menu"
+ msgstr ""
+ 
+-#: mkdocs/themes/readthedocs/base.html:147
++#: mkdocs/themes/readthedocs/base.html:162
+ msgid "Mobile navigation menu"
+ msgstr ""
+ 
+@@ -103,6 +107,10 @@ msgstr ""
+ msgid "Search docs"
+ msgstr ""
+ 
++#: mkdocs/themes/readthedocs/untranslated.html:2
++msgid "This page has not been translated yet. It is shown in its original language."
++msgstr ""
++
+ #: mkdocs/themes/readthedocs/versions.html:1
+ msgid "Versions"
+ msgstr ""
+diff --git a/judge/design-M/mkdocs/themes/readthedocs/untranslated.html b/judge/design-M/mkdocs/themes/readthedocs/untranslated.html
+new file mode 100644
+index 0000000..a2be77c
+--- /dev/null
++++ b/judge/design-M/mkdocs/themes/readthedocs/untranslated.html
+@@ -0,0 +1,3 @@
++<div class="admonition note" role="note">
++  <p>{% trans %}This page has not been translated yet. It is shown in its original language.{% endtrans %}</p>
++</div>
+diff --git a/judge/pristine/mkdocs/utils/templates.py b/judge/design-M/mkdocs/utils/templates.py
+index 9a9848a..b7589da 100644
+--- a/judge/pristine/mkdocs/utils/templates.py
++++ b/judge/design-M/mkdocs/utils/templates.py
+@@ -17,12 +17,17 @@ from mkdocs.utils import normalize_url
+ if TYPE_CHECKING:
+     from mkdocs.config.config_options import ExtraScriptValue
+     from mkdocs.config.defaults import MkDocsConfig
++    from mkdocs.languages import LanguageContext
+     from mkdocs.structure.files import File
+     from mkdocs.structure.nav import Navigation
+     from mkdocs.structure.pages import Page
+ 
+ 
+-class TemplateContext(TypedDict):
++class _OptionalTemplateContext(TypedDict, total=False):
++    language: LanguageContext  # Only on multi-language sites.
++
++
++class TemplateContext(_OptionalTemplateContext):
+     nav: Navigation
+     pages: Sequence[File]
+     base_url: str

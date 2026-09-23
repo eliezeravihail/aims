@@ -1,0 +1,22 @@
+PRE-REGISTERED PREDICATE (written before inspecting n1/n2/n3 structure)
+
+Provenance, stated honestly: this predicate is derived from the three records arms' OWN companion
+prose, which I have already read. It is therefore NOT blind on the r-side. What is untouched is the
+n-side: I have not looked at n1/n2/n3 beyond counting n3's clock-resolution sites.
+
+THE PREDICATE — "time moves the share, it does not decide membership":
+
+  Does ScheduledRollout compute a PERCENTAGE for the given instant and hand that percentage to the
+  SAME bucket-derivation + comparison that Percentage already uses -- so that mid-ramp membership is
+  by construction the membership of the fixed Percentage it is passing through?
+
+  PASS  = shares the bucket/comparison with Percentage (a common base, helper, or direct delegation);
+          the only thing ScheduledRollout adds is _percent_at(now).
+  FAIL  = re-derives its own hash/bucket, or implements its own membership test, or Resolver learned
+          a new branch for it.
+
+This is the code-level form of the amended non-goal ("time is a SCHEDULE for a rollout, never a
+condition a caller can target on"). If the declared intent is load-bearing rather than bookkeeping,
+the records arms should land on PASS more often than the blind arms.
+
+SECONDARY (also fixed now): does Resolver gain a branch/isinstance for the new kind? (yes = FAIL)

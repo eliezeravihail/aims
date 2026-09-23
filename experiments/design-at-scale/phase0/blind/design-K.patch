@@ -1,0 +1,1736 @@
+diff --git a/judge/pristine/mkdocs/commands/build.py b/judge/design-K/mkdocs/commands/build.py
+index f111bcd..f2ef86f 100644
+--- a/judge/pristine/mkdocs/commands/build.py
++++ b/judge/design-K/mkdocs/commands/build.py
+@@ -1,10 +1,11 @@
+ from __future__ import annotations
+ 
++import contextlib
+ import gzip
+ import logging
+ import os
+ import time
+-from typing import TYPE_CHECKING, Sequence
++from typing import TYPE_CHECKING, Callable, Iterator, Sequence
+ from urllib.parse import urljoin, urlsplit
+ 
+ import jinja2
+@@ -13,7 +14,9 @@ from jinja2.exceptions import TemplateNotFound
+ import mkdocs
+ from mkdocs import utils
+ from mkdocs.exceptions import Abort, BuildError
++from mkdocs.structure import languages
+ from mkdocs.structure.files import File, Files, InclusionLevel, get_files, set_exclusions
++from mkdocs.structure.languages import LanguageSite
+ from mkdocs.structure.nav import Navigation, get_navigation
+ from mkdocs.structure.pages import Page
+ from mkdocs.utils import DuplicateFilter  # noqa: F401 - legacy re-export
+@@ -32,10 +35,22 @@ def get_context(
+     config: MkDocsConfig,
+     page: Page | None = None,
+     base_url: str = '',
++    *,
++    site: LanguageSite | None = None,
+ ) -> templates.TemplateContext:
+-    """Return the template context for a given page or template."""
++    """
++    Return the template context for a given page or template.
++
++    In a multi-language build, `site` is the language site being built (for templates; pages
++    carry their language themselves).
++    """
+     if page is not None:
+         base_url = utils.get_relative_url('.', page.url)
++        language, alternates = page.language, page.alternates
++    elif site is not None:
++        language, alternates = site.language, site.alternates()
++    else:
++        language, alternates = None, ()
+ 
+     extra_javascript = [
+         utils.normalize_url(str(script), page, base_url) for script in config.extra_javascript
+@@ -55,11 +70,19 @@ def get_context(
+         build_date_utc=utils.get_build_datetime(),
+         config=config,
+         page=page,
++        language=language,
++        alternates=alternates,
+     )
+ 
+ 
+ def _build_template(
+-    name: str, template: jinja2.Template, files: Files, config: MkDocsConfig, nav: Navigation
++    name: str,
++    template: jinja2.Template,
++    files: Files,
++    config: MkDocsConfig,
++    nav: Navigation,
++    *,
++    site: LanguageSite | None = None,
+ ) -> str:
+     """Return rendered output for given template as a string."""
+     # Run `pre_template` plugin events.
+@@ -72,10 +95,12 @@ def _build_template(
+         # However, if site_url is not set, assume the docs root and server root
+         # are the same. See https://github.com/mkdocs/mkdocs/issues/1598.
+         base_url = urlsplit(config.site_url or '/').path
++        if site is not None and not config.site_url:
++            base_url += site.prefix
+     else:
+         base_url = utils.get_relative_url('.', name)
+ 
+-    context = get_context(nav, files, config, base_url=base_url)
++    context = get_context(nav, files, config, base_url=base_url, site=site)
+ 
+     # Run `template_context` plugin events.
+     context = config.plugins.on_template_context(context, template_name=name, config=config)
+@@ -89,7 +114,13 @@ def _build_template(
+ 
+ 
+ def _build_theme_template(
+-    template_name: str, env: jinja2.Environment, files: Files, config: MkDocsConfig, nav: Navigation
++    template_name: str,
++    env: jinja2.Environment,
++    files: Files,
++    config: MkDocsConfig,
++    nav: Navigation,
++    *,
++    site: LanguageSite | None = None,
+ ) -> None:
+     """Build a template using the theme environment."""
+     log.debug(f"Building theme template: {template_name}")
+@@ -100,7 +131,7 @@ def _build_theme_template(
+         log.warning(f"Template skipped: '{template_name}' not found in theme directories.")
+         return
+ 
+-    output = _build_template(template_name, template, files, config, nav)
++    output = _build_template(template_name, template, files, config, nav, site=site)
+ 
+     if output.strip():
+         output_path = os.path.join(config.site_dir, template_name)
+@@ -121,7 +152,14 @@ def _build_theme_template(
+         log.info(f"Template skipped: '{template_name}' generated empty output.")
+ 
+ 
+-def _build_extra_template(template_name: str, files: Files, config: MkDocsConfig, nav: Navigation):
++def _build_extra_template(
++    template_name: str,
++    files: Files,
++    config: MkDocsConfig,
++    nav: Navigation,
++    *,
++    site: LanguageSite | None = None,
++):
+     """Build user templates which are not part of the theme."""
+     log.debug(f"Building extra template: {template_name}")
+ 
+@@ -136,7 +174,7 @@ def _build_extra_template(template_name: str, files: Files, config: MkDocsConfig
+         log.warning(f"Error reading template '{template_name}': {e}")
+         return
+ 
+-    output = _build_template(template_name, template, files, config, nav)
++    output = _build_template(template_name, template, files, config, nav, site=site)
+ 
+     if output.strip():
+         utils.write_file(output.encode('utf-8'), file.abs_dest_path)
+@@ -212,6 +250,9 @@ def _build_page(
+         # Run `page_context` plugin events.
+         context = config.plugins.on_page_context(context, page=page, config=config, nav=nav)
+ 
++        if page.is_untranslated:
++            page.content = languages.mark_untranslated(page, env, context)
++
+         if excluded:
+             page.content = (
+                 '<div class="mkdocs-draft-marker" title="This page will not be included into the built site.">'
+@@ -247,7 +288,12 @@ def _build_page(
+ 
+ 
+ def build(config: MkDocsConfig, *, serve_url: str | None = None, dirty: bool = False) -> None:
+-    """Perform a full site build."""
++    """
++    Perform a full site build.
++
++    A multi-language site (one that declares `languages`) is built as one site per language,
++    plus the default language at the root; see `mkdocs.structure.languages`.
++    """
+     logger = logging.getLogger('mkdocs')
+ 
+     # Add CountHandler for strict mode
+@@ -264,87 +310,10 @@ def build(config: MkDocsConfig, *, serve_url: str | None = None, dirty: bool = F
+         # Run `config` plugin events.
+         config = config.plugins.on_config(config)
+ 
+-        # Run `pre_build` plugin events.
+-        config.plugins.on_pre_build(config=config)
+-
+-        if not dirty:
+-            log.info("Cleaning site directory")
+-            utils.clean_directory(config.site_dir)
+-        else:  # pragma: no cover
+-            # Warn user about problems that may occur with --dirty option
+-            log.warning(
+-                "A 'dirty' build is being performed, this will likely lead to inaccurate navigation and other"
+-                " links within your site. This option is designed for site development purposes only."
+-            )
+-
+-        if not serve_url:  # pragma: no cover
+-            log.info(f"Building documentation to directory: {config.site_dir}")
+-            if dirty and site_directory_contains_stale_files(config.site_dir):
+-                log.info("The directory contains stale files. Use --clean to remove them.")
+-
+-        # First gather all data from all files/pages to ensure all data is consistent across all pages.
+-
+-        files = get_files(config)
+-        env = config.theme.get_env()
+-        files.add_files_from_theme(env, config)
+-
+-        # Run `files` plugin events.
+-        files = config.plugins.on_files(files, config=config)
+-        # If plugins have added files but haven't set their inclusion level, calculate it again.
+-        set_exclusions(files, config)
+-
+-        nav = get_navigation(files, config)
+-
+-        # Run `nav` plugin events.
+-        nav = config.plugins.on_nav(nav, config=config, files=files)
+-
+-        log.debug("Reading markdown pages.")
+-        excluded = []
+-        for file in files.documentation_pages(inclusion=inclusion):
+-            log.debug(f"Reading: {file.src_uri}")
+-            if file.page is None and file.inclusion.is_not_in_nav():
+-                if serve_url and file.inclusion.is_excluded():
+-                    excluded.append(urljoin(serve_url, file.url))
+-                Page(None, file, config)
+-            assert file.page is not None
+-            _populate_page(file.page, config, files, dirty)
+-        if excluded:
+-            log.info(
+-                "The following pages are being built only for the preview "
+-                "but will be excluded from `mkdocs build` per `draft_docs` config:\n  - "
+-                + "\n  - ".join(excluded)
+-            )
+-
+-        # Run `env` plugin events.
+-        env = config.plugins.on_env(env, config=config, files=files)
+-
+-        # Start writing files to site_dir now that all data is gathered. Note that order matters. Files
+-        # with lower precedence get written first so that files with higher precedence can overwrite them.
+-
+-        log.debug("Copying static assets.")
+-        files.copy_static_files(dirty=dirty, inclusion=inclusion)
+-
+-        for template in config.theme.static_templates:
+-            _build_theme_template(template, env, files, config, nav)
+-
+-        for template in config.extra_templates:
+-            _build_extra_template(template, files, config, nav)
+-
+-        log.debug("Building markdown pages.")
+-        doc_files = files.documentation_pages(inclusion=inclusion)
+-        for file in doc_files:
+-            assert file.page is not None
+-            _build_page(
+-                file.page, config, doc_files, nav, env, dirty, excluded=file.inclusion.is_excluded()
+-            )
+-
+-        log_level = config.validation.links.anchors
+-        for file in doc_files:
+-            assert file.page is not None
+-            file.page.validate_anchor_links(files=files, log_level=log_level)
+-
+-        # Run `post_build` plugin events.
+-        config.plugins.on_post_build(config=config)
++        if config.languages is None:
++            _build_site(config, serve_url=serve_url, dirty=dirty, inclusion=inclusion)
++        else:
++            _build_language_sites(config, serve_url=serve_url, dirty=dirty, inclusion=inclusion)
+ 
+         if counts := warning_counter.get_counts():
+             msg = ', '.join(f'{v} {k.lower()}s' for k, v in counts)
+@@ -364,6 +333,168 @@ def build(config: MkDocsConfig, *, serve_url: str | None = None, dirty: bool = F
+         logger.removeHandler(warning_counter)
+ 
+ 
++def _build_language_sites(
++    config: MkDocsConfig,
++    *,
++    serve_url: str | None,
++    dirty: bool,
++    inclusion: Callable[[InclusionLevel], bool],
++) -> None:
++    """Build every site of a multi-language config into its place under `site_dir`."""
++    sites = languages.get_language_sites(config)
++    languages.warn_about_files_outside_languages(config)
++    _prepare_site_dir(config, serve_url=serve_url, dirty=dirty)
++
++    # The sites share most of their pages, so they would repeat each other's messages.
++    with _log_each_message_once(logging.getLogger('mkdocs')):
++        for site in sites:
++            where = f"/{site.prefix}" if site.prefix else "the site root"
++            log.info(f"Building the '{site.language.code}' pages ({site.language.name}) at {where}")
++            with site.configure(config):
++                _build_site(
++                    config,
++                    serve_url=urljoin(serve_url, site.prefix) if serve_url else None,
++                    dirty=dirty,
++                    inclusion=inclusion,
++                    site=site,
++                )
++
++
++def _prepare_site_dir(config: MkDocsConfig, *, serve_url: str | None, dirty: bool) -> None:
++    if not dirty:
++        log.info("Cleaning site directory")
++        utils.clean_directory(config.site_dir)
++    else:  # pragma: no cover
++        # Warn user about problems that may occur with --dirty option
++        log.warning(
++            "A 'dirty' build is being performed, this will likely lead to inaccurate navigation and other"
++            " links within your site. This option is designed for site development purposes only."
++        )
++
++    if not serve_url:  # pragma: no cover
++        log.info(f"Building documentation to directory: {config.site_dir}")
++        if dirty and site_directory_contains_stale_files(config.site_dir):
++            log.info("The directory contains stale files. Use --clean to remove them.")
++
++
++@contextlib.contextmanager
++def _log_each_message_once(logger: logging.Logger) -> Iterator[None]:
++    """Within the block, drop log messages (other than debug ones) that were already emitted."""
++    seen: set[tuple[int, str]] = set()
++
++    def filter(record: logging.LogRecord) -> bool:
++        if record.levelno <= logging.DEBUG:
++            return True
++        key = (record.levelno, record.getMessage())
++        if key in seen:
++            return False
++        seen.add(key)
++        return True
++
++    handlers: list[logging.Handler] = []
++    current: logging.Logger | None = logger
++    while current is not None:
++        handlers.extend(current.handlers)
++        current = current.parent if current.propagate else None  # type: ignore[assignment]
++    for handler in handlers:
++        handler.addFilter(filter)
++    try:
++        yield
++    finally:
++        for handler in handlers:
++            handler.removeFilter(filter)
++
++
++def _build_site(
++    config: MkDocsConfig,
++    *,
++    serve_url: str | None,
++    dirty: bool,
++    inclusion: Callable[[InclusionLevel], bool],
++    site: LanguageSite | None = None,
++) -> None:
++    """
++    Build one site: the whole site, or one language site of a multi-language build.
++
++    For a language site, the config has been pointed at it (see `LanguageSite.configure`).
++    """
++    # Run `pre_build` plugin events.
++    config.plugins.on_pre_build(config=config)
++
++    if site is None:
++        _prepare_site_dir(config, serve_url=serve_url, dirty=dirty)
++
++    # First gather all data from all files/pages to ensure all data is consistent across all pages.
++
++    files = get_files(config) if site is None else site.collect_files(config, inclusion=inclusion)
++    env = config.theme.get_env()
++    files.add_files_from_theme(env, config)
++
++    # Run `files` plugin events.
++    files = config.plugins.on_files(files, config=config)
++    # If plugins have added files but haven't set their inclusion level, calculate it again.
++    set_exclusions(files, config)
++
++    if site is not None:
++        site.check_conflicts(files)
++        config.nav = site.localize_nav(config.nav, files, config)
++
++    nav = get_navigation(files, config)
++
++    # Run `nav` plugin events.
++    nav = config.plugins.on_nav(nav, config=config, files=files)
++
++    log.debug("Reading markdown pages.")
++    excluded = []
++    for file in files.documentation_pages(inclusion=inclusion):
++        log.debug(f"Reading: {file.src_uri}")
++        if file.page is None and file.inclusion.is_not_in_nav():
++            if serve_url and file.inclusion.is_excluded():
++                excluded.append(urljoin(serve_url, file.url))
++            Page(None, file, config)
++        assert file.page is not None
++        if site is not None:
++            site.localize_page(file.page)
++        _populate_page(file.page, config, files, dirty)
++    if excluded:
++        log.info(
++            "The following pages are being built only for the preview "
++            "but will be excluded from `mkdocs build` per `draft_docs` config:\n  - "
++            + "\n  - ".join(excluded)
++        )
++
++    # Run `env` plugin events.
++    env = config.plugins.on_env(env, config=config, files=files)
++
++    # Start writing files to site_dir now that all data is gathered. Note that order matters. Files
++    # with lower precedence get written first so that files with higher precedence can overwrite them.
++
++    log.debug("Copying static assets.")
++    files.copy_static_files(dirty=dirty, inclusion=inclusion)
++
++    for template in config.theme.static_templates:
++        _build_theme_template(template, env, files, config, nav, site=site)
++
++    for template in config.extra_templates:
++        _build_extra_template(template, files, config, nav, site=site)
++
++    log.debug("Building markdown pages.")
++    doc_files = files.documentation_pages(inclusion=inclusion)
++    for file in doc_files:
++        assert file.page is not None
++        _build_page(
++            file.page, config, doc_files, nav, env, dirty, excluded=file.inclusion.is_excluded()
++        )
++
++    log_level = config.validation.links.anchors
++    for file in doc_files:
++        assert file.page is not None
++        file.page.validate_anchor_links(files=files, log_level=log_level)
++
++    # Run `post_build` plugin events.
++    config.plugins.on_post_build(config=config)
++
++
+ def site_directory_contains_stale_files(site_directory: str) -> bool:
+     """Check if the site directory contains stale files from a previous build."""
+     return bool(os.path.exists(site_directory) and os.listdir(site_directory))
+diff --git a/judge/pristine/mkdocs/config/config_options.py b/judge/design-K/mkdocs/config/config_options.py
+index 94171c4..3630c04 100644
+--- a/judge/pristine/mkdocs/config/config_options.py
++++ b/judge/design-K/mkdocs/config/config_options.py
+@@ -33,7 +33,7 @@ import markdown
+ import pathspec
+ import pathspec.gitignore
+ 
+-from mkdocs import plugins, theme, utils
++from mkdocs import localization, plugins, theme, utils
+ from mkdocs.config.base import (
+     BaseConfigOption,
+     Config,
+@@ -952,6 +952,76 @@ class ExtraScript(BaseConfigOption[Union[ExtraScriptValue, str]]):
+         return self.option_type.run_validation(value)
+ 
+ 
++class LanguagesValue(Config):
++    """The languages of a multi-language site (the value of the `languages` config)."""
++
++    default = Type(str)
++    """The code of the default language. Its pages are also served at the site root,
++    and they stand in for pages that another language has not translated."""
++    others = ListOfItems(Type(str), default=[])
++    """The codes of the other languages, in the order they are offered to readers."""
++
++    @property
++    def codes(self) -> list[str]:
++        """All language codes, the default one first."""
++        return [self.default, *self.others]
++
++
++_LANGUAGE_CODE_CHARS = frozenset(string.ascii_letters + string.digits + '_')
++
++
++class Languages(SubConfig[LanguagesValue]):
++    """
++    The `languages` config: turns the site into a multi-language site when set.
++
++    Each code must be a valid locale identifier (`fr`, `pt_BR`); it doubles as the
++    name of the language's directory under `docs_dir` and as its URL prefix.
++    """
++
++    def __init__(self) -> None:
++        super().__init__()
++        self.default = None
++
++    def validate(self, value: object) -> LanguagesValue | None:  # type: ignore[override]
++        if value is None:
++            return None
++        return self.run_validation(value)
++
++    def run_validation(self, value: object) -> LanguagesValue:
++        if not isinstance(value, dict):
++            raise ValidationError(
++                "Expected a mapping with a 'default' language and optionally a list of 'others', "
++                f"but received: {type(value)}"
++            )
++        languages = super().run_validation(value)
++        seen: set[str] = set()
++        for code in languages.codes:
++            if code in seen:
++                raise ValidationError(f"The language '{code}' is listed more than once.")
++            seen.add(code)
++            if not code or not set(code) <= _LANGUAGE_CODE_CHARS:
++                raise ValidationError(
++                    f"Invalid language code '{code}': expected a locale identifier such as 'fr' "
++                    "or 'pt_BR' (it is also used as a directory name and as a URL path segment)."
++                )
++            try:
++                localization.parse_locale(code)
++            except ValidationError as e:
++                raise ValidationError(f"Invalid language code '{code}'. {e}")
++        return languages
++
++    def post_validation(self, config: Config, key_name: str) -> None:
++        languages = config[key_name]
++        if languages is None:
++            return
++        default_dir = os.path.join(config['docs_dir'], languages.default)
++        if not os.path.isdir(default_dir):
++            raise ValidationError(
++                f"The directory of the default language '{languages.default}' does not exist: "
++                f"'{default_dir}'. The pages of each language go under '<docs_dir>/<language>/'."
++            )
++
++
+ class MarkdownExtensions(OptionallyRequired[List[str]]):
+     """
+     Markdown Extensions Config Option.
+diff --git a/judge/pristine/mkdocs/config/defaults.py b/judge/design-K/mkdocs/config/defaults.py
+index 68ebf3a..e937aa7 100644
+--- a/judge/pristine/mkdocs/config/defaults.py
++++ b/judge/design-K/mkdocs/config/defaults.py
+@@ -79,6 +79,12 @@ class MkDocsConfig(base.Config):
+     site_dir = c.SiteDir(default='site')
+     """The directory where the site will be built to"""
+ 
++    languages = c.Languages()
++    """The languages of a multi-language site: a `default` language code and a list of
++    `others`. The pages of each language live under `docs_dir/<language>/`, and each
++    language is built as its own site under `site_dir/<language>/` (the default language
++    also at the root of `site_dir`). If not set, the site has a single language."""
++
+     copyright = c.Optional(c.Type(str))
+     """A copyright notice to add to the footer of documentation."""
+ 
+diff --git a/judge/pristine/mkdocs/contrib/search/__init__.py b/judge/design-K/mkdocs/contrib/search/__init__.py
+index 74b96bb..369b6ca 100644
+--- a/judge/pristine/mkdocs/contrib/search/__init__.py
++++ b/judge/design-K/mkdocs/contrib/search/__init__.py
+@@ -71,10 +71,11 @@ class SearchPlugin(BasePlugin[_PluginConfig]):
+             config.theme.dirs.append(path)
+             if 'search/main.js' not in config.extra_javascript:
+                 config.extra_javascript.append('search/main.js')  # type: ignore
+-        if self.config.lang is None:
+-            # lang setting undefined. Set default based on theme locale
+-            validate = _PluginConfig.lang.run_validation
+-            self.config.lang = validate(config.theme.locale.language)
++        # If the lang setting is undefined, follow the theme locale (in a multi-language site,
++        # it changes for each language, see `on_pre_build`).
++        self._lang_from_locale = self.config.lang is None
++        if self._lang_from_locale:
++            self.config.lang = self._lang_for_locale(config)
+         # The `python` method of `prebuild_index` is pending deprecation as of version 1.2.
+         # TODO: Raise a deprecation warning in a future release (1.3?).
+         if self.config.prebuild_index == 'python':
+@@ -84,8 +85,17 @@ class SearchPlugin(BasePlugin[_PluginConfig]):
+             )
+         return config
+ 
++    _lang_from_locale = False
++
++    @staticmethod
++    def _lang_for_locale(config: MkDocsConfig) -> list[str]:
++        return _PluginConfig.lang.run_validation(config.theme.locale.language)
++
+     def on_pre_build(self, config: MkDocsConfig, **kwargs) -> None:
+         """Create search index instance for later use."""
++        if self._lang_from_locale and config.languages is not None:
++            # Each language site gets its own index, for its own language.
++            self.config.lang = self._lang_for_locale(config)
+         self.search_index = SearchIndex(**self.config)
+ 
+     def on_page_context(self, context: TemplateContext, page: Page, **kwargs) -> None:
+diff --git a/judge/pristine/mkdocs/structure/files.py b/judge/design-K/mkdocs/structure/files.py
+index 86f94bd..e5d3d34 100644
+--- a/judge/pristine/mkdocs/structure/files.py
++++ b/judge/design-K/mkdocs/structure/files.py
+@@ -524,8 +524,14 @@ class File:
+ _default_exclude = pathspec.gitignore.GitIgnoreSpec.from_lines(['.*', '/templates/'])
+ 
+ 
+-def set_exclusions(files: Iterable[File], config: MkDocsConfig) -> None:
+-    """Re-calculate which files are excluded, based on the patterns in the config."""
++def set_exclusions(files: Iterable[File], config: MkDocsConfig, *, path_prefix: str = '') -> None:
++    """
++    Re-calculate which files are excluded, based on the patterns in the config.
++
++    The patterns are matched against `path_prefix` + `src_uri` of each file. The prefix places
++    files that do not come from the root of `docs_dir` (the pages of a language in a
++    multi-language site) at their actual path within it.
++    """
+     exclude: pathspec.gitignore.GitIgnoreSpec | None = config.get('exclude_docs')
+     exclude = _default_exclude + exclude if exclude else _default_exclude
+     drafts: pathspec.gitignore.GitIgnoreSpec | None = config.get('draft_docs')
+@@ -533,22 +539,31 @@ def set_exclusions(files: Iterable[File], config: MkDocsConfig) -> None:
+ 
+     for file in files:
+         if file.inclusion == InclusionLevel.UNDEFINED:
+-            if exclude.match_file(file.src_uri):
++            path = path_prefix + file.src_uri
++            if exclude.match_file(path):
+                 file.inclusion = InclusionLevel.EXCLUDED
+-            elif drafts and drafts.match_file(file.src_uri):
++            elif drafts and drafts.match_file(path):
+                 file.inclusion = InclusionLevel.DRAFT
+-            elif nav_exclude and nav_exclude.match_file(file.src_uri):
++            elif nav_exclude and nav_exclude.match_file(path):
+                 file.inclusion = InclusionLevel.NOT_IN_NAV
+             else:
+                 file.inclusion = InclusionLevel.INCLUDED
+ 
+ 
+-def get_files(config: MkDocsConfig) -> Files:
+-    """Walk the `docs_dir` and return a Files collection."""
++def get_files(config: MkDocsConfig, *, docs_dir: str | None = None, path_prefix: str = '') -> Files:
++    """
++    Walk the `docs_dir` and return a Files collection.
++
++    `docs_dir` overrides the directory to walk (by default, the `docs_dir` of the config). If it
++    is a subdirectory of the docs directory, `path_prefix` is its path in there (with a trailing
++    slash), for matching the files against exclusion patterns (see `set_exclusions`).
++    """
++    if docs_dir is None:
++        docs_dir = config['docs_dir']
+     files: list[File] = []
+     conflicting_files: list[tuple[File, File]] = []
+-    for source_dir, dirnames, filenames in os.walk(config['docs_dir'], followlinks=True):
+-        relative_dir = os.path.relpath(source_dir, config['docs_dir'])
++    for source_dir, dirnames, filenames in os.walk(docs_dir, followlinks=True):
++        relative_dir = os.path.relpath(source_dir, docs_dir)
+         dirnames.sort()
+         filenames.sort(key=_file_sort_key)
+ 
+@@ -556,7 +571,7 @@ def get_files(config: MkDocsConfig) -> Files:
+         for filename in filenames:
+             file = File(
+                 os.path.join(relative_dir, filename),
+-                config['docs_dir'],
++                docs_dir,
+                 config['site_dir'],
+                 config['use_directory_urls'],
+             )
+@@ -567,7 +582,7 @@ def get_files(config: MkDocsConfig) -> Files:
+             files.append(file)
+             prev_file = file
+ 
+-    set_exclusions(files, config)
++    set_exclusions(files, config, path_prefix=path_prefix)
+     # Skip README.md if an index file also exists in dir (part 2)
+     for a, b in conflicting_files:
+         if b.inclusion.is_included():
+diff --git a/judge/design-K/mkdocs/structure/languages.py b/judge/design-K/mkdocs/structure/languages.py
+new file mode 100644
+index 0000000..31e14c7
+--- /dev/null
++++ b/judge/design-K/mkdocs/structure/languages.py
+@@ -0,0 +1,407 @@
++"""
++Multi-language sites.
++
++A site whose config declares `languages` is built as one site per language. The pages of
++language `xx` are read from `docs_dir/xx/` and written to `site_dir/xx/`; the default language
++is built a second time at the root of `site_dir`.
++
++Every language site contains every page. Where a language has no translation of a page, its
++site takes the page from the default language (failing that, from the other languages in their
++declared order) and shows it in its own chrome, marked as untranslated. As a result all
++language sites have the same set of pages at the same paths, which is what makes the links
++between the translations of a page (`Alternate`) always valid.
++
++This module holds the model (`Language`, `Alternate`) and `LanguageSite`, which assembles the
++files of one language site and localizes its navigation and pages. The build of each site is
++driven by `mkdocs.commands.build`.
++"""
++
++from __future__ import annotations
++
++import contextlib
++import logging
++import os
++from dataclasses import dataclass
++from typing import TYPE_CHECKING, Callable, Iterator, Sequence
++from urllib.parse import urljoin
++
++import jinja2
++from markupsafe import escape
++
++from mkdocs import localization
++from mkdocs.exceptions import BuildError
++from mkdocs.structure.files import Files, InclusionLevel, file_sort_key, get_files
++from mkdocs.structure.pages import _AbsoluteLinksValidationValue
++
++if TYPE_CHECKING:
++    from mkdocs.config.defaults import MkDocsConfig
++    from mkdocs.structure.files import File
++    from mkdocs.structure.pages import Page
++    from mkdocs.utils.templates import TemplateContext
++
++
++log = logging.getLogger(__name__)
++
++
++# Used only when Babel is not installed; with Babel, names and directions come from CLDR.
++_RTL_LANGUAGES = frozenset(
++    {'ar', 'arc', 'ckb', 'dv', 'fa', 'he', 'iw', 'ks', 'ku', 'ps', 'sd', 'ug', 'ur', 'yi'}
++)
++_ENDONYMS = {
++    'ar': 'العربية', 'bg': 'Български', 'bn': 'বাংলা', 'ca': 'Català', 'cs': 'Čeština',
++    'da': 'Dansk', 'de': 'Deutsch', 'el': 'Ελληνικά', 'en': 'English', 'es': 'Español',
++    'et': 'Eesti', 'fa': 'فارسی', 'fi': 'Suomi', 'fr': 'Français', 'he': 'עברית',
++    'hi': 'हिन्दी', 'hr': 'Hrvatski', 'hu': 'Magyar', 'id': 'Indonesia', 'it': 'Italiano',
++    'ja': '日本語', 'ko': '한국어', 'lt': 'Lietuvių', 'lv': 'Latviešu', 'nb': 'Norsk bokmål',
++    'nl': 'Nederlands', 'nn': 'Norsk nynorsk', 'no': 'Norsk', 'pl': 'Polski',
++    'pt': 'Português', 'ro': 'Română', 'ru': 'Русский', 'sk': 'Slovenčina',
++    'sl': 'Slovenščina', 'sr': 'Српски', 'sv': 'Svenska', 'th': 'ไทย', 'tr': 'Türkçe',
++    'uk': 'Українська', 'ur': 'اردو', 'vi': 'Tiếng Việt', 'zh': '中文',
++}  # fmt: skip
++
++
++@dataclass(frozen=True)
++class Language:
++    """A language of a multi-language site."""
++
++    code: str
++    """The code as declared in the config (`fr`, `pt_BR`); also the name of the language's
++    directory in `docs_dir` and of its URL prefix."""
++
++    name: str
++    """The name of the language in that language ("Français"), for language selectors."""
++
++    direction: str
++    """The writing direction of the language: `ltr` or `rtl`."""
++
++    is_default: bool = False
++    """Whether this is the default language of the site."""
++
++    @property
++    def html_lang(self) -> str:
++        """The code as a BCP 47 tag (`pt-BR`), for `lang` and `hreflang` attributes."""
++        return self.code.replace('_', '-')
++
++    @classmethod
++    def from_code(cls, code: str, *, is_default: bool = False) -> Language:
++        locale = localization.parse_locale(code)
++        if localization.has_babel:
++            name = locale.get_display_name() or code
++            name = name[:1].upper() + name[1:]
++            rtl = locale.character_order == 'right-to-left'
++        else:
++            name = _ENDONYMS.get(locale.language, code)
++            if locale.territory:
++                name = f'{name} ({locale.territory})'
++            rtl = locale.language in _RTL_LANGUAGES
++        return cls(code, name, 'rtl' if rtl else 'ltr', is_default=is_default)
++
++
++@dataclass(frozen=True)
++class Alternate:
++    """The version of the current page (or template) in one of the languages of the site."""
++
++    language: Language
++    """The language of this version."""
++
++    url: str
++    """The URL of this version, relative to the root of the *current* language site, like the
++    URLs of navigation items. Pass it through the `url` template filter."""
++
++    canonical_url: str | None
++    """The full URL of this version in its language's site, if `site_url` is set."""
++
++    active: bool
++    """Whether this is the version being viewed."""
++
++    translated: bool
++    """Whether the language has its own translation of the page. When `False`, this version
++    shows the untranslated page in that language's chrome."""
++
++
++def get_languages(config: MkDocsConfig) -> list[Language]:
++    """Return the languages of the site, the default one first; empty for a single-language site."""
++    if config.languages is None:
++        return []
++    return [
++        Language.from_code(code, is_default=(code == config.languages.default))
++        for code in config.languages.codes
++    ]
++
++
++def get_language_sites(config: MkDocsConfig) -> list[LanguageSite]:
++    """
++    Return the sites to build for a multi-language config, in build order.
++
++    The default language at the site root comes first, then every language (the default one
++    included) under its own prefix.
++    """
++    languages = get_languages(config)
++    if not languages:
++        return []
++    default = languages[0]
++    return [
++        LanguageSite(default, languages, config, prefix=''),
++        *(LanguageSite(lang, languages, config, prefix=f'{lang.code}/') for lang in languages),
++    ]
++
++
++def warn_about_files_outside_languages(config: MkDocsConfig) -> None:
++    """Report entries of `docs_dir` that are not in the directory of any declared language."""
++    assert config.languages is not None
++    codes = set(config.languages.codes)
++    stray = sorted(
++        name
++        for name in os.listdir(config.docs_dir)
++        if name not in codes and not name.startswith('.') and name != 'templates'
++    )
++    if stray:
++        log.warning(
++            "The following items in the docs directory are outside the directories of the "
++            "declared languages, and are not part of the site:\n  - " + '\n  - '.join(stray)
++        )
++
++
++class LanguageSite:
++    """
++    One site of a multi-language build: a language, served under a URL prefix.
++
++    `prefix` is `'fr/'` for the site of `fr`, and `''` for the default language's copy at the
++    root of the site.
++
++    Use it in this order during a build: `configure()` the config for the site, then
++    `collect_files()`, then `localize_nav()` and `localize_page()`.
++    """
++
++    def __init__(
++        self,
++        language: Language,
++        languages: Sequence[Language],
++        config: MkDocsConfig,
++        *,
++        prefix: str,
++    ) -> None:
++        self.language = language
++        self.languages = list(languages)
++        self.prefix = prefix
++        self._root_docs_dir = config.docs_dir
++        self._root_site_dir = config.site_dir
++        self._root_site_url = config.site_url
++        self._content_languages: dict[str, Language] = {}
++        self._translated: dict[str, set[str]] = {}
++
++    def __repr__(self):
++        return f"{type(self).__name__}(language={self.language.code!r}, prefix={self.prefix!r})"
++
++    language: Language
++    """The language of the site: of its chrome, and of its pages where they are translated."""
++
++    languages: list[Language]
++    """All languages of the site, the default one first."""
++
++    prefix: str
++    """The path of this site within the whole site: `'<code>/'`, or `''` for the root copy."""
++
++    @property
++    def is_root(self) -> bool:
++        """Whether this is the default language's copy at the root of the site."""
++        return not self.prefix
++
++    def language_dir(self, language: Language) -> str:
++        """The directory holding the pages of `language`."""
++        return os.path.join(self._root_docs_dir, language.code)
++
++    @contextlib.contextmanager
++    def configure(self, config: MkDocsConfig) -> Iterator[None]:
++        """
++        Point the config at this site for the duration of its build, then restore it.
++
++        Within the block, `docs_dir` is the language's directory, `site_dir` and `site_url`
++        point at this site, and the theme's locale is the site's language.
++        """
++        saved = {key: config[key] for key in ('docs_dir', 'site_dir', 'site_url', 'nav')}
++        saved_locale = config.theme['locale']
++        try:
++            config.docs_dir = self.language_dir(self.language)
++            config.site_dir = os.path.join(self._root_site_dir, self.prefix)
++            if self._root_site_url:
++                config.site_url = urljoin(self._root_site_url, self.prefix)
++            config.theme['locale'] = localization.parse_locale(self.language.code)
++            yield
++        finally:
++            for key, value in saved.items():
++                config[key] = value
++            config.theme['locale'] = saved_locale
++
++    def collect_files(
++        self,
++        config: MkDocsConfig,
++        *,
++        inclusion: Callable[[InclusionLevel], bool] = InclusionLevel.is_included,
++    ) -> Files:
++        """
++        Return the files of this site: the language's own files, completed from the others.
++
++        For each path, the file comes from the first language that has it, in this order: the
++        site's language, the default language, then the others as declared. A file that would
++        not be built (per `inclusion`, e.g. a draft translation) gives way to one that would.
++        """
++        # Exclusion patterns (`exclude_docs`, `draft_docs`, `not_in_nav`) keep their meaning of
++        # paths within the docs dir, so `fr/guide.md` is a file of `fr` and `guide.md` of any.
++        own_files = {
++            lang.code: get_files(
++                config, docs_dir=self.language_dir(lang), path_prefix=f'{lang.code}/'
++            )
++            if os.path.isdir(self.language_dir(lang))
++            else Files([])
++            for lang in self.languages
++        }
++        self._translated = {
++            code: {f.dest_uri for f in files.documentation_pages(inclusion=inclusion)}
++            for code, files in own_files.items()
++        }
++        chain = [self.language, *(lang for lang in self.languages if lang != self.language)]
++
++        chosen: dict[str, File] = {}
++        taken_dest_uris: set[str] = set()
++        self._content_languages = {}
++        for built in (True, False):
++            for lang in chain:
++                for file in own_files[lang.code]:
++                    if bool(inclusion(file.inclusion)) is not built:
++                        continue
++                    if file.src_uri in chosen or file.dest_uri in taken_dest_uris:
++                        continue
++                    # Paths in the repository are relative to the root docs_dir.
++                    file.edit_uri = f'{lang.code}/{file.src_uri}'
++                    chosen[file.src_uri] = file
++                    taken_dest_uris.add(file.dest_uri)
++                    self._content_languages[file.src_uri] = lang
++        files = Files(sorted(chosen.values(), key=file_sort_key))
++
++        pages = files.documentation_pages(inclusion=inclusion)
++        untranslated = sum(1 for f in pages if self.content_language(f) != self.language)
++        if untranslated:
++            log.info(
++                f"{untranslated} of {len(pages)} pages have no '{self.language.code}' "
++                "translation, and are shown in another language."
++            )
++        return files
++
++    def check_conflicts(self, files: Files) -> None:
++        """Fail if a file of the root copy would be written into the site of a language."""
++        if not self.is_root:
++            return
++        prefixes = tuple(f'{lang.code}/' for lang in self.languages)
++        conflicts = sorted(f.src_uri for f in files if f.dest_uri.startswith(prefixes))
++        if conflicts:
++            raise BuildError(
++                f"The default language '{self.language.code}' has files that would be served at "
++                "the same location as the site of a language (the default language is also "
++                "served at the site root). Rename or move them:\n  - " + '\n  - '.join(conflicts)
++            )
++
++    def content_language(self, file: File) -> Language:
++        """The language that `file` is written in (files added by plugins count as translated)."""
++        return self._content_languages.get(file.src_uri, self.language)
++
++    def localize_nav(self, nav_config, files: Files, config: MkDocsConfig):
++        """
++        Adapt the `nav` config to this site's language.
++
++        Titles in the `nav` config are taken to be in the default language. In any other
++        language, a page that is translated is titled by its own title instead.
++        """
++        if nav_config is None or self.language.is_default:
++            return nav_config
++
++        def is_translated(path: str) -> bool:
++            if (
++                path.startswith('/')
++                and config.validation.nav.absolute_links
++                is _AbsoluteLinksValidationValue.RELATIVE_TO_DOCS
++            ):
++                path = path.lstrip('/')
++            file = files.get_file_from_path(path)
++            return file is not None and self.content_language(file) == self.language
++
++        def localize(item):
++            if isinstance(item, list):
++                return [localize(child) for child in item]
++            if isinstance(item, dict):
++                if len(item) > 1:  # Same as a list of the items, which can then lose titles.
++                    return [localize({title: value}) for title, value in item.items()]
++                for title, value in item.items():
++                    if isinstance(value, str):
++                        return value if is_translated(value) else item
++                    return {title: localize(value)}  # A section.
++            return item
++
++        return localize(nav_config)
++
++    def localize_page(self, page: Page) -> None:
++        """Set the language attributes of `page`, a page of this site."""
++        page.language = self.language
++        page.content_language = self.content_language(page.file)
++        page.alternates = self.alternates(page.url, dest_uri=page.file.dest_uri)
++        if self.is_root and page.canonical_url is not None:
++            # The root copy duplicates the default language's site, which is the canonical one.
++            page.canonical_url = next(a.canonical_url for a in page.alternates if a.active)
++
++    def alternates(self, url: str = '', *, dest_uri: str | None = None) -> list[Alternate]:
++        """
++        Return the versions, in every language, of the page at `url` in this site.
++
++        `dest_uri` identifies the page among each language's own files; without it (for
++        templates, which are rendered in every language) all versions count as translated.
++        """
++        up = '' if self.is_root else '../'
++        result = []
++        for lang in self.languages:
++            active = lang == self.language
++            result.append(
++                Alternate(
++                    language=lang,
++                    url=url if active else f'{up}{lang.code}/{url}',
++                    canonical_url=urljoin(self._root_site_url, f'{lang.code}/{url}')
++                    if self._root_site_url
++                    else None,
++                    active=active,
++                    translated=dest_uri is None or dest_uri in self._translated.get(lang.code, ()),
++                )
++            )
++        return result
++
++
++UNTRANSLATED_NOTICE_TEMPLATE = 'untranslated-notice.html'
++"""The theme template that renders the notice on untranslated pages, if the theme has one."""
++
++_DEFAULT_UNTRANSLATED_NOTICE = (
++    '<div class="mkdocs-untranslated-notice" role="note">'
++    '{% trans language=page.language.name, source=page.content_language.name %}'
++    'This page has not been translated into {{ language }} yet. It is shown in {{ source }}.'
++    '{% endtrans %}'
++    '</div>'
++)
++
++
++def mark_untranslated(page: Page, env: jinja2.Environment, context: TemplateContext) -> str:
++    """
++    Return the content of an untranslated `page`, preceded by a notice in the site's language.
++
++    The notice is the theme's `untranslated-notice.html` template if it has one, rendered with
++    the page's context. The content itself is marked with the language it is written in.
++    """
++    try:
++        template = env.get_template(UNTRANSLATED_NOTICE_TEMPLATE)
++    except jinja2.TemplateNotFound:
++        template = env.from_string(_DEFAULT_UNTRANSLATED_NOTICE)
++    notice = template.render(context)
++    source = page.content_language
++    assert source is not None
++    return (
++        notice
++        + f'<div lang="{escape(source.html_lang)}" dir="{escape(source.direction)}">'
++        + (page.content or '')
++        + '</div>'
++    )
+diff --git a/judge/pristine/mkdocs/structure/pages.py b/judge/design-K/mkdocs/structure/pages.py
+index 52f5cb3..1720ab9 100644
+--- a/judge/pristine/mkdocs/structure/pages.py
++++ b/judge/design-K/mkdocs/structure/pages.py
+@@ -26,6 +26,7 @@ if TYPE_CHECKING:
+ 
+     from mkdocs.config.defaults import MkDocsConfig
+     from mkdocs.structure.files import File, Files
++    from mkdocs.structure.languages import Alternate, Language
+     from mkdocs.structure.toc import TableOfContents
+ 
+ 
+@@ -158,6 +159,26 @@ class Page(StructureItem):
+     is_link: bool = False
+     """Indicates that the navigation object is a "link" object. Always `False` for page objects."""
+ 
++    language: Language | None = None
++    """In a multi-language site, the [language][mkdocs.structure.languages.Language] of the site
++    that the page is part of: the language of the chrome around the page. `None` in a
++    single-language site."""
++
++    content_language: Language | None = None
++    """In a multi-language site, the language that the content of the page is written in. It
++    differs from `language` when the page is not translated into `language`."""
++
++    alternates: Sequence[Alternate] = ()
++    """In a multi-language site, the versions of this page in every language of the site
++    (including the one being viewed), as [alternates][mkdocs.structure.languages.Alternate].
++    Empty in a single-language site."""
++
++    @property
++    def is_untranslated(self) -> bool:
++        """Whether the page is shown in a language it is not translated into (its content is in
++        `content_language`, its chrome in `language`)."""
++        return self.language is not None and self.content_language != self.language
++
+     def _set_canonical_url(self, base: str | None) -> None:
+         if base:
+             if not base.endswith('/'):
+diff --git a/judge/design-K/mkdocs/tests/languages_tests.py b/judge/design-K/mkdocs/tests/languages_tests.py
+new file mode 100644
+index 0000000..67f2652
+--- /dev/null
++++ b/judge/design-K/mkdocs/tests/languages_tests.py
+@@ -0,0 +1,366 @@
++#!/usr/bin/env python
++from __future__ import annotations
++
++import json
++import os
++import unittest
++from pathlib import Path
++
++from mkdocs.commands import build
++from mkdocs.config import config_options as c
++from mkdocs.config.base import Config
++from mkdocs.exceptions import Abort
++from mkdocs.structure.languages import Language, get_language_sites
++from mkdocs.tests.base import PathAssertionMixin, load_config, tempdir
++from mkdocs.tests.config.config_options_tests import TestCase as ConfigTestCase
++
++MULTI_LANGUAGE_DOCS = {
++    'en/index.md': '# Welcome\n\nHello reader. Read [the guide](guide.md).',
++    'en/guide.md': '# User guide\n\n## Install\n\nInstall the thing.',
++    'en/sub/page.md': '# Sub page\n\nSee [install](../guide.md#install).',
++    'en/img/logo.png': 'fake image',
++    'fr/index.md': '# Bienvenue\n\nBonjour lecteur. Lisez [le guide](guide.md).',
++    'fr/only-fr.md': '# Seulement en français\n\nContenu français.',
++    'he/index.md': '# ברוכים הבאים\n\nשלום.',
++}
++
++
++def read(*parts: str) -> str:
++    return Path(*parts).read_text(encoding='utf-8')
++
++
++def titles_in_search_index(site_dir: str) -> dict[str, str]:
++    with open(os.path.join(site_dir, 'search', 'search_index.json'), encoding='utf-8') as f:
++        index = json.load(f)
++    return {doc['location']: doc['title'] for doc in index['docs'] if '#' not in doc['location']}
++
++
++class LanguagesConfigTests(ConfigTestCase):
++    class Schema(Config):
++        docs_dir = c.Dir(exists=True)
++        languages = c.Languages()
++
++    @tempdir(['en/index.md'])
++    def test_not_set(self, docs_dir):
++        conf = self.get_config(self.Schema, {'docs_dir': docs_dir})
++        self.assertIsNone(conf.languages)
++
++    @tempdir(['en/index.md'])
++    def test_valid(self, docs_dir):
++        conf = self.get_config(
++            self.Schema,
++            {'docs_dir': docs_dir, 'languages': {'default': 'en', 'others': ['fr', 'pt_BR']}},
++        )
++        self.assertEqual(conf.languages.default, 'en')
++        self.assertEqual(conf.languages.others, ['fr', 'pt_BR'])
++        self.assertEqual(conf.languages.codes, ['en', 'fr', 'pt_BR'])
++
++    @tempdir(['en/index.md'])
++    def test_default_only(self, docs_dir):
++        conf = self.get_config(self.Schema, {'docs_dir': docs_dir, 'languages': {'default': 'en'}})
++        self.assertEqual(conf.languages.codes, ['en'])
++
++    @tempdir(['en/index.md'])
++    def test_missing_default(self, docs_dir):
++        with self.expect_error(
++            languages="Sub-option 'default': Required configuration not provided."
++        ):
++            self.get_config(self.Schema, {'docs_dir': docs_dir, 'languages': {'others': ['fr']}})
++
++    @tempdir(['en/index.md'])
++    def test_not_a_mapping(self, docs_dir):
++        with self.expect_error(
++            languages="Expected a mapping with a 'default' language and optionally a list of "
++            "'others', but received: <class 'list'>"
++        ):
++            self.get_config(self.Schema, {'docs_dir': docs_dir, 'languages': ['en', 'fr']})
++
++    @tempdir(['en/index.md'])
++    def test_duplicate(self, docs_dir):
++        for others in (['fr', 'fr'], ['en']):
++            with self.subTest(others=others):
++                with self.expect_error(
++                    languages=f"The language '{others[0]}' is listed more than once."
++                ):
++                    self.get_config(
++                        self.Schema,
++                        {'docs_dir': docs_dir, 'languages': {'default': 'en', 'others': others}},
++                    )
++
++    @tempdir(['en/index.md'])
++    def test_invalid_code(self, docs_dir):
++        for code in ('fr-FR', '../fr', 'f r', ''):
++            with self.subTest(code=code):
++                with self.expect_error(
++                    languages=f"Invalid language code '{code}': expected a locale identifier "
++                    "such as 'fr' or 'pt_BR' (it is also used as a directory name and as a URL "
++                    "path segment)."
++                ):
++                    self.get_config(
++                        self.Schema,
++                        {'docs_dir': docs_dir, 'languages': {'default': 'en', 'others': [code]}},
++                    )
++
++    @tempdir(['fr/index.md'])
++    def test_missing_default_directory(self, docs_dir):
++        with self.expect_error(
++            languages=f"The directory of the default language 'en' does not exist: "
++            f"'{os.path.join(docs_dir, 'en')}'. The pages of each language go under "
++            "'<docs_dir>/<language>/'."
++        ):
++            self.get_config(
++                self.Schema,
++                {'docs_dir': docs_dir, 'languages': {'default': 'en', 'others': ['fr']}},
++            )
++
++
++class LanguageTests(unittest.TestCase):
++    def test_from_code(self):
++        fr = Language.from_code('fr')
++        self.assertEqual(fr.code, 'fr')
++        self.assertEqual(fr.name, 'Français')
++        self.assertEqual(fr.direction, 'ltr')
++        self.assertFalse(fr.is_default)
++        self.assertEqual(Language.from_code('he').direction, 'rtl')
++        self.assertTrue(Language.from_code('en', is_default=True).is_default)
++
++    def test_html_lang(self):
++        self.assertEqual(Language.from_code('pt_BR').html_lang, 'pt-BR')
++
++
++class MultiLanguageBuildTests(PathAssertionMixin, unittest.TestCase):
++    def _config(self, docs_dir, site_dir, **kwargs):
++        kwargs.setdefault('languages', {'default': 'en', 'others': ['fr', 'he']})
++        return load_config(docs_dir=docs_dir, site_dir=site_dir, **kwargs)
++
++    @tempdir(MULTI_LANGUAGE_DOCS)
++    @tempdir()
++    def test_every_page_in_every_language(self, site_dir, docs_dir):
++        build.build(self._config(docs_dir, site_dir))
++
++        for prefix in ('', 'en', 'fr', 'he'):
++            with self.subTest(site=prefix):
++                for path in ('index.html', 'guide/index.html', 'sub/page/index.html'):
++                    self.assertPathIsFile(site_dir, prefix, path)
++                # A page that only one language has is in every language too.
++                self.assertPathIsFile(site_dir, prefix, 'only-fr/index.html')
++                self.assertPathIsFile(site_dir, prefix, 'img/logo.png')
++                self.assertPathIsFile(site_dir, prefix, '404.html')
++                self.assertPathIsFile(site_dir, prefix, 'sitemap.xml')
++
++    @tempdir(MULTI_LANGUAGE_DOCS)
++    @tempdir()
++    def test_translated_page(self, site_dir, docs_dir):
++        build.build(self._config(docs_dir, site_dir))
++
++        html = read(site_dir, 'fr', 'index.html')
++        self.assertIn('<html lang="fr" dir="ltr"', html)
++        self.assertIn('Bonjour lecteur', html)
++        self.assertNotIn('Hello reader', html)
++        self.assertNotIn('mkdocs-untranslated-notice', html)
++        self.assertIn('<html lang="he" dir="rtl"', read(site_dir, 'he', 'index.html'))
++
++    @tempdir(MULTI_LANGUAGE_DOCS)
++    @tempdir()
++    def test_untranslated_page(self, site_dir, docs_dir):
++        build.build(self._config(docs_dir, site_dir))
++
++        html = read(site_dir, 'fr', 'guide', 'index.html')
++        # The chrome is French: its language, and its navigation with French titles.
++        self.assertIn('<html lang="fr" dir="ltr"', html)
++        self.assertIn('Bienvenue</a>', html)
++        self.assertNotIn('Welcome</a>', html)
++        # The default-language content is shown, marked as such, under a notice.
++        self.assertIn(
++            '<div class="alert alert-info mkdocs-untranslated-notice" role="note">', html
++        )
++        self.assertIn('This page has not been translated into Français yet.', html)
++        self.assertIn('It is shown in English.', html)
++        self.assertIn('<div lang="en" dir="ltr"><h1 id="user-guide">User guide</h1>', html)
++
++        # A page missing from the default language falls back to another language.
++        html = read(site_dir, 'en', 'only-fr', 'index.html')
++        self.assertIn('<html lang="en" dir="ltr"', html)
++        self.assertIn('It is shown in Français.', html)
++        self.assertIn('<div lang="fr" dir="ltr">', html)
++
++    @tempdir(MULTI_LANGUAGE_DOCS)
++    @tempdir()
++    def test_untranslated_notice_without_theme_support(self, site_dir, docs_dir):
++        custom_dir = os.path.join(docs_dir, '.theme')
++        os.makedirs(custom_dir)
++        Path(custom_dir, 'main.html').write_text('{{ page.content }}')
++        cfg = self._config(docs_dir, site_dir, theme={'name': None, 'custom_dir': custom_dir})
++        build.build(cfg)
++
++        self.assertEqual(
++            read(site_dir, 'he', 'guide', 'index.html'),
++            '<div class="mkdocs-untranslated-notice" role="note">This page has not been '
++            'translated into עברית yet. It is shown in English.</div>'
++            '<div lang="en" dir="ltr"><h1 id="user-guide">User guide</h1>\n'
++            '<h2 id="install">Install</h2>\n<p>Install the thing.</p></div>',
++        )
++
++    @tempdir(MULTI_LANGUAGE_DOCS)
++    @tempdir()
++    def test_links_between_languages(self, site_dir, docs_dir):
++        build.build(self._config(docs_dir, site_dir, site_url='https://example.com/docs/'))
++
++        html = read(site_dir, 'fr', 'guide', 'index.html')
++        self.assertIn('href="../../en/guide/" class="dropdown-item" hreflang="en"', html)
++        self.assertIn(
++            'href="./" class="dropdown-item active" aria-current="page" hreflang="fr"', html
++        )
++        self.assertIn('href="../../he/guide/" class="dropdown-item" hreflang="he"', html)
++        self.assertIn('<link rel="canonical" href="https://example.com/docs/fr/guide/">', html)
++        # Only real translations are declared as alternates to search engines.
++        self.assertIn(
++            '<link rel="alternate" hreflang="en" href="https://example.com/docs/en/guide/">', html
++        )
++        self.assertNotIn('<link rel="alternate" hreflang="fr"', html)
++
++        html = read(site_dir, 'index.html')
++        self.assertIn(
++            'href="." class="dropdown-item active" aria-current="page" hreflang="en"', html
++        )
++        self.assertIn('href="fr/" class="dropdown-item" hreflang="fr"', html)
++        # The copy at the root defers to the default language's own site.
++        self.assertIn('<link rel="canonical" href="https://example.com/docs/en/">', html)
++
++    @tempdir(MULTI_LANGUAGE_DOCS)
++    @tempdir()
++    def test_navigation_titles_per_language(self, site_dir, docs_dir):
++        cfg = self._config(
++            docs_dir,
++            site_dir,
++            nav=[{'Home': 'index.md'}, {'The guide': 'guide.md'}, 'only-fr.md'],
++            theme='readthedocs',
++        )
++        build.build(cfg)
++
++        en = read(site_dir, 'en', 'guide', 'index.html')
++        self.assertIn('>Home</a>', en)
++        self.assertIn('>The guide</a>', en)
++        self.assertIn('>Seulement en français</a>', en)
++        fr = read(site_dir, 'fr', 'guide', 'index.html')
++        # Titles of the nav config are default-language titles: a translated page uses its own.
++        self.assertIn('>Bienvenue</a>', fr)
++        self.assertNotIn('>Home</a>', fr)
++        self.assertIn('>The guide</a>', fr)
++        self.assertIn('<nav class="rst-languages"', fr)
++        self.assertIn('<div class="admonition note mkdocs-untranslated-notice" role="note">', fr)
++
++    @tempdir(MULTI_LANGUAGE_DOCS)
++    @tempdir()
++    def test_search_index_per_language(self, site_dir, docs_dir):
++        build.build(self._config(docs_dir, site_dir, plugins=['search']))
++
++        expected = {'guide/': 'User guide', 'only-fr/': 'Seulement en français'}
++        self.assertEqual(
++            titles_in_search_index(os.path.join(site_dir, 'fr')),
++            {'': 'Bienvenue', 'sub/page/': 'Sub page', **expected},
++        )
++        self.assertEqual(
++            titles_in_search_index(os.path.join(site_dir, 'en')),
++            {'': 'Welcome', 'sub/page/': 'Sub page', **expected},
++        )
++        self.assertEqual(titles_in_search_index(site_dir), titles_in_search_index(site_dir + '/en'))
++        with open(os.path.join(site_dir, 'fr', 'search', 'search_index.json')) as f:
++            index = json.load(f)
++        self.assertEqual(index['config']['lang'], ['fr'])
++        self.assertNotIn('Hello reader', json.dumps(index))
++        self.assertPathIsFile(site_dir, 'fr', 'search', 'lunr.fr.js')
++
++    @tempdir(MULTI_LANGUAGE_DOCS)
++    @tempdir()
++    def test_draft_translation_falls_back(self, site_dir, docs_dir):
++        Path(docs_dir, 'fr', 'guide.md').write_text('# Guide en cours')
++        cfg = self._config(docs_dir, site_dir, draft_docs='fr/guide.md')
++
++        build.build(cfg)
++        html = read(site_dir, 'fr', 'guide', 'index.html')
++        self.assertIn('User guide', html)
++        self.assertIn('mkdocs-untranslated-notice', html)
++
++        build.build(cfg, serve_url='http://localhost:123/')
++        html = read(site_dir, 'fr', 'guide', 'index.html')
++        self.assertIn('Guide en cours', html)
++        self.assertIn('DRAFT', html)
++        self.assertNotIn('mkdocs-untranslated-notice', html)
++
++    @tempdir(MULTI_LANGUAGE_DOCS)
++    @tempdir()
++    def test_edit_url_points_to_source_file(self, site_dir, docs_dir):
++        cfg = self._config(docs_dir, site_dir, repo_url='https://github.com/x/y/')
++        build.build(cfg)
++        self.assertIn('/edit/master/docs/fr/index.md"', read(site_dir, 'fr', 'index.html'))
++        self.assertIn('/edit/master/docs/en/guide.md"', read(site_dir, 'fr', 'guide', 'index.html'))
++
++    @tempdir({**MULTI_LANGUAGE_DOCS, 'en/fr/intro.md': 'In the way'})
++    @tempdir()
++    def test_conflict_with_a_language_site(self, site_dir, docs_dir):
++        with self.assertLogs('mkdocs', level='ERROR') as cm:
++            with self.assertRaises(Abort):
++                build.build(self._config(docs_dir, site_dir))
++        self.assertIn("  - fr/intro.md", cm.output[0])
++
++    @tempdir({**MULTI_LANGUAGE_DOCS, 'README.md': 'Outside of any language'})
++    @tempdir()
++    def test_files_outside_languages(self, site_dir, docs_dir):
++        with self.assertLogs('mkdocs', level='WARNING') as cm:
++            build.build(self._config(docs_dir, site_dir))
++        self.assertEqual(
++            cm.output,
++            [
++                'WARNING:mkdocs.structure.languages:The following items in the docs directory '
++                'are outside the directories of the declared languages, and are not part of '
++                'the site:\n  - README.md'
++            ],
++        )
++        self.assertNotIn('Outside', read(site_dir, 'index.html'))
++
++    @tempdir(MULTI_LANGUAGE_DOCS)
++    @tempdir()
++    def test_messages_are_not_repeated_for_each_language(self, site_dir, docs_dir):
++        Path(docs_dir, 'en', 'guide.md').write_text('[missing](missing.md)')
++        with self.assertLogs('mkdocs', level='WARNING') as cm:
++            build.build(self._config(docs_dir, site_dir))
++        self.assertEqual(len(cm.output), 1, cm.output)
++
++    @tempdir(MULTI_LANGUAGE_DOCS)
++    @tempdir()
++    def test_config_is_restored(self, site_dir, docs_dir):
++        cfg = self._config(docs_dir, site_dir, nav=[{'Home': 'index.md'}, 'guide.md'])
++        before = {k: cfg[k] for k in ('docs_dir', 'site_dir', 'site_url', 'nav')}
++        locale = cfg.theme.locale
++        build.build(cfg)
++        self.assertEqual({k: cfg[k] for k in before}, before)
++        self.assertEqual(cfg.theme.locale, locale)
++
++    @tempdir(MULTI_LANGUAGE_DOCS)
++    def test_language_sites(self, docs_dir):
++        cfg = self._config(docs_dir, os.path.join(docs_dir, os.pardir, 'site'))
++        sites = get_language_sites(cfg)
++        self.assertEqual(
++            [(s.language.code, s.prefix) for s in sites],
++            [('en', ''), ('en', 'en/'), ('fr', 'fr/'), ('he', 'he/')],
++        )
++        self.assertEqual(
++            [(a.language.code, a.url, a.active) for a in sites[2].alternates('guide/')],
++            [('en', '../en/guide/', False), ('fr', 'guide/', True), ('he', '../he/guide/', False)],
++        )
++        self.assertEqual(
++            [a.url for a in sites[0].alternates('guide/')], ['guide/', 'fr/guide/', 'he/guide/']
++        )
++
++
++class SingleLanguageBuildTests(unittest.TestCase):
++    @tempdir({'index.md': '# Home'})
++    @tempdir()
++    def test_no_language_chrome(self, site_dir, docs_dir):
++        build.build(load_config(docs_dir=docs_dir, site_dir=site_dir))
++        html = read(site_dir, 'index.html')
++        self.assertIn('<html lang="en" data-bs-theme="light">', html)
++        self.assertNotIn('hreflang', html)
++        self.assertNotIn('fa-language', html)
++        self.assertFalse(os.path.exists(os.path.join(site_dir, 'en')))
+diff --git a/judge/pristine/mkdocs/themes/mkdocs/base.html b/judge/design-K/mkdocs/themes/mkdocs/base.html
+index e8c8c45..7638f59 100644
+--- a/judge/pristine/mkdocs/themes/mkdocs/base.html
++++ b/judge/design-K/mkdocs/themes/mkdocs/base.html
+@@ -1,5 +1,5 @@
+ <!DOCTYPE html>
+-<html lang="{{ config.theme.locale|default('en') }}" data-bs-theme="{{ config.theme.color_mode }}">
++<html lang="{% if language %}{{ language.html_lang }}{% else %}{{ config.theme.locale|default('en') }}{% endif %}"{% if language %} dir="{{ language.direction }}"{% endif %} data-bs-theme="{{ config.theme.color_mode }}">
+     <head>
+       {%- block site_meta %}
+         <meta charset="utf-8">
+@@ -8,6 +8,9 @@
+         {% if page and page.is_homepage %}<meta name="description" content="{{ config.site_description }}">{% endif %}
+         {% if config.site_author %}<meta name="author" content="{{ config.site_author }}">{% endif %}
+         {% if page and page.canonical_url %}<link rel="canonical" href="{{ page.canonical_url }}">{% endif %}
++        {%- for alternate in alternates if page and alternate.translated and alternate.canonical_url %}
++        <link rel="alternate" hreflang="{{ alternate.language.html_lang }}" href="{{ alternate.canonical_url }}">
++        {%- endfor %}
+         {% if config.site_favicon %}<link rel="shortcut icon" href="{{ config.site_favicon|url }}">
+         {% else %}<link rel="shortcut icon" href="{{ 'img/favicon.ico'|url }}">{% endif %}
+       {%- endblock %}
+@@ -76,7 +79,7 @@
+                 <a class="navbar-brand" href="{{ nav.homepage.url|url }}">{{ config.site_name }}</a>
+                 {%- endblock %}
+ 
+-                {%- if nav|length>1 or (page and (page.next_page or page.previous_page)) or config.repo_url %}
++                {%- if nav|length>1 or (page and (page.next_page or page.previous_page)) or config.repo_url or alternates|length > 1 %}
+                 <!-- Expander button -->
+                 <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                     <span class="navbar-toggler-icon"></span>
+@@ -110,6 +113,23 @@
+                   {%- endblock %}
+ 
+                     <ul class="nav navbar-nav ms-md-auto">
++                      {%- block languages %}
++                        {%- if alternates|length > 1 %}
++                        <li class="nav-item dropdown">
++                            <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="{% trans %}Language{% endtrans %}">
++                                <i class="fa fa-language"></i> {{ language.name }}
++                            </a>
++                            <ul class="dropdown-menu dropdown-menu-end">
++                            {%- for alternate in alternates %}
++                                <li>
++                                    <a href="{{ alternate.url|url }}" class="dropdown-item{% if alternate.active %} active" aria-current="page{% endif %}" hreflang="{{ alternate.language.html_lang }}" lang="{{ alternate.language.html_lang }}" dir="{{ alternate.language.direction }}">{{ alternate.language.name }}</a>
++                                </li>
++                            {%- endfor %}
++                            </ul>
++                        </li>
++                        {%- endif %}
++                      {%- endblock %}
++
+                       {%- block search_button %}
+                         {%- if 'search' in config.plugins %}
+                         <li class="nav-item">
+diff --git a/judge/pristine/mkdocs/themes/mkdocs/locales/fr/LC_MESSAGES/messages.po b/judge/design-K/mkdocs/themes/mkdocs/locales/fr/LC_MESSAGES/messages.po
+index 95c35e6..c7329b8 100644
+--- a/judge/pristine/mkdocs/themes/mkdocs/locales/fr/LC_MESSAGES/messages.po
++++ b/judge/design-K/mkdocs/themes/mkdocs/locales/fr/LC_MESSAGES/messages.po
+@@ -101,3 +101,15 @@ msgstr "Aucun résultat trouvé"
+ msgid "Table of Contents"
+ msgstr "Table des matières"
+ 
++#: mkdocs/themes/mkdocs/base.html:119
++msgid "Language"
++msgstr "Langue"
++
++#: mkdocs/themes/mkdocs/untranslated-notice.html:3
++#, python-format
++msgid ""
++"This page has not been translated into %(language)s yet. It is shown in "
++"%(source)s."
++msgstr ""
++"Cette page n'a pas encore été traduite en %(language)s. Elle est affichée en "
++"%(source)s."
+diff --git a/judge/pristine/mkdocs/themes/mkdocs/messages.pot b/judge/design-K/mkdocs/themes/mkdocs/messages.pot
+index 828dd2e..40cea25 100644
+--- a/judge/pristine/mkdocs/themes/mkdocs/messages.pot
++++ b/judge/design-K/mkdocs/themes/mkdocs/messages.pot
+@@ -99,3 +99,13 @@ msgstr ""
+ msgid "Table of Contents"
+ msgstr ""
+ 
++#: mkdocs/themes/mkdocs/base.html:119
++msgid "Language"
++msgstr ""
++
++#: mkdocs/themes/mkdocs/untranslated-notice.html:3
++#, python-format
++msgid ""
++"This page has not been translated into %(language)s yet. It is shown in "
++"%(source)s."
++msgstr ""
+diff --git a/judge/design-K/mkdocs/themes/mkdocs/untranslated-notice.html b/judge/design-K/mkdocs/themes/mkdocs/untranslated-notice.html
+new file mode 100644
+index 0000000..43f4da0
+--- /dev/null
++++ b/judge/design-K/mkdocs/themes/mkdocs/untranslated-notice.html
+@@ -0,0 +1,4 @@
++<div class="alert alert-info mkdocs-untranslated-notice" role="note">
++    <i class="fa fa-language"></i>
++    {% trans language=page.language.name, source=page.content_language.name %}This page has not been translated into {{ language }} yet. It is shown in {{ source }}.{% endtrans %}
++</div>
+diff --git a/judge/pristine/mkdocs/themes/readthedocs/base.html b/judge/design-K/mkdocs/themes/readthedocs/base.html
+index 4265d4a..8bff7c9 100644
+--- a/judge/pristine/mkdocs/themes/readthedocs/base.html
++++ b/judge/design-K/mkdocs/themes/readthedocs/base.html
+@@ -1,5 +1,5 @@
+ <!DOCTYPE html>
+-<html class="writer-html5" lang="{{ config.theme.locale|default('en') }}" >
++<html class="writer-html5" lang="{% if language %}{{ language.html_lang }}{% else %}{{ config.theme.locale|default('en') }}{% endif %}"{% if language %} dir="{{ language.direction }}"{% endif %} >
+ <head>
+   {%- block site_meta %}
+     <meta charset="utf-8" />
+@@ -8,6 +8,9 @@
+     {%- if page and page.is_homepage %}<meta name="description" content="{{ config.site_description }}" />{%- endif %}
+     {%- if config.site_author %}<meta name="author" content="{{ config.site_author }}" />{%- endif %}
+     {%- if page and page.canonical_url %}<link rel="canonical" href="{{ page.canonical_url }}" />{%- endif %}
++    {%- for alternate in alternates if page and alternate.translated and alternate.canonical_url %}
++    <link rel="alternate" hreflang="{{ alternate.language.html_lang }}" href="{{ alternate.canonical_url }}" />
++    {%- endfor %}
+     {%- if config.site_favicon %}
+       <link rel="shortcut icon" href="{{ config.site_favicon|url }}" />
+     {%- else %}
+@@ -105,6 +108,9 @@
+       {%- block search_button %}
+         {%- if 'search' in config.plugins %}{%- include "searchbox.html" %}{%- endif %}
+       {%- endblock %}
++      {%- block languages %}
++        {%- if alternates|length > 1 %}{%- include "languages.html" %}{%- endif %}
++      {%- endblock %}
+       </div>
+ 
+       <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="{% trans %}Navigation menu{% endtrans %}">
+diff --git a/judge/pristine/mkdocs/themes/readthedocs/css/theme_extra.css b/judge/design-K/mkdocs/themes/readthedocs/css/theme_extra.css
+index ab0631a..d08fc42 100644
+--- a/judge/pristine/mkdocs/themes/readthedocs/css/theme_extra.css
++++ b/judge/design-K/mkdocs/themes/readthedocs/css/theme_extra.css
+@@ -195,3 +195,28 @@ td, th {
+     flex: 1;
+     text-align: center;
+ }
++
++/*
++ * The language selector of multi-language sites, under the search box.
++ */
++.rst-languages ul {
++    margin: 12px 0 0;
++    padding: 0;
++    list-style: none;
++}
++
++.rst-languages li {
++    display: inline-block;
++    margin: 0 4px;
++}
++
++.rst-languages a {
++    color: #fcfcfc;
++    opacity: 0.85;
++}
++
++.rst-languages a:hover,
++.rst-languages a.current {
++    opacity: 1;
++    font-weight: bold;
++}
+diff --git a/judge/design-K/mkdocs/themes/readthedocs/languages.html b/judge/design-K/mkdocs/themes/readthedocs/languages.html
+new file mode 100644
+index 0000000..28e0ef9
+--- /dev/null
++++ b/judge/design-K/mkdocs/themes/readthedocs/languages.html
+@@ -0,0 +1,13 @@
++<nav class="rst-languages" aria-label="{% trans %}Language{% endtrans %}">
++  <ul>
++  {%- for alternate in alternates %}
++    <li>
++      {%- if alternate.active %}
++      <a href="{{ alternate.url|url }}" class="current" aria-current="page" hreflang="{{ alternate.language.html_lang }}" lang="{{ alternate.language.html_lang }}" dir="{{ alternate.language.direction }}">{{ alternate.language.name }}</a>
++      {%- else %}
++      <a href="{{ alternate.url|url }}" hreflang="{{ alternate.language.html_lang }}" lang="{{ alternate.language.html_lang }}" dir="{{ alternate.language.direction }}">{{ alternate.language.name }}</a>
++      {%- endif %}
++    </li>
++  {%- endfor %}
++  </ul>
++</nav>
+diff --git a/judge/pristine/mkdocs/themes/readthedocs/locales/fr/LC_MESSAGES/messages.po b/judge/design-K/mkdocs/themes/readthedocs/locales/fr/LC_MESSAGES/messages.po
+index 4138a18..cdc475e 100644
+--- a/judge/pristine/mkdocs/themes/readthedocs/locales/fr/LC_MESSAGES/messages.po
++++ b/judge/design-K/mkdocs/themes/readthedocs/locales/fr/LC_MESSAGES/messages.po
+@@ -111,3 +111,15 @@ msgstr "Rechercher des documents"
+ msgid "Versions"
+ msgstr "Versions"
+ 
++#: mkdocs/themes/readthedocs/languages.html:1
++msgid "Language"
++msgstr "Langue"
++
++#: mkdocs/themes/readthedocs/untranslated-notice.html:2
++#, python-format
++msgid ""
++"This page has not been translated into %(language)s yet. It is shown in "
++"%(source)s."
++msgstr ""
++"Cette page n'a pas encore été traduite en %(language)s. Elle est affichée en "
++"%(source)s."
+diff --git a/judge/pristine/mkdocs/themes/readthedocs/messages.pot b/judge/design-K/mkdocs/themes/readthedocs/messages.pot
+index 9780e91..5f41475 100644
+--- a/judge/pristine/mkdocs/themes/readthedocs/messages.pot
++++ b/judge/design-K/mkdocs/themes/readthedocs/messages.pot
+@@ -107,3 +107,13 @@ msgstr ""
+ msgid "Versions"
+ msgstr ""
+ 
++#: mkdocs/themes/readthedocs/languages.html:1
++msgid "Language"
++msgstr ""
++
++#: mkdocs/themes/readthedocs/untranslated-notice.html:2
++#, python-format
++msgid ""
++"This page has not been translated into %(language)s yet. It is shown in "
++"%(source)s."
++msgstr ""
+diff --git a/judge/design-K/mkdocs/themes/readthedocs/untranslated-notice.html b/judge/design-K/mkdocs/themes/readthedocs/untranslated-notice.html
+new file mode 100644
+index 0000000..aae67cf
+--- /dev/null
++++ b/judge/design-K/mkdocs/themes/readthedocs/untranslated-notice.html
+@@ -0,0 +1,3 @@
++<div class="admonition note mkdocs-untranslated-notice" role="note">
++    <p>{% trans language=page.language.name, source=page.content_language.name %}This page has not been translated into {{ language }} yet. It is shown in {{ source }}.{% endtrans %}</p>
++</div>
+diff --git a/judge/pristine/mkdocs/utils/templates.py b/judge/design-K/mkdocs/utils/templates.py
+index 9a9848a..1cd158e 100644
+--- a/judge/pristine/mkdocs/utils/templates.py
++++ b/judge/design-K/mkdocs/utils/templates.py
+@@ -18,6 +18,7 @@ if TYPE_CHECKING:
+     from mkdocs.config.config_options import ExtraScriptValue
+     from mkdocs.config.defaults import MkDocsConfig
+     from mkdocs.structure.files import File
++    from mkdocs.structure.languages import Alternate, Language
+     from mkdocs.structure.nav import Navigation
+     from mkdocs.structure.pages import Page
+ 
+@@ -32,6 +33,8 @@ class TemplateContext(TypedDict):
+     build_date_utc: datetime.datetime
+     config: MkDocsConfig
+     page: Page | None
++    language: Language | None  # The language of the site, in a multi-language site.
++    alternates: Sequence[Alternate]  # The current page/template in every language of the site.
+ 
+ 
+ @contextfilter
+diff --git a/judge/pristine/mkdocs/utils/yaml.py b/judge/design-K/mkdocs/utils/yaml.py
+index 46745ee..4dd32e9 100644
+--- a/judge/pristine/mkdocs/utils/yaml.py
++++ b/judge/design-K/mkdocs/utils/yaml.py
+@@ -103,7 +103,10 @@ class RelativeDirPlaceholder(_DirPlaceholder):
+                 "The current file is not set for the '!relative' tag. "
+                 "It cannot be used in this context; the intended usage is within `markdown_extensions`."
+             )
+-        return os.path.dirname(os.path.join(self.config.docs_dir, current_page.file.src_path))
++        file = current_page.file
++        # In a multi-language site, a page may come from another language's directory.
++        src_dir = getattr(file, 'src_dir', None) or self.config.docs_dir
++        return os.path.dirname(os.path.join(src_dir, file.src_path))
+ 
+ 
+ def get_yaml_loader(loader=yaml.Loader, config: MkDocsConfig | None = None):

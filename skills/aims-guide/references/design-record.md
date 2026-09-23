@@ -1,64 +1,99 @@
-# The design record — how the method's outputs become co-located records
+# The design record — where design knowledge goes
 
-Everything the loop produces worth having *next year* is filed as a record **in the code tree**. The
-complete format is `../../../knowledge/format.md` (short, self-contained); fill-in skeletons for each
-record kind are in `assets/record-templates.md`; this file maps "what I just decided" to "which record".
-There are two homes, and the split is by *what the knowledge is about*.
+**The rule.** Discussions and decisions that are **not evident from the code itself** go in a `.md` file
+next to what they are about: beside the relevant file, in the relevant module's folder, or at the project
+root if they concern the whole project.
 
-## File-level → a companion beside the source file
+**Everything else belongs in the code's own documentation** — a name, a signature, a docstring, a comment
+at the line, a guard, a test. If the code can say it, that is where it goes, and no record is written.
 
-Knowledge **about one source file** goes in that file's companion — the same name plus `.md`, right
-next to it (`src/render.py` → `src/render.py.md`) — under three sections:
+That is the whole idea. The rest of this file is detail.
 
-- **Insights** — what was learned about this file (tried, failed, why).
-- **Decisions** — file-level choices and the rule they impose (append-only within the section).
+*(Shape of a record — frontmatter, sections, the anchor: `../../../knowledge/format.md`. Skeletons:
+`assets/record-templates.md`.)*
+
+## What is not evident from the code
+
+The code describes what *is*. A record is for what is **not** there — which is why nothing in the code
+asserts it:
+
+- why an alternative was **rejected**;
+- a **non-goal**, or a boundary declared deliberately (the one category measured unrecoverable from code
+  alone — `../../../experiments/improve-2026-09/bp19-aims-filed-records/`);
+- what was **tried and failed**, and the symptom;
+- an **assumption never proved** — said as unproved;
+- the **reason behind a decision once that reason is gone**;
+- the **history** — what a superseded decision was, and why it no longer holds.
+
+**The test: if you could delete the entry, write it in the code, and lose nothing, it belonged in the
+code.** This disposes of most candidates, including facts with an external cause — a library's defect, a
+contract, an incident. An external reason does not make something record material; only what a comment
+cannot say does. And "the code says it" means a reader would meet it, not that something enforces it.
+
+A record that restates the code is **duplicate state** — the one part of a record that can go wrong by
+itself. The code changes, the restatement is now false, and the anchor only *flags* the drift; nothing
+repairs it. What the code cannot hold has no such failure mode, because nothing else asserts it.
+
+*(When the product is prose — a method, a spec, this repo — "the code" is the shipped text: could the file
+simply say it? What survives is what a text cannot assert about itself, such as how it was misread.)*
+
+## Where
+
+| about… | goes in… |
+|---|---|
+| one file | `<file>.md` beside it — `src/render.py` → `src/render.py.md` |
+| a folder | `<dir>.md` beside it — `src/parsers/` → `src/parsers.md` |
+| a library | `dependencies.md` — a file that merely guards against a defect is not what the defect is about |
+| the project | the root record it concerns (below) |
+| something deleted | wherever its job went — never a companion for a removed file, which would sit beside nothing |
+
+**Most files never get a companion.** One appears the first time there is something durable to record about
+that file, never mechanically.
+
+Each of these holds the same three sections:
+
+- **Insights** — what was learned: tried, failed, why. Not what the code shows.
+- **Decisions** — the choice and the rule it imposes, **with what it rules out**. Append-only: supersede in
+  place, never rewrite. A rule the code already enforces is a docstring, not a Decision.
 - **Discussions** — trade-offs weighed, options considered, the road not taken.
 
-You read the whole companion when you touch the file, because it is all about that file. Anchor it on
-filing (`python3 .aims/anchor.py <companion>`) — it hashes the same-named source file. That path is
-where `/install-on` puts the tool in every project; the aims repo itself runs it from its source
-location, `knowledge/anchor.py`. This line owns the invocation — everywhere else refers to it.
+## Root records
 
-## System-level → a record at the repo root
-
-Knowledge that is **cross-cutting** (not about one file) goes to the matching root record:
-
-| The method produces… | root record |
+| about… | record |
 |---|---|
-| primary goal, use scenarios, non-goals | `goals.md` |
-| boundaries, seams, invariants, change axes — the shape of the system | `architecture.md` |
+| what the project is for — goal, use scenarios, non-goals | `goals.md` |
+| its shape — boundaries, seams, invariants, change axes | `architecture.md` |
 | the foundational substrate (language, framework, pervasive base) | `base-dependencies.md` |
-| a confined, replaceable dependency and what it is for | `dependencies.md` |
-| a system-wide architecture decision + rejected alternatives | `decisions/NNNN-slug.md` (an ADR) |
+| a dependency: what it is for, and what a caller must respect about it | `dependencies.md` |
+| a system-wide decision, correction, or finding of record | `decisions/NNNN-slug.md` |
 
-System records take **no anchor** (they are intent/architecture, not tied to one file). `decisions/`
-ADRs are append-only — to change one, add a new ADR that supersedes it, naming it.
+An ADR is **not only a decision**. It is also where a correction or a finding goes — that an earlier ADR's
+evidence no longer holds, that a result was withdrawn, that an alternative is *considered-but-untested*
+rather than rejected. Such an entry may leave the ADR it concerns unsuperseded; it corrects the record
+beside it rather than replacing it. ADRs are append-only.
 
-## The split, sharply
+There is no root "Insights" file and none is needed: a companion has three sections because it holds
+everything about one file, while a root record is already about its subject.
 
-- Is the knowledge **about one file**? → its companion, in the right section.
-- Is it **cross-cutting**? → the matching root record.
+## Anchoring
 
-Do not put a file-level insight at the root, and do not scatter a system-wide decision across file
-companions. If a would-be file-level insight actually concerns *several* files at once, that is usually a
-system-level fact (→ `architecture.md` or an ADR) or a signal the files share a responsibility that
-wants its own home (a add-feature objective) — not a note copied into many companions.
+A companion is anchored on filing: `python3 .aims/anchor.py <companion>` — it hashes the same-named source
+file. *(That is where `/install-on` puts the tool; this repo runs it from `knowledge/anchor.py`. This line
+owns the invocation; everywhere else refers to it.)* Folder and root records take no anchor — there is no
+single file to hash.
+
+A source file is any file the project ships, **including a Markdown one**: a companion for `guide.md` is
+`guide.md.md`. The double extension looks like a slip; it is the derivation working as specified.
 
 ## Who files, and when
 
-The Guide owns the records — from its own decisions and the design reasoning the Worker returns. At
-planning time file `goals.md`, `base-dependencies.md`, the substrate/architecture decisions; at build
-and review time, add file-level Insights/Decisions/Discussions to the companions of the files touched,
-and a superseding ADR when a system decision changed. An unfiled decision is a lost one.
+The Guide owns the records — from its own decisions and the design reasoning the Worker returns. At planning
+time: `goals.md`, `base-dependencies.md`, the substrate and architecture decisions. At build and review
+time: Insights/Decisions/Discussions on the files touched, and a superseding ADR when a system decision
+changed. An unfiled decision is a lost one.
 
-## Reading — navigate, don't read everything
+## Reading
 
-To understand a file, open its companion (all of it). For system context, read the root records
-(`goals.md`, `architecture.md`, the relevant ADR). Relevant knowledge is reached by *navigating* to the
-file or the root record — never by reading the whole project. A stale-flagged companion is *possibly*
-out of date; re-verify against the current code first.
-
-## Bootstrapping
-
-Create root records as they earn their place (`goals.md` first, usually). A source file gets a companion
-the first time there is something durable to record about it — not mechanically for every file.
+To understand a file, open its companion — all of it. For system context, read the root records. Navigate to
+what bears on the work; never read the whole project. A companion flagged stale is *possibly* out of date —
+re-verify against the current code first.

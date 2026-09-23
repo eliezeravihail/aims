@@ -15,16 +15,19 @@ overview; this file is the working guidance for developing aims itself.
 - `knowledge/` — the durable-knowledge layer: `format.md` (the record format), `anchor.py` (write-time
   stamper), `staleness_hook.py` (read-time advisory).
 - Design records are **co-located in this repo's own code tree** (dogfood): root `goals.md`,
-  `architecture.md`, and `decisions/` (system ADRs); a companion beside each source file
-  (`knowledge/anchor.py.md`, `knowledge/staleness_hook.py.md`, …).
+  `architecture.md`, and `decisions/` (system ADRs); a companion beside a file only where one was earned
+  (`knowledge/anchor.py.md`, `knowledge/staleness_hook.py.md`, `skills/aims-guide/references/design-record.md.md`).
 
 ## How aims documents itself — companions + root records
 
-Durable design knowledge for aims lives **next to the code it describes**, in two homes:
+**The rule.** Discussions and decisions **not evident from the code itself** go in a `.md` file next to what
+they are about: beside the file, in the module's folder, or at the root if they concern the whole project.
+Everything else belongs in the code's own documentation — here, that means the shipped guidance text itself.
 
-- Knowledge about one source file → its **companion** `<file>.md` beside it, under the sections
+- About one file → its **companion** `<file>.md` beside it (**most files never get one**), under
   Insights / Decisions / Discussions (Decisions are append-only — supersede in place, never rewrite).
-- Cross-cutting knowledge → a root record: `goals.md`, `architecture.md`, `base-dependencies.md`,
+- About a folder → `<dir>.md` beside it.
+- About the whole project → a root record: `goals.md`, `architecture.md`, `base-dependencies.md`,
   `dependencies.md`, or a `decisions/` ADR.
 
 **Anchor every companion on filing** with `python3 knowledge/anchor.py <companion>` — it hashes the

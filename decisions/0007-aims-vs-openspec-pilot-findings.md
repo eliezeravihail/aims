@@ -1,7 +1,11 @@
 ---
 title: "the aims-vs-OpenSpec pilot found no design advantage, and one narrow continuity win"
 date: 2026-09-16
+status: CORRECTED by 0010 — the pilot was re-run through v4, and this ADR's negative headline no longer holds as
+  stated. It is left unsuperseded because 0010 corrects its evidence rather than replacing its reasoning.
 ---
+
+> **Read `0010` beside this one** — it records what the later runs found.
 
 **Context.** `experiments/aims-vs-openspec/` ran a three-arm, design-only, blind-judged pilot (aims /
 OpenSpec / plain) on a checkout pricing service evolved across three staged requirements, each later stage

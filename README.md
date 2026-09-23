@@ -76,16 +76,16 @@ code tree, next to the code it describes**, so the next session inherits it. Thi
 one-session method into long-term development: months later, a fresh session at some part of the code
 reads the conclusions in force there and continues, instead of starting over.
 
-**The idea — the structure carries both the code and the knowledge.** There are two homes. A source
-file that has something worth recording gets a **companion** with the same name plus `.md`, right
-beside it (`src/render.py` → `src/render.py.md`), holding what is known about *that file* under three
-sections — **Insights**, **Decisions**, **Discussions**. Most files never need one; a companion appears
-only where there is a real insight, decision, or discussion to keep. Cross-cutting knowledge lives at
-the repo root: `goals.md`,
-`architecture.md`, `base-dependencies.md`, `dependencies.md`, and `decisions/` (system-wide ADRs). The
-one directory structure is *both* the code graph and the knowledge tree, so knowledge is reached by
-**navigating** to the file or the root record — you never read the whole project to find what bears on
-the file in front of you.
+**The rule.** Discussions and decisions that are **not evident from the code itself** go in a `.md`
+file next to what they are about: beside the relevant file (`src/render.py` → `src/render.py.md`), in
+the relevant module's folder (`src/parsers/` → `src/parsers.md`), or at the project root if they concern
+the whole project (`goals.md`, `architecture.md`, `dependencies.md`, `decisions/`). **Everything else
+belongs in the code's own documentation** — names, docstrings, comments, tests. If the code can say it,
+no record is written, so most files never get one.
+
+The one directory structure is then *both* the code graph and the knowledge tree: knowledge is reached by
+**navigating** to what you are working on, never by reading the whole project. A record holds what the
+code cannot — a road not taken, a deliberate non-goal, a failed attempt, an unproved assumption:
 
 ```yaml
 ---
@@ -93,12 +93,15 @@ title: "render.py"
 date: 2026-08-12
 ---
 ## Insights
-- SVG was chosen over canvas because the pages are static.
+- Canvas was tried first and dropped: its text nodes rasterise, so a zoomed page lost the labels.
 ## Decisions
-- render must not know how the maze was generated.
+- render never generates — it takes a finished maze. This rules out the "render(seed)" convenience
+  overload that has now been asked for twice.
 ## Discussions
-- Considered PNG; dropped — not crisp when zoomed.
+- PNG output was weighed and dropped: not crisp when zoomed. Worth revisiting only if pages go to print.
 ```
+
+Nothing there restates the code — that `render` takes a maze and returns SVG is what its signature is for.
 
 **Knowledge is anchored, so drift is detected — not trusted.** The rule is one derivation: a record
 `X.md` anchors to a sibling file named `X` (its name with `.md` removed) if it exists — so
@@ -111,8 +114,8 @@ in sync with nothing to update.
 **`decisions/` are append-only** — to change a decision you add a new entry that supersedes it, so the
 history of what once bound the code is never rewritten.
 
-The format is [`knowledge/format.md`](knowledge/format.md); the mapping from method output to record is
-[`design-record.md`](skills/aims-guide/references/design-record.md).
+Where things go is [`design-record.md`](skills/aims-guide/references/design-record.md); what a record
+looks like is [`knowledge/format.md`](knowledge/format.md).
 
 ---
 
@@ -147,9 +150,9 @@ Drive the design from within a session in your project:
   `/aims-review`.
 - **Review any change on its own** — `/aims-review <branch | diff | path>`.
 
-As it works, aims files design knowledge **co-located with the code**: a companion `<file>.md` beside
-each source file, and root records (`goals.md`, `architecture.md`, …). A later fresh session reads those
-by navigating to the relevant file's companion — and continues instead of re-deriving. If you read a
+As it works, aims files what the code cannot say **next to what it is about** — a companion beside a file
+that earned one, a record beside a folder, root records for the whole project. A later fresh session
+reads those by navigating to what it is working on, and continues instead of re-deriving. If you read a
 companion whose source has since changed, the staleness hook says *"re-verify"*.
 
 ## Sharpening any task — `/aims-sharpen-prompt`
@@ -197,47 +200,24 @@ single task before you execute it.
 - `/install-on <path>` — install aims' per-project pieces (the two hooks + the anchor tool) into a
   target project.
 
-## Running the experiments
+## The evidence
 
-[`experiments/`](experiments/) holds the evaluations behind the design. Every experiment must follow the
-protocol — a controlled, **blind-judged** comparison (a control/clean arm + a separate judge), not a
-single-arm demonstration:
+[`experiments/README.md`](experiments/README.md) lists **every experiment** behind aims — what it asked, what
+it found, and whether it stands, was superseded, or was withdrawn — split by the two goals, since they are
+measured separately. The short version:
 
-- **[`experiments/PROTOCOL.md`](experiments/PROTOCOL.md)** — how to run an aims pilot: two arms (aims vs.
-  clean), a hidden oracle, staged reveals with no foreknowledge, and blind judgment by separate judge
-  subagents (three unmerged reports; verify the judge). A demonstration is not an experiment; the control
-  arm and the separate blind judge are what make it one.
+- **Design.** Passing tests does not separate designs; the design rubric does (43 vs 16 at an identical test
+  suite). The review catches designs that pass every test but are badly built. On a weaker model aims raises
+  the floor. On a strong model the effect has been small — because every task measured so far was small
+  enough for a strong model to find a good design unaided. Whether aims wins **at a scale where the right
+  design is not obvious** is the open question.
+- **Knowledge.** A recorded non-goal catches a change that contradicts it; the code alone cannot (3/3 vs
+  0/3). On small code a record does not change the outcome, because the pattern is recoverable from the code.
+- **Losses are recorded as losses**: aims lost the plant → mineral pilot decisively, and its best design
+  pilot (v4) ships a real defect.
 
-The pilots:
-
-- [`experiments/navigation/`](experiments/navigation/) — *does a fresh agent find the knowledge it
-  needs by navigating the structure, without reading the whole project?* Reproduce: copy
-  `navigation/product/` to a scratch directory, then run a fresh, no-history session (e.g. a
-  subagent) with the task in the README. It should open only the relevant file's companion — the
-  recorded run read 2 of 8 files and honored a constraint that lived only in the companion.
-- [`experiments/continued-development/`](experiments/continued-development/) — *does a clean session
-  continue from the records instead of re-deriving?* Reproduce: take `continued-development/product-v1/`
-  (a small product with its records), hand a fresh session the product plus a continuation task, and
-  compare against a blind session with the records withheld.
-- [`experiments/instance-seg-annotator/`](experiments/instance-seg-annotator/) — a real, container-run
-  product (multi-class instance-segmentation annotator) built across a staged evolution (general
-  annotator → satellite tiling + dataset export), run as a two-arm blind pilot under `PROTOCOL.md`.
-- [`experiments/aims-vs-openspec/`](experiments/aims-vs-openspec/) — aims against a *rival method* rather
-  than against no method, **on the architecture only — nothing is built**. Three arms (aims / OpenSpec /
-  plain) each design a checkout pricing service across three staged reveals; the primary reading is
-  countable — when an unforeseen requirement arrives, how many named components and seams must be
-  **reopened**. **Run, and honest about the result: aims did not win.** The one clean blind run (v1) found
-  **no design advantage** for aims — it placed third of three and reopened the most, and the pre-registered
-  falsifier fired (`decisions/0007`). Later runs improved: the concept-fit pass eliminated the architectural
-  fault, and the **clean isolated re-run (v4)** ranks aims-panel first under both opposite-prior judges with
-  the pass generalizing — **but aims-panel's own v4 design ships a real, acknowledged defect** in its tax
-  mechanism (`decisions/0010`, `experiments/aims-vs-openspec/results-v4.md`). The honest current claim is
-  *"aims improved change-absorption and v4 is its strongest result, but ships a real defect — a win on this
-  pilot's measures, not yet a design to build from unmodified"* — not
-  that aims beats a spec-first method.
-
-Each README states exactly what was handed to each arm and what was measured, so a run is reproducible and
-the claims are checkable.
+Every experiment follows [`experiments/PROTOCOL.md`](experiments/PROTOCOL.md): a controlled, **blind-judged**
+comparison against a control arm, judged by a separate agent — a demonstration is not an experiment.
 
 ## What aims deliberately does not have
 

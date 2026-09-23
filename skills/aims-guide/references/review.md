@@ -158,14 +158,24 @@ weaker executor leaves:
 - a binding design decision that was *claimed in a comment but not wired up* in the code;
 - an abstraction the design asked for that exists but is **dead** (nothing in production calls it),
   with the rule it was meant to own quietly inlined elsewhere;
-- a boundary the design drew that the code leaks across.
+- a boundary the design drew that the code leaks across;
+- a distinct concept the design would model as a first-class type left as an **anemic data-bag** while a
+  type-code switch (`isinstance` / a kind tag) in a central function owns all of its logic — the
+  OCP-reopen that the design's one-owner rule was meant to prevent. This is a *structural* gap, not a
+  correctness bug: the build usually passes its tests, so "tests pass" will not surface it — only reading
+  the implementation against the design does.
 
 Fix each by making the design's intent real (route the caller through the owner), not by deleting the
 intent — unless the subtractive pass says the abstraction should not exist at all. This holds only
 while the review stays a *review*: if it turns into re-implementation or many rework rounds, the cost
 advantage is gone and a stronger executor was the right call. (Observed directly: a Sonnet Worker
 built a difficulty type exactly as designed but left its predicate dead and inlined the rule in the
-generator; a strong fidelity review caught and repaired precisely that, at review cost.)
+generator; a strong fidelity review caught and repaired precisely that, at review cost. Observed again
+under measurement: on a rule-engine card a cheaper Worker centralized all rule logic in an `isinstance`
+type-switch over anemic rule classes on roughly one build in three; a strong review flagged that
+structural gap on **every** such build and named the polymorphic seam — the same gap a design principle
+*injected into the Worker's prompt* did not prevent on that tier, which is why the review, not the
+advice, is the load-bearing step when the Worker is cheap.)
 
 ## When the measurement shows the objective not yet reached
 
