@@ -93,3 +93,16 @@ Then lists what it treats as settled.
 **Answered** (the card does not answer; the default): "I don't know — choose a simple, sensible technical approach."
 
 **Surfaced the decision?** No.
+
+## pt-c1 (C, PyTorch) — stop after building
+
+**Asked** (at hand-back, work complete): with `num_workers > 0` the sampler's position runs ahead of what training
+received; (A) keep it sampler-only and document the gap, or (B) make the DataLoader report what training received?
+Probed as handed back: `probe-results/pt-c1-before-answer.txt` (respected, floor clear).
+
+**Answered** (the card's own sentences, as for pt-c2 and pt-c3): "Make `RandomSampler`'s order checkpointable.
+`sampler.state_dict()` returns a picklable dict describing where the sampler is; `sampler.load_state_dict(state)`,
+called on a new `RandomSampler` over the same data, makes its next iteration yield exactly the samples the
+interrupted iteration had not yet yielded, in the same order."
+
+**Surfaced the decision?** No.
