@@ -84,3 +84,12 @@ Then lists what it treats as settled.
 **Answered** (the card does not answer; the default): "I don't know — choose a simple, sensible technical approach."
 
 **Surfaced the decision?** No.
+
+## rq-b2 (B, requests) — first stop
+
+**Asked.** Once a session has a default, does an explicit `timeout=None` mean (A) "use the session default" or (B)
+"wait forever"? Recommends A. Then lists what it assumes.
+
+**Answered** (the card does not answer; the default): "I don't know — choose a simple, sensible technical approach."
+
+**Surfaced the decision?** No.
