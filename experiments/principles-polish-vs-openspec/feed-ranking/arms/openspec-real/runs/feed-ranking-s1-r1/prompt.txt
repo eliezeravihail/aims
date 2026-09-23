@@ -1,0 +1,21 @@
+# Feed ranking — stage 1
+
+Design a service that produces an **ordered feed** for a user.
+
+Input per request: a `user` and a list of **candidate items**. Each candidate carries three signals:
+
+- `recency` — how fresh the item is (0.0 – 1.0, higher = fresher).
+- `affinity` — how close the item's author is to the user (0.0 – 1.0).
+- `popularity` — normalized engagement (0.0 – 1.0).
+
+The service combines the signals into a single score per item and returns the candidates **ordered by score,
+highest first**. The weight of each signal is **configuration**, set per deployment (e.g. recency 0.5,
+affinity 0.3, popularity 0.2), and an operator changes the weights without a code change. Ties break by a
+stable item id.
+
+Deliver the architecture of this service. Design only — no implementation.
+
+use OpenSpec for this; design only
+
+---
+Operating instructions (from the operator, not part of the task): Use the OpenSpec skills installed in this project — explore first (openspec-explore), then propose (openspec-propose). Stop before apply. No one is available to answer questions interactively: if you have questions for the product owner, write them to QUESTIONS.md in this directory and stop without proposing; they will be answered and the task restarted with the answers.

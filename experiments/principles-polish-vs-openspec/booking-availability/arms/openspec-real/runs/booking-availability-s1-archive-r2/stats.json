@@ -1,0 +1,52 @@
+{
+ "exit": "0",
+ "wall_s": 28,
+ "tool_calls": 7,
+ "tools": [
+  "Skill",
+  "Bash",
+  "Bash",
+  "Bash",
+  "Bash",
+  "Bash",
+  "Bash"
+ ],
+ "num_turns": 9,
+ "input_tokens": 16,
+ "cache_creation_input_tokens": 26969,
+ "cache_read_input_tokens": 321200,
+ "output_tokens": 1894,
+ "total_tokens": 350079,
+ "cost_usd": 0.318989,
+ "model_usage": {
+  "claude-haiku-4-5-20251001": {
+   "inputTokens": 988,
+   "outputTokens": 13,
+   "cacheReadInputTokens": 0,
+   "cacheCreationInputTokens": 0,
+   "webSearchRequests": 0,
+   "costUSD": 0.001053,
+   "contextWindow": 200000,
+   "maxOutputTokens": 32000,
+   "thinkingTokens": 0,
+   "canonicalModel": "claude-haiku-4-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  },
+  "claude-opus-5-5": {
+   "inputTokens": 16,
+   "outputTokens": 1894,
+   "cacheReadInputTokens": 321200,
+   "cacheCreationInputTokens": 26969,
+   "webSearchRequests": 0,
+   "costUSD": 0.317936,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 177,
+   "canonicalModel": "claude-opus-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "final_message": "## Archive complete\n\n**Change:** add-booking-availability\n**Schema:** spec-driven\n**Archived to:** `openspec/changes/archive/2026-09-23-add-booking-availability/` (the `.openspec.yaml` file moved with it)\n**Specs:** \u2713 Synced to main specs\n\n- The delta added a new capability, so the sync created `openspec/specs/slot-availability/spec.md`. It copies the delta's Purpose unchanged and holds all 8 added requirements with all 16 of their scenarios, under a single `## Requirements` section.\n- `openspec validate --specs` passes. It printed one informational note: requirement 4 (\"Slots are laid back-to-back\u2026\") is over 500 characters. I left its wording unchanged.\n- Where the skill would have asked a question, I took its recommended choice, which was \"Sync now\".\n- No project context, operation guidance or spec rules are configured, so none applied.\n\n**Warning:** archived with 10 of 10 tasks incomplete. The product owner approved this for a design-only project. No code was written or changed.\n\nI haven't committed anything; the changes are only in the working tree."
+}

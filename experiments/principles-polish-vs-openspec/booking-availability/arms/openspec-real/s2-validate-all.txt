@@ -1,0 +1,5 @@
+- Validating...
+✓ change/add-buffer-notice-granularity
+✓ spec/slot-availability
+  ℹ [INFO] requirements[3]: Requirement text is very long (>500 characters). Consider breaking it down.
+Totals: 2 passed, 0 failed (2 items)

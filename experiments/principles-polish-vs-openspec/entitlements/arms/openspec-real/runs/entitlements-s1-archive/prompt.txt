@@ -1,0 +1,1 @@
+Archive the completed OpenSpec change in this project using the installed openspec-archive-change skill (sync its delta specs into openspec/specs as part of archiving). No one is available to answer questions interactively; where the skill would ask for confirmation, proceed with the skill's default/recommended choice. Do not implement anything.

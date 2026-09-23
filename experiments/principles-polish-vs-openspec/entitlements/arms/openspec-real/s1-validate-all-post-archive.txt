@@ -1,0 +1,4 @@
+- Validating...
+✓ spec/access-decision
+✓ spec/entitlement-model
+Totals: 2 passed, 0 failed (2 items)

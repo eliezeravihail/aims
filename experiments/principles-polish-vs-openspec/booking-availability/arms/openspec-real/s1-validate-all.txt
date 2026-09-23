@@ -1,0 +1,3 @@
+- Validating...
+✓ change/add-booking-availability
+Totals: 1 passed, 0 failed (1 items)

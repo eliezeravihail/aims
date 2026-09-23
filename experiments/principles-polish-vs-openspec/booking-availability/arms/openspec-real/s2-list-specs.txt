@@ -1,0 +1,2 @@
+Specs:
+  slot-availability     requirements 8
