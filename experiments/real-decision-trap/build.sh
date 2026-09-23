@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
-# Build one arm's checkout. Usage: build.sh <pt|rq> <dir> [aims]
+# Build one arm's checkout. Usage: build.sh <pt|rq> <dir> [aims [<record-file> <path-in-checkout>]]
 #   pt — PyTorch's torch.utils.data at the installed wheel's version (2.14.0), with the upstream
 #        test file minus test_sampler_reproducibility (withheld: it is the grader) and docs/source/data.md.
 #   rq — requests at 611c6162 without git history, .github/, and the feature-freeze paragraph.
 #   aims — also install aims' per-project layer (.aims/anchor.py, .aims/staleness_hook.py).
+#   <record-file> <path-in-checkout> — arm A: the frozen record, placed where the record session filed it.
 # Every checkout is a fresh git repo with one commit, "Initial checkout". No upstream history.
 set -euo pipefail
 RDT=/tmp/claude-0/rdt
-case_=$1; dir=$2; withaims=${3:-}
+case_=$1; dir=$2; withaims=${3:-}; record=${4:-}; record_at=${5:-}
 rm -rf "$dir"; mkdir -p "$dir"
 if [ "$case_" = pt ]; then
   SP=$RDT/venv-torch/lib/python3.11/site-packages
@@ -54,6 +55,7 @@ if [ "$withaims" = aims ]; then
   mkdir -p "$dir/.aims"
   cp "$RDT/aims/knowledge/anchor.py" "$RDT/aims/knowledge/staleness_hook.py" "$dir/.aims/"
 fi
+if [ -n "$record" ]; then cp "$record" "$dir/$record_at"; fi
 printf '.venv/\n__pycache__/\n*.egg-info/\n.pytest_cache/\n' >> "$dir/.gitignore"
 git -C "$dir" init -q
 git -C "$dir" add -A
