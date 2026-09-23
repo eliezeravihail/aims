@@ -56,3 +56,31 @@ not support exporting: it has no 'export.html' template."; T and N export. **Rep
 **§7 DRY, S3 (V) — the page-reading loop re-implemented without `on_env`.** `on_env` occurs 0 times in
 `design-V/mkdocs/commands/export.py`. **Reproduces.** (R's parallel `render_site` beside `_build_site` in
 `design-R/mkdocs/commands/build.py` is a structural fact, seen at the cited lines.)
+
+## Simplicity judge — its §1 edge-case S4s
+
+`edges.py`: one project exported by each design, with a page titled `Q & A`, a page carrying inline SVG
+(`fill="url(#g)"`), a `<style>` block with `url(img/pic.png)`, an `<img srcset>`, and a directory link `sub/`.
+Run twice — `use_directory_urls: false` (the judge's configuration) and the default `true`.
+
+**With `use_directory_urls: false`:**
+
+| design | title escaped twice | SVG `url(#)` to a renamed id | `<style>` `url()` left relative | `srcset` left relative | directory link resolved |
+|---|---|---|---|---|---|
+| N | **yes** | no | no | no | yes |
+| P | **yes** | **yes** | **yes** | no | yes |
+| Q | no | no | **yes** | no | yes |
+| R | no | no | no | **yes** | **no** |
+| S | **yes** | no | no | no | yes |
+| T | no | no | no | no | yes |
+| U | **yes** | **yes** | **yes** | no | yes |
+| V | no | **yes** | no | no | yes |
+| W | **yes** | **yes** | no | no | yes |
+
+**Every S4 the judge placed reproduces, in exactly the designs it named**, and T is the only design with none. Q's
+other S4 (no export for a theme without `export.html`) reproduced above.
+
+**With the default `use_directory_urls: true`**, raw-HTML `url(img/pic.png)` and `srcset` resolve from `/en/art/` to
+a path that does not exist on the site either, so nearly every design "leaves them relative" — there is nothing to
+embed. Those two columns are not a defect in that configuration and are not counted; the title, SVG and
+directory-link columns give the same answer as above (R resolves the directory link there).
