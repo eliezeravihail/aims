@@ -1,7 +1,7 @@
 ---
 title: "Design at scale — does aims produce better design where the right design is not obvious?"
 date: 2026-09-22
-status: Phase 0 RUN — gate PASSED (phase0/results.md). Phase 1 RUN — verdict aims, all three judges (phase1/results.md). Phase 2 not yet run. Frozen at the start of
+status: Phase 0 RUN — gate PASSED (phase0/results.md). Phase 1 RUN — verdict aims, all three judges (phase1/results.md). Phase 2 RUN — goal 1 supported at stage 3 by the panel rule, after a disclosed spec correction; goal 2 no clear advantage (phase2/results.md). Frozen at the start of
   Phase 0; nothing below changes once a run begins.
 ---
 

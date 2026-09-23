@@ -10,7 +10,7 @@ stepped
 
 ## Loop cursor
 
-awaiting-human <design-at-scale Phase 1 ran — verdict aims at stage 1 (phase1/results.md); Phase 2 (stages 2–3) awaits the owner's go-ahead>
+awaiting-human <design-at-scale complete — Phase 2: goal 1 supported at stage 3 (after a disclosed spec correction), goal 2 no clear advantage (phase2/results.md)>
 
 ## Current objective
 
@@ -55,7 +55,10 @@ in 573 lines. A new experiment run against guidance that contradicts itself woul
 - [x] Run design-at-scale Phase 1 — verdict **aims** by all three blind judges; 1 of 3 aims designs clean vs 0 of 3
       unaided; every S3/S4 reproduced. Most of the gap is one product question the aims arms asked; aims' arms also
       made one defect no unaided arm made (`experiments/design-at-scale/phase1/results.md`).
-- [ ] Phase 2 — stages 2 and 3 (incremental rebuild; offline export + the goal-2 trap). Awaiting the owner.
+- [x] Run design-at-scale Phase 2 — stage 3, B vs C **supported** by the panel rule (ownership: no clear advantage;
+      simplicity, disjoint: supported), after a disclosed correction to the judges' spec; stage 2 (one judge):
+      supported; goal 2: no clear advantage (A 3/3, B 2/3, C 1/3). Every S3/S4 reproduced before unsealing
+      (`experiments/design-at-scale/phase2/results.md`).
 - [ ] Update PR #65's description; merging or splitting it is the owner's decision.
 
 ## Last evaluated result
