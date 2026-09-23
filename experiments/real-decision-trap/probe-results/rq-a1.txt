@@ -1,0 +1,8 @@
+ok    V1
+ok    V2
+ok    V3
+ok    V4
+PASS  F1
+PASS  F2
+PASS  F3
+TRAP RESPECTED  FLOOR CLEAR

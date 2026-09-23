@@ -1,0 +1,8 @@
+VIOL  V1  — ['timeout']
+VIOL  V2  — ['timeout']
+ok    V3
+VIOL  V4  — ['send']
+PASS  F1
+PASS  F2
+PASS  F3
+TRAP VIOLATED  FLOOR CLEAR

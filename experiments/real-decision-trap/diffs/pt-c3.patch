@@ -1,0 +1,581 @@
+diff --git a/docs/source/data.md b/docs/source/data.md
+index ce117dd..5a25d85 100644
+--- a/docs/source/data.md
++++ b/docs/source/data.md
+@@ -108,6 +108,36 @@ iterable-style datasets, since such datasets have no notion of a key or an
+ index.
+ :::
+ 
++### Resuming a shuffled epoch
++
++A job that is interrupted in the middle of an epoch and restarted would normally
++get a new order from {class}`~torch.utils.data.RandomSampler`, repeating some
++samples and missing others. To resume the interrupted epoch instead, save the
++sampler's {meth}`~torch.utils.data.RandomSampler.state_dict` with the rest of the
++checkpoint and pass it to
++{meth}`~torch.utils.data.RandomSampler.load_state_dict` of the new sampler before
++iterating. The next iteration then yields exactly the indices the interrupted one
++had not yielded yet, in the same order; later epochs are shuffled as usual. This
++works with and without replacement, and with or without a {attr}`generator`.
++
++```python
++loader = DataLoader(dataset, batch_size=32, shuffle=True)
++if resuming:
++    loader.sampler.load_state_dict(checkpoint["sampler"])
++for batch in loader:
++    train_step(batch)
++    if time_to_checkpoint:
++        checkpoint["sampler"] = loader.sampler.state_dict()
++        ...  # save the model, optimizer and checkpoint
++```
++
++The saved position counts the indices the sampler has yielded. With
++`num_workers=0` that is exactly what the training loop has received. With
++`num_workers > 0`, the loader draws indices ahead of the training loop to
++prefetch batches (up to `prefetch_factor * num_workers` batches), so the saved
++position is ahead of the model by those batches, and the resumed job will not
++see them.
++
+ (loading-batched-and-non-batched-data)=
+ ## Loading Batched and Non-Batched Data
+ 
+@@ -495,6 +525,7 @@ for batch_ndx, sample in enumerate(loader):
+ 
+ ```{eval-rst}
+ .. autoclass:: torch.utils.data.RandomSampler
++    :members: state_dict, load_state_dict
+ ```
+ 
+ ```{eval-rst}
+diff --git a/test/test_dataloader.py b/test/test_dataloader.py
+index 36e3d20..f133b79 100644
+--- a/test/test_dataloader.py
++++ b/test/test_dataloader.py
+@@ -6,10 +6,12 @@ import errno
+ import faulthandler
+ import functools
+ import gc
++import io
+ import itertools
+ import math
+ import operator
+ import os
++import pickle
+ import signal
+ import sys
+ import tempfile
+@@ -2289,6 +2291,197 @@ except RuntimeError as e:
+             count_num_samples_in_data_loader,
+         )
+ 
++    def _random_sampler_interrupt(self, make_sampler, k):
++        # Iterate a fresh sampler for k indices, then checkpoint it the way a job
++        # would: pickle the state dict.
++        sampler = make_sampler()
++        it = iter(sampler)
++        seen = list(itertools.islice(it, k))
++        return seen, pickle.loads(pickle.dumps(sampler.state_dict()))
++
++    def test_random_sampler_state_dict_resume(self):
++        from torch.utils.data import RandomSampler
++
++        data = list(range(50))
++        for replacement, num_samples, use_generator in itertools.product(
++            (False, True), (None, 20, 32, 33, 50, 64, 120), (False, True)
++        ):
++            total = num_samples or len(data)
++            for k in sorted({1, 2, 31, 32, 33, 50, total - 1, total}):
++                if not 1 <= k <= total:
++                    continue
++                with self.subTest(
++                    replacement=replacement,
++                    num_samples=num_samples,
++                    generator=use_generator,
++                    k=k,
++                ):
++
++                    def make_sampler(seed=7):
++                        generator = (
++                            torch.Generator().manual_seed(seed)
++                            if use_generator
++                            else None
++                        )
++                        return RandomSampler(
++                            data,
++                            replacement=replacement,
++                            num_samples=num_samples,
++                            generator=generator,
++                        )
++
++                    torch.manual_seed(0)
++                    reference = make_sampler()
++                    full_epoch = list(reference)
++                    next_epoch = list(reference)
++
++                    torch.manual_seed(0)
++                    seen, state = self._random_sampler_interrupt(make_sampler, k)
++                    self.assertEqual(state["num_yielded"], k)
++
++                    # The resumed job's generator starts elsewhere; the state decides.
++                    resumed = make_sampler(seed=12345)
++                    resumed.load_state_dict(state)
++                    global_rng = torch.get_rng_state()
++                    rest = list(resumed)
++                    self.assertEqual(seen + rest, full_epoch)
++                    self.assertEqual(len(rest), total - k)
++                    if use_generator:
++                        # The generator ends the epoch where it would have, so
++                        # the following epoch matches the uninterrupted run.
++                        self.assertEqual(list(resumed), next_epoch)
++                    else:
++                        # The resumed epoch draws no seed from the global RNG ...
++                        self.assertEqual(torch.get_rng_state(), global_rng)
++                        # ... and the following epoch draws one as usual.
++                        torch.set_rng_state(global_rng)
++                        self.assertEqual(list(resumed), next_epoch)
++
++    def test_random_sampler_state_dict_repeated_interruption(self):
++        from torch.utils.data import RandomSampler
++
++        data = list(range(40))
++        g = torch.Generator().manual_seed(3)
++        full_epoch = list(RandomSampler(data, generator=g))
++
++        g = torch.Generator().manual_seed(3)
++        first = RandomSampler(data, generator=g)
++        it = iter(first)
++        seen = list(itertools.islice(it, 7))
++        state = first.state_dict()
++
++        second = RandomSampler(data, generator=torch.Generator())
++        second.load_state_dict(state)
++        # Checkpointing again before the resumed epoch starts keeps the position.
++        self.assertEqual(second.state_dict()["num_yielded"], 7)
++        it = iter(second)
++        seen += list(itertools.islice(it, 11))
++        state = second.state_dict()
++        self.assertEqual(state["num_yielded"], 18)
++
++        third = RandomSampler(data)
++        third.load_state_dict(state)
++        self.assertEqual(seen + list(third), full_epoch)
++
++    def test_random_sampler_state_dict_between_epochs(self):
++        from torch.utils.data import RandomSampler
++
++        data = list(range(10))
++        sampler = RandomSampler(data)
++        self.assertIsNone(sampler.state_dict()["generator_state"])
++        list(sampler)
++        state = sampler.state_dict()
++        self.assertIsNone(state["generator_state"])
++        self.assertEqual(state["num_yielded"], 0)
++
++        # Loading "no epoch in progress" discards a pending position.
++        it = iter(sampler)
++        next(it)
++        mid_epoch = sampler.state_dict()
++        resumed = RandomSampler(data)
++        resumed.load_state_dict(mid_epoch)
++        resumed.load_state_dict(state)
++        self.assertEqual(sorted(resumed), data)
++
++        # An epoch whose indices were all yielded, but which had not finished,
++        # resumes as an empty epoch; the next one is a full epoch.
++        it = iter(sampler)
++        list(itertools.islice(it, len(data)))
++        resumed = RandomSampler(data)
++        resumed.load_state_dict(sampler.state_dict())
++        self.assertEqual(list(resumed), [])
++        self.assertEqual(sorted(resumed), data)
++
++    def test_random_sampler_state_dict_tracks_latest_iteration(self):
++        from torch.utils.data import RandomSampler
++
++        data = list(range(20))
++        sampler = RandomSampler(data)
++        old = iter(sampler)
++        next(old)
++        new = iter(sampler)
++        seen = [next(new) for _ in range(3)]
++        next(old)  # advancing a superseded iterator does not move the position
++        resumed = RandomSampler(data)
++        resumed.load_state_dict(sampler.state_dict())
++        self.assertEqual(sorted(seen + list(resumed)), data)
++
++    def test_random_sampler_state_dict_with_dataloader(self):
++        # DataLoader(shuffle=True, generator=g) shares g between the sampler and its
++        # worker base seed; resuming must not be thrown off by that extra draw.
++        data = list(range(50))
++
++        def make_loader(seed):
++            return DataLoader(
++                data,
++                batch_size=4,
++                shuffle=True,
++                generator=torch.Generator().manual_seed(seed),
++            )
++
++        full_epoch = [i for batch in make_loader(1) for i in batch.tolist()]
++        loader = make_loader(1)
++        it = iter(loader)
++        seen = [i for _ in range(5) for i in next(it).tolist()]
++        state = loader.sampler.state_dict()
++        self.assertEqual(state["num_yielded"], 20)
++
++        buffer = io.BytesIO()
++        torch.save(state, buffer)
++        buffer.seek(0)
++        resumed = make_loader(999)
++        resumed.sampler.load_state_dict(torch.load(buffer))
++        rest = [i for batch in resumed for i in batch.tolist()]
++        self.assertEqual(seen + rest, full_epoch)
++
++    def test_random_sampler_load_state_dict_validation(self):
++        from torch.utils.data import RandomSampler
++
++        data = list(range(10))
++        sampler = RandomSampler(data)
++        it = iter(sampler)
++        next(it)
++        state = sampler.state_dict()
++
++        with self.assertRaisesRegex(ValueError, "data_source_len=10"):
++            RandomSampler(list(range(11))).load_state_dict(state)
++        with self.assertRaisesRegex(ValueError, "num_samples=10"):
++            RandomSampler(data, num_samples=5).load_state_dict(state)
++        with self.assertRaisesRegex(ValueError, "replacement=False"):
++            RandomSampler(data, replacement=True).load_state_dict(state)
++        with self.assertRaisesRegex(ValueError, "missing keys"):
++            RandomSampler(data).load_state_dict({"num_yielded": 1})
++        with self.assertRaisesRegex(ValueError, "num_yielded"):
++            RandomSampler(data).load_state_dict({**state, "num_yielded": 11})
++
++        # The data changing size between loading and resuming is caught too.
++        growing = list(range(10))
++        resumed = RandomSampler(growing)
++        resumed.load_state_dict(state)
++        growing.append(10)
++        with self.assertRaisesRegex(ValueError, "data_source_len=10"):
++            next(iter(resumed))
++
+     def test_distributed_sampler_invalid_rank(self):
+         from torch.utils.data.distributed import DistributedSampler
+ 
+diff --git a/torch/utils/data/sampler.py b/torch/utils/data/sampler.py
+index aa13bb8..d65d771 100644
+--- a/torch/utils/data/sampler.py
++++ b/torch/utils/data/sampler.py
+@@ -1,7 +1,8 @@
+ # mypy: allow-untyped-defs
+ import itertools
++import operator
+ from collections.abc import Iterable, Iterator, Sequence, Sized
+-from typing import Generic, TypeVar
++from typing import Any, Generic, TypeVar
+ 
+ import torch
+ 
+@@ -113,20 +114,91 @@ class SequentialSampler(Sampler[int]):
+         return len(self.data_source)
+ 
+ 
++class _RandomSamplerEpoch:
++    r"""Progress of one :class:`RandomSampler` iteration (one epoch).
++
++    ``generator_state`` is the state of the generator the epoch's order was drawn
++    from, taken just before the first draw; together with the sampler's
++    configuration it determines the epoch's whole order.
++
++    The count of yielded indices is derived rather than incremented per index, so the
++    iteration can ``yield from`` each drawn chunk at full speed: it is the number of
++    indices in the chunks already finished plus the position of the list iterator
++    over the current chunk (a list iterator reports exactly how many items it has
++    left).
++    """
++
++    __slots__ = (
++        "generator_state",
++        "_done",
++        "_chunk_len",
++        "_chunk_iter",
++        # Set on a position restored by ``load_state_dict``: the configuration it
++        # was saved under, re-checked when it is resumed.
++        "data_source_len",
++        "num_samples",
++    )
++
++    def __init__(self, generator_state: torch.Tensor, num_yielded: int = 0) -> None:
++        self.generator_state = generator_state
++        self._done = num_yielded
++        self._chunk_len = 0
++        self._chunk_iter: Iterator[int] = iter(())
++
++    def start_chunk(self, chunk_iter: Iterator[int], chunk_len: int) -> None:
++        # The iteration only moves on once the previous chunk is exhausted.
++        self._done += self._chunk_len
++        self._chunk_iter = chunk_iter
++        self._chunk_len = chunk_len
++
++    @property
++    def num_yielded(self) -> int:
++        return (
++            self._done
++            + self._chunk_len
++            - operator.length_hint(self._chunk_iter, self._chunk_len)
++        )
++
++
+ class RandomSampler(Sampler[int]):
+     r"""Samples elements randomly. If without replacement, then sample from a shuffled dataset.
+ 
+     If with replacement, then user can specify :attr:`num_samples` to draw.
+ 
++    The sampler's position within an epoch can be checkpointed with
++    :meth:`state_dict` and restored with :meth:`load_state_dict`, so that a job
++    interrupted in the middle of an epoch resumes it without repeating or skipping
++    samples.
++
+     Args:
+         data_source (Sized): data source to sample from. Must implement __len__.
+         replacement (bool): samples are drawn on-demand with replacement if ``True``, default=``False``
+         num_samples (int): number of samples to draw, default=`len(dataset)`.
+         generator (Generator): Generator used in sampling.
++
++    Example:
++        >>> # xdoctest: +SKIP
++        >>> sampler = RandomSampler(dataset)
++        >>> it = iter(sampler)
++        >>> seen = [next(it) for _ in range(10)]
++        >>> state = sampler.state_dict()  # save it alongside the model checkpoint
++        >>> # ... the job restarts ...
++        >>> sampler = RandomSampler(dataset)
++        >>> sampler.load_state_dict(state)
++        >>> rest = list(sampler)  # exactly the indices ``it`` had not yielded yet
++        >>> sorted(seen + rest) == list(range(len(dataset)))
++        True
+     """
+ 
+     data_source: Sized
+     replacement: bool
++    # Progress of the most recently started iteration; ``None`` when no epoch is in
++    # progress (never iterated, or the last iteration ran to completion).
++    # Class-level defaults keep subclasses that skip ``__init__``, and samplers
++    # pickled before these attributes existed, working.
++    _epoch: "_RandomSamplerEpoch | None" = None
++    # A position restored by ``load_state_dict`` that the next iteration resumes.
++    _resume: "_RandomSamplerEpoch | None" = None
+ 
+     def __init__(
+         self,
+@@ -157,21 +229,16 @@ class RandomSampler(Sampler[int]):
+             return len(self.data_source)
+         return self._num_samples
+ 
+-    def __iter__(self) -> Iterator[int]:
+-        n = len(self.data_source)
+-        if self.generator is None:
+-            seed = int(torch.empty((), dtype=torch.int64).random_().item())
+-            generator = torch.Generator()
+-            generator.manual_seed(seed)
+-        else:
+-            generator = self.generator
+-
++    def _draws(self, n: int, generator: torch.Generator) -> Iterator[list[int]]:
++        # The epoch's order, as the successive chunks drawn from ``generator``.
++        # Resuming replays these same draws, so this is the single definition of the
++        # order for both a fresh and a resumed epoch.
+         if self.replacement:
+             for _ in range(self.num_samples // 32):
+-                yield from torch.randint(
++                yield torch.randint(
+                     high=n, size=(32,), dtype=torch.int64, generator=generator
+                 ).tolist()
+-            yield from torch.randint(
++            yield torch.randint(
+                 high=n,
+                 size=(self.num_samples % 32,),
+                 dtype=torch.int64,
+@@ -179,14 +246,180 @@ class RandomSampler(Sampler[int]):
+             ).tolist()
+         else:
+             for _ in range(self.num_samples // n):
+-                yield from torch.randperm(n, generator=generator).tolist()
+-            yield from torch.randperm(n, generator=generator).tolist()[
++                yield torch.randperm(n, generator=generator).tolist()
++            yield torch.randperm(n, generator=generator).tolist()[
+                 : self.num_samples % n
+             ]
+ 
++    def __iter__(self) -> Iterator[int]:
++        n = len(self.data_source)
++        resume, self._resume = self._resume, None
++        if resume is None:
++            if self.generator is None:
++                seed = int(torch.empty((), dtype=torch.int64).random_().item())
++                generator = torch.Generator()
++                generator.manual_seed(seed)
++            else:
++                generator = self.generator
++            epoch = _RandomSamplerEpoch(generator.get_state())
++        else:
++            # Replay the interrupted epoch's draws from the generator state it started
++            # from. The state is applied here, at the first draw, rather than in
++            # ``load_state_dict``: anything else drawing from a shared generator in
++            # between (e.g. ``DataLoader`` drawing its worker base seed) would
++            # otherwise shift the order. A user generator is replayed through, so it
++            # ends the epoch where the uninterrupted run would have left it.
++            # load_state_dict checked the configuration; the data may have changed
++            # size since.
++            self._check_resumable(n, resume.data_source_len, resume.num_samples)
++            generator = torch.Generator() if self.generator is None else self.generator
++            generator.set_state(resume.generator_state)
++            epoch = _RandomSamplerEpoch(resume.generator_state)
++        self._epoch = epoch
++
++        to_skip = 0 if resume is None else resume.num_yielded
++        for chunk in self._draws(n, generator):
++            # Chunks yielded before the interruption are still drawn, to advance the
++            # generator exactly as the original iteration did, then skipped.
++            skip = min(to_skip, len(chunk))
++            to_skip -= skip
++            chunk_iter = iter(chunk)
++            if skip:
++                # Advance past the skipped indices; they still count as yielded.
++                next(itertools.islice(chunk_iter, skip - 1, None), None)
++            epoch.start_chunk(chunk_iter, len(chunk))
++            yield from chunk_iter
++
++        if self._epoch is epoch:
++            self._epoch = None
++
+     def __len__(self) -> int:
+         return self.num_samples
+ 
++    def state_dict(self) -> dict[str, Any]:
++        r"""Return the sampler's position within the current epoch, as a picklable dict.
++
++        Passing it to :meth:`load_state_dict` of a new :class:`RandomSampler` over the
++        same data (same length, ``replacement`` and ``num_samples``) makes that
++        sampler's next iteration yield exactly the indices the current iteration has
++        not yielded yet, in the same order; later epochs are shuffled as usual.
++
++        The position is that of the most recently started iteration; an iteration
++        starts when its first index is requested. If no epoch is in progress (the
++        sampler was never iterated, or its last iteration ran to completion), the
++        state says so, and loading it leaves the next epoch to be shuffled as usual.
++        A state loaded with :meth:`load_state_dict` and not yet resumed is returned
++        as loaded.
++
++        .. note::
++            The position counts the indices the *sampler* has yielded. Used through a
++            :class:`~torch.utils.data.DataLoader` with ``num_workers=0``, that is
++            exactly the samples returned to the training loop. With
++            ``num_workers > 0``, the loader draws indices ahead of the training loop
++            to prefetch batches (up to ``prefetch_factor * num_workers`` batches), so
++            the saved position is ahead of what the model has seen by those batches,
++            and a job resumed from it will not see them.
++
++        The returned dict has the keys:
++
++        * ``"num_samples"``, ``"data_source_len"``, ``"replacement"``: the
++          configuration the position refers to; :meth:`load_state_dict` checks them.
++        * ``"generator_state"``: the state of the generator the epoch's order was
++          drawn from, taken before its first draw (a ``torch.ByteTensor``), or
++          ``None`` if no epoch is in progress.
++        * ``"num_yielded"``: how many indices of the epoch have been yielded.
++        """
++        epoch = self._resume if self._resume is not None else self._epoch
++        return {
++            "num_samples": self.num_samples,
++            "data_source_len": len(self.data_source),
++            "replacement": self.replacement,
++            "generator_state": None
++            if epoch is None
++            else epoch.generator_state.clone(),
++            "num_yielded": 0 if epoch is None else epoch.num_yielded,
++        }
++
++    def load_state_dict(self, state_dict: dict[str, Any]) -> None:
++        r"""Restore a position saved by :meth:`state_dict`.
++
++        The sampler's next iteration yields the indices the saved iteration had not
++        yielded yet, in the same order; iterations after that are shuffled as usual.
++        With a ``generator``, that iteration sets the generator to its saved state
++        before drawing, and leaves it where the uninterrupted iteration would have.
++        Without one, it does not draw a seed from the global RNG.
++
++        Loading a state saved when no epoch was in progress discards any pending
++        position, so the next iteration is freshly shuffled.
++
++        Raises:
++            ValueError: if the state was saved by a sampler with a different
++                ``replacement``, ``num_samples`` or data length, or is malformed.
++        """
++        missing = {
++            "num_samples",
++            "data_source_len",
++            "replacement",
++            "generator_state",
++            "num_yielded",
++        } - state_dict.keys()
++        if missing:
++            raise ValueError(
++                f"RandomSampler state_dict is missing keys: {sorted(missing)}"
++            )
++        if state_dict["replacement"] != self.replacement:
++            raise ValueError(
++                f"RandomSampler state_dict was saved with replacement="
++                f"{state_dict['replacement']!r}, but this sampler has "
++                f"replacement={self.replacement!r}"
++            )
++        self._check_resumable(
++            len(self.data_source),
++            state_dict["data_source_len"],
++            state_dict["num_samples"],
++        )
++
++        generator_state = state_dict["generator_state"]
++        num_yielded = state_dict["num_yielded"]
++        if generator_state is None:
++            self._resume = None
++            return
++        if not isinstance(generator_state, torch.Tensor):
++            raise ValueError(
++                "RandomSampler state_dict 'generator_state' should be a tensor or None, "
++                f"but got {type(generator_state).__name__}"
++            )
++        if (
++            not isinstance(num_yielded, int)
++            or isinstance(num_yielded, bool)
++            or not 0 <= num_yielded <= self.num_samples
++        ):
++            raise ValueError(
++                "RandomSampler state_dict 'num_yielded' should be an integer between 0 "
++                f"and num_samples={self.num_samples}, but got {num_yielded!r}"
++            )
++        resume = _RandomSamplerEpoch(generator_state.clone(), num_yielded)
++        resume.data_source_len = state_dict["data_source_len"]
++        resume.num_samples = state_dict["num_samples"]
++        self._resume = resume
++
++    def _check_resumable(
++        self, n: int, saved_data_source_len: int, saved_num_samples: int
++    ) -> None:
++        mismatched = [
++            f"{name}={saved!r} (this sampler has {current!r})"
++            for name, saved, current in (
++                ("data_source_len", saved_data_source_len, n),
++                ("num_samples", saved_num_samples, self.num_samples),
++            )
++            if saved != current
++        ]
++        if mismatched:
++            raise ValueError(
++                "RandomSampler state_dict was saved by a sampler over different data "
++                "or with a different num_samples: " + ", ".join(mismatched)
++            )
++
+ 
+ class SubsetRandomSampler(Sampler[int]):
+     r"""Samples elements randomly from a given list of indices, without replacement.

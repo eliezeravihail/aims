@@ -1,0 +1,388 @@
+diff --git a/.aims/state.md b/.aims/state.md
+new file mode 100644
+index 0000000..92cfc77
+--- /dev/null
++++ b/.aims/state.md
+@@ -0,0 +1,70 @@
++# aims Guide State
++
++Loop status only. Not the design record.
++
++## Mode
++
++auto
++
++## Loop cursor
++
++ready-to-choose-next
++
++## Current objective
++
++**Kind:** add-feature
++
++**Objective:** The effective timeout of any request sent through a Session is decided by exactly one owner,
++which applies the session's configured default on every path through the session and yields to an explicit
++per-call timeout.
++
++**Why now:** PO change: set a default timeout once per Session; calls that forget `timeout=` must not hang.
++PO handed the None-semantics choice back ("choose a simple, sensible approach"): chosen — per-call `None`
++counts as "not passed" (session default applies); explicit no-limit per call is the existing `(None, None)`
++/ urllib3 `Timeout(None, None)`.
++
++**Exit criteria:**
++- [x] Session with default D; `s.get(url)` (no timeout kw) → adapter receives D. Same for every verb method and `s.request`.
++- [x] `s.get(url, timeout=None)` → adapter receives D (falsifier: a `setdefault("timeout", ...)` shortcut fails this, because `request()` always passes `timeout=None` explicitly).
++- [x] `s.get(url, timeout=T)` for float T, tuple, urllib3 Timeout → adapter receives T unchanged; no field-wise mixing of tuples with D.
++- [x] `s.get(url, timeout=(None, None))` with default D → no limit reaches the adapter (explicit opt-out survives).
++- [x] `s.send(prepared)` directly, no timeout → D applies.
++- [x] Redirect chain (2+ hops) → every hop's adapter call gets the same effective timeout as the first.
++- [x] Response hooks receive the resolved (effective) timeout in their kwargs.
++- [x] End to end: default 0.x s on a slow endpoint raises ReadTimeout without any per-call timeout.
++- [x] No default configured → adapter receives exactly what was passed (None when omitted) — characterization.
++- [x] Pickle round-trip keeps the default; unpickling a state from before this change (no timeout key) works and means "no default".
++- [x] Invalid default (e.g. 3-tuple) fails with the same ValueError as an invalid per-call value.
++
++**Preserve:**
++- Session with no default: bit-for-bit current behavior; module-level `requests.get` etc. unchanged.
++- Existing TestTimeout tests pass unedited (4 connect-timeout tests fail environmentally, as before).
++
++**Do not optimize for:**
++- A general "session settings" framework, a new sentinel type, validation machinery foreign to Session's plain-attribute grain.
++
++## Worker handoff (drafted — do not execute before the build command)
++
++ROLE: implementation Worker; the design is the deliverable.
++DESIGN GOAL: one owner for "effective timeout" across all send paths of a Session; the change lands at the
++existing seam, matching Session's grain (plain public attributes like `stream`/`verify`/`cert`).
++BEHAVIOR: the exit criteria above.
++WHAT GOOD AIMS AT: design-principles.md + add-feature-principles.md (characterize first; one owner; re-trace
++the interactions: redirects, hooks, Response.next, pickling).
++TESTING: test-first; characterization of no-default behavior before touching code; every criterion a test.
++PRESERVE / NON-GOALS: as above. Module/placement choices are the Worker's.
++RETURN: code + tests + design reasoning; met | partially_met | invalidated | blocked.
++
++## Open assumptions (unproven — carried, not filed)
++
++- "Every request made through that session" includes direct `Session.send()` and redirect hops (grounded reading of PO text).
++
++## Open Guide TODO
++
++- [x] None-semantics decision — handed back by PO; chosen as above; filed in src/requests/sessions.py.md (anchored).
++- [x] Prove the default applies through every send path (tests: verbs, request, send, Response.next, redirects, hooks).
++- [x] Prove no-default sessions are unchanged (characterization tests passed before and after; full suite unedited).
++
++## Last evaluated result
++
++met — 35 new tests pass; full suite 650 passed, only the 4 known environmental connect-timeout failures; setdefault-shortcut mutation caught by 18 tests. Pyright not installed in .venv, not run.
+diff --git a/HISTORY.md b/HISTORY.md
+index 4fb8a63..37e346d 100644
+--- a/HISTORY.md
++++ b/HISTORY.md
+@@ -6,6 +6,13 @@ dev
+ 
+ - \[Short description of non-trivial change.\]
+ 
++**Improvements**
++
++- `Session` gained a `timeout` attribute: a default timeout for every request
++  sent through the session (including `Session.send` and redirects). A call's
++  own `timeout` replaces it; `timeout=None` on a call uses the default, and
++  `timeout=(None, None)` opts a single call out of it.
++
+ 
+ 2.34.2 (2026-05-14)
+ -------------------
+diff --git a/docs/user/advanced.rst b/docs/user/advanced.rst
+index f5209a5..2927b3d 100644
+--- a/docs/user/advanced.rst
++++ b/docs/user/advanced.rst
+@@ -1120,6 +1120,24 @@ coffee.
+ 
+     r = requests.get('https://github.com', timeout=None)
+ 
++To avoid repeating the timeout on every call, set a default on a
++:class:`Session <requests.Session>`. Every request sent through that session
++uses it unless the call passes its own timeout, which replaces the default
++entirely (a tuple is never combined field by field with the default)::
++
++    s = requests.Session()
++    s.timeout = (3.05, 27)
++
++    s.get('https://github.com')              # uses (3.05, 27)
++    s.get('https://github.com', timeout=5)   # uses 5
++
++On a session with a default, ``timeout=None`` means "not given" and the
++default still applies, so code that forwards ``timeout=None`` from its own
++arguments cannot turn the default off by accident. To wait forever on a single
++call anyway, say so explicitly::
++
++    s.get('https://github.com', timeout=(None, None))
++
+ .. note:: The connect timeout applies to each connection attempt to an IP address.
+           If multiple addresses exist for a domain name, the underlying ``urllib3`` will
+           try each address sequentially until one successfully connects.
+diff --git a/src/requests/sessions.py b/src/requests/sessions.py
+index d11355b..6dcb284 100644
+--- a/src/requests/sessions.py
++++ b/src/requests/sessions.py
+@@ -423,6 +423,9 @@ class Session(SessionRedirectMixin):
+     trust_env: bool
+     cookies: RequestsCookieJar
+     adapters: MutableMapping[str, BaseAdapter]
++    # A class-level fallback so a Session unpickled from a state saved before
++    # this attribute existed (``__setstate__`` skips ``__init__``) has no default.
++    timeout: _t.TimeoutType = None
+ 
+     __attrs__: list[str] = [
+         "headers",
+@@ -437,6 +440,7 @@ class Session(SessionRedirectMixin):
+         "stream",
+         "trust_env",
+         "max_redirects",
++        "timeout",
+     ]
+ 
+     def __init__(self) -> None:
+@@ -465,6 +469,14 @@ class Session(SessionRedirectMixin):
+         #: Stream response content default.
+         self.stream = False
+ 
++        #: Default timeout for every request sent through this session, in the
++        #: same forms the ``timeout`` argument accepts. It applies whenever a
++        #: call passes no timeout or ``timeout=None``; a call's own timeout
++        #: replaces it entirely. To wait without limit on one call despite the
++        #: default, pass ``timeout=(None, None)``. Defaults to ``None`` (no
++        #: default: requests wait until the server responds).
++        self.timeout = None
++
+         #: SSL Verification default.
+         #: Defaults to `True`, requiring requests to verify the TLS certificate at the
+         #: remote end.
+@@ -594,7 +606,8 @@ class Session(SessionRedirectMixin):
+             Basic/Digest/Custom HTTP Auth.
+         :param timeout: (optional) How many seconds to wait for the server to send
+             data before giving up, as a float, or a :ref:`(connect timeout,
+-            read timeout) <timeouts>` tuple.
++            read timeout) <timeouts>` tuple. ``None`` (or omitted) uses the
++            session's :attr:`timeout`.
+         :type timeout: float or tuple
+         :param allow_redirects: (optional) Set to True by default.
+         :type allow_redirects: bool
+@@ -759,6 +772,10 @@ class Session(SessionRedirectMixin):
+         kwargs.setdefault("stream", self.stream)
+         kwargs.setdefault("verify", self.verify)
+         kwargs.setdefault("cert", self.cert)
++        # Not setdefault: request() always passes timeout, as None when the
++        # caller gave none, and None must still fall back to the session default.
++        if kwargs.get("timeout") is None:
++            kwargs["timeout"] = self.timeout
+         if "proxies" not in kwargs:
+             kwargs["proxies"] = resolve_proxies(request, self.proxies, self.trust_env)
+ 
+diff --git a/src/requests/sessions.py.md b/src/requests/sessions.py.md
+new file mode 100644
+index 0000000..52d2a21
+--- /dev/null
++++ b/src/requests/sessions.py.md
+@@ -0,0 +1,23 @@
++---
++title: "sessions.py"
++date: 2026-09-23
++hash: "sha256:f3dc0ac18ca0635dbc680030f87f8c77512e45c5d658d1e92108f882749015a8"
++---
++## Decisions
++- `Session.timeout` (session default timeout): a per-call `timeout=None` counts as "not given" and the
++  default applies. Rejected: `None` as an explicit "no limit" that overrides the default — wrappers that
++  forward their own `timeout=None` argument (a very common pattern) would silently disable the default and
++  reintroduce the hang-forever calls the feature exists to prevent. The product owner handed this choice
++  to engineering; it was decided on that reason.
++- Per-call opt-out of the default is the already-valid `timeout=(None, None)` / urllib3
++  `Timeout(connect=None, read=None)`, not a new sentinel. Rules out adding a `NO_TIMEOUT`-style constant
++  unless `(None, None)` proves insufficient.
++- A call's timeout replaces the default whole; a `(connect, read)` tuple is never merged field-by-field
++  with the session's. Rules out "call sets read, session supplies connect".
++- The default is a plain attribute validated where per-call timeouts are (the adapter), like `stream` /
++  `verify` / `cert` — no property/validation at assignment. An invalid default fails on first request
++  with the same ValueError as an invalid per-call value.
++## Discussions
++- Resolution lives only in `Session.send`: every path (verb methods → `request`, direct `send`,
++  `Response.next`, redirect hops, response hooks) passes through it. `merge_environment_settings` was the
++  other candidate; rejected because direct `send()` bypasses it.
+diff --git a/tests/test_requests.py b/tests/test_requests.py
+index 8bcb81d..1f13196 100644
+--- a/tests/test_requests.py
++++ b/tests/test_requests.py
+@@ -2605,6 +2605,173 @@ class TestTimeout:
+ SendCall = collections.namedtuple("SendCall", ("args", "kwargs"))
+ 
+ 
++class _RecordingAdapter(HTTPAdapter):
++    """Records the ``timeout`` each send reaches the transport with."""
++
++    def __init__(self):
++        super().__init__()
++        self.timeouts = []
++
++    def send(self, request, **kwargs):
++        self.timeouts.append(kwargs["timeout"])
++        return super().send(request, **kwargs)
++
++
++def _recording_session(default=None, configure=True):
++    s = requests.Session()
++    if configure:
++        s.timeout = default
++    adapter = _RecordingAdapter()
++    s.mount("http://", adapter)
++    return s, adapter
++
++
++class TestSessionDefaultTimeout:
++    # --- no default configured: behavior is exactly as before -----------------
++
++    @pytest.mark.parametrize(
++        "kwargs, expected",
++        (
++            ({}, None),
++            ({"timeout": None}, None),
++            ({"timeout": 5}, 5),
++            ({"timeout": (1, 2)}, (1, 2)),
++        ),
++    )
++    def test_without_default_timeout_reaches_adapter_as_passed(
++        self, httpbin, kwargs, expected
++    ):
++        s, adapter = _recording_session(configure=False)
++        s.get(httpbin("get"), **kwargs)
++        assert adapter.timeouts == [expected]
++
++    def test_new_session_has_no_default(self):
++        assert requests.Session().timeout is None
++
++    # --- default configured ----------------------------------------------------
++
++    @pytest.mark.parametrize(
++        "method", ("get", "options", "head", "post", "put", "patch", "delete")
++    )
++    def test_default_applies_to_every_verb_method(self, httpbin, method):
++        s, adapter = _recording_session(default=7)
++        getattr(s, method)(httpbin(method if method not in ("options", "head") else "get"))
++        assert adapter.timeouts == [7]
++
++    def test_default_applies_to_request(self, httpbin):
++        s, adapter = _recording_session(default=7)
++        s.request("GET", httpbin("get"))
++        assert adapter.timeouts == [7]
++
++    def test_explicit_none_uses_default(self, httpbin):
++        """A forwarded ``timeout=None`` must not silently disable the default."""
++        s, adapter = _recording_session(default=7)
++        s.get(httpbin("get"), timeout=None)
++        assert adapter.timeouts == [7]
++
++    @pytest.mark.parametrize(
++        "timeout",
++        (3, 0.5, (1, 30), (None, 30), Urllib3Timeout(connect=1, read=2)),
++    )
++    def test_per_call_timeout_replaces_default_whole(self, httpbin, timeout):
++        s, adapter = _recording_session(default=(9, 99))
++        s.get(httpbin("get"), timeout=timeout)
++        assert adapter.timeouts == [timeout]
++
++    @pytest.mark.parametrize(
++        "no_limit", ((None, None), Urllib3Timeout(connect=None, read=None))
++    )
++    def test_explicit_no_limit_opts_out_of_default(self, httpbin, no_limit):
++        s, adapter = _recording_session(default=7)
++        r = s.get(httpbin("get"), timeout=no_limit)
++        assert r.status_code == 200
++        assert adapter.timeouts == [no_limit]
++
++    @pytest.mark.parametrize(
++        "default", (7, (1, 30), Urllib3Timeout(connect=1, read=30))
++    )
++    def test_default_value_shapes_reach_adapter_unchanged(self, httpbin, default):
++        s, adapter = _recording_session(default=default)
++        s.get(httpbin("get"))
++        assert adapter.timeouts == [default]
++
++    def test_default_applies_to_direct_send(self, httpbin):
++        s, adapter = _recording_session(default=7)
++        prep = s.prepare_request(requests.Request("GET", httpbin("get")))
++        s.send(prep)
++        assert adapter.timeouts == [7]
++
++    def test_direct_send_with_explicit_timeout_wins(self, httpbin):
++        s, adapter = _recording_session(default=7)
++        prep = s.prepare_request(requests.Request("GET", httpbin("get")))
++        s.send(prep, timeout=2)
++        assert adapter.timeouts == [2]
++
++    def test_default_applies_to_every_redirect_hop(self, httpbin):
++        s, adapter = _recording_session(default=7)
++        r = s.get(httpbin("redirect/2"))
++        assert len(r.history) == 2
++        assert adapter.timeouts == [7, 7, 7]
++
++    def test_per_call_timeout_applies_to_every_redirect_hop(self, httpbin):
++        s, adapter = _recording_session(default=7)
++        s.get(httpbin("redirect/2"), timeout=3)
++        assert adapter.timeouts == [3, 3, 3]
++
++    def test_default_applies_when_following_response_next(self, httpbin):
++        s, adapter = _recording_session(default=7)
++        r = s.get(httpbin("redirect/1"), allow_redirects=False)
++        s.send(r.next)
++        assert adapter.timeouts == [7, 7]
++
++    def test_hooks_see_effective_timeout(self, httpbin):
++        seen = []
++
++        def hook(r, **kwargs):
++            seen.append(kwargs["timeout"])
++
++        s, _ = _recording_session(default=7)
++        s.get(httpbin("get"), hooks={"response": hook})
++        assert seen == [7]
++
++    def test_default_changed_later_applies_to_later_requests(self, httpbin):
++        s, adapter = _recording_session(default=7)
++        s.get(httpbin("get"))
++        s.timeout = None
++        s.get(httpbin("get"))
++        assert adapter.timeouts == [7, None]
++
++    def test_default_read_timeout_fires_without_per_call_timeout(self, httpbin):
++        with requests.Session() as s:
++            s.timeout = (None, 0.1)
++            with pytest.raises(ReadTimeout):
++                s.get(httpbin("delay/10"))
++
++    def test_invalid_default_fails_like_invalid_per_call_timeout(self, httpbin):
++        s, _ = _recording_session(default=(3, 4, 5))
++        with pytest.raises(ValueError, match=r"\(connect, read\)"):
++            s.get(httpbin("get"))
++
++    # --- persistence -----------------------------------------------------------
++
++    def test_default_survives_pickling(self, httpbin):
++        s = requests.Session()
++        s.timeout = (1, 30)
++        assert pickle.loads(pickle.dumps(s)).timeout == (1, 30)
++
++    def test_session_pickled_before_default_existed_has_no_default(self, httpbin):
++        s = requests.Session()
++        state = s.__getstate__()
++        del state["timeout"]
++        old = requests.Session.__new__(requests.Session)
++        old.__setstate__(state)
++        assert old.timeout is None
++        adapter = _RecordingAdapter()
++        old.mount("http://", adapter)
++        old.get(httpbin("get"))
++        assert adapter.timeouts == [None]
++
++
+ class RedirectSession(SessionRedirectMixin):
+     def __init__(self, order_of_redirects):
+         self.redirects = order_of_redirects
