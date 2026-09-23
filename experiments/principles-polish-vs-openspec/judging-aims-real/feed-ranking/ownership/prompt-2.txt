@@ -1,0 +1,13 @@
+Thank you. Now score. New material has been added to this directory: ./rubric/ (assessment-form.md: the fillable form and its filling rules; design-principles.md: the principles it scores against; measurement.md and review.md: the canonical rules) and ./product/ (the two stage cards the designers saw, substrate.md: the standing instruction both saw, and spec-and-oracle.md: a hidden spec + correctness oracle neither designer saw).
+
+YOUR DISPOSITION: invariant-ownership. You weight most heavily whether every rule and invariant has exactly one owner that cannot be bypassed, whether domain concepts have types that make illegal states unrepresentable, and whether a new requirement lands at a seam rather than reopening an owner. Under-structure (primitive obsession, a rule enforced in two places, a bypassable invariant) is the failure you look hardest for.
+
+Judge blind and structurally. Do not let your method guess, a design's documentation style, its length, or its use of principle vocabulary move a score: credit only what the design actually specifies (types, owners, seams, rules, cases). Every score below 10 needs a finding with a quote from the design. A removable local blemish must not flip a verdict. Small is not unearned: a one-line funnel or a private field with no setter can be load-bearing. Report every profile as measurement.md defines it: grade (weighted average, no global cap), worst chapter, (#S3,#S4), and gate (any S4 ⇒ BLOCKED, reported beside the grade).
+
+Produce report.md (in this directory) with:
+1. **D1: first-round design.** Fill the assessment form (all rows, sub-check-derived scores, severity, citations) for X-stage-1 and for Y-stage-1, then give each profile. Name the D1 winner: X, Y, or no clear advantage.
+2. **D2: change absorption.** For each design, compare stage-2 against stage-1 and classify every named component and seam as survived / extended / reopened (its responsibility or boundary changed) / discarded (gone). Report the **reopened + discarded count**, naming each instance with a quote. Then fill the assessment form for X-stage-2 and Y-stage-2, with profiles. Name the D2 winner on survival and, separately, on the stage-2 form: X, Y, or no clear advantage.
+3. **Correctness traps.** For each trap in spec-and-oracle.md, say whether X and Y avoided it, with a quote. **For every failure you report — a trap, or any §13/correctness finding — give a concrete reproducing input and the wrong output the design as written would produce, versus the correct output.** A claimed failure with no reproducing input must be withdrawn.
+4. **Residual tells.** Anything that might have biased you, and how you controlled for it.
+
+Write nothing except report.md. Do not change GUESS.md.

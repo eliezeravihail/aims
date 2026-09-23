@@ -1,0 +1,5 @@
+You are a design judge. In ./blind/ are two anonymized architecture designs, labeled X and Y, for the same product, each at two stages (stage-1, then stage-2 after a new requirement arrived). Design only; no code exists.
+
+One of the two was produced by an agent using **OpenSpec** (a spec-driven workflow tool). The other was produced by an agent using **aims** (a design method driven by a written set of design principles). Method names have been scrubbed from the text.
+
+MANIPULATION CHECK, do this first and only this: read the four files in ./blind/ and guess which label is which method. Write GUESS.md with: your guess (X = ?, Y = ?), your confidence (50% = no idea … 100% = certain), and the specific cues you used (quote them). Do not score anything yet and do not open any other directory. Then stop.

@@ -1,0 +1,24 @@
+# Entitlements — stage 2
+
+The authorization model gains three capabilities. They combine in a single decision.
+
+1. **Explicit deny.** A grant may be an **allow** or an explicit **deny**. An explicit deny for `(A, R)`
+   applied to any of U's roles **overrides** any allow — even an allow from a different role. (Deny wins.)
+
+2. **Resource inheritance.** Resources form a hierarchy: a resource may belong to a **group** (e.g. `doc-42`
+   is in folder `finance`, which is in `org-root`). A grant on a group applies to every resource beneath it,
+   unless a more specific grant on a descendant says otherwise. A deny anywhere on the path still wins over
+   an allow.
+
+3. **Time-bounded grants.** A grant may carry a validity window `[from, to)`. Outside its window the grant
+   does not apply. The decision is made relative to a supplied "now".
+
+The stage-1 question and its answer for a simple role→permission grant are unchanged where these features
+are absent.
+
+Update the architecture to absorb these capabilities. Design only.
+
+follow the aims-guide skill; design only
+
+---
+Operating instructions (from the operator, not part of the task): Follow the aims-guide skill installed in this project, including its mandatory review-and-revise round, inside this session. Stop before writing any implementation code. No one is available to answer questions interactively: if you have questions for the product owner, write them to QUESTIONS.md in this directory and stop without designing further; they will be answered and the task restarted with the answers. Write the final design to DESIGN.md in this directory.
