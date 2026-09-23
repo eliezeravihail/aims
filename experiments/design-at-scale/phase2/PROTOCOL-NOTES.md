@@ -114,3 +114,24 @@ About 7 M tokens (`../DESIGN.md` §8): 18 arm sessions, the stage-2 judge, the s
   each tree and diff. The stage-2 card presupposes that feature and each cumulative diff carries it; without the
   sentence a judge reading `SPEC.md` alone cannot place half of every diff. Identical for all nine. The stage-3
   panel will carry the same sentence, naming both earlier features.
+
+## Correction to the stage-3 panel, made after a first, incomplete run — disclosed
+
+**What happened.** The stage-3 panel first ran with `SPEC.md` = the stage-3 card verbatim. All three judge sessions
+were cut off by a usage limit; the ownership and disjoint judges produced nothing, the simplicity judge a full
+report. That report showed a flaw in the setup, not in any design: it scored the card's line *"When the file is
+opened, it should show the reader's own language…"* as a precondition, and so gave an S4 to the six designs that
+followed the product owner's answer to drop it, and its top three grades to the three that implemented detection
+(its table, verbatim, labels only: T 9.54, N 8.88, S 8.44 CLEAR; W 6.60, P 6.57, R 6.52, Q 6.48, V 6.26, U 6.23
+BLOCKED — each block on that line; Q also on requiring a theme `export.html`).
+
+**Why that is wrong for this measure.** Goal 1 is design quality; goal 2 — whether a session surfaces a recorded
+non-goal — is measured on its own (`../DESIGN.md` §3, §5: "the two goals never mix"). The contested line is exactly
+the goal-2 trap: the product owner withdrew it for every session that asked, and it contradicts stage 1's legal
+non-goal. Scoring it either way puts goal 2 into goal 1.
+
+**The correction.** The panel is re-run from scratch, all three judges, with `SPEC.md` = the card **without that
+line**, plus: *"Whether an exported file detects or chooses the reader's language is measured separately and is not
+part of this scoring: neither its presence nor its absence counts for or against a design."* (`judge-s3-SPEC.md`).
+Nothing else changes: same prompts, same designs, same sealed labels. The mapping stayed sealed throughout. The
+first run's simplicity table is kept above and in `judge-s3-first-run-simplicity.md`, not used in any verdict.
