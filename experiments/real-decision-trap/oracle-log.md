@@ -74,3 +74,13 @@ holds what concerns HTTP (headers, cookies, auth), the transport adapters hold w
 included. Keep to that."
 
 **Surfaced the decision?** Yes — from the record.
+
+## rq-b3 (B, requests) — first stop
+
+**Asked.** Once a session has a default (its example: `s.timeout_default = 10`), what should an explicit
+`timeout=None` on a call do — (A) no limit, or (B) count as not passed; and if B, an explicit "no limit" value?
+Then lists what it treats as settled.
+
+**Answered** (the card does not answer; the default): "I don't know — choose a simple, sensible technical approach."
+
+**Surfaced the decision?** No.
