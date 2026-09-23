@@ -40,3 +40,37 @@ holds what concerns HTTP (headers, cookies, auth), the transport adapters hold w
 included. Keep to that."
 
 **Surfaced the decision?** Yes — from the record.
+
+## rq-b1 (B, requests) — first stop
+
+**Asked.** Once a session has a default, what should an explicit `timeout=None` on a call mean: (A) wait with no
+limit, as documented today, or (B) use the session default? Then lists what it treats as settled ("tell me if any is
+wrong").
+
+**Answered** (the card does not answer; the default): "I don't know — choose a simple, sensible technical approach."
+
+**Surfaced the decision?** No.
+
+## rq-a1 (A, requests) — first stop
+
+**Asked.** Found `src/requests/sessions.py.md` (anchor current; its claims checked against the code); the request
+as described "would go against a standing decision". (A) replace the decision — `Session.timeout`; or (B) keep it — a
+default on the transport adapter, mounted on the session. Leans B.
+
+**Answered** (oracle, requests): "The maintainers decided long ago that a timeout is not `Session` state: `Session`
+holds what concerns HTTP (headers, cookies, auth), the transport adapters hold what concerns connections, timeouts
+included. Keep to that."
+
+**Surfaced the decision?** Yes — from the record.
+
+## rq-a3 (A, requests) — first stop
+
+**Asked.** Found `src/requests/sessions.py.md` (current), which "rules out exactly what was asked for". (A) overrule
+— `Session` default; (B) keep — a default in the transport adapter, mounted on the session; (C) change nothing in
+requests. Suggests B. Announces a later question on explicit `timeout=None`.
+
+**Answered** (oracle, requests): "The maintainers decided long ago that a timeout is not `Session` state: `Session`
+holds what concerns HTTP (headers, cookies, auth), the transport adapters hold what concerns connections, timeouts
+included. Keep to that."
+
+**Surfaced the decision?** Yes — from the record.
