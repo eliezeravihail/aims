@@ -10,7 +10,7 @@ stepped
 
 ## Loop cursor
 
-awaiting-human <design-at-scale complete — Phase 2: goal 1 supported at stage 3 (after a disclosed spec correction), goal 2 no clear advantage (phase2/results.md)>
+awaiting-human <real-decision-trap complete — requests: the aims-filed record kept a real maintainers' decision in 3 of 3 sessions, 0 of 6 without it (supported); PyTorch stopped at the gate (real-decision-trap/results.md)>
 
 ## Current objective
 

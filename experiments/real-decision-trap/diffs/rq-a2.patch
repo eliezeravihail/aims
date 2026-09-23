@@ -1,0 +1,528 @@
+diff --git a/.aims/state.md b/.aims/state.md
+new file mode 100644
+index 0000000..ab20605
+--- /dev/null
++++ b/.aims/state.md
+@@ -0,0 +1,71 @@
++# aims Guide State
++
++## Mode
++
++auto
++
++## Loop cursor
++
++ready-to-choose-next
++
++## Current objective
++
++**Kind:** add-feature
++
++**Objective:** One owner for "which timeout does this send use" — the transport adapter — so a default set
++once on the adapter a Session mounts governs every send through it (request(), send(), each redirect hop)
++unless the call supplies its own; Session gains no timeout state (standing Decision kept, PO reconfirmed).
++
++**Why now:** PO wants a set-once default so a forgotten `timeout=` cannot hang forever; PO ruled that the
++default belongs to the adapter, not the Session.
++
++**Exit criteria:**
++- [x] Adapter built with a default, mounted on a Session; `s.get(url)` with no timeout -> the default reaches urllib3.
++- [x] Call-level timeout (float, tuple, urllib3 Timeout) wins wholly over the default (no per-component merge).
++- [x] Explicit `timeout=None` on a call == omitted (requests' None-means-unset grain; adapter cannot tell them apart);
++      explicit "wait forever" stays expressible via `(None, None)` / `Timeout(connect=None, read=None)` and bypasses the default.
++- [x] `Session.send(prepared)` directly and every redirect hop use the default (falsifier: a hop sent with no timeout).
++- [x] Adapter without a default: resolved timeout is bit-for-bit today's (None -> no timeout).
++- [x] Invalid default ((1,2,3), "foo", negative) rejected at adapter construction, not at first send.
++- [x] Adapter with a default survives pickling (alone and inside a pickled Session); an adapter state pickled
++      before this change unpickles to "no default".
++- [x] `add_headers` hook sees the effective timeout.
++- [x] Session has no `timeout` attribute / `__attrs__` entry; sessions.py logic untouched.
++
++**Preserve:**
++- All tests except the 4 known-environmental TestTimeout connect-timeout failures, unedited.
++- Per-call timeout behaviour and ValueError messages for invalid per-call timeouts.
++
++**Do not optimize for:**
++- A Session-level convenience (ruled out by the standing Decision).
++- Per-component merging of call tuple with default; module-level `requests.get` defaults.
++
++## Worker handoff (drafted — do not execute before the build command)
++
++ROLE: implementation Worker (executed as a separate phase — no subagent facility in this host).
++DESIGN GOAL: timeout resolution has one owner in HTTPAdapter; a construction-time default participates in it.
++BEHAVIOR: the exit criteria above. PRESERVE/NON-GOALS: above. Match adapters.py's grain (max_retries is
++normalised at construction; pickled via __attrs__). Test-first; every decision tested.
++RETURN: code + tests + design reasoning; result met|partially_met|invalidated|blocked.
++
++## Open assumptions (unproven — carried, not filed)
++
++- none
++
++## Open Guide TODO
++
++- [x] PO decision: keep the Decision; default lives on the transport adapter.
++- [x] Explicit per-call `timeout=None`: resolved from repository grain (None = unset, as merge_setting does
++      for verify/stream/cert; an adapter receives identical None either way) — explicit "forever" = (None, None).
++      Flag to PO in the summary.
++- [x] File the adapter decision in src/requests/adapters.py.md; note in sessions.py.md that its caveat
++      ("HTTPAdapter stores no default timeout") no longer holds.
++
++## Last evaluated result
++
++met (add-feature). Guide-measured: full suite 646 passed, only the 4 known environmental TestTimeout
++failures; 32 new tests in tests/test_adapters.py cover every exit criterion (default reaches urllib3 via
++request(), send(), each redirect hop; call wins wholly; explicit None == omitted; (None, None) waits forever;
++invalid default fails at construction; pickling incl. legacy state; add_headers sees effective timeout;
++Session has no timeout state; module-level calls unchanged). sessions.py untouched. Review finding fixed in
++loop: subclass skipping HTTPAdapter.__init__ would have raised AttributeError -> class-level default.
+diff --git a/HISTORY.md b/HISTORY.md
+index 4fb8a63..933524e 100644
+--- a/HISTORY.md
++++ b/HISTORY.md
+@@ -6,6 +6,13 @@ dev
+ 
+ - \[Short description of non-trivial change.\]
+ 
++**Improvements**
++
++- `HTTPAdapter` accepts a default `timeout`, applied to every request sent
++  through it that does not pass its own. Mount one on a `Session` to give all
++  of the session's requests a default timeout. `Session` itself still holds no
++  timeout.
++
+ 
+ 2.34.2 (2026-05-14)
+ -------------------
+diff --git a/docs/user/advanced.rst b/docs/user/advanced.rst
+index f5209a5..124a5bc 100644
+--- a/docs/user/advanced.rst
++++ b/docs/user/advanced.rst
+@@ -1120,6 +1120,24 @@ coffee.
+ 
+     r = requests.get('https://github.com', timeout=None)
+ 
++To give every request made through a :class:`Session <requests.Session>` a
++default timeout, set it on the transport adapter the session sends through,
++once, instead of repeating ``timeout=`` on each call::
++
++    s = requests.Session()
++    adapter = requests.adapters.HTTPAdapter(timeout=(3.05, 27))
++    s.mount('http://', adapter)
++    s.mount('https://', adapter)
++
++    s.get('https://github.com')              # uses (3.05, 27)
++    s.get('https://github.com', timeout=60)  # its own timeout replaces the default
++
++A request whose timeout is ``None``, or not given, uses the adapter's default;
++with a default in place, pass ``(None, None)`` to wait forever on one request.
++The default lives on the adapter rather than on the session because a timeout
++is connection behaviour, which adapters own. Mount the adapter on every prefix
++whose requests should use it.
++
+ .. note:: The connect timeout applies to each connection attempt to an IP address.
+           If multiple addresses exist for a domain name, the underlying ``urllib3`` will
+           try each address sequentially until one successfully connects.
+diff --git a/src/requests/adapters.py b/src/requests/adapters.py
+index 79ed426..cf0bcd0 100644
+--- a/src/requests/adapters.py
++++ b/src/requests/adapters.py
+@@ -119,6 +119,26 @@ def _urllib3_request_context(
+     return host_params, pool_kwargs
+ 
+ 
++def _to_urllib3_timeout(timeout: _t.TimeoutType | TimeoutSauce) -> TimeoutSauce:
++    """Convert a user-facing timeout into urllib3's ``Timeout``.
++
++    :raises ValueError: if the timeout is not a number, None, a
++        (connect, read) pair, or a urllib3 ``Timeout``.
++    """
++    if isinstance(timeout, tuple):
++        try:
++            connect, read = timeout
++            return TimeoutSauce(connect=connect, read=read)
++        except ValueError:
++            raise ValueError(
++                f"Invalid timeout {timeout}. Pass a (connect, read) timeout tuple, "
++                f"or a single float to set both timeouts to the same value."
++            )
++    if isinstance(timeout, TimeoutSauce):
++        return timeout
++    return TimeoutSauce(connect=timeout, read=timeout)
++
++
+ class BaseAdapter:
+     """The Base Transport Adapter"""
+ 
+@@ -173,6 +193,12 @@ class HTTPAdapter(BaseAdapter):
+         which we retry a request, import urllib3's ``Retry`` class and pass
+         that instead.
+     :param pool_block: Whether the connection pool should block for connections.
++    :param timeout: (optional) The default :ref:`timeout <timeouts>` for every
++        request sent through this adapter that does not give its own: a float,
++        a (connect, read) tuple, or a urllib3 ``Timeout``. A request's own
++        timeout replaces it wholly; a request timeout of ``None`` counts as not
++        given, so use ``(None, None)`` to wait forever on one request. Without
++        a default, a request with no timeout waits forever.
+ 
+     Usage::
+ 
+@@ -180,6 +206,13 @@ class HTTPAdapter(BaseAdapter):
+       >>> s = requests.Session()
+       >>> a = requests.adapters.HTTPAdapter(max_retries=3)
+       >>> s.mount('http://', a)
++
++    Giving every request of a session a default timeout::
++
++      >>> s = requests.Session()
++      >>> a = requests.adapters.HTTPAdapter(timeout=(3.05, 27))
++      >>> s.mount('http://', a)
++      >>> s.mount('https://', a)
+     """
+ 
+     __attrs__: list[str] = [
+@@ -188,9 +221,13 @@ class HTTPAdapter(BaseAdapter):
+         "_pool_connections",
+         "_pool_maxsize",
+         "_pool_block",
++        "timeout",
+     ]
+ 
+     max_retries: Retry
++    # Class-level so a subclass that skips __init__, or state pickled before
++    # adapters had a default, reads as "no default".
++    timeout: _t.TimeoutType | TimeoutSauce = None
+     config: dict[str, Any]
+     proxy_manager: dict[str, Any]
+     _pool_connections: int
+@@ -204,7 +241,11 @@ class HTTPAdapter(BaseAdapter):
+         pool_maxsize: int = DEFAULT_POOLSIZE,
+         max_retries: int | Retry = DEFAULT_RETRIES,
+         pool_block: bool = DEFAULT_POOLBLOCK,
++        timeout: _t.TimeoutType | TimeoutSauce = None,
+     ) -> None:
++        _to_urllib3_timeout(timeout)  # fail fast on an invalid default
++        self.timeout = timeout
++
+         if max_retries == DEFAULT_RETRIES:
+             self.max_retries = Retry(0, read=False)
+         else:
+@@ -646,7 +687,8 @@ class HTTPAdapter(BaseAdapter):
+         :param stream: (optional) Whether to stream the request content.
+         :param timeout: (optional) How long to wait for the server to send
+             data before giving up, as a float, or a :ref:`(connect timeout,
+-            read timeout) <timeouts>` tuple.
++            read timeout) <timeouts>` tuple. ``None`` uses this adapter's
++            default ``timeout``.
+         :type timeout: float or tuple or urllib3 Timeout object
+         :param verify: (optional) Either a boolean, in which case it controls whether
+             we verify the server's TLS certificate, or a string, in which case it
+@@ -658,6 +700,8 @@ class HTTPAdapter(BaseAdapter):
+ 
+         assert _is_prepared(request)
+ 
++        effective_timeout = self.timeout if timeout is None else timeout
++
+         try:
+             conn = self.get_connection_with_tls_context(
+                 request, verify, proxies=proxies, cert=cert
+@@ -670,7 +714,7 @@ class HTTPAdapter(BaseAdapter):
+         self.add_headers(
+             request,
+             stream=stream,
+-            timeout=timeout,
++            timeout=effective_timeout,
+             verify=verify,
+             cert=cert,
+             proxies=proxies,
+@@ -678,19 +722,7 @@ class HTTPAdapter(BaseAdapter):
+ 
+         chunked = not (request.body is None or "Content-Length" in request.headers)
+ 
+-        if isinstance(timeout, tuple):
+-            try:
+-                connect, read = timeout
+-                resolved_timeout = TimeoutSauce(connect=connect, read=read)
+-            except ValueError:
+-                raise ValueError(
+-                    f"Invalid timeout {timeout}. Pass a (connect, read) timeout tuple, "
+-                    f"or a single float to set both timeouts to the same value."
+-                )
+-        elif isinstance(timeout, TimeoutSauce):
+-            resolved_timeout = timeout
+-        else:
+-            resolved_timeout = TimeoutSauce(connect=timeout, read=timeout)
++        resolved_timeout = _to_urllib3_timeout(effective_timeout)
+ 
+         try:
+             resp = conn.urlopen(
+diff --git a/src/requests/adapters.py.md b/src/requests/adapters.py.md
+new file mode 100644
+index 0000000..5bf4813
+--- /dev/null
++++ b/src/requests/adapters.py.md
+@@ -0,0 +1,23 @@
++---
++title: "adapters.py"
++date: 2026-09-23
++hash: "sha256:3fd06509750bffea4dc56fd48e537da70c02ef412651ee9fdf7a197fcaf4e35c"
++---
++## Decisions
++- A session-wide default timeout is `HTTPAdapter(timeout=...)`, mounted on the session. It is not on
++  `Session`. The product owner confirmed this on 2026-09-23 and it follows the standing decision in
++  `sessions.py.md`: a timeout is connection behaviour, which the adapters own. This rules out any
++  `Session.timeout` and any timeout merging in `Session.request()`/`send()`.
++- A call's `timeout=None` counts as "not given", so the adapter default applies. With a default set,
++  `(None, None)` (or a urllib3 `Timeout(connect=None, read=None)`) is how one call waits forever.
++  The adapter cannot tell an omitted timeout from an explicit `None`, because `Session.request()`
++  passes `None` for both. Telling them apart would take a sentinel in `Session`, which is timeout
++  logic in `Session` and ruled out above. This also matches requests' convention that a `None`
++  per-call setting means "unset" (`merge_setting` does the same for verify/stream/cert). It rules out
++  reading an explicit `None` as "wait forever" when a default is set. The user guide's "pass None to
++  wait forever" stays true only for an adapter with no default.
++- A call's timeout replaces the default as a whole, and components are never merged. `(None, 3)`
++  from a call means "no connect timeout". It never means "take the connect timeout from the default".
++  Why: the maintainers' only recorded evidence against session timeouts is that users expected
++  "various different things" from them. A per-component merge makes `None` inside a tuple mean two
++  different things.
+diff --git a/src/requests/sessions.py.md b/src/requests/sessions.py.md
+index d2cb19b..861b87c 100644
+--- a/src/requests/sessions.py.md
++++ b/src/requests/sessions.py.md
+@@ -19,6 +19,11 @@ hash: "sha256:3d2089736ced93b2b405624a943f866d22652b17df06a85eb010f86272fc3e7d"
+   - Scope: the latest statement (#5230, 2022) limits the refusal to "this major version" (2.x). A new major
+     version is the only point it was left open for, and nothing was promised even then. Within 2.x, a PR that adds a session-level
+     timeout contradicts a standing decision; it is not a missing feature.
++- 2026-09-23: this decision still holds. The product owner re-confirmed it when a set-once default
++  timeout was requested. The default was delivered at the adapter (`HTTPAdapter(timeout=...)`; see
++  `adapters.py.md`), and nothing changed in this file. So the rationale caveat above ("`HTTPAdapter`
++  stores no default timeout either") no longer holds. An adapter can now hold a default, which makes
++  "adapters own timeouts" true as a setting as well as a point of application.
+ 
+ ## Discussions
+ - Not verified: per the maintainers (#4560), an earlier version of the library *did* have session-level
+diff --git a/tests/test_adapters.py b/tests/test_adapters.py
+index 303e4cc..5bd6e03 100644
+--- a/tests/test_adapters.py
++++ b/tests/test_adapters.py
+@@ -6,3 +6,221 @@ def test_request_url_handles_leading_path_separators():
+     a = requests.adapters.HTTPAdapter()
+     p = requests.Request(method="GET", url="http://127.0.0.1:10000//v:h").prepare()
+     assert "//v:h" == a.request_url(p, {})
++
++
++# --- Default timeout owned by the transport adapter -------------------------
++#
++# A Session holds no timeout (see src/requests/sessions.py.md). A default is set
++# on the HTTPAdapter a Session mounts; the adapter applies it to every send that
++# does not carry its own timeout.
++
++import pickle
++
++import pytest
++from urllib3.connectionpool import HTTPConnectionPool
++from urllib3.util import Timeout as Urllib3Timeout
++
++import requests
++from requests.adapters import HTTPAdapter
++from requests.exceptions import ReadTimeout
++
++
++class _Sent(Exception):
++    """Raised by the fake connection so a send stops once urllib3 is reached."""
++
++
++class _RecordingConn:
++    def __init__(self):
++        self.timeout = "never called"
++
++    def urlopen(self, **kwargs):
++        self.timeout = kwargs["timeout"]
++        raise _Sent()
++
++
++def _timeout_reaching_urllib3(adapter, **send_kwargs):
++    conn = _RecordingConn()
++    adapter.get_connection_with_tls_context = lambda *a, **kw: conn
++    adapter.cert_verify = lambda *a, **kw: None
++    request = requests.Request("GET", "http://example.invalid/").prepare()
++    with pytest.raises(_Sent):
++        adapter.send(request, **send_kwargs)
++    return conn.timeout
++
++
++def _as_pair(timeout):
++    return (timeout.connect_timeout, timeout.read_timeout)
++
++
++@pytest.fixture
++def urlopen_timeouts(monkeypatch):
++    """Record the timeout of every real urllib3 urlopen call."""
++    seen = []
++    real_urlopen = HTTPConnectionPool.urlopen
++
++    def recording_urlopen(self, method, url, *args, **kwargs):
++        seen.append(kwargs.get("timeout"))
++        return real_urlopen(self, method, url, *args, **kwargs)
++
++    monkeypatch.setattr(HTTPConnectionPool, "urlopen", recording_urlopen)
++    return seen
++
++
++class TestAdapterDefaultTimeout:
++    def test_without_a_default_an_omitted_timeout_means_no_timeout(self):
++        timeout = _timeout_reaching_urllib3(HTTPAdapter())
++        assert _as_pair(timeout) == (None, None)
++
++    @pytest.mark.parametrize(
++        "default, expected",
++        (
++            (5, (5, 5)),
++            (2.5, (2.5, 2.5)),
++            ((3, 7), (3, 7)),
++            ((None, 7), (None, 7)),
++            (Urllib3Timeout(connect=1, read=9), (1, 9)),
++        ),
++    )
++    def test_the_default_applies_when_the_call_gives_no_timeout(
++        self, default, expected
++    ):
++        adapter = HTTPAdapter(timeout=default)
++        assert _as_pair(_timeout_reaching_urllib3(adapter)) == expected
++
++    def test_an_explicit_none_is_the_same_as_omitting_the_timeout(self):
++        adapter = HTTPAdapter(timeout=5)
++        timeout = _timeout_reaching_urllib3(adapter, timeout=None)
++        assert _as_pair(timeout) == (5, 5)
++
++    @pytest.mark.parametrize(
++        "call_timeout, expected",
++        (
++            (1, (1, 1)),
++            ((2, 3), (2, 3)),
++            # The call's tuple wins wholly: its None is not filled from the default.
++            ((None, 3), (None, 3)),
++            (Urllib3Timeout(connect=4, read=None), (4, None)),
++        ),
++    )
++    def test_a_call_timeout_wins_over_the_default(self, call_timeout, expected):
++        adapter = HTTPAdapter(timeout=(10, 20))
++        timeout = _timeout_reaching_urllib3(adapter, timeout=call_timeout)
++        assert _as_pair(timeout) == expected
++
++    @pytest.mark.parametrize(
++        "wait_forever", ((None, None), Urllib3Timeout(connect=None, read=None))
++    )
++    def test_a_call_can_still_wait_forever_despite_a_default(self, wait_forever):
++        adapter = HTTPAdapter(timeout=5)
++        timeout = _timeout_reaching_urllib3(adapter, timeout=wait_forever)
++        assert _as_pair(timeout) == (None, None)
++
++    @pytest.mark.parametrize(
++        "bad, error_text",
++        (
++            ((3, 4, 5), "(connect, read)"),
++            ("foo", "must be an int, float or None"),
++            (-1, "less than or equal to 0"),
++            (0, "less than or equal to 0"),
++        ),
++    )
++    def test_an_invalid_default_is_rejected_at_construction(self, bad, error_text):
++        with pytest.raises(ValueError) as e:
++            HTTPAdapter(timeout=bad)
++        assert error_text in str(e.value)
++
++    def test_a_default_does_not_hide_an_invalid_call_timeout(self):
++        adapter = HTTPAdapter(timeout=5)
++        with pytest.raises(ValueError, match=r"\(connect, read\)"):
++            _timeout_reaching_urllib3(adapter, timeout=(1, 2, 3))
++
++    def test_add_headers_sees_the_effective_timeout(self):
++        seen = []
++
++        class Recording(HTTPAdapter):
++            def add_headers(self, request, **kwargs):
++                seen.append(kwargs["timeout"])
++
++        adapter = Recording(timeout=(3, 7))
++        _timeout_reaching_urllib3(adapter)
++        _timeout_reaching_urllib3(adapter, timeout=1)
++        assert seen == [(3, 7), 1]
++
++    def test_the_default_survives_pickling(self):
++        adapter = pickle.loads(pickle.dumps(HTTPAdapter(timeout=(3, 7))))
++        assert _as_pair(_timeout_reaching_urllib3(adapter)) == (3, 7)
++
++    def test_state_pickled_without_a_default_restores_as_no_default(self):
++        state = HTTPAdapter().__getstate__()
++        del state["timeout"]  # as pickled by a version without this feature
++        adapter = HTTPAdapter.__new__(HTTPAdapter)
++        adapter.__setstate__(state)
++        assert _as_pair(_timeout_reaching_urllib3(adapter)) == (None, None)
++
++    def test_a_subclass_that_skips_the_base_init_has_no_default(self):
++        class OwnInit(HTTPAdapter):
++            def __init__(self):
++                self.max_retries = requests.adapters.Retry(0, read=False)
++                self.config = {}
++                self.proxy_manager = {}
++                self.init_poolmanager(1, 1)
++
++        assert _as_pair(_timeout_reaching_urllib3(OwnInit())) == (None, None)
++
++
++class TestSessionUsesMountedAdapterDefault:
++    def _session(self, default):
++        s = requests.Session()
++        adapter = HTTPAdapter(timeout=default)
++        s.mount("http://", adapter)
++        s.mount("https://", adapter)
++        return s
++
++    def test_session_has_no_timeout_state(self):
++        s = requests.Session()
++        assert not hasattr(s, "timeout")
++        assert "timeout" not in s.__attrs__
++
++    def test_every_request_through_the_session_uses_the_default(
++        self, httpbin, urlopen_timeouts
++    ):
++        s = self._session((3, 7))
++        s.get(httpbin("get"))
++        s.post(httpbin("post"), data="x")
++        assert [_as_pair(t) for t in urlopen_timeouts] == [(3, 7), (3, 7)]
++
++    def test_a_call_timeout_overrides_the_default(self, httpbin, urlopen_timeouts):
++        s = self._session((3, 7))
++        s.get(httpbin("get"), timeout=1)
++        assert [_as_pair(t) for t in urlopen_timeouts] == [(1, 1)]
++
++    def test_sending_a_prepared_request_directly_uses_the_default(
++        self, httpbin, urlopen_timeouts
++    ):
++        s = self._session((3, 7))
++        s.send(requests.Request("GET", httpbin("get")).prepare())
++        assert [_as_pair(t) for t in urlopen_timeouts] == [(3, 7)]
++
++    def test_every_redirect_hop_uses_the_default(self, httpbin, urlopen_timeouts):
++        s = self._session((3, 7))
++        r = s.get(httpbin("redirect/3"))
++        assert len(r.history) == 3
++        assert [_as_pair(t) for t in urlopen_timeouts] == [(3, 7)] * 4
++
++    def test_the_default_actually_times_a_slow_response_out(self, httpbin):
++        s = self._session((None, 0.1))
++        with pytest.raises(ReadTimeout):
++            s.get(httpbin("delay/1"))
++
++    def test_a_call_timeout_lets_a_slow_response_through(self, httpbin):
++        s = self._session((None, 0.1))
++        assert s.get(httpbin("delay/1"), timeout=5).status_code == 200
++
++    def test_the_default_survives_pickling_the_session(self, httpbin, urlopen_timeouts):
++        s = pickle.loads(pickle.dumps(self._session((3, 7))))
++        s.get(httpbin("get"))
++        assert [_as_pair(t) for t in urlopen_timeouts] == [(3, 7)]
++
++    def test_module_level_calls_are_unaffected(self, httpbin, urlopen_timeouts):
++        requests.get(httpbin("get"))
++        assert [_as_pair(t) for t in urlopen_timeouts] == [(None, None)]

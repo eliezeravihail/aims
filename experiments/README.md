@@ -31,8 +31,9 @@ replaced its conclusion) · **removed** (the test was invalid; its files are del
   unaided**. Whether aims produces better design **at a scale where the right design is not obvious** is
   untested — the open question.
 - **Goal 2.** A filed **non-goal** catches a change that contradicts it (3/3 vs 0/3) — the one thing a
-  record holds that the code cannot. A record does not change the outcome on small code, where the pattern is
-  recoverable from the code itself. Six campaign runs were withdrawn (hand-written records).
+  record holds that the code cannot. On a **real** decision (requests' maintainers: no timeout on `Session`), the
+  record aims filed from their discussion kept it in 3 of 3 sessions; without it, 0 of 6 — aims' process alone did
+  not find it. A record does not change the outcome where the pattern is recoverable from the code itself. Six campaign runs were withdrawn (hand-written records).
 - **Cost.** ≈1.85–2.34× tokens in the campaign's two measurements; 2.5–3× in the paper's study.
 
 ---
@@ -71,6 +72,7 @@ Synthesis of the add-feature runs: [`refactoring-SYNTHESIS.md`](refactoring-SYNT
 | [`continued-development`](continued-development/results.md) | does a fresh session continue from the records? | a tie on the code; the records arm *knew* the invariant instead of re-deriving it | **stands** — narrow |
 | [`instance-seg-annotator`](instance-seg-annotator/results.md) | Q2: did the fresh session continue from the records? | yes, blind-corroborated | **stands** |
 | [`refactoring-continuity`](refactoring-continuity/results.md) | the same code with and without its record | both correct; the record added legibility, not a different outcome | **null** at this scale |
+| [`real-decision-trap`](real-decision-trap/results.md) | a **real** maintainers' decision, reached on GitHub and absent from code and docs, filed as a record by aims from the maintainers' words: does a later session keep it when a feature request invites the historical wrong turn? | requests (no timeout on `Session`): with the record **3 of 3** kept it — each stopped, cited the record and built the default on the transport adapter; aims without it 0 of 3, unaided 0 of 3, all building `Session.timeout`. PyTorch (sampler re-seeding): stopped at the gate — unaided kept it 3 of 3, the code's own shape leads there | **stands** — one decisive case, n = 3 |
 
 ## Designed, not yet run
 

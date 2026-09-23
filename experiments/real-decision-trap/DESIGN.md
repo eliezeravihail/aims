@@ -1,7 +1,7 @@
 ---
 title: "real-decision-trap — does a co-located record carry a decision the code cannot show?"
 date: 2026-09-23
-status: frozen before any session ran
+status: frozen before any session ran; run 2026-09-23 — see results.md
 ---
 
 # The question
