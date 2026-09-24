@@ -1,0 +1,261 @@
+{
+ "units_scored_by_2+_judges": 12,
+ "forms_parsed": 36,
+ "grades": {
+  "openspec-real, 3 judges": {
+   "alpha_interval": 0.107,
+   "alpha_95ci": [
+    -0.32,
+    0.308
+   ],
+   "ICC(2,1)": 0.268,
+   "ICC(3,1)": 0.541,
+   "variance share: design": 0.268,
+   "variance share: judge": 0.505,
+   "variance share: residual (judge x design)": 0.227
+  },
+  "aims-real, 2 judges": {
+   "alpha_interval": 0.963,
+   "alpha_95ci": [
+    -0.566,
+    0.995
+   ]
+  },
+  "all 12 designs": {
+   "alpha_interval": 0.406,
+   "alpha_95ci": [
+    0.082,
+    0.671
+   ],
+   "round-2 pair ICC(2,1)": 0.779,
+   "round-2 pair ICC(3,1)": 0.793,
+   "round-2 pair variance share: design": 0.779,
+   "round-2 pair variance share: judge": 0.018,
+   "round-2 pair variance share: residual (judge x design)": 0.203
+  },
+  "per_design": {
+   "booking-availability/1/openspec-real": [
+    9.79,
+    6.82,
+    9.47
+   ],
+   "booking-availability/2/openspec-real": [
+    9.71,
+    6.52,
+    9.07
+   ],
+   "entitlements/1/openspec-real": [
+    9.27,
+    8.74,
+    9.33
+   ],
+   "entitlements/2/openspec-real": [
+    9.0,
+    5.71,
+    6.36
+   ],
+   "feed-ranking/1/openspec-real": [
+    8.69,
+    5.92,
+    6.09
+   ],
+   "feed-ranking/2/openspec-real": [
+    8.69,
+    5.8,
+    5.78
+   ],
+   "booking-availability/1/aims-real": [
+    10.0,
+    9.33
+   ],
+   "booking-availability/2/aims-real": [
+    6.86,
+    6.64
+   ],
+   "entitlements/1/aims-real": [
+    9.5,
+    9.47
+   ],
+   "entitlements/2/aims-real": [
+    9.18,
+    9.0
+   ],
+   "feed-ranking/1/aims-real": [
+    9.79,
+    9.71
+   ],
+   "feed-ranking/2/aims-real": [
+    9.64,
+    9.57
+   ]
+  },
+  "spread (max-min) per design": {
+   "mean": 1.414,
+   "max": 3.29,
+   "designs with spread >= 2 points": 5
+  }
+ },
+ "grades_without_chapter_13": {
+  "openspec-real, 3 judges": {
+   "alpha_interval": 0.487,
+   "alpha_95ci": [
+    -0.076,
+    0.755
+   ],
+   "ICC(2,1)": 0.557,
+   "ICC(3,1)": 0.736,
+   "variance share: design": 0.557,
+   "variance share: judge": 0.242,
+   "variance share: residual (judge x design)": 0.2
+  },
+  "all 12 designs": {
+   "alpha_interval": 0.605,
+   "alpha_95ci": [
+    0.237,
+    0.788
+   ]
+  }
+ },
+ "s4_found_in_chapter_13": {
+  "R1": [],
+  "R2-own": [
+   "booking-availability/1/openspec-real",
+   "booking-availability/2/openspec-real",
+   "entitlements/2/openspec-real",
+   "feed-ranking/1/openspec-real",
+   "feed-ranking/2/openspec-real",
+   "booking-availability/2/aims-real"
+  ],
+  "R2-simp": [
+   "entitlements/2/openspec-real",
+   "feed-ranking/1/openspec-real",
+   "feed-ranking/2/openspec-real",
+   "booking-availability/2/aims-real"
+  ]
+ },
+ "gate": {
+  "round-2 pair: agreement": "10/12",
+  "round-2 pair: Cohen kappa": 0.667,
+  "all judges: alpha_nominal": 0.275,
+  "designs BLOCKED by some judge and CLEAR by another": 5
+ },
+ "arm_order": {
+  "pairs": [
+   {
+    "product": "feed-ranking",
+    "stage": 1,
+    "aims-minus-openspec (own)": 3.87,
+    "aims-minus-openspec (simp)": 3.62,
+    "same sign": true
+   },
+   {
+    "product": "feed-ranking",
+    "stage": 2,
+    "aims-minus-openspec (own)": 3.84,
+    "aims-minus-openspec (simp)": 3.79,
+    "same sign": true
+   },
+   {
+    "product": "booking-availability",
+    "stage": 1,
+    "aims-minus-openspec (own)": 3.18,
+    "aims-minus-openspec (simp)": -0.14,
+    "same sign": false
+   },
+   {
+    "product": "booking-availability",
+    "stage": 2,
+    "aims-minus-openspec (own)": 0.34,
+    "aims-minus-openspec (simp)": -2.43,
+    "same sign": false
+   },
+   {
+    "product": "entitlements",
+    "stage": 1,
+    "aims-minus-openspec (own)": 0.76,
+    "aims-minus-openspec (simp)": 0.14,
+    "same sign": true
+   },
+   {
+    "product": "entitlements",
+    "stage": 2,
+    "aims-minus-openspec (own)": 3.47,
+    "aims-minus-openspec (simp)": 2.64,
+    "same sign": true
+   }
+  ],
+  "same sign": "4/6",
+  "alpha_interval on arm difference": 0.626
+ },
+ "verdicts_round2": {
+  "agree": "5/9",
+  "alpha_nominal": 0.313
+ },
+ "survival_counts": {
+  "alpha_interval": 0.623,
+  "per_design": {
+   "feed-ranking/openspec-real": {
+    "R1": 3,
+    "R2-own": 3,
+    "R2-simp": 2
+   },
+   "booking-availability/openspec-real": {
+    "R1": 1,
+    "R2-own": 1,
+    "R2-simp": 1
+   },
+   "entitlements/openspec-real": {
+    "R1": 3,
+    "R2-own": 2,
+    "R2-simp": 3
+   },
+   "feed-ranking/aims-real": {
+    "R2-own": 4,
+    "R2-simp": 2
+   },
+   "booking-availability/aims-real": {
+    "R2-own": 3,
+    "R2-simp": 4
+   },
+   "entitlements/aims-real": {
+    "R2-own": 4,
+    "R2-simp": 4
+   }
+  }
+ },
+ "chapters": {
+  "items (design x chapter) with 2+ judges": 168,
+  "score: alpha_interval": 0.375,
+  "score: alpha_95ci (resampling designs)": [
+   0.196,
+   0.514
+  ],
+  "pass/fail (score 10 vs <10): alpha_nominal": 0.316,
+  "S4 in chapter: alpha_nominal": 0.489,
+  "per chapter: alpha_interval": {
+   "1": 0.045,
+   "2": 0.065,
+   "3": -0.036,
+   "4": 0.494,
+   "5": 0.58,
+   "6": -0.074,
+   "7": -0.019,
+   "8": -0.036,
+   "9": null,
+   "10": 0.171,
+   "11": 0.127,
+   "12": -0.087,
+   "13": 0.275,
+   "14": 0.442
+  },
+  "items where every judge agrees on pass/fail": "114/168"
+ },
+ "design_only": {
+  "grade (chapters 1-14 minus 13), all judges: alpha_interval": 0.605,
+  "chapter score, all judges: alpha_interval": 0.361,
+  "chapter pass/fail, all judges: alpha_nominal": 0.32,
+  "round-2 pair: chapter score alpha_interval": 0.381,
+  "round-2 pair: chapter pass/fail alpha_nominal": 0.398,
+  "round-2 pair: chapters flagged failed by both / by either": "21/56"
+ }
+}
