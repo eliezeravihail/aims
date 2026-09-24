@@ -249,5 +249,13 @@
    "14": 0.442
   },
   "items where every judge agrees on pass/fail": "114/168"
+ },
+ "design_only": {
+  "grade (chapters 1-14 minus 13), all judges: alpha_interval": 0.605,
+  "chapter score, all judges: alpha_interval": 0.361,
+  "chapter pass/fail, all judges: alpha_nominal": 0.32,
+  "round-2 pair: chapter score alpha_interval": 0.381,
+  "round-2 pair: chapter pass/fail alpha_nominal": 0.398,
+  "round-2 pair: chapters flagged failed by both / by either": "21/56"
  }
 }

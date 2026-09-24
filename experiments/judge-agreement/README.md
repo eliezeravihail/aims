@@ -96,6 +96,18 @@ to about zero or below for §1, §2, §3, §6, §7, §8 and §12. §9 has no var
 | named verdicts, round-2 pair (D1, survival, D2 form × 3 products) | **5 of 9**; α (nominal) 0.31 |
 | reopened + discarded counts, all judges | α (interval) 0.62 |
 
+### 5. Design chapters only (correctness removed)
+
+| reading | agreement |
+|---|---|
+| grade without chapter 13, all judges | α 0.61 |
+| chapter score, chapters 1–14 minus 13, all judges | α 0.36 |
+| chapter pass/fail, same chapters, all judges | α 0.32 |
+| round-2 pair (same protocol): chapter score / pass/fail | α 0.38 / 0.40 |
+| round-2 pair: design chapters flagged failed by both, of those flagged by either | **21 of 56** |
+
+The open research question this leads to is documented in [`../design-judgment/`](../design-judgment/README.md).
+
 ## What this does and does not show
 
 - **Shows:** across the two rounds, grades of the same OpenSpec designs did not repeat. Agreement was

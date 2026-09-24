@@ -199,6 +199,19 @@ def main():
     fails = chapter_items(all_units, fn=lambda s, v: s < 10)
     res["chapters"]["items where every judge agrees on pass/fail"] = f"{sum(len(set(i)) == 1 for i in fails)}/{len(fails)}"
 
+    # 6. design only: every reading above, without chapter 13 (functional correctness)
+    design_ch = [c for c in range(1, 15) if c != 13]
+    r2 = [u for u in all_units if "R2-own" in multi[u] and "R2-simp" in multi[u]]
+    pf2 = [[multi[u][j]["rows"][c][0] < 10 for j in ("R2-own", "R2-simp")] for u in r2 for c in design_ch]
+    res["design_only"] = {
+        "grade (chapters 1-14 minus 13), all judges: alpha_interval": r(alpha_wo13(all_units)),
+        "chapter score, all judges: alpha_interval": r(kripp_alpha(chapter_items(all_units, chapters=design_ch))),
+        "chapter pass/fail, all judges: alpha_nominal": r(kripp_alpha(chapter_items(all_units, chapters=design_ch, fn=lambda s, v: s < 10), "nominal")),
+        "round-2 pair: chapter score alpha_interval": r(kripp_alpha([[multi[u][j]["rows"][c][0] for j in ("R2-own", "R2-simp")] for u in r2 for c in design_ch])),
+        "round-2 pair: chapter pass/fail alpha_nominal": r(kripp_alpha(pf2, "nominal")),
+        "round-2 pair: chapters flagged failed by both / by either": f"{sum(x and y for x, y in pf2)}/{sum(x or y for x, y in pf2)}",
+    }
+
     (HERE / "results.json").write_text(json.dumps(res, indent=1, default=str))
     print(json.dumps({k: v for k, v in res.items() if k != "survival_counts"}, indent=1, default=str))
 
