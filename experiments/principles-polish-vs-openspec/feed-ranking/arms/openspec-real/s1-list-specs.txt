@@ -1,0 +1,3 @@
+Specs:
+  feed-ranking       requirements 6
+  ranking-config     requirements 5

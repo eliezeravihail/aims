@@ -1,0 +1,3 @@
+Specs:
+  access-decision       requirements 5
+  entitlement-model     requirements 5

@@ -1,0 +1,5 @@
+ca9cc83 (HEAD -> master, tag: stage-2) stage-2: openspec propose
+25758ba (tag: stage-1) stage-1: archive (specs synced)
+ea2e96a stage-1: openspec propose
+518208f openspec init --tools claude
+55326d6 starter: substrate

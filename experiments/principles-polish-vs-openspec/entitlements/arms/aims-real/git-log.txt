@@ -1,0 +1,3 @@
+4ac5e43 (HEAD -> master, tag: stage-2) stage-2: aims-guide design
+d96e239 (tag: stage-1) stage-1: aims-guide design
+da01b28 starter: substrate + aims-guide skill @477cff9

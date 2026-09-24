@@ -1,0 +1,4 @@
+- Validating...
+✓ spec/feed-ranking
+✓ spec/ranking-config
+Totals: 2 passed, 0 failed (2 items)

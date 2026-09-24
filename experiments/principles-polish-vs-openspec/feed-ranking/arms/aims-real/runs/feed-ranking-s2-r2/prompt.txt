@@ -1,0 +1,108 @@
+# Feed ranking — stage 2
+
+The feed now has to respect two new rules. Both apply to the **same** ranking request.
+
+1. **Eligibility.** The user maintains a block list (authors) and a mute list (topics). An item from a
+   blocked author, or on a muted topic, must **never appear in the feed** — regardless of how high its
+   signals are. A muted item is simply absent; it is not shown low.
+
+2. **Diversity.** In the returned order, **no more than 2 items in a row may share the same author**. When a
+   third consecutive same-author item would occur, it is deferred to the next available position that does
+   not violate the rule; the relative order of everything else is otherwise preserved as much as possible.
+
+The weighted scoring of stage 1, and the operator-tunable weights, keep working exactly as before.
+
+Update the architecture to absorb these rules. Design only.
+
+follow the aims-guide skill; design only
+
+---
+Questions previously asked of the product owner for this task, and the product owner's answers:
+
+# Stage 2 — questions for the product owner
+
+Stage 2 adds eligibility (block/mute) and diversity (≤ 2 same-author in a row) to the stage-1 ranking
+(`goals.md`, `DESIGN.md`). The rules as stated leave the decisions below open. Each one changes observable
+behavior or the request contract, so the design waits for them. Every question offers a default: reply
+"choose" to hand it back, and the Guide will adopt that default and record it as handed back.
+
+## Q1. Where do a user's block list and mute list come from?
+
+Stage 1 has no persistence, and `user` is carried for identity only.
+
+- **(a)** Each ranking request carries the user's block list (author ids) and mute list (topic ids)
+  next to `user` and the candidates. The service stores nothing.
+- **(b)** The service holds the lists per user and ranks by looking up `user`. That needs a store, a way
+  to update it, and a rule for an unknown user. It reverses the stage-1 non-goal "no persistence", and
+  `user` would start affecting the result.
+
+*Default if handed back:* **(a)**.
+
+## Q2. What does an item carry to be judged, and what if that is missing?
+
+- **Author:** exactly one per item? Required?
+- **Topic:** exactly one per item, or a set of zero or more? If it is a set, is an item muted when
+  **any** of its topics is muted?
+- **Missing or malformed author/topic** (absent, empty string, not a string): reject the whole request,
+  naming the item? That is how stage 1 treats a bad signal.
+- **Matching:** exact, case-sensitive string equality (`"Alice"` ≠ `"alice"`)?
+
+*Default if handed back:* exactly one required author id (a non-empty string); a set of zero or more
+topic ids (non-empty strings), and an item is muted if any of its topics is muted; a missing or malformed
+author/topic rejects the request, naming the item; matching is exact and case-sensitive; an empty list and
+repeated entries in a list are allowed.
+
+## Q3. Does a blocked or muted item still have to be valid?
+
+Suppose a request contains an item that is blocked or muted **and** also breaks the stage-1 input
+contract: a signal outside [0, 1], or an id that duplicates another item's.
+
+- **(a)** The whole request is rejected, exactly as in stage 1. Eligibility applies only to a valid
+  request.
+- **(b)** Ineligible items are removed first, so an item that will never be shown cannot fail the request.
+
+*Default if handed back:* **(a)**. The stage-1 contract stays unchanged, and the caller learns about bad
+data whatever the user's lists say.
+
+## Q4. What happens when the diversity rule cannot be satisfied?
+
+Example (authors in brackets), in ranked order after filtering: `a1[A] a2[A] a3[A] b1[B]`. Deferring gives
+`a1 a2 b1 a3`, which is fine. But with `a1[A] a2[A] a3[A]` alone, no position exists for `a3`. The same
+happens whenever the tail of the feed is a single author with nothing left to separate it.
+
+- **(a)** Append the item anyway, in rank order. The rule becomes "as far as the candidates allow", and
+  the feed keeps every eligible item.
+- **(b)** Drop the item. The rule stays absolute, and the feed is shorter than the eligible set.
+- **(c)** Reject the request.
+
+*This one has no safe default.* (a) and (b) are both plausible, and they differ in which items the user
+sees. "Deferred to the next available position" reads toward (b) when no position exists. But then
+eligibility is no longer the only reason an item is missing. Please choose.
+
+## Q5. Confirm the deferral reading (worked example)
+
+Our reading: at each position, place the highest-ranked remaining item that does not make a third
+same-author item in a row. Deferred items keep their relative order.
+
+`a1[A] a2[A] a3[A] a4[A] b1[B] b2[B]` → `a1 a2 b1 a3 a4 b2`
+`a1[A] a2[A] a3[A] b1[B] c1[C]` → `a1 a2 b1 a3 c1`
+
+Each item keeps its own score, so the returned feed is no longer strictly score-descending. The response
+shape is otherwise unchanged: filtered items are simply absent, and nothing reports how many were removed.
+
+*Default if handed back:* as written above.
+
+# Answers from the product owner — feed ranking stage 2
+
+Q1. I don't know; choose a simple sensible technical approach.
+
+Q2. I don't know; choose a simple sensible technical approach.
+
+Q3. I don't know; choose a simple sensible technical approach.
+
+Q4. The constraint is hard; within it, preserve score order as much as possible. The case where the constraint cannot be met is not specified; choose a simple, sensible approach and state it.
+
+Q5. The constraint is hard; within it, preserve score order as much as possible.
+
+---
+Operating instructions (from the operator, not part of the task): Follow the aims-guide skill installed in this project, including its mandatory review-and-revise round, inside this session. Stop before writing any implementation code. No one is available to answer questions interactively: if you have questions for the product owner, write them to QUESTIONS.md in this directory and stop without designing further; they will be answered and the task restarted with the answers. Write the final design to DESIGN.md in this directory.

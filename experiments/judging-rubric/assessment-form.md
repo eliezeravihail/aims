@@ -46,7 +46,8 @@ The same filled form feeds both activities aims separates:
 4. **The score reflects how materially the design violates *this* principle** — a cosmetic breach of a rule
    is 8–9; the principle essentially unhonored is 0–2. Scores run **0–10** (0 = the principle is wholly
    unhonored — we keep 0 reachable rather than a 1–10 floor). Cross-principle importance (correctness and
-   ownership dominating) is **not** put into the row score — it lives in the weight + the graded caps.
+   ownership dominating) is **not** put into the row score — it lives in the weight; the S4 gate is reported
+   beside the grade, never folded into it.
 5. **A score below 10 REQUIRES a finding line with a citation** (the defect + the R/X/C or seam item it
    violates). A 10 needs a one-line cite of where the principle holds by construction. No citation → the row
    is struck, not counted as a pass.
@@ -78,11 +79,11 @@ Design: <id>            Product: <name>            Judge: <id>            Step-0
 | 17 | Security & trust boundaries (N/A if none)          |         |           |          |                                      |
 
 Profile (judging projection only):
-  weighted_average = Σ(score×weight)/Σweight   (weight from severity)
-  worst_principle  = min score
+  grade            = Σ(score×weight)/Σweight   (weight from severity; no global cap)
+  worst_chapter    = min score
   counts           = (#S3, #S4)
-  graded caps      = S2 ≤ 8.5 · S3 ≤ 7.5 · S4 ≤ 5.0
-  reported grade   = <capped>   worst=<n>   (#S3,#S4)=(,)
+  gate             = any S4 ⇒ BLOCKED · else CLEAR   (reported beside the grade, not folded into it)
+  reported         = grade=<n>   worst=<n>   (#S3,#S4)=(,)   gate=<BLOCKED|CLEAR>
 ```
 
 (§18 is not scored — it only names OCP/LSP/ADP/DRY/least-astonishment/YAGNI, folded into the rows above.)
@@ -99,10 +100,10 @@ has one owner, `balance()`, lines 28–36; §13 passes: balance derived from ent
 | 4  | Primitive obsession | Y | 7 | S2 | `statement()` returns `tuple[list[Entry], int]` — a bare positional pair at a public seam; the closing balance is an anonymous `int`, not a named `Statement`/closing-balance concept (line 41–43). One localized clump; `Entry` itself is a named type (line 7), so the principle is not broadly violated → ceiling S2 = 7. |
 | 7  | Leaky abstractions | Y | 10 | — | boundary types are domain types; error is a `ValueError` on the zero-delta rule (line 21–22). *(References the §4 clump, does not re-deduct it.)* |
 
-**Judging projection — profile:** with §4 = 7 (weight ×2) and every other applicable row 10, the weighted
-average is ≈ 9.6; the S2 finding caps it at **8.5**; `worst_principle = 7`, `(#S3,#S4) = (0,0)`. Reported:
-**8.5, worst 7, (0,0)**. (The capsule-aware arm `led-1.py` scores **§4 = 10** — it returns a named
-`Statement{account, entries, closing_balance}`, lines 13–17 — so its profile is a clean 10s, no cap. The
+**Judging projection — profile:** with §4 = 7 (weight ×2) and every other applicable row 10, the grade is
+the weighted average, **9.63**; `worst_chapter = 7`, `(#S3,#S4) = (0,0)`, gate **CLEAR**. Reported:
+**9.63, worst 7, (0,0), CLEAR**. (The capsule-aware arm `led-1.py` scores **§4 = 10** — it returns a named
+`Statement{account, entries, closing_balance}`, lines 13–17 — so its profile is a clean 10s. The
 form captures **exactly the difference the deterministic static metrics were blind to**: Halstead identical,
 MI even favored the shorter blind arm.)
 
