@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Experiments — aims</title>
-<meta name="description" content="Blind-judged results with scores, the test documents (spec inventories, arm designs, records), and the confounds that keep any single grade from being a verdict.">
+<meta name="description" content="Results with scores, and why the measurement does not yet hold, the test documents (spec inventories, arm designs, records), and the confounds that keep any single grade from being a verdict.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -25,12 +25,25 @@
 <header class="pagehero"><div class="wrap">
   <span class="badge">04 · Experiments</span>
   <h1>Results &amp; test documents</h1>
-  <p class="lede">Latest single-pass run: the aims arm built under the current method (one revise round), every arm graded <b>blind</b> on the 0–10 form, raw spec to the builder, no hint to the judge.</p>
+  <p class="lede">Every result here is exploratory. The latest comparison showed that the design grades depend on the judge as much as on the design, so no grade on this page is a verdict on its own.</p>
 </div></header>
 
 <section><div class="wrap">
-  <div class="kicker">Scores</div>
-  <h2>Blind grades, by product and arm</h2>
+  <div class="kicker">Latest</div>
+  <h2>aims vs the real OpenSpec tool: the measurement did not hold</h2>
+  <p class="intro">Three products, design only, compared twice on the <em>same</em> OpenSpec designs (OpenSpec 1.13.2). In round 1 the aims designs came from an earlier run and one judge scored each product. In round 2 aims was re-run at its current version in stricter isolation, and two judges of opposite leanings scored each product.</p>
+  <ul class="clean">
+    <li><span class="tag">rounds</span> <span class="body"><b>The two rounds disagree.</b> By the form, OpenSpec did better on the changed design in round 1 (3 of 3) and aims in round 2 (5 of 6).</span></li>
+    <li><span class="tag">judges</span> <span class="body"><b>Same designs, different grades.</b> The unchanged OpenSpec designs were graded from 5.7 to 9.8 depending on the judge, and wrong-output failures found in round 2 had been passed in round 1.</span></li>
+    <li><span class="tag">blind</span> <span class="body"><b>Not blind in practice.</b> All nine judges named the method behind each design correctly, each at 97% confidence.</span></li>
+    <li><span class="tag">measures</span> <span class="body"><b>The principle-free measure disagrees with the form.</b> In round 2 the count of components reopened or discarded favoured OpenSpec in 5 of 6 readings.</span></li>
+  </ul>
+  <p class="muted">Round 1: <a href="https://github.com/eliezeravihail/aims/blob/master/experiments/principles-polish-vs-openspec/results-openspec-real.md">results-openspec-real.md</a> · round 2: <a href="https://github.com/eliezeravihail/aims/blob/master/experiments/principles-polish-vs-openspec/results-aims-real.md">results-aims-real.md</a> · the paper's reading: <a href="paper.html">Paper</a>.</p>
+</div></section>
+
+<section><div class="wrap">
+  <div class="kicker">Scores, an earlier run</div>
+  <h2>Grades by product and arm (single-pass-assessment-rerun)</h2>
   <div class="tablewrap">
     <table>
       <thead><tr><th>Product</th><th>Arm</th><th>Grade</th><th>Worst</th><th>#S3,#S4</th><th>Sole finding</th></tr></thead>
@@ -46,7 +59,7 @@
       </tbody>
     </table>
   </div>
-  <p class="muted">Checkout: three-way tie at the cap, no correctness/ownership fault in any arm. Marketplace: aims absorbs the new category with zero core edits; the others reopen (§6). aims' rank is <b>product-dependent</b>.</p>
+  <p class="muted">Checkout: three-way tie at the cap, no correctness/ownership fault in any arm. Marketplace: aims absorbs the new category with zero core edits; the others reopen (§6). aims' rank is <b>product-dependent</b>. One judge per product, under the old capped grade; the judge spread measured later is wider than these gaps.</p>
 </div></section>
 
 <section><div class="wrap">
@@ -56,7 +69,7 @@
     <table>
       <thead><tr><th>Document</th><th>What it is</th></tr></thead>
       <tbody>
-        <tr><td><a href="https://github.com/eliezeravihail/aims/blob/master/experiments/PROTOCOL.md">PROTOCOL.md</a></td><td>How a pilot is run — two arms, hidden oracle, staged reveals, blind judges</td></tr>
+        <tr><td><a href="https://github.com/eliezeravihail/aims/blob/master/experiments/PROTOCOL.md">PROTOCOL.md</a></td><td>How a pilot is run — two arms, hidden oracle, staged reveals, anonymized designs, separate judges</td></tr>
         <tr><td><a href="https://github.com/eliezeravihail/aims/blob/master/skills/aims-guide/references/design-principles.md">design-principles.md</a></td><td>The design principles — the single source for building and grading</td></tr>
         <tr><td><a href="https://github.com/eliezeravihail/aims/blob/master/skills/aims-guide/references/measurement.md">measurement.md</a></td><td>The single measurement instrument — sub-checks, severity, the two projections</td></tr>
         <tr><td><a href="https://github.com/eliezeravihail/aims/blob/master/experiments/judging-rubric/assessment-form.md">assessment-form.md</a></td><td>The fillable layout + a worked filled example</td></tr>
@@ -106,12 +119,12 @@
         <tr><td><a href="https://github.com/eliezeravihail/aims/tree/master/experiments/aims-vs-openspec">aims-vs-openspec</a></td><td><b>aims lost</b> — third on design quality, reopened the most on survival. No design advantage found.</td></tr>
         <tr><td><a href="https://github.com/eliezeravihail/aims/tree/master/experiments/aims-upgraded-rerun">aims-upgraded-rerun</a></td><td>Decisive survival win; quality still third, but now the two judges <em>agree</em> why (not a taste split).</td></tr>
         <tr><td><a href="https://github.com/eliezeravihail/aims/tree/master/experiments/single-pass-assessment-rerun">single-pass-assessment-rerun</a></td><td class="win">Under neutral measurement, aims ties checkout and leads marketplace — no longer last.</td></tr>
-        <tr><td><a href="https://github.com/eliezeravihail/aims/tree/master/experiments/principles-polish-vs-openspec">principles-polish-vs-openspec</a> (3 products)</td><td class="win">D1 first-round quality: aims wins all three on the same axis. D2 absorption: wins the rubric all three.</td></tr>
+        <tr><td><a href="https://github.com/eliezeravihail/aims/tree/master/experiments/principles-polish-vs-openspec">principles-polish-vs-openspec</a> (3 products)</td><td>First run: aims won the form on all three, but the OpenSpec arm only imitated the tool. Re-run with the real tool, twice: the rounds disagree, and the same designs were graded 5.7–9.8 by judge.</td></tr>
         <tr><td><a href="https://github.com/eliezeravihail/aims/tree/master/experiments/marketplace-change-absorption">marketplace-change-absorption</a></td><td>Self-score tie; the blind judge tips a slight edge to OpenSpec (one reopen too generous).</td></tr>
       </tbody>
     </table>
   </div>
-  <div class="callout"><b>→ What changed:</b> the first pilot's no-advantage result was recorded honestly (<a href="https://github.com/eliezeravihail/aims/blob/master/decisions/0007-aims-vs-openspec-pilot-findings.md">0007</a>, trail through <a href="https://github.com/eliezeravihail/aims/blob/master/decisions/0010-openspec-pilot-trail-through-v4.md">0010</a>) and established the <b>blind two-arm protocol</b>. Judges splitting the verdict = a taste artifact → a single <b>assessment form</b> became the one measurement instrument (<a href="https://github.com/eliezeravihail/aims/blob/master/decisions/0012-assessment-form-instrument-and-review-projection.md">0012</a>, <a href="https://github.com/eliezeravihail/aims/blob/master/decisions/0014-one-measurement-instrument-the-form.md">0014</a>). §2 was rebalanced — the "describable second implementation" prediction-gate dropped, under-structuring ranked the primary failure (<a href="https://github.com/eliezeravihail/aims/blob/master/decisions/0013-interfaces-are-positive-drop-second-implementation-bar.md">0013</a>) — and operator prompt-anchoring removed. Under those, aims stopped placing last.</div>
+  <div class="callout"><b>→ What changed:</b> the first pilot's no-advantage result was recorded honestly (<a href="https://github.com/eliezeravihail/aims/blob/master/decisions/0007-aims-vs-openspec-pilot-findings.md">0007</a>, trail through <a href="https://github.com/eliezeravihail/aims/blob/master/decisions/0010-openspec-pilot-trail-through-v4.md">0010</a>) and established the <b>two-arm protocol</b> with anonymized designs and separate judges. Judges splitting the verdict = a taste artifact → a single <b>assessment form</b> became the one measurement instrument (<a href="https://github.com/eliezeravihail/aims/blob/master/decisions/0012-assessment-form-instrument-and-review-projection.md">0012</a>, <a href="https://github.com/eliezeravihail/aims/blob/master/decisions/0014-one-measurement-instrument-the-form.md">0014</a>). §2 was rebalanced — the "describable second implementation" prediction-gate dropped, under-structuring ranked the primary failure (<a href="https://github.com/eliezeravihail/aims/blob/master/decisions/0013-interfaces-are-positive-drop-second-implementation-bar.md">0013</a>) — and operator prompt-anchoring removed. Under those, aims stopped placing last.</div>
 
   <h3 style="margin-top:32px">Series 2 · Method-internal probes — where should quality come from?</h3>
   <div class="tablewrap">
@@ -163,8 +176,8 @@
   <div class="kicker">Reading the numbers</div>
   <h2>Protocol &amp; confounds</h2>
   <div class="grid g2">
-    <div class="card"><h3>What makes a run count</h3><p>Two arms (aims vs a control) build the same product across staged reveals with a passive oracle; separate blind judges grade against the same inventory; every claim carries a reproduction or <code>file:line</code>.</p></div>
-    <div class="card"><h3>Why no single grade is a verdict</h3><p><b>±0.5</b> judge noise (the three checkout 8.5s are a tie) · <b>maturity asymmetry</b> inflates the marketplace margin · <b>n = 1</b> per product, product-dependent.</p></div>
+    <div class="card"><h3>What makes a run count</h3><p>Two arms (aims vs a control) build the same product across staged reveals with a passive oracle; separate judges grade anonymized designs against the same inventory; every claim carries a reproduction or <code>file:line</code>. Anonymized is not blind: in the latest comparison every judge recognized the methods.</p></div>
+    <div class="card"><h3>Why no single grade is a verdict</h3><p>The judge spread is up to <b>4 points</b> on the same design (5.7–9.8), not the ±0.5 once assumed · the form shares its source with the method · <b>maturity asymmetry</b> inflates the marketplace margin · <b>n = 1</b> per product, product-dependent.</p></div>
   </div>
   <div class="callout"><b>On the record:</b> an earlier run showed aims last on checkout. With operator prompt-anchoring removed and §2 rebalanced, it did not reproduce — aims tied checkout and led marketplace. Both corrections contributed; at n = 1 they don't separate.</div>
   <div class="pagenav">

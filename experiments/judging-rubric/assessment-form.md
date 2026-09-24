@@ -14,8 +14,11 @@ A **standardized, fillable instrument** for scoring one design against the princ
 of `measurement.md`: one row per principle, so two judges (or two runs) produce comparable, auditable
 records rather than free prose.
 
-It is honest about what it is: a **reliable** instrument (same design → same profile across judges/runs,
-because every row is sub-check-derived and cited), **not** an externally **valid** benchmark — no external
+It is honest about what it is: **designed to be reliable** (every row is sub-check-derived and cited, so a
+misjudged check should move a fraction, not a band), **but not yet shown to be** — in the real-tool OpenSpec
+comparison the same unchanged designs were graded 5.7 to 9.8 depending on the judge
+([`../principles-polish-vs-openspec/results-aims-real.md`](../principles-polish-vs-openspec/results-aims-real.md)).
+It is also **not** an externally **valid** benchmark — no external
 ground truth for design quality exists (the static-metric cross-check in
 [`cross-experiment-regrade.md`](cross-experiment-regrade.md) shows deterministic metrics measuring a
 different construct). Its validity rests on the principles being

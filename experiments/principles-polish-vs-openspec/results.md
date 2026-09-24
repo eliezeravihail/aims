@@ -1,5 +1,10 @@
 # Results — design-principles.md vs. OpenSpec, three products, design-only
 
+> **Superseded.** In this run the OpenSpec arm only imitated the tool's format. The comparison was re-run with
+> the real tool, in two rounds: [`results-openspec-real.md`](results-openspec-real.md) (round 1) and
+> [`results-aims-real.md`](results-aims-real.md) (round 2). The rounds disagree, and the same OpenSpec designs
+> were graded 5.7–9.8 depending on the judge. The readings below are kept as the record of this run.
+
 **Run once, 2026-09-18.** Pins: aims method at this branch's head; both arms and all three judges are
 isolated subagents on the same model; design-only, no code. n = 1 per product (strength is the sequence of
 three). Deviations declared in [`README.md`](README.md) §5.

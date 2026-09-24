@@ -66,7 +66,17 @@ observe than the goal, that ease is the thing to distrust, not the justification
 ## Evidence status — reported per goal, never as one verdict
 
 ### Goal 1 (correct design) — a hypothesis under test, not an established result
-The blind design-only pilot
+
+**Current status (2026-09): not demonstrated; the measurement does not hold yet.** The design-only comparison
+with the real OpenSpec tool (`experiments/principles-polish-vs-openspec/results-openspec-real.md`,
+`results-aims-real.md`) ran twice on the same OpenSpec designs, and the two rounds pointed in opposite
+directions. Those unchanged designs were graded 5.7 to 9.8 depending on the judge, all nine judges recognized
+which method produced each design, and the principle-free reopen count favoured OpenSpec in 5 of 6 readings.
+Until a measurement gives the same answer twice, every rubric reading below is exploratory, including the
+"honest current reading" further down, which predates this finding. The paper (`paper/aims_paper.pdf`) states
+the same conclusion.
+
+The design-only pilot
 `experiments/aims-vs-openspec/` (vs OpenSpec, n=1) has now been run three times as the method was sharpened:
 
 - **v1** — found **no design-quality advantage for aims**, and it reopened the most of its own structure

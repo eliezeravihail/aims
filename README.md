@@ -211,18 +211,28 @@ single task before you execute it.
 it found, and whether it stands, was superseded, or was withdrawn — split by the two goals, since they are
 measured separately. The short version:
 
-- **Design.** Passing tests does not separate designs; the design rubric does (43 vs 16 at an identical test
-  suite). The review catches designs that pass every test but are badly built. On a weaker model aims raises
-  the floor. On a strong model the effect has been small — because every task measured so far was small
-  enough for a strong model to find a good design unaided. Whether aims wins **at a scale where the right
-  design is not obvious** is the open question.
+- **The measurement does not hold yet.** In the latest design comparison, aims against the real OpenSpec
+  tool over two rounds ([`results-openspec-real.md`](experiments/principles-polish-vs-openspec/results-openspec-real.md),
+  [`results-aims-real.md`](experiments/principles-polish-vs-openspec/results-aims-real.md)):
+  - the two rounds pointed in opposite directions;
+  - the same, unchanged designs received grades from 5.7 to 9.8 depending on the judge;
+  - all nine judges recognized which method produced each design;
+  - the one measure independent of aims' principles (components reopened) favoured OpenSpec in 5 of 6
+    readings.
+
+  A rubric difference smaller than that spread, which is most of them, cannot be read as a result.
+- **Design.** Tests do not separate designs: two designs passing an identical suite scored 43 vs 16, but on
+  the same rubric whose spread is shown above. When adding a feature, an agent without the method was equally
+  correct every time. Over a sequence of three additions a judge saw aims' design improve; the coupling count
+  did not confirm it.
 - **Knowledge.** A recorded non-goal catches a change that contradicts it; the code alone cannot (3/3 vs
   0/3). On small code a record does not change the outcome, because the pattern is recoverable from the code.
 - **Losses are recorded as losses**: aims lost the plant → mineral pilot decisively, and its best design
   pilot (v4) ships a real defect.
 
-Every experiment follows [`experiments/PROTOCOL.md`](experiments/PROTOCOL.md): a controlled, **blind-judged**
-comparison against a control arm, judged by a separate agent — a demonstration is not an experiment.
+Every experiment follows [`experiments/PROTOCOL.md`](experiments/PROTOCOL.md): a controlled comparison against a
+control arm, with anonymized designs judged by a separate agent — a demonstration is not an experiment.
+Anonymized is not blind: in the latest comparison every judge recognized which method produced each design.
 
 ## What aims deliberately does not have
 

@@ -25,6 +25,13 @@ replaced its conclusion) · **removed** (the test was invalid; its files are del
 
 ## Where the evidence stands today
 
+- **Measurement first.** The design grades do not yet repeat. In the latest comparison, aims against the real
+  OpenSpec tool over two rounds, the rounds pointed in opposite directions. The same unchanged designs were
+  graded 5.7 to 9.8 depending on the judge, all nine judges recognized which method produced each design, and
+  the principle-free reopen count favoured OpenSpec in 5 of 6 readings
+  ([`results-openspec-real.md`](principles-polish-vs-openspec/results-openspec-real.md),
+  [`results-aims-real.md`](principles-polish-vs-openspec/results-aims-real.md)). Every Goal-1 rubric reading
+  below should be read against that spread.
 - **Goal 1.** The rubric separates designs the tests cannot (43 vs 16 at an identical suite). The **review**
   catches green-but-bad designs (4/4). On a *weaker* model aims raises the floor; on a strong one the effect
   is small, because **every task so far was small enough that a strong model converged on a good design
@@ -48,7 +55,9 @@ replaced its conclusion) · **removed** (the test was invalid; its files are del
 | [`aims-upgraded-rerun`](aims-upgraded-rerun/results.md) | the pilot aims lost, re-run on upgraded aims | the judges now agree — on a real structural fault (two structures for one tax concept) and a correctness gap | **stands** — a loss, diagnosed |
 | [`aims-single-pass-rerun`](aims-single-pass-rerun/README.md) | single-pass designer on the corrected principles | discovered the discount→line allocation from the requirement itself | **stands** |
 | [`single-pass-assessment-rerun`](single-pass-assessment-rerun/README.md) | the same, scored on the assessment form | checkout a three-way tie; aims no longer last | **stands** |
-| [`principles-polish-vs-openspec`](principles-polish-vs-openspec/results.md) | design-principles.md vs OpenSpec, 3 fresh products | aims wins first-round on all three; change absorption tie / win / tie | **stands** — with a ceiling (every aims arm scored the maximum) and vocabulary-capture caveat |
+| [`principles-polish-vs-openspec`](principles-polish-vs-openspec/results.md) | design-principles.md vs OpenSpec, 3 fresh products | aims wins first-round on all three; change absorption tie / win / tie | **superseded** — the OpenSpec arm only imitated the tool's format; re-run below |
+| [`principles-polish-vs-openspec`](principles-polish-vs-openspec/results-openspec-real.md) (round 1) | the same, OpenSpec arm re-run with the real tool (1.13.2), against the frozen aims designs | form: no clear advantage on D1 in all 3, OpenSpec on D2 in all 3; fewer reopens: aims 1, OpenSpec 2; wrong-output failures found in aims on 3 products, OpenSpec 0 | **contested** — round 2 disagrees |
+| [`principles-polish-vs-openspec`](principles-polish-vs-openspec/results-aims-real.md) (round 2) | aims re-run at its current version in stricter isolation; two opposite-disposition judges per product | form: aims 4 of 6 on D1, 5 of 6 on D2; fewer reopens: OpenSpec 5 of 6; the same OpenSpec designs graded 5.7–9.8 by judge; 9 of 9 judges named the methods | **stands as a measurement failure** — the grades depend on the judge |
 | [`plant-mineral-id`](plant-mineral-id/results.md) | aims vs OpenSpec, feature-based identifier | **aims lost decisively** (6.63 vs 9.54), the only BLOCKED arm | **stands** — a loss |
 | [`s7-yagni-stated-capability`](s7-yagni-stated-capability/results.md) | does a §7 clause fix that loss on an unseen product? | the loss did not reproduce with or without it | **null** — not adopted |
 | [`marketplace-change-absorption`](marketplace-change-absorption/results.md) | informal change-absorption probe, furniture → cars | three blind judges: aims > OpenSpec > plain | **stands** — informal |
