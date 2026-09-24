@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The paper — aims</title>
-<meta name="description" content="Design as the Objective: a model optimizes the goal it is given, so structure must be made the goal — with a blind evaluation, losses included.">
+<meta name="description" content="Design as the Objective: a model optimizes the goal it is given, so structure must be made the goal. We could not show that this helps: design quality has no measurement yet that gives the same answer twice.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -25,58 +25,105 @@
 <header class="pagehero"><div class="wrap">
   <span class="badge">06 · Paper</span>
   <h1>Design as the objective</h1>
-  <p class="lede">A model optimizes the goal it is <em>given</em>. Agent loops score correctness, so structure is never the goal — unless you make it one.</p>
+  <p class="lede">A model optimizes the goal it is <em>given</em>. Coding agents are given correctness, so structure is never the goal unless it is made one. We built a method that makes it the goal. <b>We could not show that it helps.</b></p>
   <p class="muted">Eliezer Avihail · September 2026 · <a href="https://github.com/eliezeravihail/aims/blob/master/paper/aims_paper.pdf">full paper (PDF)</a></p>
 </div></header>
 
 <section><div class="wrap">
   <div class="kicker">The idea</div>
-  <h2>One assumption, three requirements</h2>
-  <p class="intro">A language model maximizes the likelihood of the next token given its context, and preference training rewards answers that <em>look</em> right. Under a loop that ends on "it works," good structure is never being optimized — the model's default is ordinary, flat code. Getting structure out requires three things, and aims is just those three:</p>
+  <h2>Why the goal must be explicit</h2>
+  <p class="intro">A language model produces text one token at a time, choosing what is likely given the context. Preference training rewards answers that <em>look</em> like they satisfy the request, and agent loops stop when the task works. An instruction such as "write clean code" changes nothing, because it gives the model nothing it can fail. The paper's argument has three parts:</p>
   <div class="grid g3" style="margin-top:24px">
-    <div class="card"><h3>1 · Make it checkable</h3><p>An adjective ("clean code") is not a goal. Structure becomes real only as a list of yes/no items applied to the output — a document that says what "correct" means.</p></div>
-    <div class="card"><h3>2 · Check at the decision</h3><p>Once an interface is written, the model defends it. So the check runs <em>inside the design step</em>, before any code — where a fix costs a paragraph, not a refactor.</p></div>
-    <div class="card"><h3>3 · Write down the why</h3><p>No memory between sessions. File the reasons for each boundary <em>beside the code</em>, and flag the record stale when the code moves — because a stale record gets followed.</p></div>
+    <div class="card"><h3>1 · Make it checkable</h3><p>A goal becomes real only when it is a list of items, each of which can be answered yes or no for a given design.</p></div>
+    <div class="card"><h3>2 · Check before the code</h3><p>Once an interface is written, the model tends to defend it rather than revise it. So the check belongs inside the design step, against a written list rather than the model's own opinion. <em>This part has not yet been tested directly.</em></p></div>
+    <div class="card"><h3>3 · When in doubt, more structure</h3><p>Most code a model learned from is ordinary working code. Too much structure costs a layer nobody uses; too little spreads, because every later change has to work around the missing boundary.</p></div>
   </div>
 </div></section>
 
 <section><div class="wrap">
-  <div class="kicker">The evaluation</div>
-  <h2>What the experiments show — honestly</h2>
-  <p class="intro">Blind, adversarial protocol: staged requirement cards that never hint at later stages, a passive oracle, method-anonymized artifacts, judges who built nothing, a reproduction for every claim. The results, wins and non-wins together:</p>
-  <ul class="clean">
-    <li><span class="tag">win</span> <span class="body"><b>First-round design quality:</b> against a spec-driven baseline on three products, aims wins all three on the same axis — value objects and one-owner-per-rule.</span></li>
-    <li><span class="tag">even</span> <span class="body"><b>Change absorption:</b> tie / win / tie on the rubric-free survival count; both arms pass every correctness trap.</span></li>
-    <li><span class="tag">even</span> <span class="body"><b>Six adaptation tasks</b> (one on a real open-source module): a no-method control is correct <em>every</em> time. On a change one session can hold, the method is not needed for correctness.</span></li>
-    <li><span class="tag">win</span> <span class="body"><b>The real edge is a trajectory:</b> across successive changes aims' design improves while the control flattens and densifies — rot that a single-change benchmark cannot see.</span></li>
-    <li><span class="tag">loss</span> <span class="body"><b>A product it lost:</b> on plant→mineral the aims arm shipped a type that could not represent an observed range ("6.5–7") — a correctness (S4) design defect, caught blind, in the home method. The instrument is not a home referee.</span></li>
-    <li><span class="tag">cost</span> <span class="body"><b>2.5–3×</b> the baseline in tokens and time — spent on reading the principles, filing records, and the mandatory revise round. A follow-up measured <b>1.9–2.3×</b> tokens.</span></li>
-  </ul>
-  <p class="intro" style="margin-top:18px"><b>A follow-up campaign</b> (the paper's Study 3) re-tested both claims on running code:</p>
-  <ul class="clean">
-    <li><span class="tag">win</span> <span class="body"><b>Tests do not measure design:</b> two designs passing an identical test suite scored 43 vs 16 on the rubric, blind and from the code.</span></li>
-    <li><span class="tag">win</span> <span class="body"><b>The review carries the weight:</b> it flagged all four builds that pass every test but are badly built; the same principle written into the prompt had not prevented them, and on a weak model changed nothing.</span></li>
-    <li><span class="tag">even</span> <span class="body"><b>A raised floor, not a higher ceiling:</b> the shortcut aims prevents is taken by a minority of unaided builds, more often on weaker models; the benefit did not compound, and no correctness gap appeared.</span></li>
-    <li><span class="tag">win</span> <span class="body"><b>What a record holds that code cannot:</b> a filed non-goal — 3 of 3 agents with the record caught a change that contradicted it; 0 of 3 without could.</span></li>
-    <li><span class="tag">loss</span> <span class="body"><b>A retraction:</b> six record-layer runs were withdrawn — the evaluator had written the records by hand, so they tested that construction, not the method.</span></li>
-  </ul>
-  <p class="intro" style="margin-top:18px"><b>At scale</b> (the paper's Study 4) — mkdocs, 7,111 lines, three successive changes that cut across it, three arms of three sessions each, blind judges:</p>
-  <ul class="clean">
-    <li><span class="tag">win</span> <span class="body"><b>Better design at every stage:</b> aims' designs scored above unaided ones at all three stages, with aims' records withheld. At the final stage 2 of 3 judges support it and the third finds no clear advantage — and the verdict rests on a disclosed correction: the judges' first specification scored the goal-2 trap line as a design requirement.</span></li>
-    <li><span class="tag">even</span> <span class="body"><b>The record, at scale:</b> every session given aims' records stopped at a change contradicting a recorded legal non-goal and cited its reason (3 of 3 sessions); with records withheld 2 of 3 sessions raised it, unaided 1 of 3 — one short of the threshold registered in advance. The records did not change the design.</span></li>
-  </ul>
-  <p class="intro" style="margin-top:18px"><b>A real decision</b> (the paper's Study 5) — requests' maintainers decided, in discussions over nine years, that a timeout is not <code>Session</code> state; nothing in the code says so. aims filed that decision as a record from their words; then a feature request invited the wrong turn:</p>
-  <ul class="clean">
-    <li><span class="tag">win</span> <span class="body"><b>The record decided the outcome:</b> with it, 3 of 3 sessions stopped, named the conflict and built the default on the transport adapter; without it, 0 of 3 with aims and 0 of 3 unaided — all six added the rejected <code>Session.timeout</code>. A second case (PyTorch's sampler) had no trap: unaided sessions kept that decision on their own, because the code's shape already leads there.</span></li>
-  </ul>
-  <div class="callout"><b>Two of the best-looking numbers are reported as instrument failures, not results:</b> a perfect first-round score on all three products (a ceiling that can no longer register the next regression), and all three judges noting the designs speak the rubric's own vocabulary (the judge shares the method's rubric). A candidate fix prompted by the loss was withheld and A/B-tested on an unseen product; it did not prove necessary, so it was <em>not</em> adopted.</div>
+  <div class="kicker">The method</div>
+  <h2>Two tasks, one scored form</h2>
+  <p class="intro">Aims serves two tasks: <b>designing new code</b>, and <b>adding a feature to existing code</b> without eroding its design. The latter is the process that Lehman, Parnas and others describe as software decaying under change. Both tasks use the same scored form, built only from checks drawn from the established literature that a reader can answer yes or no on a given design. There are 15 chapters for new designs and 12 for adding features.</p>
+  <ol class="steps" style="margin-top:18px">
+    <li><b>Lists from the specification.</b> <p>Before reading the design, the reviewer lists the rules the product must obey, its likely directions of change, and its acceptance cases. Every design of that product is checked against the same lists.</p></li>
+    <li><b>Item by item.</b> <p>Each item is pass, fail or not applicable. A failure must point to a list entry or a named part of the design, and one defect counts once.</p></li>
+    <li><b>Chapter scores.</b> <p>A chapter scores <code>round(10 × passed / applicable)</code>, and its worst failure sets both its ceiling and its weight.</p></li>
+    <li><b>Report.</b> <p>The report gives the weighted average, the worst chapter, the count of serious failures, and a gate: any correctness failure (S4) marks the design <b>blocked</b>. The grade is never capped and never reported alone.</p></li>
+  </ol>
+  <p class="intro" style="margin-top:18px">The designer receives only the list of failures, without a score, and revises the design once before anything is built. For comparing designs, the full scored form is used.</p>
 </div></section>
 
 <section><div class="wrap">
-  <div class="kicker">The honest bottom line</div>
-  <h2>Why this is judgement, not measurement</h2>
-  <p class="intro">On the one pair of runnable arms differing in a single design decision, <b>every deterministic metric was blind to the difference a judge penalized — and two (Maintainability Index, SLOC) pointed the wrong way</b>, because a named concept costs lines and adds no branches. There is no off-the-shelf benchmark for what this work improves; the metrics that resemble one measure something else. So architectural evaluation is an instrument of <b>procedure</b> — spec-pinned inventory, evidence per score, sealed blinding, adversarial by construction — and its soundness rests there. The method's value is structural discipline and durable records that compound across many changes; a first test at scale points that way on design, and a longer sequence, with a judge outside the rubric's lineage, is what would settle it.</p>
-  <p class="muted">Full argument, tables, protocol and references: <a href="https://github.com/eliezeravihail/aims/blob/master/paper/aims_paper.pdf">paper/aims_paper.pdf</a>. Frozen experiment packages, run logs, judge reports and sealed mappings: <a href="https://github.com/eliezeravihail/aims">the repository</a>.</p>
+  <div class="kicker">Why not a metric</div>
+  <h2>The automatic measures count size, not structure</h2>
+  <p class="intro">Lines of code, cyclomatic complexity, Halstead and the Maintainability Index all measure size and branching. The paper tested them on one pair of implementations that differed in a single design choice, a named type against a plain tuple. Two of the metrics saw no difference, and two preferred the weaker design, because a named type adds lines without adding branches. A coupling count built for this work ranked that pair correctly. It still missed a fault whose cause was the choice of operation, which can only be seen against the specification. The paper found no automatic metric that can judge design quality.</p>
+</div></section>
+
+<section><div class="wrap">
+  <div class="kicker">The evaluation</div>
+  <h2>Study 1: new designs, compared with OpenSpec</h2>
+  <p class="intro">Both methods designed three services: feed ranking, booking availability and entitlements. The work was design only, with no code. D1 scores the first design; D2 scores the design after a new, unannounced requirement. OpenSpec ran as the installed tool (1.13.2), with each stage in its own session. The comparison ran twice on the <em>same</em> OpenSpec designs. In round 1 the Aims designs came from an earlier run and one judge scored each product. Round 2 reran Aims at its current version, in stricter isolation, and scored each product with two judges of opposite leanings.</p>
+  <div class="tablewrap" style="margin-top:18px">
+    <table>
+      <thead><tr><th></th><th>Round 1 (3 readings)</th><th>Round 2 (6 readings)</th></tr></thead>
+      <tbody>
+        <tr><td>D1 winner by the form</td><td>no clear advantage in all 3</td><td>Aims 4, no clear advantage 2</td></tr>
+        <tr><td>D2 winner by the form</td><td>OpenSpec 3</td><td>Aims 5, OpenSpec 1</td></tr>
+        <tr><td>Fewer components reopened or discarded</td><td>Aims 1, OpenSpec 2</td><td>OpenSpec 5, tie 1</td></tr>
+        <tr><td>Products with a wrong-output failure found</td><td>Aims 3, OpenSpec 0</td><td>Aims 1, OpenSpec 3</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="intro" style="margin-top:18px"><b>The rounds disagree.</b> The next table shows why this cannot be read as a result. The OpenSpec designs were identical in both rounds, yet their grades moved by up to 3.3 points between judges, which is more than most differences between the arms. Correctness findings did not repeat either.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Same, unchanged OpenSpec design</th><th>Round 1</th><th>Round 2, ownership judge</th><th>Round 2, simplicity judge</th></tr></thead>
+      <tbody>
+        <tr><td>feed ranking, D1</td><td>8.69</td><td>5.92 (blocked)</td><td>6.09 (blocked)</td></tr>
+        <tr><td>booking availability, D1</td><td>9.79</td><td>6.82 (blocked)</td><td>9.47</td></tr>
+        <tr><td>entitlements, D1</td><td>9.27</td><td>8.74</td><td>9.33</td></tr>
+        <tr><td>feed ranking, D2</td><td>8.69</td><td>5.80 (blocked)</td><td>5.78 (blocked)</td></tr>
+        <tr><td>booking availability, D2</td><td>9.71</td><td>6.52 (blocked)</td><td>9.07</td></tr>
+        <tr><td>entitlements, D2</td><td>9.00</td><td>5.71 (blocked)</td><td>6.36 (blocked)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <ul class="clean" style="margin-top:18px">
+    <li><span class="tag">judges</span> <span class="body"><b>The judges knew which arm was which.</b> All nine judges named each design's method correctly, each at 97% confidence, from OpenSpec's file layout and wording and from the Aims designs' references to their principles.</span></li>
+    <li><span class="tag">measures</span> <span class="body"><b>The principle-free measure disagrees with the form.</b> In round 2 the form favoured Aims, but the count of components reopened or discarded favoured OpenSpec in five of six readings.</span></li>
+    <li><span class="tag">cost</span> <span class="body"><b>Round 2, per product:</b> Aims used 8–13 million tokens, 26–49 minutes and $12–21, Workers included. OpenSpec used 1.6–2.2 million tokens and 6–7 minutes.</span></li>
+  </ul>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Study 2: adding features to existing code</h2>
+  <p class="intro">Five experiments added a feature to existing code, comparing Aims with an agent without the method. One of them used a real open-source module.</p>
+  <ul class="clean">
+    <li><span class="tag">equal</span> <span class="body"><b>Correctness:</b> the agent without the method added the feature correctly every time, and the method caught no bug the other agent missed. For a feature that fits in one session, Aims is not needed for correctness.</span></li>
+    <li><span class="tag">sequence</span> <span class="body"><b>Over a sequence of three additions</b> a judge found the Aims code getting cleaner at each step while the other arm's code grew denser. The coupling measure did not confirm this: by that measure both arms got worse, Aims slightly less so.</span></li>
+    <li><span class="tag">style</span> <span class="body"><b>Existing style:</b> when the existing code was written in a plain style, Aims kept that style instead of imposing its own.</span></li>
+  </ul>
+</div></section>
+
+<section><div class="wrap">
+  <div class="kicker">The bottom line</div>
+  <h2>What we could not show, and why</h2>
+  <p class="intro">The paper set out to show that making design the objective produces better code. It could not show it, and the reason is measurement, not a result in either direction.</p>
+  <div class="grid g2" style="margin-top:24px">
+    <div class="card"><h3>Judges do not agree</h3><p>The same designs received grades from 5.7 to 9.8 depending on the judge, and correctness failures found by one judge were missed by another. Most differences between the methods were smaller than this spread.</p></div>
+    <div class="card"><h3>Blinding is not possible</h3><p>Each method leaves its own marks in its output, and every judge recognized them. A judge who knows which design came from which method is not blind, whatever the protocol says.</p></div>
+    <div class="card"><h3>The form shares a source with the method</h3><p>The form is built from the principles Aims designs toward, so it is likely to favour Aims. The one measure independent of those principles favoured the other tool.</p></div>
+    <div class="card"><h3>No outside measure exists</h3><p>There is no accepted benchmark or independent judge for design quality, and the automatic metrics measure size and branching, which good structure often increases.</p></div>
+  </div>
+  <div class="callout" style="margin-top:24px"><b>What would be needed.</b> The paper names three things, and none exists yet:
+    <ul>
+      <li>a measurement of how much independent judges agree, run on the same designs;</li>
+      <li>a way to hide which method produced a design, for example by rewriting every design into one neutral format before judging;</li>
+      <li>an outcome that depends on no rubric, such as the cost of a long sequence of later changes, measured over more changes than one session can hold.</li>
+    </ul>
+  </div>
+  <p class="intro" style="margin-top:18px">The argument for making design the goal may still be right; it has not been tested. What is missing is a way to measure design quality that gives the same answer twice. Building one is the next step, before any further claim about Aims.</p>
+  <p class="muted">Full argument, tables, limitations and references: <a href="https://github.com/eliezeravihail/aims/blob/master/paper/aims_paper.pdf">paper/aims_paper.pdf</a>. Experiment packages, run logs, judge reports and sealed mappings: <a href="https://github.com/eliezeravihail/aims">the repository</a>.</p>
   <div class="pagenav">
     <a href="usage.html"><div class="lab">Next</div><div class="ttl">Use it →</div></a>
     <a href="experiments.html"><div class="lab">Back to</div><div class="ttl">← Experiments</div></a>
