@@ -95,6 +95,7 @@ Synthesis of the add-feature runs: [`refactoring-SYNTHESIS.md`](refactoring-SYNT
 | item | what it is |
 |---|---|
 | [`judging-rubric/`](judging-rubric/) | the assessment form and its regrades |
+| [`judge-agreement/`](judge-agreement/README.md) | how far the grades repeat across judges, from the 36 existing forms. Same OpenSpec designs, three judges: α 0.11, and the judge explains more grade variance (50%) than the design (27%). Mostly driven by which judge finds a correctness bug; without chapter 13, α 0.49. Within one round the two judges' grades agree (ICC 0.78), but not which chapters fail (α 0.38) or the verdict (5 of 9). |
 | [`grade-rule-regrade.md`](grade-rule-regrade.md) | every earlier grade recomputed without the removed global cap, both readings kept; no ranking changed (`0018`) |
 | [`PROTOCOL.md`](PROTOCOL.md) | how to run an experiment that discriminates |
 
