@@ -26,8 +26,7 @@ aims answers each of these:
 
 📄 **Paper:** [*Design as the Objective*](paper/aims_paper.pdf) — the argument (a model optimizes the
 goal it is given), and an evaluation that could not show the method helps, with the reasons: design
-quality has no measurement yet that gives the same answer twice
-([LaTeX source](paper/aims_paper.tex)).
+quality has no measurement yet that gives the same answer twice.
 
 ---
 
